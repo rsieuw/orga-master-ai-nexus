@@ -12,16 +12,15 @@ const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    // Get theme from local storage or use device preference
+    // Get theme from local storage or default to dark
     const savedTheme = localStorage.getItem("theme") as Theme | null;
     
     if (savedTheme) {
       return savedTheme;
     }
     
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
+    // Default to dark theme instead of checking system preference
+    return "dark";
   });
 
   useEffect(() => {
@@ -33,8 +32,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     
     if (theme === "dark") {
       root.classList.add("dark");
+      root.classList.remove("light");
     } else {
       root.classList.remove("dark");
+      root.classList.add("light");
     }
   }, [theme]);
 

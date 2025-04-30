@@ -5,6 +5,38 @@
 
 @layer base {
   :root {
+    --background: 220 20% 18%;
+    --foreground: 0 0% 95%;
+
+    --card: 222 25% 12%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 222 20% 15%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 217 32% 20%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 32% 17%;
+    --accent-foreground: 0 0% 95%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 95%;
+
+    --border: 217 32% 22%;
+    --input: 217 32% 22%;
+    --ring: 224 76% 48%;
+
+    --radius: 0.5rem;
+  }
+
+  .light {
     --background: 210 40% 98%;
     --foreground: 222 47% 11%;
 
@@ -32,38 +64,6 @@
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 221 83% 53%;
-
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 217 32% 17%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217 32% 17%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 217 32% 17%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217 32% 17%;
-    --input: 217 32% 17%;
-    --ring: 224 76% 48%;
   }
 }
 
@@ -77,8 +77,22 @@
   }
 }
 
+@layer utilities {
+  .glass-effect {
+    @apply bg-black/20 backdrop-blur-lg border border-white/10 shadow-lg;
+  }
+  
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-md border border-white/5 shadow-md hover:shadow-lg transition-all duration-300;
+  }
+  
+  .glass-nav {
+    @apply bg-background/80 backdrop-blur-lg border-b border-white/5;
+  }
+}
+
 .task-card {
-  @apply rounded-lg border p-3 shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:-translate-y-1 duration-200;
+  @apply rounded-lg border p-3 shadow-sm transition-all hover:shadow-md hover:translate-y-[-2px] duration-200 glass-card;
 }
 
 .priority-high {
@@ -95,11 +109,11 @@
 
 /* Firebase Studio inspired styles */
 .firebase-card {
-  @apply bg-gray-800 rounded-lg border border-gray-700 transition-all duration-200 hover:shadow-md hover:border-primary/50;
+  @apply bg-card/80 backdrop-blur-md rounded-lg border border-white/5 shadow-md transition-all duration-200 hover:shadow-lg hover:border-primary/30;
 }
 
 .firebase-btn {
-  @apply rounded-md font-medium transition-all duration-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2;
+  @apply rounded-md font-medium transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-1 focus:ring-offset-background;
 }
 
 .firebase-btn-primary {
@@ -107,12 +121,12 @@
 }
 
 .firebase-btn-secondary {
-  @apply bg-gray-800 text-gray-200 border border-gray-700 hover:bg-gray-700;
+  @apply bg-secondary text-gray-200 border border-white/5 hover:bg-secondary/80;
 }
 
 /* Chat styles */
 .chat-window {
-  @apply h-[calc(100vh-16rem)] overflow-y-auto border rounded-lg bg-gray-800 dark:bg-secondary;
+  @apply h-[calc(100vh-16rem)] overflow-y-auto border border-white/5 rounded-lg bg-card/80 backdrop-blur-md;
 }
 
 .chat-message {
@@ -124,9 +138,9 @@
 }
 
 .chat-message-ai {
-  @apply bg-gray-700 mr-8;
+  @apply bg-card/80 mr-8;
 }
 
 .chat-input {
-  @apply w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary/40;
+  @apply w-full border border-white/10 rounded-lg p-3 bg-card/60 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/40;
 }

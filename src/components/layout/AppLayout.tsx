@@ -21,7 +21,7 @@ export default function AppLayout({
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-4">
         {children}

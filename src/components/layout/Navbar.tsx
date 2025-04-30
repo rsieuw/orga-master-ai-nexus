@@ -16,7 +16,7 @@ export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <nav className="border-b sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-40 glass-nav">
       <div className="container flex h-16 items-center px-4 justify-between">
         <div className="flex items-center">
           <Link to="/" className="text-xl font-bold text-primary">
@@ -26,7 +26,7 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <>
-              <Button variant="ghost" size="icon" onClick={toggleTheme}>
+              <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-foreground/70 hover:text-foreground">
                 {theme === "light" ? (
                   <Moon className="h-5 w-5" />
                 ) : (
@@ -35,7 +35,7 @@ export default function Navbar() {
               </Button>
 
               <Link to="/new-task">
-                <Button size="sm" className="gap-1">
+                <Button size="sm" className="gap-1 bg-primary/80 hover:bg-primary">
                   <Plus className="h-4 w-4" />
                   <span className="hidden sm:inline">Nieuwe Taak</span>
                 </Button>
@@ -43,11 +43,11 @@ export default function Navbar() {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
+                  <Button variant="outline" size="icon" className="border-white/10 bg-secondary/50">
                     <User className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="glass-effect">
                   <DropdownMenuItem>
                     <span className="text-sm font-medium">
                       {user?.name || "Gebruiker"}
@@ -80,12 +80,12 @@ export default function Navbar() {
                 )}
               </Button>
               <Link to="/login">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="border-white/10 bg-secondary/50 hover:bg-secondary">
                   Login
                 </Button>
               </Link>
               <Link to="/register">
-                <Button size="sm">Register</Button>
+                <Button size="sm" className="bg-primary/80 hover:bg-primary">Register</Button>
               </Link>
             </>
           )}

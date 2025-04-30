@@ -25,7 +25,7 @@ export default function TaskCard({ task }: TaskCardProps) {
 
   return (
     <Link to={`/task/${task.id}`}>
-      <Card className={`task-card firebase-card ${priorityClass} h-full`}>
+      <Card className={`task-card ${priorityClass} h-full`}>
         <div className="p-3">
           <div className="flex justify-between items-start">
             <h3 className="font-medium text-base line-clamp-1">{task.title}</h3>
@@ -41,7 +41,7 @@ export default function TaskCard({ task }: TaskCardProps) {
           <div className="flex justify-between items-center mt-2 text-xs">
             <Badge
               variant="outline"
-              className={`text-xs ${isOverdue ? "border-red-500 text-red-500" : ""}`}
+              className={`text-xs ${isOverdue ? "border-red-500 text-red-500" : ""} bg-background/30 backdrop-blur-sm`}
             >
               {isOverdue ? "Verlopen" : formatDistance(deadline, now, { addSuffix: true, locale: nl })}
             </Badge>
