@@ -17,7 +17,7 @@ export default function TaskSection({
     <div className="mb-6">
       <h2 className="text-lg font-semibold mb-3">{title}</h2>
       {tasks.length > 0 ? (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} />
           ))}

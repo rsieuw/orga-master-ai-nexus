@@ -53,6 +53,13 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				firebase: {
+					blue: '#039BE5',
+					yellow: '#FFA000',
+					red: '#F57C00',
+					green: '#0F9D58',
+					gray: '#757575',
+				},
 				priority: {
 					high: '#F97316',
 					medium: '#0EA5E9',
