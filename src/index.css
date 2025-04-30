@@ -95,7 +95,7 @@
 
 /* Firebase Studio inspired styles */
 .firebase-card {
-  @apply bg-white rounded-lg border border-gray-200 transition-all duration-200 hover:shadow-md hover:border-primary/50;
+  @apply bg-gray-800 rounded-lg border border-gray-700 transition-all duration-200 hover:shadow-md hover:border-primary/50;
 }
 
 .firebase-btn {
@@ -107,12 +107,12 @@
 }
 
 .firebase-btn-secondary {
-  @apply bg-white text-gray-700 border border-gray-200 hover:bg-gray-50;
+  @apply bg-gray-800 text-gray-200 border border-gray-700 hover:bg-gray-700;
 }
 
 /* Chat styles */
 .chat-window {
-  @apply h-[calc(100vh-16rem)] overflow-y-auto border rounded-lg bg-white dark:bg-secondary;
+  @apply h-[calc(100vh-16rem)] overflow-y-auto border rounded-lg bg-gray-800 dark:bg-secondary;
 }
 
 .chat-message {
@@ -124,7 +124,7 @@
 }
 
 .chat-message-ai {
-  @apply bg-secondary mr-8;
+  @apply bg-gray-700 mr-8;
 }
 
 .chat-input {

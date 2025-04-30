@@ -1,6 +1,7 @@
 
 import { PropsWithChildren } from "react";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 
@@ -25,6 +26,7 @@ export default function AppLayout({
       <main className="flex-1 container mx-auto px-4 py-4">
         {children}
       </main>
+      <Footer />
     </div>
   );
 }
