@@ -1,0 +1,30 @@
+
+import { PropsWithChildren } from "react";
+import Navbar from "./Navbar";
+import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
+
+interface AppLayoutProps extends PropsWithChildren {
+  requireAuth?: boolean;
+}
+
+export default function AppLayout({ 
+  children, 
+  requireAuth = true 
+}: AppLayoutProps) {
+  const { isAuthenticated } = useAuth();
+
+  // Redirect to login if authentication is required but user is not authenticated
+  if (requireAuth && !isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col pb-20 md:pb-0">
+      <Navbar />
+      <main className="flex-1 container mx-auto px-4 py-4">
+        {children}
+      </main>
+    </div>
+  );
+}
