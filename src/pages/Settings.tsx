@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -16,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, User, Palette, Language, HelpCircle } from "lucide-react";
+import { Settings, User, Palette, Languages, HelpCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   HoverCard,
@@ -93,7 +92,7 @@ export default function SettingsPage() {
             <span className="hidden sm:inline">Notificaties</span>
           </TabsTrigger>
           <TabsTrigger value="ai" className="flex items-center gap-2">
-            <Language className="h-4 w-4" />
+            <Languages className="h-4 w-4" />
             <span className="hidden sm:inline">AI</span>
           </TabsTrigger>
         </TabsList>
