@@ -28,12 +28,8 @@ export default function LoginForm() {
       });
       navigate("/");
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Inloggen mislukt",
-        description: "Controleer je e-mail en wachtwoord.",
-      });
-      console.error("Login error:", error);
+      // Error is handled in the AuthContext
+      console.error("Login error occurred");
     } finally {
       setIsLoading(false);
     }
