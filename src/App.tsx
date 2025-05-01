@@ -18,26 +18,7 @@ import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      meta: {
-        onError: (error: Error) => {
-          console.error('Query error:', error);
-        }
-      }
-    },
-    mutations: {
-      meta: {
-        onError: (error: Error) => {
-          console.error('Mutation error:', error);
-        }
-      }
-    }
-  }
-});
+const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -46,7 +27,7 @@ const App = () => (
         <TaskProvider>
           <TooltipProvider>
             <Toaster />
-            <Sonner position="top-right" closeButton />
+            <Sonner />
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
