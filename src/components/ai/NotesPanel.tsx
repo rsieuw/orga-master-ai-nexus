@@ -4,6 +4,7 @@ import { Task } from "@/types/task";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface NotesPanelProps {
   task: Task;
@@ -11,6 +12,7 @@ interface NotesPanelProps {
 
 export default function NotesPanel({ task }: NotesPanelProps) {
   const [note, setNote] = useState("");
+  const [activeTab, setActiveTab] = useState("current");
   const { toast } = useToast();
 
   const handleSaveNote = () => {
@@ -35,24 +37,39 @@ export default function NotesPanel({ task }: NotesPanelProps) {
         Voeg notities toe aan deze taak om belangrijke informatie bij te houden.
       </p>
       
-      <Textarea
-        className="min-h-[200px] border-white/10 bg-secondary/30 focus:ring-primary/40"
-        placeholder="Schrijf hier je notities..."
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-      />
-      
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => setNote("")}>
-          Wissen
-        </Button>
-        <Button 
-          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-          onClick={handleSaveNote}
-        >
-          Opslaan
-        </Button>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-2 mb-4">
+          <TabsTrigger value="current">Huidige notitie</TabsTrigger>
+          <TabsTrigger value="history">Geschiedenis</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="current" className="space-y-4">
+          <Textarea
+            className="min-h-[200px] border-white/10 bg-secondary/30 focus:ring-primary/40"
+            placeholder="Schrijf hier je notities..."
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+          
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setNote("")}>
+              Wissen
+            </Button>
+            <Button 
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+              onClick={handleSaveNote}
+            >
+              Opslaan
+            </Button>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="history">
+          <div className="text-sm text-muted-foreground italic p-4 text-center bg-secondary/20 rounded-md">
+            Geen eerdere notities gevonden voor deze taak.
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
