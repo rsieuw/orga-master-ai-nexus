@@ -36,30 +36,23 @@ export default function TaskAIChat({ task }: TaskAIChatProps) {
               <span className="hidden sm:inline">Notities</span>
             </TabsTrigger>
           </TabsList>
-        </Tabs>
-      </div>
-
-      {/* Move these TabsContent components inside the Tabs component above */}
-      <div className="flex-grow">
-        {activeTab === "chat" && (
-          <ChatPanel task={task} deepResearch={deepResearch} />
-        )}
-        
-        {activeTab === "research" && (
-          <div className="flex-grow flex flex-col p-4 m-0 gap-4">
+          
+          <TabsContent value="chat" className="flex-grow flex flex-col p-0 m-0">
+            <ChatPanel task={task} deepResearch={deepResearch} />
+          </TabsContent>
+          
+          <TabsContent value="research" className="flex-grow flex flex-col p-4 m-0 gap-4">
             <ResearchPanel 
               deepResearch={deepResearch} 
               setDeepResearch={setDeepResearch} 
               setActiveTab={setActiveTab} 
             />
-          </div>
-        )}
-        
-        {activeTab === "notes" && (
-          <div className="flex-grow flex flex-col p-4 m-0 gap-4">
+          </TabsContent>
+          
+          <TabsContent value="notes" className="flex-grow flex flex-col p-4 m-0 gap-4">
             <NotesPanel task={task} />
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
