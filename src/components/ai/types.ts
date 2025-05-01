@@ -5,6 +5,7 @@ export interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp?: number;
+  messageType?: 'standard' | 'research_result' | 'system' | 'error';
 }
 
 export interface AIModel {

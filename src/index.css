@@ -171,7 +171,11 @@
 }
 
 .chat-message-ai {
-  @apply bg-secondary self-start;
+  @apply bg-secondary text-secondary-foreground;
+}
+
+.chat-message-research {
+  @apply bg-blue-100 text-gray-900 dark:bg-blue-900/50 dark:text-blue-100;
 }
 
 .chat-input {

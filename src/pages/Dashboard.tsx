@@ -72,7 +72,7 @@ export default function Dashboard() {
 
         <div className="md:col-span-1">
           <TaskSection
-            title="Later"
+            title="Binnenkort"
             tasks={taskGroups.later}
             emptyMessage="Geen taken gepland voor later"
           />

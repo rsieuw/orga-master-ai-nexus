@@ -27,13 +27,17 @@ import { GradientLoader } from "@/components/ui/loader";
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
-  const { getTaskById, updateTask, deleteTask } = useTask();
+  const { getTaskById, updateTask, deleteTask, isLoading: tasksLoading } = useTask();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSubtaskTitle, setSelectedSubtaskTitle] = useState<string | null>(null);
 
   const task = getTaskById(id || "");
+
+  if (tasksLoading) {
+    return null;
+  }
 
   if (!task) {
     return (
