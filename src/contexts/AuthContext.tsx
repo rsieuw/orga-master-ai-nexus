@@ -7,6 +7,7 @@ import { GradientLoader } from "@/components/ui/loader";
 import { Database } from "@/integrations/supabase/types";
 
 // This is a placeholder until Supabase integration
+// This is a placeholder until Supabase integration
 export type UserRole = "admin" | "free" | "paid";
 
 // Define Profile type based on Database types if possible, or keep explicit
@@ -16,9 +17,9 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 export interface UserProfile extends Profile {
   id: string;
   email: string;
-  name: string | null;
+  name: string | null; // Allow null for name
   role: UserRole;
-  avatar_url: string | null;
+  avatar_url: string | null; // Add avatar_url back
 }
 
 interface AuthContextProps {
@@ -127,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Keep Supabase logout function from HEAD
   const logout = async () => {
+    // Mock implementation until Supabase integration
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;

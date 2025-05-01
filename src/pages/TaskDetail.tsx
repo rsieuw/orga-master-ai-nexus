@@ -64,8 +64,6 @@ export default function TaskDetail() {
         title: "Fout bij verwijderen",
         description: "De taak kon niet worden verwijderd",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
