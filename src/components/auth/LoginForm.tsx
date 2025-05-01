@@ -31,8 +31,12 @@ export default function LoginForm() {
       });
       navigate("/");
     } catch (error) {
-      // Error is handled in the AuthContext
-      console.error("Login error occurred");
+      toast({
+        variant: "destructive",
+        title: "Inloggen mislukt",
+        description: "Controleer je e-mail en wachtwoord.",
+      });
+      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -65,6 +69,7 @@ export default function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               required
               className="pr-10"
+              autoComplete="current-password"
             />
             <Button
               type="button"
@@ -101,7 +106,11 @@ export default function LoginForm() {
               Wachtwoord vergeten?
             </Link>
           </div>
-          <Button type="submit" className="w-full mt-8" disabled={isLoading}>
+          <Button 
+            type="submit" 
+            className="w-full mt-8 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white" 
+            disabled={isLoading}
+          >
             {isLoading ? "Inloggen..." : "Inloggen"}
           </Button>
         </form>

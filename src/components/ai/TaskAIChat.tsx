@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Task } from "@/types/task";
+import ChatPanel from "./ChatPanel";
+import NotesPanel from "./NotesPanel";
 // Removed Bot, BrainCircuit, PenSquare imports as they are no longer used here
 // Removed Tabs imports
 
-// Import the components
-import ChatPanel from "./ChatPanel";
-import ResearchPanel from "./ResearchPanel";
-import NotesPanel from "./NotesPanel";
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
 
 interface TaskAIChatProps {
   task: Task;
@@ -40,6 +42,9 @@ export default function TaskAIChat({ task, selectedSubtaskTitle, onSubtaskHandle
           <NotesPanel task={task} />
         )}
       </div>
+      
+      {/* Remove the leftover chat window and form elements below */}
+      {/* These belong inside ChatPanel */}
     </div>
   );
 }

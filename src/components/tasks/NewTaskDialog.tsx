@@ -35,7 +35,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
   // State specifiek voor het *nieuwe* taak formulier
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<TaskPriority>("low");
+  const [priority, setPriority] = useState<TaskPriority>("medium");
   const [status, setStatus] = useState<TaskStatus>("todo");
   const [deadline, setDeadline] = useState<Date | undefined>(undefined);
   const [initialInput, setInitialInput] = useState("");
@@ -55,68 +55,55 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
       return;
     }
     setIsGeneratingTask(true);
-    setDetailsVisible(false); // Hide details while generating
+    setDetailsVisible(false);
+    console.log("AI Task Gen: Starting generation for input:", initialInput);
 
     try {
-      // Call the Edge Function
+      console.log("AI Task Gen: Invoking edge function 'generate-task-details'...");
       const { data, error } = await supabase.functions.invoke(
         'generate-task-details',
         {
-          body: { input: initialInput }, // Pass input in the body
+          body: { input: initialInput },
         }
       );
+      console.log("AI Task Gen: Edge function invocation finished.", { data, error });
 
       if (error) {
         console.error("Edge function invocation error:", error);
         throw new Error(error.message || "Kon de AI functie niet aanroepen.");
       }
 
-      // Check for application-level errors returned by the function itself
       if (data?.error) {
          console.error("Edge function returned an error:", data.error);
          throw new Error(data.error);
       }
 
-      // Assuming successful invocation returns { title: string, description: string }
       if (data && data.title && data.description) {
+        console.log("AI Task Gen: Received valid data:", data);
         setTitle(data.title);
         setDescription(data.description);
         toast({
           title: "Taakdetails gegenereerd",
           description: "De titel en beschrijving zijn ingevuld. Je kunt ze nu aanpassen.",
         });
-        setDetailsVisible(true); // Show the details fields
+        setDetailsVisible(true);
       } else {
-        console.error("Invalid data structure returned from edge function:", data);
+        console.error("AI Task Gen: Invalid data structure returned:", data);
         throw new Error("Onverwachte response van AI service.");
       }
 
     } catch (error: unknown) {
-      console.error("Failed to generate task details:", error);
-      // Check if it's an Error object to safely access message
+      console.error("AI Task Gen: Failed to generate task details:", error);
       const message = error instanceof Error ? error.message : "Er is een fout opgetreden.";
       toast({
         variant: "destructive",
         title: "Genereren mislukt",
-        description: message, // Use extracted message
+        description: message,
       });
-       // Keep details hidden on error
     } finally {
       setIsGeneratingTask(false);
+      console.log("AI Task Gen: Generation process finished.");
     }
-
-    // // OLD Placeholder Logic:
-    // await new Promise(resolve => setTimeout(resolve, 1000)); 
-    // const generatedTitle = `AI Titel: ${initialInput.substring(0, 20)}...`;
-    // const generatedDescription = `AI Desc: ${initialInput}`; 
-    // setTitle(generatedTitle);
-    // setDescription(generatedDescription);
-    // toast({
-    //   title: "Taakdetails gegenereerd",
-    //   description: "De titel en beschrijving zijn ingevuld. Je kunt ze nu aanpassen.",
-    // });
-    // setIsGeneratingTask(false);
-    // setDetailsVisible(true);
   };
 
   // Aangepaste submit handler voor *alleen* aanmaken
@@ -162,25 +149,25 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
       {/* Show initial input only if details are not visible */}
       {!detailsVisible && (
         <>
-          <Textarea
-            id="initial-input"
-            value={initialInput}
-            onChange={(e) => setInitialInput(e.target.value)}
-            placeholder="Beschrijf je taak of idee, bijv: Organiseer een teamlunch voor volgende week vrijdag..."
-            rows={4}
-            className="animated-border-textarea"
-          />
-          <div className="mt-4">
-            <Button 
-              type="button"
-              onClick={handleGenerateTaskDetails}
-              disabled={isGeneratingTask || !initialInput}
-              className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
-            >
-              <Sparkles className="mr-2 h-4 w-4" />
-              {isGeneratingTask ? "Genereren..." : "Genereer Taakdetails"}
-            </Button>
-          </div>
+      <Textarea
+        id="initial-input"
+        value={initialInput}
+        onChange={(e) => setInitialInput(e.target.value)}
+        placeholder="Beschrijf je taak of idee, bijv: Organiseer een teamlunch voor volgende week vrijdag..."
+        rows={4}
+        className="animated-border-textarea"
+      />
+      <div className="mt-4">
+        <Button 
+          type="button"
+          onClick={handleGenerateTaskDetails}
+          disabled={isGeneratingTask || !initialInput}
+          className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
+        >
+          <Sparkles className="mr-2 h-4 w-4" />
+          {isGeneratingTask ? "Genereren..." : "Genereer Taakdetails"}
+        </Button>
+      </div>
         </>
       )}
 
@@ -235,7 +222,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
                   <SelectTrigger id="priority">
                     <SelectValue placeholder="Selecteer prioriteit" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent onPointerDownOutside={(event) => event.preventDefault()}>
                     <SelectItem value="high">Hoog</SelectItem>
                     <SelectItem value="medium">Middel</SelectItem>
                     <SelectItem value="low">Laag</SelectItem>
@@ -252,7 +239,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
                   <SelectTrigger id="status">
                     <SelectValue placeholder="Selecteer status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent onPointerDownOutside={(event) => event.preventDefault()}>
                     <SelectItem value="todo">Te doen</SelectItem>
                     <SelectItem value="in_progress">In behandeling</SelectItem>
                     <SelectItem value="done">Voltooid</SelectItem>
@@ -277,7 +264,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
                     {deadline ? format(deadline, 'PPP', { locale: nl }) : <span>Kies een datum</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                <PopoverContent className="w-auto p-0 bg-card border-border z-[100]" align="start">
                   <Calendar
                     mode="single"
                     selected={deadline} // Pass Date | undefined

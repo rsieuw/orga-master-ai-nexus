@@ -5,17 +5,15 @@ interface TaskSectionProps {
   title: string;
   tasks: Task[];
   emptyMessage?: string;
-  gridClass?: string;
 }
 
 export default function TaskSection({ 
   title, 
   tasks,
-  emptyMessage = "Geen taken gevonden",
-  gridClass = ""
+  emptyMessage = "Geen taken gevonden"
 }: TaskSectionProps) {
   return (
-    <div className={`mb-6 ${gridClass}`}>
+    <div className="mb-6">
       <h2 className="text-lg font-semibold mb-3">{title}</h2>
       {tasks.length > 0 ? (
         <div className="grid grid-cols-1 gap-4">

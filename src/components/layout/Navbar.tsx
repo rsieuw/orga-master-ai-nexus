@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Moon, Sun, Plus, User, LogOut } from "lucide-react";
+import { Plus, User, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogTrigger,
-  DialogOverlay,
   DialogPortal,
 } from "@/components/ui/dialog";
 import NewTaskDialog from "@/components/tasks/NewTaskDialog";
@@ -56,7 +55,7 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <>
-              <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+              <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen} modal={false}>
                 <DialogTrigger asChild>
                   <Button className="gap-1 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900">
                     <Plus className="h-4 w-4" />
@@ -64,8 +63,10 @@ export default function Navbar() {
                   </Button>
                 </DialogTrigger>
                 <DialogPortal>
-                  <DialogOverlay className="bg-black/30 backdrop-blur-sm" />
-                  <DialogContent className="sm:max-w-[600px] bg-card">
+                  {isNewTaskOpen && (
+                     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" aria-hidden="true" />
+                  )}
+                  <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card p-6 shadow-lg duration-200 sm:max-w-[600px] sm:rounded-lg z-50">
                     <DialogHeader>
                       <DialogTitle className="text-2xl">Nieuwe taak</DialogTitle>
                       <DialogDescription>

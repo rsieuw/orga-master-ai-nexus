@@ -1,12 +1,19 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { User as SupabaseUser, Session, AuthChangeEvent, AuthError } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client"; // Old alias import
+// import { supabase } from "../integrations/supabase/client"; // Use relative path
 import { useToast } from "@/hooks/use-toast";
 import { GradientLoader } from "@/components/ui/loader";
+import { Database } from "@/integrations/supabase/types";
 
+// This is a placeholder until Supabase integration
 export type UserRole = "admin" | "free" | "paid";
 
-export interface UserProfile {
+// Define Profile type based on Database types if possible, or keep explicit
+type Profile = Database['public']['Tables']['profiles']['Row'];
+
+// Keep UserProfile interface from HEAD
+export interface UserProfile extends Profile {
   id: string;
   email: string;
   name: string | null;
@@ -18,10 +25,11 @@ interface AuthContextProps {
   isAuthenticated: boolean;
   user: UserProfile | null;
   session: Session | null;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
-  updateUser: (data: { name?: string; email?: string }) => Promise<void>;
+  updateUser: (data: Partial<Pick<UserProfile, 'name' | 'email'>>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -31,80 +39,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [initialAuthCheckComplete, setInitialAuthCheckComplete] = useState<boolean>(false);
   const { toast } = useToast();
 
+  // Effect voor het luisteren naar auth state changes
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      (event: AuthChangeEvent, currentSession: Session | null) => {
         setSession(currentSession);
         setIsAuthenticated(!!currentSession);
         
-        if (currentSession?.user) {
-          // Defer Supabase calls with setTimeout to prevent recursion
-          setTimeout(async () => {
-            const { data: profile, error } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', currentSession.user.id)
-              .single();
-              
-            if (error) {
-              console.error('Error fetching user profile:', error);
-              return;
-            }
-            
-            if (profile) {
-              setUser({
-                id: currentSession.user.id,
-                email: currentSession.user.email || '',
-                name: profile.name,
-                role: profile.role as UserRole || 'free',
-                avatar_url: profile.avatar_url
-              });
-            }
-          }, 0);
-        } else {
-          setUser(null);
+        if (!initialAuthCheckComplete) {
+            setInitialAuthCheckComplete(true);
         }
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      setIsAuthenticated(!!currentSession);
-      
-      if (currentSession?.user) {
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentSession.user.id)
-          .single()
-          .then(({ data: profile, error }) => {
-            if (error) {
-              console.error('Error fetching user profile:', error);
-              return;
-            }
-            
-            if (profile) {
-              setUser({
-                id: currentSession.user.id,
-                email: currentSession.user.email || '',
-                name: profile.name,
-                role: profile.role as UserRole || 'free',
-                avatar_url: profile.avatar_url
-              });
-            }
-          });
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase, initialAuthCheckComplete]);
+
+  // Effect voor het ophalen van het profiel ZODRA de sessie bekend is NA de initiële check
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (initialAuthCheckComplete && session?.user) {
+        setIsLoading(true); 
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single<Profile>();
+          
+          if (error) {
+            console.error('Profile Effect: Error fetching profile:', error);
+            setUser(null);
+          } else if (profile) {
+            setUser({
+              ...profile,
+              email: session.user?.email || '',
+              role: profile.role as UserRole || 'free',
+            });
+          } else {
+            console.warn('Profile Effect: Profile not found for user:', session.user?.id);
+            setUser(null);
+          }
+        } catch (catchError: unknown) {
+          console.error('Profile Effect: CATCH block error fetching profile:', catchError);
+          setUser(null);
+        } finally {
+          setIsLoading(false); 
+        }
+      } else if (initialAuthCheckComplete && !session) {
+        setUser(null);
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
-  }, []);
+    fetchProfile();
+  }, [session, initialAuthCheckComplete, supabase]);
 
+  // Keep Supabase login function from HEAD
   const login = async (email: string, password: string) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -114,6 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (error) throw error;
       
+      // User state is updated via onAuthStateChange listener
+      // No need to manually set user/isAuthenticated here
       return;
     } catch (error: unknown) {
       console.error("Login failed:", error);
@@ -127,10 +125,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Keep Supabase logout function from HEAD
   const logout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      // State updates handled by listener
     } catch (error: unknown) {
       console.error("Logout failed:", error);
       const message = error instanceof Error ? error.message : "Er is iets misgegaan bij het uitloggen.";
@@ -142,7 +142,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
   };
-
+      
+  // Keep Supabase register function from HEAD
   const register = async (email: string, password: string, name: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -150,14 +151,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
         options: {
           data: {
-            name: name,
+            // Add name to user_metadata during signup if needed
+            // Note: This usually doesn't automatically create a profile row
+            name: name, 
           },
         },
       });
       
       if (error) throw error;
       
+      // Suggest user checks email for confirmation
+       toast({ title: "Registratie succesvol", description: "Controleer je e-mail om je account te bevestigen." });
       return;
+
     } catch (error: unknown) {
       console.error("Registration failed:", error);
       const message = error instanceof Error ? error.message : "Er is iets misgegaan bij het registreren.";
@@ -170,60 +176,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateUser = async (data: { name?: string; email?: string }) => {
+  // Keep Supabase updateUser function from HEAD
+  const updateUser = async (data: Partial<Pick<UserProfile, 'name' | 'email'>>) => {
     if (!session?.user) {
       throw new Error("Gebruiker niet ingelogd");
     }
 
     try {
-      // Update user_metadata in Supabase Auth
-      const { data: updatedUserData, error: updateAuthError } = await supabase.auth.updateUser({
-        data: { name: data.name }, // Only update metadata we want to change
-        // Note: Updating email requires verification, handle separately if needed
-      });
+      const authUpdatePayload: { data?: { name?: string }; email?: string } = {};
+      const profileUpdatePayload: Partial<Profile> = {};
 
+      if (data.name !== undefined) {
+         // Only include name in auth update if it's not null
+         if (data.name !== null) {
+           authUpdatePayload.data = { name: data.name };
+         }
+         // Profile update can handle null
+         profileUpdatePayload.name = data.name;
+      }
+
+      if (authUpdatePayload.data) {
+        const { error: updateAuthError } = await supabase.auth.updateUser(authUpdatePayload);
       if (updateAuthError) throw updateAuthError;
+      }
 
-      // Update the corresponding profile in the 'profiles' table
+      if (Object.keys(profileUpdatePayload).length > 0) {
       const { error: updateProfileError } = await supabase
         .from('profiles')
-        .update({ name: data.name })
+           .update(profileUpdatePayload)
         .eq('id', session.user.id);
-
       if (updateProfileError) throw updateProfileError;
+      }
 
-      // Refresh local user state with updated data
-      if (updatedUserData?.user && user) {
-        setUser({
-          ...user,
-          name: updatedUserData.user.user_metadata.name || user.name,
-          // Assuming email update is handled elsewhere or requires verification
-        });
+      // Manually update local user state for immediate feedback
+      if (data.name !== undefined && user) {
+        // Ensure name is explicitly null if undefined in data
+        setUser({ ...user, name: data.name ?? null }); 
       }
       
     } catch (error: unknown) {
       console.error("Update user failed:", error);
-      const message = error instanceof Error ? error.message : "Er is iets misgegaan bij het bijwerken van je gegevens.";
-      toast({
-        variant: "destructive",
-        title: "Account bijwerken mislukt",
-        description: message,
-      });
+      const message = error instanceof Error ? error.message : "Er is iets misgegaan bij het bijwerken.";
+      toast({ variant: "destructive", title: "Account bijwerken mislukt", description: message });
       throw error;
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <GradientLoader size="lg" />
-      </div>
-    );
-  }
-
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, user, session, login, logout, register, updateUser }}
+      value={{ isAuthenticated, user, session, isLoading, login, logout, register, updateUser }}
     >
       {children}
     </AuthContext.Provider>

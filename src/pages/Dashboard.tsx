@@ -3,7 +3,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import TaskSection from "@/components/task/TaskSection";
 import AppLayout from "@/components/layout/AppLayout";
 import { Skeleton } from "@/components/ui/skeleton";
-import { GradientLoader } from "@/components/ui/loader";
 
 export default function Dashboard() {
   const { isLoading, groupTasksByDate } = useTask();
@@ -13,9 +12,18 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="flex flex-col items-center justify-center h-64">
-          <GradientLoader size="lg" />
-          <p className="mt-4 text-muted-foreground">Taken laden...</p>
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <Skeleton className="h-10 w-64" />
+          </div>
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="space-y-3">
+              <Skeleton className="h-6 w-40" />
+              {Array.from({ length: 2 }).map((_, cardIndex) => (
+                <Skeleton key={cardIndex} className="h-32 w-full rounded-lg" />
+              ))}
+            </div>
+          ))}
         </div>
       </AppLayout>
     );
@@ -34,9 +42,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Apply grid layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Column 1: Vandaag, Morgen */}
         <div className="flex flex-col gap-6 md:col-span-1">
           <TaskSection
             title="Vandaag"
@@ -51,7 +57,6 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Column 2: Overmorgen, Volgende week */}
         <div className="flex flex-col gap-6 md:col-span-1">
           <TaskSection
             title="Overmorgen"
@@ -65,7 +70,6 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Column 3: Later */}
         <div className="md:col-span-1">
           <TaskSection
             title="Later"

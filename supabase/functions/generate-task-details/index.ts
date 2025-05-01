@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error("Error in Edge Function:", error);
-    return new Response(
+  return new Response(
       JSON.stringify({ error: error.message || "Er is een onverwachte fout opgetreden." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

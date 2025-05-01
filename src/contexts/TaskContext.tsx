@@ -4,6 +4,9 @@ import { useAuth } from "./AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+// Define a type for the fields that can be updated in the database
+type TaskUpdatePayload = Partial<Pick<Task, 'title' | 'description' | 'priority' | 'status' | 'deadline' | 'subtasks'>>;
+
 interface TaskContextProps {
   tasks: Task[];
   isLoading: boolean;
@@ -61,8 +64,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           } as Task));
           setTasks(mappedTasks);
         }
-      } catch (error) {
-        console.error("Unexpected error loading tasks:", error);
+      } catch (error: unknown) {
+        console.error("Tasks: Unexpected error loading tasks:", error);
         toast({
           variant: "destructive",
           title: "Laden van taken mislukt",
@@ -156,13 +159,17 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const taskToUpdate: { [key: string]: any } = {};
+      // Use the specific TaskUpdatePayload type instead of { [key: string]: any }
+      const taskToUpdate: TaskUpdatePayload = {};
+
+      // Assign properties safely
       if (taskData.title !== undefined) taskToUpdate.title = taskData.title;
       if (taskData.description !== undefined) taskToUpdate.description = taskData.description;
       if (taskData.priority !== undefined) taskToUpdate.priority = taskData.priority;
       if (taskData.status !== undefined) taskToUpdate.status = taskData.status;
       if (taskData.deadline !== undefined) {
-        taskToUpdate.deadline = taskData.deadline ? new Date(taskData.deadline).toISOString() : null;
+        // Convert to ISO string or empty string
+        taskToUpdate.deadline = taskData.deadline ? new Date(taskData.deadline).toISOString() : '';
       }
       if (taskData.subtasks !== undefined) taskToUpdate.subtasks = taskData.subtasks;
 
@@ -173,9 +180,22 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         return currentTask;
       }
 
+      // Prepare payload for Supabase
+      const payloadForSupabase: { [key: string]: any } = { ...taskToUpdate };
+
+      // Convert deadline: empty string becomes null
+      if (payloadForSupabase.deadline === '') {
+         payloadForSupabase.deadline = null;
+      }
+
+      // Ensure subtasks are treated as JSON by Supabase client
+      // The client should handle the serialization if the column type is jsonb
+      // No explicit JSON.stringify needed here usually, just ensure the structure is correct.
+      // If subtasks is explicitly set to an empty array or updated, it will be included.
+
       const { data: updatedTaskData, error } = await supabase
         .from('tasks')
-        .update(taskToUpdate)
+        .update(payloadForSupabase as any) // Use type assertion to bypass strict check temporarily, Supabase handles JSON
         .eq('id', id)
         .eq('user_id', user.id)
         .select()

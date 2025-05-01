@@ -2,12 +2,13 @@ import { useState, useRef, useEffect, Dispatch, SetStateAction } from "react";
 import { Task } from "@/types/task";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Settings, Bot, BrainCircuit, PenSquare, ClipboardCopy } from "lucide-react";
+import { Send, Settings, Bot, BrainCircuit, PenSquare, ClipboardCopy, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { GradientLoader } from "@/components/ui/loader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Message, aiModels, AIModel } from "./types";
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 interface ChatPanelProps {
   task: Task;
@@ -24,6 +25,7 @@ export default function ChatPanel({ task, setActiveTab, selectedSubtaskTitle, on
   const [isLoading, setIsLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState("default");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -105,9 +107,24 @@ export default function ChatPanel({ task, setActiveTab, selectedSubtaskTitle, on
     });
   };
 
+  // Function to handle closing the chat view
+  const handleCloseChat = () => {
+    navigate('/'); // Navigeer naar de dashboard pagina
+  };
+
   return (
     <>
-      <div className="chat-window p-4 flex-grow">
+      <div className="chat-window p-4 flex-grow relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-foreground z-10"
+          onClick={handleCloseChat}
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">Sluiten</span>
+        </Button>
+
         {messages.map((message, index) => (
           <div 
             key={index} 

@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { ArrowLeft, Trash2, Edit } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -20,10 +20,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import TaskAIChat from "@/components/ai/TaskAIChat";
 import { GradientLoader } from "@/components/ui/loader";
-import { useState } from "react";
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
@@ -50,8 +50,8 @@ export default function TaskDetail() {
   }
 
   const handleDelete = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       await deleteTask(task.id);
       toast({
         title: "Taak verwijderd",
@@ -71,16 +71,11 @@ export default function TaskDetail() {
 
   const toggleSubtaskCompletion = async (subtaskId: string, completed: boolean) => {
     try {
-      const updatedSubtasks = task.subtasks.map(st => 
+      const updatedSubtasks = task.subtasks.map(st =>
         st.id === subtaskId ? { ...st, completed } : st
       );
-      
+
       await updateTask(task.id, { subtasks: updatedSubtasks });
-      
-      toast({
-        title: completed ? "Subtaak voltooid" : "Subtaak heropend",
-        description: `De subtaak is gemarkeerd als ${completed ? 'voltooid' : 'te doen'}`,
-      });
     } catch (error) {
       toast({
         variant: "destructive",
@@ -111,9 +106,9 @@ export default function TaskDetail() {
   return (
     <AppLayout>
       <div className="relative">
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           className="absolute -left-12 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground z-10"
           onClick={() => navigate(-1)}
         >
@@ -129,11 +124,11 @@ export default function TaskDetail() {
                 <CardTitle>{task.title}</CardTitle>
               </div>
             </CardHeader>
-            
+
             <div className="absolute top-3 right-3 flex gap-1">
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-7 w-7"
                 onClick={() => navigate(`/task/edit/${task.id}`)}
               >
@@ -156,8 +151,8 @@ export default function TaskDetail() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel className="bg-secondary/80 border-white/10">Annuleren</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={handleDelete} 
+                    <AlertDialogAction
+                      onClick={handleDelete}
                       className="bg-destructive hover:bg-destructive/90"
                       disabled={isLoading}
                     >
@@ -170,21 +165,23 @@ export default function TaskDetail() {
                 </AlertDialogContent>
               </AlertDialog>
             </div>
-            
+
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline">{statusLabel[task.status]}</Badge>
                 <Badge variant="outline">Prioriteit: {priorityLabel[task.priority]}</Badge>
-                <Badge variant="outline">
-                  Deadline: {format(new Date(task.deadline), "d MMMM yyyy", { locale: nl })}
-                </Badge>
+                {task.deadline && (
+                  <Badge variant="outline">
+                    Deadline: {format(new Date(task.deadline), "d MMMM yyyy", { locale: nl })}
+                  </Badge>
+                )}
               </div>
 
               <Separator className="my-4" />
 
               <div>
                 <h3 className="font-medium mb-2">Beschrijving</h3>
-                <p className="text-muted-foreground whitespace-pre-wrap">
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                   {task.description || "Geen beschrijving"}
                 </p>
               </div>
@@ -198,14 +195,14 @@ export default function TaskDetail() {
                     {task.subtasks.map((subtask, index) => (
                       <div key={subtask.id} className="flex items-center gap-2">
                         <span className="text-xs w-5 text-center text-muted-foreground">{index + 1}.</span>
-                        <Checkbox 
+                        <Checkbox
                           id={subtask.id}
                           checked={subtask.completed}
-                          onCheckedChange={(checked) => 
+                          onCheckedChange={(checked) =>
                             toggleSubtaskCompletion(subtask.id, checked === true)
                           }
                         />
-                        <label 
+                        <label
                           onClick={() => setSelectedSubtaskTitle(subtask.title)}
                           className={`${
                             subtask.completed ? "line-through text-muted-foreground" : ""
@@ -224,9 +221,9 @@ export default function TaskDetail() {
           </Card>
 
           <Card className="firebase-card overflow-hidden">
-            <TaskAIChat 
-              task={task} 
-              selectedSubtaskTitle={selectedSubtaskTitle} 
+            <TaskAIChat
+              task={task}
+              selectedSubtaskTitle={selectedSubtaskTitle}
               onSubtaskHandled={() => setSelectedSubtaskTitle(null)}
             />
           </Card>
