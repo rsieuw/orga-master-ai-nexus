@@ -29,8 +29,12 @@ export default function RegisterForm() {
       });
       navigate("/");
     } catch (error) {
-      // Error is handled in the AuthContext
-      console.error("Registration error occurred");
+      toast({
+        variant: "destructive",
+        title: "Registratie mislukt",
+        description: "Er is iets misgegaan bij het registreren.",
+      });
+      console.error("Registration error:", error);
     } finally {
       setIsLoading(false);
     }

@@ -32,7 +32,7 @@ export default function Profile() {
         <CardContent className="space-y-4">
           <div className="flex flex-col space-y-1">
             <span className="text-sm text-muted-foreground">Naam</span>
-            <span className="font-medium">{user.name || 'Geen naam opgegeven'}</span>
+            <span className="font-medium">{user.name}</span>
           </div>
           
           <div className="flex flex-col space-y-1">
@@ -43,7 +43,7 @@ export default function Profile() {
           <div className="flex flex-col space-y-1">
             <span className="text-sm text-muted-foreground">Account Type</span>
             <Badge variant={roleBadgeVariant} className="w-fit">
-              {roleName[user.role] || roleName.free}
+              {roleName[user.role]}
             </Badge>
           </div>
         </CardContent>
