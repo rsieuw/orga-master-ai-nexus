@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import TaskSection from "@/components/task/TaskSection";
 import AppLayout from "@/components/layout/AppLayout";
 import { Skeleton } from "@/components/ui/skeleton";
+import { GradientLoader } from "@/components/ui/loader";
 
 export default function Dashboard() {
   const { isLoading, groupTasksByDate } = useTask();
@@ -13,18 +14,9 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <Skeleton className="h-10 w-64" />
-          </div>
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="space-y-3">
-              <Skeleton className="h-6 w-40" />
-              {Array.from({ length: 2 }).map((_, cardIndex) => (
-                <Skeleton key={cardIndex} className="h-32 w-full rounded-lg" />
-              ))}
-            </div>
-          ))}
+        <div className="flex flex-col items-center justify-center h-64">
+          <GradientLoader size="lg" />
+          <p className="mt-4 text-muted-foreground">Taken laden...</p>
         </div>
       </AppLayout>
     );
@@ -33,8 +25,10 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">
-          Hallo, {user?.name || "Gebruiker"}
+        <h1 className="text-3xl font-bold">
+          <span className="bg-gradient-to-r from-amber-500 to-red-500 bg-clip-text text-transparent">
+            Hallo, {user?.name || "Gebruiker"}
+          </span>
         </h1>
         <p className="text-muted-foreground">
           Hier is een overzicht van je taken
@@ -63,12 +57,14 @@ export default function Dashboard() {
         title="VOLGENDE WEEK"
         tasks={taskGroups.nextWeek}
         emptyMessage="Geen taken voor volgende week"
+        gridClass="col-start-2 col-span-full"
       />
       
       <TaskSection
         title="LATER"
         tasks={taskGroups.later}
         emptyMessage="Geen taken gepland voor later"
+        gridClass="col-start-3 col-span-full"
       />
     </AppLayout>
   );

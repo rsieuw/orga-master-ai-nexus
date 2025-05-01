@@ -20,15 +20,17 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import TaskAIChat from "@/components/ai/TaskAIChat";
+import { GradientLoader } from "@/components/ui/loader";
+import { useState } from "react";
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
   const { getTaskById, updateTask, deleteTask } = useTask();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const task = getTaskById(id || "");
 
@@ -37,7 +39,7 @@ export default function TaskDetail() {
       <AppLayout>
         <div className="flex flex-col items-center justify-center h-64">
           <h1 className="text-2xl font-bold mb-2">Taak niet gevonden</h1>
-          <Button onClick={() => navigate(-1)}>
+          <Button onClick={() => navigate(-1)} className="bg-gradient-to-r from-blue-500 to-purple-600">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Terug
           </Button>
@@ -48,6 +50,7 @@ export default function TaskDetail() {
 
   const handleDelete = async () => {
     try {
+      setIsLoading(true);
       await deleteTask(task.id);
       toast({
         title: "Taak verwijderd",
@@ -60,6 +63,8 @@ export default function TaskDetail() {
         title: "Fout bij verwijderen",
         description: "De taak kon niet worden verwijderd",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -70,6 +75,11 @@ export default function TaskDetail() {
       );
       
       await updateTask(task.id, { subtasks: updatedSubtasks });
+      
+      toast({
+        title: completed ? "Subtaak voltooid" : "Subtaak heropend",
+        description: `De subtaak is gemarkeerd als ${completed ? 'voltooid' : 'te doen'}`,
+      });
     } catch (error) {
       toast({
         variant: "destructive",
@@ -100,13 +110,17 @@ export default function TaskDetail() {
   return (
     <AppLayout>
       <div className="mb-4 flex items-center justify-between">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="firebase-btn firebase-btn-secondary">
+        <Button variant="outline" onClick={() => navigate(-1)} className="firebase-btn firebase-btn-secondary">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Terug
         </Button>
 
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={() => navigate(`/task/edit/${task.id}`)}>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => navigate(`/task/edit/${task.id}`)}
+          >
             <Edit className="h-4 w-4" />
           </Button>
           <AlertDialog>
@@ -115,7 +129,7 @@ export default function TaskDetail() {
                 <Trash className="h-4 w-4" />
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="bg-card/90 backdrop-blur-lg border border-white/5">
               <AlertDialogHeader>
                 <AlertDialogTitle>Taak verwijderen?</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -123,8 +137,17 @@ export default function TaskDetail() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Annuleren</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete}>Verwijderen</AlertDialogAction>
+                <AlertDialogCancel className="bg-secondary/80 border-white/10">Annuleren</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleDelete} 
+                  className="bg-destructive hover:bg-destructive/90"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <GradientLoader size="sm" className="mr-2" />
+                  ) : null}
+                  Verwijderen
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

@@ -19,7 +19,7 @@ export default function Navbar() {
     <nav className="sticky top-0 z-40 glass-nav">
       <div className="container flex h-16 items-center px-4 justify-between">
         <div className="flex items-center">
-          <Link to="/" className="text-xl font-bold text-primary">
+          <Link to="/" className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
             OrgaMaster AI
           </Link>
         </div>
@@ -35,7 +35,7 @@ export default function Navbar() {
               </Button>
 
               <Link to="/new-task">
-                <Button size="sm" className="gap-1 bg-primary/80 hover:bg-primary">
+                <Button size="sm" className="gap-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
                   <Plus className="h-4 w-4" />
                   <span className="hidden sm:inline">Nieuwe Taak</span>
                 </Button>
@@ -85,7 +85,7 @@ export default function Navbar() {
                 </Button>
               </Link>
               <Link to="/register">
-                <Button size="sm" className="bg-primary/80 hover:bg-primary">Register</Button>
+                <Button size="sm" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">Register</Button>
               </Link>
             </>
           )}

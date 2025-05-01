@@ -34,6 +34,10 @@
     --ring: 224 76% 48%;
 
     --radius: 0.5rem;
+
+    /* Custom gradients */
+    --brand-gradient: linear-gradient(135deg, #3b82f6 0%, #7c3aed 100%);
+    --text-gradient: linear-gradient(135deg, #ff9d00 0%, #ff6161 100%);
   }
 
   .light {
@@ -64,6 +68,10 @@
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 221 83% 53%;
+    
+    /* Custom gradients for light mode */
+    --brand-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    --text-gradient: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
   }
 }
 
@@ -88,6 +96,36 @@
   
   .glass-nav {
     @apply bg-background/80 backdrop-blur-lg border-b border-white/5;
+  }
+  
+  .brand-gradient {
+    @apply bg-gradient-to-r from-blue-500 to-purple-600;
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-500 to-red-500;
+  }
+  
+  /* Mobile specific utilities */
+  @media (max-width: 767px) {
+    .mobile-container {
+      @apply px-4 py-3;
+    }
+    
+    .mobile-card {
+      @apply p-3 rounded-lg;
+    }
+  }
+  
+  /* Desktop specific utilities */
+  @media (min-width: 768px) {
+    .desktop-container {
+      @apply px-6 py-4;
+    }
+    
+    .desktop-card {
+      @apply p-4 rounded-xl;
+    }
   }
 }
 
@@ -117,7 +155,7 @@
 }
 
 .firebase-btn-primary {
-  @apply bg-primary text-white hover:bg-primary/90;
+  @apply bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-700;
 }
 
 .firebase-btn-secondary {
