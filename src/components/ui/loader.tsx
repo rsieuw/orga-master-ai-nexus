@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 
 interface LoaderProps {
@@ -51,7 +50,7 @@ export function GradientLoader({ size = "md", className }: LoaderProps) {
   return (
     <div className={cn("flex items-center justify-center", className)}>
       <div className={cn("animate-spin relative", sizeClasses[size])}>
-        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 blur opacity-75"></div>
+        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-700 to-purple-800 blur opacity-75"></div>
         <div className="relative rounded-full h-full w-full border-2 border-transparent border-t-white"></div>
       </div>
     </div>

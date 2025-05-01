@@ -1,8 +1,8 @@
-
 import { createContext, useContext, useState, useEffect } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { GradientLoader } from "@/components/ui/loader";
 
 export type UserRole = "admin" | "free" | "paid";
 
@@ -21,6 +21,7 @@ interface AuthContextProps {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
+  updateUser: (data: { name?: string; email?: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -114,12 +115,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       
       return;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login failed:", error);
+      const message = error instanceof Error ? error.message : "Controleer je e-mail en wachtwoord.";
       toast({
         variant: "destructive",
         title: "Inloggen mislukt",
-        description: error.message || "Controleer je e-mail en wachtwoord.",
+        description: message,
       });
       throw error;
     }
@@ -129,12 +131,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Logout failed:", error);
+      const message = error instanceof Error ? error.message : "Er is iets misgegaan bij het uitloggen.";
       toast({
         variant: "destructive",
         title: "Uitloggen mislukt",
-        description: error.message || "Er is iets misgegaan bij het uitloggen.",
+        description: message,
       });
       throw error;
     }
@@ -155,24 +158,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       
       return;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Registration failed:", error);
+      const message = error instanceof Error ? error.message : "Er is iets misgegaan bij het registreren.";
       toast({
         variant: "destructive",
         title: "Registratie mislukt",
-        description: error.message || "Er is iets misgegaan bij het registreren.",
+        description: message,
+      });
+      throw error;
+    }
+  };
+
+  const updateUser = async (data: { name?: string; email?: string }) => {
+    if (!session?.user) {
+      throw new Error("Gebruiker niet ingelogd");
+    }
+
+    try {
+      // Update user_metadata in Supabase Auth
+      const { data: updatedUserData, error: updateAuthError } = await supabase.auth.updateUser({
+        data: { name: data.name }, // Only update metadata we want to change
+        // Note: Updating email requires verification, handle separately if needed
+      });
+
+      if (updateAuthError) throw updateAuthError;
+
+      // Update the corresponding profile in the 'profiles' table
+      const { error: updateProfileError } = await supabase
+        .from('profiles')
+        .update({ name: data.name })
+        .eq('id', session.user.id);
+
+      if (updateProfileError) throw updateProfileError;
+
+      // Refresh local user state with updated data
+      if (updatedUserData?.user && user) {
+        setUser({
+          ...user,
+          name: updatedUserData.user.user_metadata.name || user.name,
+          // Assuming email update is handled elsewhere or requires verification
+        });
+      }
+      
+    } catch (error: unknown) {
+      console.error("Update user failed:", error);
+      const message = error instanceof Error ? error.message : "Er is iets misgegaan bij het bijwerken van je gegevens.";
+      toast({
+        variant: "destructive",
+        title: "Account bijwerken mislukt",
+        description: message,
       });
       throw error;
     }
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <GradientLoader size="lg" />
+      </div>
+    );
   }
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, user, session, login, logout, register }}
+      value={{ isAuthenticated, user, session, login, logout, register, updateUser }}
     >
       {children}
     </AuthContext.Provider>

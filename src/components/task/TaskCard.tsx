@@ -1,4 +1,3 @@
-
 import { Task, TaskPriority } from "@/types/task";
 import { formatDistance } from "date-fns";
 import { nl } from "date-fns/locale";
@@ -13,9 +12,12 @@ interface TaskCardProps {
 export default function TaskCard({ task }: TaskCardProps) {
   const priorityClass = `priority-${task.priority}`;
   const completedSubtasks = task.subtasks.filter(st => st.completed).length;
-  const deadline = new Date(task.deadline);
+
+  // Parse deadline only if it exists
+  const deadlineDate = task.deadline ? new Date(task.deadline) : null;
   const now = new Date();
-  const isOverdue = deadline < now && task.status !== "done";
+  // Determine if overdue only if deadline exists and is in the past
+  const isOverdue = deadlineDate && deadlineDate < now && task.status !== "done";
 
   const statusColor: Record<string, string> = {
     todo: "bg-yellow-500",
@@ -39,15 +41,21 @@ export default function TaskCard({ task }: TaskCardProps) {
           )}
 
           <div className="flex justify-between items-center mt-2 text-xs">
-            <Badge
-              variant="outline"
-              className={`text-xs ${isOverdue ? "border-red-500 text-red-500" : ""} bg-background/30 backdrop-blur-sm`}
-            >
-              {isOverdue ? "Verlopen" : formatDistance(deadline, now, { addSuffix: true, locale: nl })}
-            </Badge>
+            {/* Deadline Badge removed as requested */}
+            {/* {deadlineDate ? (
+              <Badge
+                variant="outline"
+                className={`text-xs ${isOverdue ? "border-red-500 text-red-500" : ""} bg-background/30 backdrop-blur-sm`}
+              >
+                {isOverdue ? "Verlopen" : formatDistance(deadlineDate, now, { addSuffix: true, locale: nl })}
+              </Badge>
+            ) : (
+              <span></span>
+            )} */}
 
+            {/* Keep subtask count if it exists */}
             {task.subtasks.length > 0 && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground ml-auto"> {/* Add ml-auto if badge is removed */} 
                 {completedSubtasks}/{task.subtasks.length}
               </span>
             )}

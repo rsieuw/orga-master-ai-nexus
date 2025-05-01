@@ -1,8 +1,6 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/contexts/ThemeContext";
 import { Moon, Sun, Plus, User, LogOut } from "lucide-react";
 import {
   DropdownMenu,
@@ -10,36 +8,74 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+  DialogOverlay,
+  DialogPortal,
+} from "@/components/ui/dialog";
+import NewTaskDialog from "@/components/tasks/NewTaskDialog";
+import { useState } from "react";
 
 export default function Navbar() {
   const { isAuthenticated, logout, user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-40 glass-nav">
+    <nav className="sticky top-0 z-40 bg-card border-b border-border">
       <div className="container flex h-16 items-center px-4 justify-between">
         <div className="flex items-center">
-          <Link to="/" className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+          <Link to="/" className="flex items-center gap-2 text-xl font-medium text-foreground">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="url(#icon-gradient)"
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              className="h-7 w-7"
+            >
+              <defs>
+                <linearGradient id="icon-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style={{stopColor: "#3b82f6"}} />
+                  <stop offset="100%" style={{stopColor: "#a855f7"}} />
+                </linearGradient>
+              </defs>
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
             OrgaMaster AI
           </Link>
         </div>
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <>
-              <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-foreground/70 hover:text-foreground">
-                {theme === "light" ? (
-                  <Moon className="h-5 w-5" />
-                ) : (
-                  <Sun className="h-5 w-5" />
-                )}
-              </Button>
-
-              <Link to="/new-task">
-                <Button size="sm" className="gap-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">Nieuwe Taak</span>
-                </Button>
-              </Link>
+              <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-1 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900">
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Nieuwe Taak</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogPortal>
+                  <DialogOverlay className="bg-black/30 backdrop-blur-sm" />
+                  <DialogContent className="sm:max-w-[600px] bg-card">
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl">Nieuwe taak</DialogTitle>
+                      <DialogDescription>
+                        Beschrijf wat je wilt doen, en laat AI de details invullen.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <NewTaskDialog setOpen={setIsNewTaskOpen} />
+                  </DialogContent>
+                </DialogPortal>
+              </Dialog>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -72,20 +108,13 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                {theme === "light" ? (
-                  <Moon className="h-5 w-5" />
-                ) : (
-                  <Sun className="h-5 w-5" />
-                )}
-              </Button>
               <Link to="/login">
                 <Button variant="outline" size="sm" className="border-white/10 bg-secondary/50 hover:bg-secondary">
                   Login
                 </Button>
               </Link>
               <Link to="/register">
-                <Button size="sm" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">Register</Button>
+                <Button size="sm" className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900">Register</Button>
               </Link>
             </>
           )}

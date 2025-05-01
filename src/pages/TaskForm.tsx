@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTask } from "@/contexts/TaskContext";
@@ -13,6 +12,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import {
   Select,
@@ -28,10 +28,9 @@ import { Task, TaskPriority, TaskStatus } from "@/types/task";
 
 export default function TaskForm() {
   const { id } = useParams<{ id: string }>();
-  const { getTaskById, createTask, updateTask, suggestPriority } = useTask();
+  const { getTaskById, updateTask, suggestPriority } = useTask();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const isEditing = !!id;
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -44,17 +43,22 @@ export default function TaskForm() {
   const [isAiSuggesting, setIsAiSuggesting] = useState(false);
 
   useEffect(() => {
-    if (isEditing) {
-      const task = getTaskById(id);
-      if (task) {
-        setTitle(task.title);
-        setDescription(task.description);
-        setPriority(task.priority);
-        setStatus(task.status);
-        setDeadline(format(new Date(task.deadline), "yyyy-MM-dd'T'HH:mm"));
-      }
+    if (!id) {
+      navigate("/");
+      return;
     }
-  }, [id, isEditing, getTaskById]);
+    const task = getTaskById(id);
+    if (task) {
+      setTitle(task.title);
+      setDescription(task.description);
+      setPriority(task.priority);
+      setStatus(task.status);
+      setDeadline(format(new Date(task.deadline), "yyyy-MM-dd'T'HH:mm"));
+    } else {
+      toast({ variant: "destructive", title: "Fout", description: "Taak niet gevonden" });
+      navigate("/");
+    }
+  }, [id, getTaskById, navigate, toast]);
 
   const handleGetAIPrioritySuggestion = async () => {
     if (!title) {
@@ -90,6 +94,10 @@ export default function TaskForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!id) {
+      toast({ variant: "destructive", title: "Fout", description: "Ongeldig taak ID" });
+      return;
+    }
     setIsLoading(true);
 
     try {
@@ -101,31 +109,17 @@ export default function TaskForm() {
         deadline: new Date(deadline).toISOString(),
       };
 
-      if (isEditing) {
-        const task = getTaskById(id);
-        if (task) {
-          await updateTask(id, taskData);
-          toast({
-            title: "Taak bijgewerkt",
-            description: "De taak is succesvol bijgewerkt",
-          });
-        }
-      } else {
-        await createTask(taskData);
-        toast({
-          title: "Taak aangemaakt",
-          description: "De nieuwe taak is succesvol aangemaakt",
-        });
-      }
-
+      await updateTask(id, taskData);
+      toast({
+        title: "Taak bijgewerkt",
+        description: "De taak is succesvol bijgewerkt",
+      });
       navigate("/");
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Fout",
-        description: isEditing
-          ? "De taak kon niet worden bijgewerkt"
-          : "De taak kon niet worden aangemaakt",
+        description: "De taak kon niet worden bijgewerkt",
       });
     } finally {
       setIsLoading(false);
@@ -141,12 +135,12 @@ export default function TaskForm() {
         </Button>
       </div>
 
-      <Card>
+      <Card className="max-w-3xl mx-auto">
         <CardHeader>
-          <CardTitle>{isEditing ? "Taak bewerken" : "Nieuwe taak"}</CardTitle>
+          <CardTitle className="text-2xl">Taak bewerken</CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="title">Titel</Label>
               <Input
@@ -231,13 +225,7 @@ export default function TaskForm() {
           </CardContent>
           <CardFooter className="flex justify-end">
             <Button type="submit" disabled={isLoading}>
-              {isLoading
-                ? isEditing
-                  ? "Bijwerken..."
-                  : "Aanmaken..."
-                : isEditing
-                ? "Taak bijwerken"
-                : "Taak aanmaken"}
+              {isLoading ? "Bijwerken..." : "Taak bijwerken"}
             </Button>
           </CardFooter>
         </form>

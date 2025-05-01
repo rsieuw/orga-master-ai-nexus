@@ -1,15 +1,18 @@
-
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Loader } from "@/components/ui/loader";
 
 interface ResearchPanelProps {
   deepResearch: boolean;
   setDeepResearch: (value: boolean) => void;
   setActiveTab: (tab: string) => void;
+  loading: boolean;
+  error: string | null;
+  handleResearch: () => void;
 }
 
-export default function ResearchPanel({ deepResearch, setDeepResearch, setActiveTab }: ResearchPanelProps) {
+export default function ResearchPanel({ deepResearch, setDeepResearch, setActiveTab, loading, error, handleResearch }: ResearchPanelProps) {
   const { toast } = useToast();
 
   const handleResearchActivation = () => {
@@ -46,12 +49,15 @@ export default function ResearchPanel({ deepResearch, setDeepResearch, setActive
         </p>
       </div>
       
-      <Button 
-        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700" 
-        onClick={handleResearchActivation}
+      {loading && <Loader size="sm" />}
+      {error && <p className="text-red-500">{error}</p>}
+      <Button
+        onClick={handleResearch}
+        disabled={loading}
+        className="w-full bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
       >
-        <Search className="mr-2 h-4 w-4" />
-        Terug naar chat
+        {loading ? 'Researching...' : 'Start Research'}
+        <Search className="ml-2 h-4 w-4" />
       </Button>
     </div>
   );

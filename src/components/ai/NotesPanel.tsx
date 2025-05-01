@@ -1,10 +1,11 @@
-
 import { useState } from "react";
 import { Task } from "@/types/task";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader } from "@/components/ui/loader";
+import { Save } from "lucide-react";
 
 interface NotesPanelProps {
   task: Task;
@@ -14,6 +15,7 @@ export default function NotesPanel({ task }: NotesPanelProps) {
   const [note, setNote] = useState("");
   const [activeTab, setActiveTab] = useState("current");
   const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSaveNote = () => {
     if (note.trim()) {
@@ -28,6 +30,12 @@ export default function NotesPanel({ task }: NotesPanelProps) {
         description: "Voeg eerst tekst toe aan je notitie",
       });
     }
+  };
+
+  const handleSaveNotes = () => {
+    setIsSaving(true);
+    handleSaveNote();
+    setIsSaving(false);
   };
 
   return (
@@ -56,10 +64,16 @@ export default function NotesPanel({ task }: NotesPanelProps) {
               Wissen
             </Button>
             <Button 
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              onClick={handleSaveNote}
+              onClick={handleSaveNotes} 
+              disabled={isSaving}
+              className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
             >
-              Opslaan
+              {isSaving ? (
+                  <Loader size="sm" className="mr-2" />
+              ) : (
+                  <Save className="mr-2 h-4 w-4" />
+              )}
+              Save Notes
             </Button>
           </div>
         </TabsContent>

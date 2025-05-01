@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Select,
   SelectContent,
@@ -35,10 +36,23 @@ import {
 
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
+  const { user, updateUser } = useAuth();
   const [language, setLanguage] = useState("nl"); // Default to Dutch
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [apiKey, setApiKey] = useState("");
   const { toast } = useToast();
+
+  // State for account form
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+
+  // Initialize form state when user data is available
+  useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setEmail(user.email || "");
+    }
+  }, [user]);
 
   const handleLanguageChange = (value: string) => {
     setLanguage(value);
@@ -69,6 +83,24 @@ export default function SettingsPage() {
       title: `E-mail notificaties ${checked ? 'ingeschakeld' : 'uitgeschakeld'}`,
       description: `Je zult ${checked ? 'nu' : 'geen'} e-mail notificaties ontvangen voor naderende deadlines`,
     });
+  };
+
+  const handleSaveAccount = async () => {
+    if (!user) return;
+    try {
+      // Assuming updateUser takes an object with properties to update
+      await updateUser({ name, email }); 
+      toast({
+        title: "Account bijgewerkt",
+        description: "Je accountgegevens zijn succesvol opgeslagen",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Fout bij bijwerken",
+        description: "Kon accountgegevens niet opslaan",
+      });
+    }
   };
 
   return (
@@ -134,13 +166,13 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Naam</Label>
-                <Input id="name" placeholder="Je naam" className="bg-gray-700" />
+                <Input id="name" placeholder="Je naam" className="bg-gray-700" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" placeholder="Je e-mail" className="bg-gray-700" />
+                <Input id="email" type="email" placeholder="Je e-mail" className="bg-gray-700" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
-              <Button className="mt-4">Opslaan</Button>
+              <Button className="mt-4" onClick={handleSaveAccount}>Opslaan</Button>
             </CardContent>
           </Card>
         </TabsContent>

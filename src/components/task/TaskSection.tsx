@@ -1,4 +1,3 @@
-
 import { Task } from "@/types/task";
 import TaskCard from "./TaskCard";
 
@@ -19,7 +18,7 @@ export default function TaskSection({
     <div className={`mb-6 ${gridClass}`}>
       <h2 className="text-lg font-semibold mb-3">{title}</h2>
       {tasks.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-4">
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} />
           ))}
