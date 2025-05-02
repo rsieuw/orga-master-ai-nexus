@@ -2,11 +2,11 @@
 
 **Prioriteit 1: Basisfunctionaliteit**
 
-- 🟡 **[AUTH] Gebruikersauthenticatie Opzetten:**
-  - 🟡 Implementeer Supabase Auth voor gebruikersregistratie en login (Context, basis functies).
+- ✅ **[AUTH] Gebruikersauthenticatie Opzetten:**
+  - ✅ Implementeer Supabase Auth voor gebruikersregistratie en login (Context, basis functies).
   - ✅ Maak login/registratie formulieren/pagina's (AuthModal).
   - 🤔 Beveilig routes/data zodat alleen ingelogde gebruikers toegang hebben. (Nog controleren)
-- 🟡 **[CORE] Taak CRUD Operaties:**
+- ✅ **[CORE] Taak CRUD Operaties:**
   - ✅ Definieer database schema voor taken (titel, beschrijving, status, prioriteit, deadline, user_id, subtasks).
   - ✅ Implementeer Supabase functies/API-calls voor het aanmaken, lezen, updaten, en verwijderen van taken.
   - ✅ Bouw UI componenten voor het weergeven van takenlijsten.

@@ -1,14 +1,11 @@
 import { useState } from "react";
 import { Task } from "@/types/task";
 import ChatPanel from "./ChatPanel";
-import NotesPanel from "./NotesPanel";
+// Removed unused NotesPanel import
 // Removed Bot, BrainCircuit, PenSquare imports as they are no longer used here
 // Removed Tabs imports
 
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
+// Removed unused Message interface
 
 interface TaskAIChatProps {
   task: Task;
@@ -38,9 +35,10 @@ export default function TaskAIChat({ task, selectedSubtaskTitle, onSubtaskHandle
         {/* {activeTab === "research" && (
           <ResearchPanel /> 
         )} */}
-        {activeTab === "notes" && (
+        {/* Removed NotesPanel rendering based on activeTab */}
+        {/* {activeTab === "notes" && (
           <NotesPanel task={task} />
-        )}
+        )} */}
       </div>
       
       {/* Remove the leftover chat window and form elements below */}

@@ -122,6 +122,34 @@
       @apply p-4 rounded-xl;
     }
   }
+
+  /* Custom Scrollbar for Webkit (Chrome, Safari, Edge) */
+  .scrollbar-thin {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: hsl(var(--muted)) transparent; /* Firefox: thumb track */
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted));
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground));
+  }
+
+  /* End Custom Scrollbar */
 }
 
 .task-card {
@@ -176,6 +204,14 @@
 
 .chat-message-research {
   @apply bg-blue-100 text-gray-900 dark:bg-blue-900/50 dark:text-blue-100;
+}
+
+.chat-message-notes {
+  @apply bg-yellow-100 text-yellow-900 dark:bg-yellow-900/40 dark:text-yellow-100 border border-yellow-500/30;
+}
+
+.chat-message-note-saved { /* Style for newly saved notes */
+  @apply bg-yellow-100 text-yellow-900 dark:bg-yellow-800/50 dark:text-yellow-100 border border-yellow-600/50;
 }
 
 .chat-input {

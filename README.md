@@ -1,8 +1,20 @@
-# Welcome to your Lovable project
+# OrgaMaster AI
 
-## Project info
+Welcome to the OrgaMaster AI project repository! This application helps you manage your tasks efficiently with the assistance of AI.
 
-**URL**: https://lovable.dev/projects/d23be5de-91ed-4c61-9083-1b83b4e91305
+**Project Goal:** To create an intuitive task management application that leverages AI to streamline task creation, research, and organization.
+
+**URL (Lovable Project):** https://lovable.dev/projects/d23be5de-91ed-4c61-9083-1b83b4e91305
+
+**Key Features (Planned & Implemented):**
+
+*   User Authentication (Supabase Auth)
+*   Task Management (CRUD operations)
+*   AI-Powered Task Detail Generation
+*   AI-Powered "Deep Research" for tasks
+*   Task Filtering & Sorting
+*   Notifications & Reminders
+*   See `task.md` for a detailed feature list and progress.
 
 ## How can I edit this code?
 
@@ -59,6 +71,7 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase (Auth, Database, Edge Functions)
 
 ## How can I deploy this project?
 
