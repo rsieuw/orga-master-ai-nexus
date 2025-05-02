@@ -1,4 +1,3 @@
-
 export type TaskPriority = "low" | "medium" | "high";
 export type TaskStatus = "todo" | "in_progress" | "done";
 
@@ -30,6 +29,7 @@ export interface AIResearchResult {
 }
 
 export interface TasksByDate {
+  overdue: Task[];
   today: Task[];
   tomorrow: Task[];
   dayAfterTomorrow: Task[];

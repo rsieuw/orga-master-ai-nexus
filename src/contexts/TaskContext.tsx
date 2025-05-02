@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 // Define a type for the fields that can be updated in the database
 type TaskUpdatePayload = Partial<Pick<Task, 'title' | 'description' | 'priority' | 'status' | 'deadline' | 'subtasks'>>;
 
+// Update interface to include subtask management functions
 interface TaskContextProps {
   tasks: Task[];
   isLoading: boolean;
@@ -16,6 +17,10 @@ interface TaskContextProps {
   getTaskById: (id: string) => Task | undefined;
   groupTasksByDate: () => TasksByDate;
   suggestPriority: (title: string, description: string) => Promise<TaskPriority>;
+  // New functions for subtasks
+  addSubtask: (taskId: string, title: string) => Promise<void>;
+  updateSubtask: (taskId: string, subtaskId: string, updates: Partial<Omit<SubTask, 'id' | 'taskId'>>) => Promise<void>;
+  deleteSubtask: (taskId: string, subtaskId: string) => Promise<void>;
 }
 
 const TaskContext = createContext<TaskContextProps | undefined>(undefined);
@@ -159,19 +164,17 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      // Use the specific TaskUpdatePayload type instead of { [key: string]: any }
       const taskToUpdate: TaskUpdatePayload = {};
-
-      // Assign properties safely
       if (taskData.title !== undefined) taskToUpdate.title = taskData.title;
       if (taskData.description !== undefined) taskToUpdate.description = taskData.description;
       if (taskData.priority !== undefined) taskToUpdate.priority = taskData.priority;
       if (taskData.status !== undefined) taskToUpdate.status = taskData.status;
       if (taskData.deadline !== undefined) {
-        // Convert to ISO string or empty string
         taskToUpdate.deadline = taskData.deadline ? new Date(taskData.deadline).toISOString() : '';
       }
-      if (taskData.subtasks !== undefined) taskToUpdate.subtasks = taskData.subtasks;
+      if (taskData.subtasks !== undefined) {
+         taskToUpdate.subtasks = taskData.subtasks;
+      }
 
       if (Object.keys(taskToUpdate).length === 0) {
         console.log("No changes detected for update.");
@@ -180,22 +183,14 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         return currentTask;
       }
 
-      // Prepare payload for Supabase
       const payloadForSupabase: { [key: string]: any } = { ...taskToUpdate };
-
-      // Convert deadline: empty string becomes null
       if (payloadForSupabase.deadline === '') {
          payloadForSupabase.deadline = null;
       }
 
-      // Ensure subtasks are treated as JSON by Supabase client
-      // The client should handle the serialization if the column type is jsonb
-      // No explicit JSON.stringify needed here usually, just ensure the structure is correct.
-      // If subtasks is explicitly set to an empty array or updated, it will be included.
-
       const { data: updatedTaskData, error } = await supabase
         .from('tasks')
-        .update(payloadForSupabase as any) // Use type assertion to bypass strict check temporarily, Supabase handles JSON
+        .update(payloadForSupabase as any)
         .eq('id', id)
         .eq('user_id', user.id)
         .select()
@@ -258,17 +253,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       throw new Error("User must be authenticated to delete tasks");
     }
 
-    // Optimistic UI update: remove task from local state immediately
     const originalTasks = [...tasks];
     setTasks((prevTasks) => prevTasks.filter(t => t.id !== id));
 
     try {
-      // Delete the task from Supabase
       const { error } = await supabase
         .from('tasks')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id); // Ensure user can only delete their own tasks
+        .eq('user_id', user.id);
 
       if (error) {
         console.error("Failed to delete task from Supabase:", error);
@@ -277,20 +270,17 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           title: "Verwijderen mislukt",
           description: error.message || "Kon de taak niet verwijderen uit de database.",
         });
-        // Revert optimistic update on error
         setTasks(originalTasks);
-        throw error; // Re-throw error
+        throw error;
       }
 
-      // Success: local state already updated optimistically
-      toast({ // Optional: Show success toast
+      toast({
           title: "Taak verwijderd",
           description: "De taak is succesvol verwijderd.",
       });
 
     } catch (error) {
-       // Catch potential errors from the try block or re-thrown errors
-      console.error("Unexpected error deleting task:", error);
+       console.error("Unexpected error deleting task:", error);
       if (!(error instanceof Error && error.message.includes("Kon de taak niet verwijderen"))) {
           toast({
             variant: "destructive",
@@ -298,17 +288,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
             description: "Er is een onverwachte fout opgetreden bij het verwijderen.",
           });
       }
-      // Ensure state is reverted if not already
       if (tasks !== originalTasks) {
           setTasks(originalTasks);
       }
-      throw error; // Re-throw to allow UI to handle loading state etc.
+      throw error;
     }
-
-    // // OLD Local Storage Logic:
-    // const updatedTasks = tasks.filter(t => t.id !== id);
-    // setTasks(updatedTasks);
-    // localStorage.setItem("tasks", JSON.stringify(updatedTasks));
   };
 
   const getTaskById = (id: string): Task | undefined => {
@@ -332,6 +316,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
 
     return {
+      overdue: tasks.filter(task => {
+        if (!task.deadline) return false;
+        const taskDate = new Date(task.deadline);
+        taskDate.setHours(0, 0, 0, 0);
+        return taskDate.getTime() < today.getTime();
+      }),
       today: tasks.filter(task => {
         if (!task.deadline) return false;
         const taskDate = new Date(task.deadline);
@@ -389,8 +379,134 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     return "low";
   };
 
+  const addSubtask = async (taskId: string, title: string): Promise<void> => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) {
+      toast({ variant: "destructive", title: "Fout", description: "Hoofdtaak niet gevonden." });
+      throw new Error("Task not found");
+    }
+    if (!title.trim()) {
+        toast({ variant: "destructive", title: "Fout", description: "Subtaak titel mag niet leeg zijn." });
+        throw new Error("Subtask title cannot be empty");
+    }
+
+    const newSubtask: SubTask = {
+      id: crypto.randomUUID(),
+      title: title.trim(),
+      completed: false,
+      taskId: taskId,
+    };
+
+    const updatedSubtasks = [...task.subtasks, newSubtask];
+
+    try {
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
+          t.id === taskId ? { ...t, subtasks: updatedSubtasks } : t
+        )
+      );
+      await updateTask(taskId, { subtasks: updatedSubtasks });
+      toast({ title: "Subtaak toegevoegd", description: `"${title}" is toegevoegd.` });
+    } catch (error) {
+      console.error("Failed to add subtask:", error);
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
+          t.id === taskId ? { ...t, subtasks: task.subtasks } : t
+        )
+      );
+    }
+  };
+
+  const updateSubtask = async (taskId: string, subtaskId: string, updates: Partial<Omit<SubTask, 'id' | 'taskId'>>): Promise<void> => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) {
+      toast({ variant: "destructive", title: "Fout", description: "Hoofdtaak niet gevonden." });
+      throw new Error("Task not found");
+    }
+
+    const subtaskIndex = task.subtasks.findIndex(st => st.id === subtaskId);
+    if (subtaskIndex === -1) {
+      toast({ variant: "destructive", title: "Fout", description: "Subtaak niet gevonden." });
+      throw new Error("Subtask not found");
+    }
+
+    if (updates.title !== undefined && !updates.title.trim()) {
+         toast({ variant: "destructive", title: "Fout", description: "Subtaak titel mag niet leeg zijn." });
+         throw new Error("Subtask title cannot be empty");
+    }
+
+    const updatedSubtasks = task.subtasks.map(st =>
+      st.id === subtaskId ? { ...st, ...updates } : st
+    );
+
+    const originalSubtasks = [...task.subtasks];
+
+    try {
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
+          t.id === taskId ? { ...t, subtasks: updatedSubtasks } : t
+        )
+      );
+      await updateTask(taskId, { subtasks: updatedSubtasks });
+      toast({ title: "Subtaak bijgewerkt" });
+    } catch (error) {
+      console.error("Failed to update subtask:", error);
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
+          t.id === taskId ? { ...t, subtasks: originalSubtasks } : t
+        )
+      );
+    }
+  };
+
+  const deleteSubtask = async (taskId: string, subtaskId: string): Promise<void> => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) {
+      toast({ variant: "destructive", title: "Fout", description: "Hoofdtaak niet gevonden." });
+      throw new Error("Task not found");
+    }
+
+    const subtaskToDelete = task.subtasks.find(st => st.id === subtaskId);
+     if (!subtaskToDelete) {
+        toast({ variant: "destructive", title: "Fout", description: "Subtaak niet gevonden." });
+        throw new Error("Subtask not found");
+     }
+
+    const updatedSubtasks = task.subtasks.filter(st => st.id !== subtaskId);
+    const originalSubtasks = [...task.subtasks];
+
+    try {
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
+          t.id === taskId ? { ...t, subtasks: updatedSubtasks } : t
+        )
+      );
+      await updateTask(taskId, { subtasks: updatedSubtasks });
+      toast({ title: "Subtaak verwijderd", description: `"${subtaskToDelete.title}" is verwijderd.` });
+    } catch (error) {
+      console.error("Failed to delete subtask:", error);
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
+          t.id === taskId ? { ...t, subtasks: originalSubtasks } : t
+        )
+      );
+    }
+  };
+
   return (
-    <TaskContext.Provider value={{ tasks, isLoading, createTask, updateTask, deleteTask, getTaskById, groupTasksByDate, suggestPriority }}>
+    <TaskContext.Provider value={{
+      tasks,
+      isLoading,
+      createTask,
+      updateTask,
+      deleteTask,
+      getTaskById,
+      groupTasksByDate,
+      suggestPriority,
+      addSubtask,
+      updateSubtask,
+      deleteSubtask
+    }}>
       {children}
     </TaskContext.Provider>
   );

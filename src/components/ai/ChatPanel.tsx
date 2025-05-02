@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Task } from "@/types/task";
+import { Task, SubTask } from "@/types/task";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Settings, Bot, BrainCircuit, PenSquare, Copy, X, Save } from "lucide-react";
@@ -11,6 +11,7 @@ import { Message, aiModels } from "./types";
 import React, { ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useTask } from "@/contexts/TaskContext";
 
 interface ChatPanelProps {
   task: Task;
@@ -19,6 +20,12 @@ interface ChatPanelProps {
 }
 
 export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled }: ChatPanelProps) {
+  const {
+    addSubtask,
+    updateSubtask,
+    deleteSubtask
+  } = useTask();
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -211,8 +218,8 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
     
     if (!input.trim() || !task?.id) return;
     
-    const currentInput = input; // Save input before potentially clearing
-    setInput(""); // Clear input immediately
+    const currentInput = input;
+    setInput("");
 
     if (isNoteMode) {
       // --- Save Note Logic ---
@@ -268,6 +275,54 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
           
         setMessages((prev) => [...prev, aiResponse]);
         await saveMessageToDb(aiResponse);
+        
+        // --- NIEUW: Handel AI Acties af ---
+        if (data?.action && data?.payload) {
+          try {
+            switch (data.action) {
+              case 'ADD_SUBTASK':
+                if (data.payload.title) {
+                  await addSubtask(task.id, data.payload.title);
+                  toast({ title: "AI Actie", description: "Subtaak toegevoegd via AI." });
+                } else {
+                  console.warn("AI Action (ADD_SUBTASK): Missing title in payload", data.payload);
+                  toast({ variant:"destructive", title: "AI Actie Fout", description: "AI gaf geen titel op voor de nieuwe subtaak." });
+                }
+                break;
+              case 'UPDATE_SUBTASK':
+                if (data.payload.subtaskId && data.payload.updates) {
+                  // Zorg ervoor dat updates alleen geldige SubTask velden bevatten (excl. id, taskId)
+                  const { id, taskId, ...validUpdates } = data.payload.updates as Partial<SubTask>; 
+                  await updateSubtask(task.id, data.payload.subtaskId, validUpdates);
+                  toast({ title: "AI Actie", description: "Subtaak bijgewerkt via AI." });
+                } else {
+                  console.warn("AI Action (UPDATE_SUBTASK): Missing subtaskId or updates in payload", data.payload);
+                  toast({ variant:"destructive", title: "AI Actie Fout", description: "AI gaf onvolledige informatie voor het bijwerken van de subtaak." });
+                }
+                break;
+              case 'DELETE_SUBTASK':
+                 if (data.payload.subtaskId) {
+                   await deleteSubtask(task.id, data.payload.subtaskId);
+                   toast({ title: "AI Actie", description: "Subtaak verwijderd via AI." });
+                 } else {
+                   console.warn("AI Action (DELETE_SUBTASK): Missing subtaskId in payload", data.payload);
+                   toast({ variant:"destructive", title: "AI Actie Fout", description: "AI gaf niet aan welke subtaak verwijderd moest worden." });
+                 }
+                break;
+              default:
+                console.warn("Unknown AI action received:", data.action);
+            }
+          } catch (actionError: unknown) {
+             console.error("Error executing AI action:", data.action, actionError);
+             const message = actionError instanceof Error ? actionError.message : "Onbekende fout";
+             toast({
+               variant: "destructive",
+               title: `Fout bij uitvoeren AI actie (${data.action})`,
+               description: message,
+             });
+          }
+        }
+        // --- Einde AI Acties afhandelen ---
           
       } catch (error: unknown) {
         console.error('Error calling generate-chat-response function:', error);
@@ -546,16 +601,6 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
 
       <div className="p-2 px-4 border-t border-white/5 flex items-center justify-between gap-2 bg-background/50">
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className={`gap-1 border-white/10 hover:bg-secondary ${!isNoteMode ? 'bg-primary/20 border-primary/50' : 'bg-secondary/50'}`}
-            onClick={() => { /* setActiveTab("chat"); // No need to set activeTab here */ setIsNoteMode(false); }}
-            disabled={isNoteMode} // Disable chat button in note mode
-          >
-            <Bot className="h-4 w-4" />
-            <span className="hidden sm:inline">Chat</span>
-          </Button>
           <Button 
             variant="outline" 
             size="sm" 

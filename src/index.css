@@ -153,19 +153,39 @@
 }
 
 .task-card {
-  @apply rounded-lg border p-3 shadow-sm transition-all hover:shadow-md hover:translate-y-[-2px] duration-200 glass-card;
+  @apply relative rounded-lg border p-3 shadow-sm transition-all hover:shadow-md hover:translate-y-[-2px] duration-200 glass-card;
 }
 
-.priority-high {
-  @apply border-l-4 border-l-priority-high;
+.priority-high::before,
+.priority-medium::before,
+.priority-low::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px; /* Breedte van de gradient-lijn */
+  /* Behoud afronding van de kaart zelf, de lijn is binnen de border */
+  border-top-left-radius: inherit; /* Probeer afronding over te nemen */
+  border-bottom-left-radius: inherit; /* Probeer afronding over te nemen */
 }
 
-.priority-medium {
-  @apply border-l-4 border-l-priority-medium;
+.priority-high::before {
+  /* Verwijderd: @apply border-l-4 border-l-priority-high; */
+  /* Gradient van red-500 naar red-700 */
+  @apply bg-gradient-to-b from-red-500 to-red-700;
 }
 
-.priority-low {
-  @apply border-l-4 border-l-priority-low;
+.priority-medium::before {
+  /* Verwijderd: @apply border-l-4 border-l-priority-medium; */
+  /* Gradient van amber-400 naar orange-500 */
+  @apply bg-gradient-to-b from-amber-400 to-orange-500;
+}
+
+.priority-low::before {
+  /* Verwijderd: @apply border-l-4 border-l-priority-low; */
+  /* Gradient van blue-400 naar blue-600 */
+  @apply bg-gradient-to-b from-blue-400 to-blue-600;
 }
 
 /* Firebase Studio inspired styles */
