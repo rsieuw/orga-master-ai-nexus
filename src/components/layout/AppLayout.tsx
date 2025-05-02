@@ -1,7 +1,7 @@
 import { PropsWithChildren } from "react";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
-import { useAuth } from "@/contexts/AuthContext";
+import Navbar from "./Navbar.tsx";
+import Footer from "./Footer.tsx";
+import { useAuth } from "@/contexts/AuthContext.tsx";
 import { Navigate } from "react-router-dom";
 
 interface AppLayoutProps extends PropsWithChildren {

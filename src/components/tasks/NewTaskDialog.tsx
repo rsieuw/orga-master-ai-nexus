@@ -264,13 +264,13 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
                     {deadline ? format(deadline, 'PPP', { locale: nl }) : <span>Kies een datum</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-card border-border z-[100]" align="start">
+                <PopoverContent className="w-auto p-0 bg-card/70 backdrop-blur-md border border-white/10 z-[100]" align="start" onPointerDownOutside={(event) => event.preventDefault()}>
                   <Calendar
                     mode="single"
-                    selected={deadline} // Pass Date | undefined
-                    onSelect={setDeadline} // Expects (Date | undefined) => void
+                    selected={deadline}
+                    onSelect={setDeadline}
                     initialFocus
-                    className="bg-card text-card-foreground"
+                    locale={nl}
                   />
                 </PopoverContent>
               </Popover>

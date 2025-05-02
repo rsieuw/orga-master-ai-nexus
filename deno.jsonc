@@ -1,0 +1,32 @@
+{
+  "tasks": {
+    // Voeg hier eventuele Deno taken toe, bijv. "dev": "deno run --watch src/main.ts"
+  },
+  "fmt": {
+    // Formatteringsopties (standaard Deno-instellingen zijn meestal goed)
+    "options": {
+      "useTabs": false,
+      "lineWidth": 100,
+      "indentWidth": 2,
+      "singleQuote": false // Gebruik dubbele quotes zoals in je bestaande code
+    }
+  },
+  "lint": {
+    // Linting regels (standaard Deno-set is een goed begin)
+    "rules": {
+      "tags": ["recommended"],
+      "exclude": ["no-unused-vars"] // We kunnen ongebruikte vars negeren als de TS config dat ook doet
+    }
+  },
+  "imports": {
+    // Definieer hier je pad-aliassen
+    "@/": "./src/"
+  },
+  // Optioneel: Als je wilt dat Deno de compiler opties van tsconfig.json respecteert
+  // "compilerOptions": {
+  //   "jsx": "react-jsx",
+  //   "lib": ["dom", "dom.iterable", "esnext"]
+  // }
+  // Als je expliciet wilt zijn over de tsconfig locatie:
+  // "config": "./tsconfig.json"
+} 
