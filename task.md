@@ -59,8 +59,12 @@
   - ✅ Verwijderknop toegevoegd voor opgeslagen onderzoek.
   - ✅ Markdown rendering verbeterd (`rehype-raw`, kop styling).
   - ✅ Styling chatberichten (notities, onderzoek) en iconen verbeterd.
-- ❌ **[TEST] Unit & Integratie Tests:**
-  - Schrijf tests voor kritieke componenten, hooks, en API-integraties.
+- 🟡 **[TEST] Unit & Integratie Tests:**
+  - ✅ Basis testomgeving opgezet met Vitest, React Testing Library en Jest-DOM.
+  - ✅ Tests geschreven voor TaskCard component.
+  - ✅ Tests geschreven voor AuthContext.
+  - ✅ Tests geschreven voor Supabase API integratie.
+  - 🟡 Meer tests schrijven voor andere componenten, hooks, en API-integraties.
 - ❌ **[OPS] Logging & Monitoring:**
   - Zet basis logging en monitoring op (bv. met Supabase logs of een externe service).
 - 🟡 **[SEC] Beveiligingscheck:**
