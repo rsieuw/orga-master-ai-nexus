@@ -48,24 +48,33 @@ Deno.serve(async (req) => {
     }
 
     // 4. Insert data into the saved_research table
-    const { error: insertError } = await supabaseClient
+    const { data: savedData, error: insertError } = await supabaseClient
       .from('saved_research')
       .insert({ 
         task_id: taskId, 
         user_id: user.id, 
         research_content: researchContent,
         citations: citations // citations can be null/undefined, JSONB handles it
-      });
+      })
+      .select('id') // Selecteer de ID van het ingevoegde record
+      .single(); // We verwachten maar één record terug
 
     if (insertError) {
       console.error("Error inserting saved research:", insertError);
       throw insertError; // Let the generic error handler catch it
     }
 
-    // 5. Return success response
-    console.log(`Research saved successfully for task ${taskId} by user ${user.id}`);
+    // ---> NIEUW: Controleer of we data (en dus ID) hebben <--- 
+    if (!savedData || !savedData.id) {
+      console.error("Failed to retrieve ID after inserting saved research");
+      throw new Error("Kon de ID van het opgeslagen onderzoek niet ophalen.");
+    }
+
+    // 5. Return success response, inclusief de nieuwe ID
+    console.log(`Research saved successfully (ID: ${savedData.id}) for task ${taskId} by user ${user.id}`);
     return new Response(
-      JSON.stringify({ message: "Onderzoek succesvol opgeslagen!" }),
+      // ---> NIEUW: Stuur ID mee in de response <--- 
+      JSON.stringify({ message: "Onderzoek succesvol opgeslagen!", savedResearchId: savedData.id }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200 

@@ -6,8 +6,9 @@ export interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp?: number;
-  messageType?: 'standard' | 'research_result' | 'system' | 'error' | 'note_saved' | 'action_confirm';
+  messageType?: 'standard' | 'research_result' | 'system' | 'error' | 'note_saved' | 'action_confirm' | 'saved_research_display';
   citations?: string[];
+  dbId?: string;
 }
 
 export interface AIModel {

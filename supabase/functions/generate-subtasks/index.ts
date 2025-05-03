@@ -76,7 +76,7 @@ serve(async (req) => {
     // Pas tabelnaam, kolommen en sortering aan indien nodig
     const { data: chatMessages, error: chatError } = await supabase
       .from('chat_messages') // Tabelnaam is correct
-      .select('role, content, created_at') // Kolomnamen aangepast: sender->role, message->content
+      .select('role, content, created_at, message_type') // Kolomnamen aangepast: sender->role, message->content
       .eq('task_id', taskId) // Filter op task_id
       .order('created_at', { ascending: true }); // Sorteer op tijd
 
@@ -106,7 +106,9 @@ serve(async (req) => {
     // Construeer de prompt met de extra context
     const systemPrompt = `Je bent een AI-assistent gespecialiseerd in het opsplitsen van complexe taken in concrete, behapbare subtaken.
 
-Gebruik de hoofdtaak, de bijbehorende chatgeschiedenis, notities en onderzoeksresultaten om een lijst van logische, actiegerichte subtaken te genereren. Deze subtaken moeten de gebruiker helpen de hoofdtaak succesvol te voltooien. Zorg dat elke stap klein, duidelijk en zelfstandig uitvoerbaar is, indien mogelijk in een logische volgorde. Houd rekening met prioriteiten en deadlines als die vermeld zijn.
+Gebruik de hoofdtaak, de bijbehorende chatgeschiedenis, notities en onderzoeksresultaten om een lijst van logische, actiegerichte subtaken te genereren. 
+Let specifiek ook op berichten in de chatgeschiedenis die gemarkeerd zijn als onderzoeksresultaten (ook als ze niet apart als 'Onderzoeksresultaten' zijn aangeleverd); deze bevatten mogelijk waardevolle context.
+Deze subtaken moeten de gebruiker helpen de hoofdtaak succesvol te voltooien. Zorg dat elke stap klein, duidelijk en zelfstandig uitvoerbaar is, indien mogelijk in een logische volgorde. Houd rekening met prioriteiten en deadlines als die vermeld zijn.
 
 Formatteer de output als een JSON-object met een enkele sleutel "subtasks" die een array van objecten bevat, elk met een "title" sleutel. Bijvoorbeeld:
 { "subtasks": [{ "title": "Subtaak 1" }, { "title": "Subtaak 2" }] }
@@ -129,8 +131,10 @@ Geef uitsluitend dit JSON-object terug — geen toelichting of extra tekst.
       // Beperk eventueel de lengte, of neem alleen relevante berichten? Voor nu: alles (of laatste paar)
       const recentMessages = chatMessages.slice(-10); // Neem max laatste 10 berichten
       recentMessages.forEach(msg => {
+        // Voeg markering toe voor research result
+        const prefix = msg.message_type === 'research_result' ? '[ONDERZOEKSRESULTAAT] ' : '';
         // Gebruik msg.role en msg.content ipv msg.sender en msg.message
-        userPromptContent += `- ${msg.role === 'user' ? 'Gebruiker' : 'AI'} (${new Date(msg.created_at).toLocaleString('nl-NL')}): ${msg.content}\n`;
+        userPromptContent += `- ${msg.role === 'user' ? 'Gebruiker' : 'AI'} (${new Date(msg.created_at).toLocaleString('nl-NL')}): ${prefix}${msg.content}\n`;
       });
     }
 

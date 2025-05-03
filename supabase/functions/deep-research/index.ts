@@ -17,8 +17,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Parse the request body to get the query, description, and language preference
-    const { query, description, languagePreference = 'nl' } = await req.json();
+    // Parse the request body to get the query, description, contextQuery, and language preference
+    const { query, description, contextQuery, languagePreference = 'nl' } = await req.json();
 
     if (!query) {
       return new Response(
@@ -43,6 +43,26 @@ Deno.serve(async (req) => {
         }
       );
     }
+
+    // ---> TOEKOMSTIGE CHECK: Betaalde Functie Toegangscontrole <---
+    // TODO: Implementeer hier de logica om te checken of de gebruiker een betaald abonnement heeft.
+    // Bijvoorbeeld: haal user op met req.headers.get('Authorization')!, 
+    // check tegen een 'subscriptions' tabel.
+    const isPaidUser = true; // Placeholder: later vervangen door echte check
+    console.log("[PLACEHOLDER] Checking user payment status (currently always true)...");
+
+    if (!isPaidUser) { 
+      // Dit blok wordt nu overgeslagen.
+      console.warn("Access denied: Deep research is a paid feature.");
+      return new Response(
+        JSON.stringify({ error: "Toegang geweigerd: Deze functie vereist een actief abonnement." }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403, // Forbidden
+        }
+      );
+    }
+    // ---> EINDE Placeholder Check <---
 
     const perplexityUrl = "https://api.perplexity.ai/chat/completions";
 
@@ -80,25 +100,28 @@ Deno.serve(async (req) => {
           messages: [
             {
               role: "system",
-              content: `You are an expert research assistant helping a user understand and execute a task in their project management workflow.
+              content: `You are an expert research assistant helping a user understand and execute a task or subtask in their project management workflow.
 
-Task Title: "${query}"
-Task Description: "${description || 'No description provided.'}"
+${contextQuery 
+  ? `Main Task Title: \"${contextQuery}\"\nSubtask to Research: \"${query}\"` 
+  : `Task Title: \"${query}\"\nTask Description: \"${description || 'No description provided.'}\"`
+}
 
-Based on your search results and understanding of the core topic, provide a structured and practical response to help the user move forward with this task. Your response should include the following sections:
+Based on your search results and understanding of the core topic (${contextQuery ? 'the subtask "' + query + '" in the context of the main task' : 'the task "' + query + '"'}), provide a structured and practical response to help the user move forward. Your response should include the following sections:
 
-1.  **${headers.summary}** – Briefly explain the main topic or concept behind the task in simple terms.
+1.  **${headers.summary}** – Briefly explain the main topic or concept behind the task/subtask in simple terms.
 2.  **${headers.challenges}** – Identify common pitfalls, dependencies, or factors the user should watch out for. **Use markdown bullet points (e.g., \`- Challenge one\`) for each item.**
-3.  **${headers.steps}** – List 2–4 clear and specific actions the user can take right away to begin working on the task. **Use markdown numbered list format (e.g., \`1. Step one\`) for each step.**
-4.  **${headers.resources}** – If applicable, suggest one or two high-quality resources (articles, tools, or references) that directly support this task. **Format these as markdown links: \`[Resource Title](URL)\`**. 
+3.  **${headers.steps}** – List at least 4 clear and specific actions the user can take right away to begin working on the task/subtask. **Start EACH step STRICTLY with a number followed by a period and a space (e.g., \`1. Step one\`, \`2. Step two\`). Do NOT use bold text or other formatting at the beginning of the step itself.**
+4.  **${headers.resources}** – If applicable, suggest one or two high-quality resources (articles, tools, or references) that directly support this task/subtask. **Format these as markdown links: \`[Resource Title](URL)\`**. 
 
-Keep your response concise, practical, and focused on helping the user make meaningful progress within their project.
+Provide a comprehensive and detailed response, practical, and focused on helping the user make meaningful progress within their project.
 
 **Respond in the following language: ${languagePreference}.**`
             },
             // Voeg een user message toe als laatste item, zoals vereist door Perplexity
-            { role: "user", content: `Provide research based on the task: "${query}"` }
+            { role: "user", content: `Provide research based on the ${contextQuery ? 'subtask: "' + query + '" (related to main task: "' + contextQuery + '")' : 'task: "' + query + '"'}` }
           ],
+          max_tokens: 1500 
         }),
       });
 

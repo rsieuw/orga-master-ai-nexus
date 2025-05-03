@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Task } from "@/types/task.ts";
 import { Button } from "@/components/ui/button.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
-import { Send, Settings, Bot, BrainCircuit, PenSquare, Copy, X, Save } from "lucide-react";
+import { Send, Settings, Bot, BrainCircuit, PenSquare, Copy, X, Save, Trash2, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast.ts";
 import { GradientLoader } from "@/components/ui/loader.tsx";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select.tsx";
@@ -19,7 +19,7 @@ import rehypeRaw from 'rehype-raw';
 
 // ---> NIEUW: Helper functie voor MessageType validatie <---
 const validMessageTypes = [
-  'standard', 'research_result', 'system', 'error', 'note_saved', 'action_confirm'
+  'standard', 'research_result', 'system', 'error', 'note_saved', 'action_confirm', 'saved_research_display'
 ] as const; // Gebruik 'as const' voor een tuple type
 
 type ValidMessageType = typeof validMessageTypes[number]; // Maak een type van de waarden
@@ -53,6 +53,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
   const [isNoteMode, setIsNoteMode] = useState(false);
   const [selectedModel, setSelectedModel] = useState("default");
   const [isResearching, setIsResearching] = useState(false);
+  const [researchCancelled, setResearchCancelled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -121,20 +122,45 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
 
         if (chatError) throw chatError;
 
-        // Fetch task notes
+        // Fetch task notes - voeg id toe aan select
         const { data: dbNotes, error: notesError } = await supabase
           .from('task_notes')
-          .select('content, created_at')
+          .select('id, content, created_at')
           .eq('task_id', task.id)
           .order('created_at', { ascending: true });
         
         if (notesError) throw notesError;
 
+        // ---> NIEUW: Fetch saved research (inclusief citations) <---
+        const { data: dbResearch, error: researchError } = await supabase
+          .from('saved_research')
+          // ---> NIEUW: Selecteer ook 'citations' <---
+          .select('id, research_content, created_at, citations') 
+          .eq('task_id', task.id)
+          .order('created_at', { ascending: true });
+
+        if (researchError) {
+          // Log de fout, maar ga verder, misschien is er geen onderzoek
+          console.warn("Could not fetch saved research:", researchError.message);
+        }
+        // ---> EINDE NIEUW <---
+
         // Define interfaces for fetched data to avoid 'any'
         interface DbNote {
+           id: string; // <-- Interface klopt al
            content: string;
            created_at: string;
         }
+
+        // ---> NIEUW: Interface voor opgeslagen onderzoek <--- 
+        interface DbResearch {
+          id: string;
+          research_content: string;
+          created_at: string;
+          // Gebruik 'any' omdat 'Json' type niet direct geëxporteerd wordt
+          citations: any | null; 
+        }
+        // ---> EINDE NIEUW <---
 
         // Map chat messages
         const loadedChatMessages: Message[] = (dbMessages || []).map((msg) => ({
@@ -149,11 +175,36 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
           role: 'user',
           content: note.content,
           timestamp: new Date(note.created_at).getTime(),
-          messageType: 'note_saved'
+          messageType: 'note_saved',
+          dbId: note.id
         }));
 
-        // Combine and sort messages and notes
-        const combinedMessages = [...loadedChatMessages, ...loadedNotes].sort(
+        // ---> NIEUW: Map saved research <--- 
+        const loadedResearch: Message[] = (dbResearch || []).map((research: DbResearch) => {
+          // Type assertion en validatie voor citations
+          let mappedCitations: string[] | undefined = undefined;
+          // Check of het een array is
+          if (Array.isArray(research.citations)) {
+              // Check of alle elementen strings zijn
+              if (research.citations.every((item) => typeof item === 'string')) {
+                  // Cast naar string[] als beide checks slagen
+                  mappedCitations = research.citations as string[];
+              }
+          } 
+          
+          return {
+              role: 'assistant',
+              content: research.research_content,
+              timestamp: new Date(research.created_at).getTime(),
+              messageType: 'saved_research_display',
+              dbId: research.id,
+              citations: mappedCitations // Gebruik de gevalideerde/gemapte array
+          };
+        });
+        // ---> EINDE NIEUW <---
+
+        // Combine and sort messages, notes, and research
+        const combinedMessages = [...loadedChatMessages, ...loadedNotes, ...loadedResearch].sort(
           (a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0)
         );
 
@@ -188,12 +239,11 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
           };
           setMessages((prev) => [...prev, systemMessage]);
           await saveMessageToDb(systemMessage); // Save the system message
-          onSubtaskHandled();
       };
       handleSubtaskSelection();
     }
     // No dependency on saveMessageToDb as it's stable if defined outside useEffect
-  }, [selectedSubtaskTitle, onSubtaskHandled, task?.id]);
+  }, [selectedSubtaskTitle, task?.id]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -266,15 +316,15 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
       // ---> Nogmaals Aangepaste Check voor Trigger Phrases (NL/EN) <---
       const inputLower = currentInput.toLowerCase();
 
-      // Definieer keywords per taal
-      const dutchVerbs = ["genere", "maak", "splits", "deel "];
+      // Definieer keywords per taal voor Subtaken
+      const dutchVerbs = ["genere", "maak", "splits", "deel ", "aanmaken"];
       // Voeg 'taken' toe aan de nouns
       const dutchNouns = ["subta", "taken"]; 
       const englishVerbs = ["generate", "create", "split", "break "];
       // Voeg 'tasks' toe aan de nouns
       const englishNouns = ["subtask", "tasks"];
 
-      // Check of een van de werkwoorden aanwezig is
+      // Check voor Subtaken
       const hasDutchVerb = dutchVerbs.some(verb => inputLower.includes(verb));
       const hasEnglishVerb = englishVerbs.some(verb => inputLower.includes(verb));
 
@@ -285,10 +335,15 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
       // Combineer de checks: (NL Werkwoord EN NL Noun) OF (EN Werkwoord EN EN Noun)
       const requiresSubtaskGeneration = (hasDutchVerb && hasDutchNoun) || (hasEnglishVerb && hasEnglishNoun);
 
-      // Gedetailleerde logging (aangepast)
+      // ---> NIEUW: Definieer keywords voor Onderzoek <---
+      const researchKeywords = ["onderzoek", "research", "zoek op", "find out", "investigate"];
+      const requiresResearch = researchKeywords.some(keyword => inputLower.includes(keyword));
+
+      // Gedetailleerde logging (uitgebreid)
       console.log(`[DEBUG] Checking input: "${inputLower}"`);
       console.log(`[DEBUG] NL Check: Verb? ${hasDutchVerb}, Noun? ${hasDutchNoun}. EN Check: Verb? ${hasEnglishVerb}, Noun? ${hasEnglishNoun}.`);
-      console.log(`[DEBUG] Requires Generation? ${requiresSubtaskGeneration}`);
+      console.log(`[DEBUG] Requires Subtask Generation? ${requiresSubtaskGeneration}`);
+      console.log(`[DEBUG] Requires Research? ${requiresResearch}`); // <-- Nieuwe log
 
       if (requiresSubtaskGeneration) {
         console.log("[DEBUG] *** Subtask generation keywords DETECTED ***");
@@ -363,13 +418,20 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
         }
         // Sla de normale chat AI aanroep over
         return; // Belangrijk: stop hier de executie voor dit bericht
+      } else if (requiresResearch) { // <-- Nieuwe ELSE IF voor Onderzoek
+        console.log("[DEBUG] *** Research keywords DETECTED ***");
+        // Roep de bestaande handleDeepResearch functie aan
+        handleDeepResearch(); 
+        // Belangrijk: Sla de normale chat AI aanroep over
+        return; 
       } else {
-        console.log("[DEBUG] Subtask generation keywords NIET gedetecteerd. Door naar normale chat.");
+        // Aangepaste log voor als geen enkele trigger matcht
+        console.log("[DEBUG] Geen speciale keywords gedetecteerd. Door naar normale chat."); 
       }
-      // ---> EINDE Nogmaals Aangepaste Check <---
+      // ---> EINDE Checks <---
 
-      // Als de trigger niet is gedetecteerd, ga door met de normale chat flow
-      setIsLoading(true); // Zet isLoading hier, na de check
+      // Als GEEN trigger is gedetecteerd, ga door met de normale chat flow
+      setIsLoading(true); // Zet isLoading hier, na de checks
       
       try {
         // Prepare Chat History
@@ -563,10 +625,39 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
 
       if (error) throw error;
 
-      toast({ 
-        title: "Onderzoek Opgeslagen", 
-        description: data?.message || "Het onderzoeksresultaat is opgeslagen."
-      });
+      // ---> NIEUW: Haal ID op en voeg bericht toe aan state <--- 
+      const savedResearchId = data?.savedResearchId; // Haal de ID op uit de response
+      if (!savedResearchId) {
+          console.warn("Did not receive savedResearchId from function, cannot update display message.");
+          toast({ 
+            title: "Onderzoek Opgeslagen", 
+            description: data?.message || "Het onderzoeksresultaat is opgeslagen (maar kon niet direct bijgewerkt worden)."
+          });
+      } else {
+          // ---> NIEUW: Zoek en update het bestaande bericht in state <---
+          setMessages(prevMessages => 
+            prevMessages.map(msg => {
+              // Identificeer het originele bericht (aanname: object referentie is stabiel)
+              if (msg === message) { 
+                // Retourneer het bijgewerkte bericht
+                return {
+                  ...msg, // Behoud andere properties zoals content, timestamp, citations
+                  messageType: 'saved_research_display',
+                  dbId: savedResearchId
+                };
+              }
+              // Geef andere berichten ongewijzigd terug
+              return msg;
+            })
+          );
+          // ---> EINDE NIEUW <---
+
+          toast({ 
+            title: "Onderzoek Opgeslagen", 
+            description: data?.message || "Het onderzoeksresultaat is opgeslagen."
+          });
+      }
+      // ---> EINDE NIEUW <---
 
     } catch (error: unknown) {
       console.error('Error calling save-research function:', error);
@@ -592,34 +683,78 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
 
   // Function to trigger deep research
   const handleDeepResearch = async () => {
-    if (!task?.id) return; // Ensure task.id is available
-    
+    if (!task?.id || isResearching) return; // Voorkom dubbel starten
+
+    // ---> NIEUW: Reset cancel state <---
+    setResearchCancelled(false);
+    // ---> EINDE NIEUW <---
     setIsResearching(true);
-    const researchQuery = task.title;
+    
+    // ---> NIEUW: Bepaal de query en context o.b.v. geselecteerde subtaak <---
+    let researchQuery = task.title; // Standaard: hoofdtaak titel
+    let researchDescription = task.description || "";
+    let contextQuery: string | undefined = undefined;
+    let userMessageContent = `Oké, ik start een diep onderzoek naar: "${researchQuery}"`;
+
+    if (selectedSubtaskTitle) {
+      researchQuery = selectedSubtaskTitle; // Gebruik subtaak als hoofdquery
+      researchDescription = ""; // Hoofdbeschrijving is minder relevant voor subtaak onderzoek
+      contextQuery = task.title; // Geef hoofdtaak mee als context
+      userMessageContent = `Oké, ik start een diep onderzoek naar subtaak: "${researchQuery}" (voor hoofdtaak: "${contextQuery}")`;
+    }
+    // ---> EINDE NIEUW <---
+
     const researchInitiationMessage: Message = {
       role: "assistant",
-      content: `Oké, ik start een diep onderzoek naar: "${researchQuery}"`,
+      content: userMessageContent, // Gebruik de dynamische boodschap
       timestamp: Date.now(),
       messageType: 'system'
     };
     setMessages(prev => [...prev, researchInitiationMessage]);
-    await saveMessageToDb(researchInitiationMessage); // Save initiation message
+    await saveMessageToDb(researchInitiationMessage);
     setIsLoading(true);
     
     try {
-      // Haal taalvoorkeur op, met fallback naar 'nl'
       const languagePreference = user?.language_preference || 'nl';
-      console.log(`Starting deep research for "${researchQuery}" in language: ${languagePreference}`);
+      // ---> NIEUW: Stuur juiste parameters mee <---
+      const requestBody: { 
+        query: string;
+        description?: string;
+        contextQuery?: string;
+        languagePreference: string;
+      } = {
+        query: researchQuery,
+        languagePreference: languagePreference,
+      };
+      // Voeg description of contextQuery conditioneel toe
+      if (contextQuery) {
+        requestBody.contextQuery = contextQuery;
+      } else if (researchDescription) {
+        requestBody.description = researchDescription;
+      }
+      // ---> NIEUW: Log de waarden vlak voor de API call <---
+      console.log('[DEBUG] handleDeepResearch - Values before invoke:', {
+        selectedSubtaskTitle, 
+        researchQuery, 
+        researchDescription, 
+        contextQuery,
+        languagePreference,
+        requestBody 
+      });
+      // ---> EINDE NIEUW <---
       
       const { data, error } = await supabase.functions.invoke('deep-research', {
-        body: { 
-          query: researchQuery, 
-          description: task.description || "",
-          languagePreference: languagePreference // Stuur taalvoorkeur mee
-        },
+        body: requestBody, 
       });
 
       if (error) throw error;
+
+      // ---> NIEUW: Check of onderzoek geannuleerd is <---
+      if (researchCancelled) {
+        console.log("[DEBUG] Research was cancelled by user. Discarding result.");
+        return; // Stop verwerking als geannuleerd
+      }
+      // ---> EINDE NIEUW <---
 
       const resultMessage: Message = {
         role: "assistant",
@@ -653,8 +788,22 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
     } finally {
       setIsLoading(false);
       setIsResearching(false);
+       // ---> NIEUW: Reset cancel state ook in finally <---
+       setResearchCancelled(false);
+       // ---> EINDE NIEUW <---
     }
   };
+
+  // ---> NIEUW: Functie voor annuleren <---
+  const handleCancelResearch = () => {
+    console.log("[DEBUG] Cancelling research...");
+    setResearchCancelled(true); // Zet de vlag
+    setIsResearching(false); // Stop de laadindicator
+    setIsLoading(false); // Stop ook algemene laadindicator
+    // Optioneel: Toon een toast
+    toast({ title: "Onderzoek Geannuleerd", description: "Het ophalen van onderzoeksresultaten is gestopt.", variant: "default" });
+  };
+  // ---> EINDE NIEUW <---
 
   // Function to clear chat history
   const handleClearHistory = async () => {
@@ -684,7 +833,12 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
         timestamp: Date.now(),
         messageType: 'system'
        };
-      setMessages([initialMessage]);
+      // Filter de huidige berichten: behoud de initialMessage (als die er is) 
+      // en alle berichten die een notitie zijn (type 'note_saved') of opgeslagen onderzoek ('saved_research_display').
+      setMessages(prevMessages => [
+          initialMessage, 
+          ...prevMessages.filter(msg => msg.messageType === 'note_saved' || msg.messageType === 'saved_research_display')
+      ]);
 
       toast({ title: "Geschiedenis gewist", description: "Chatgeschiedenis voor deze taak is verwijderd." });
 
@@ -734,6 +888,84 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
     toast({ title: "Export Gestart", description: "Chat wordt gedownload als tekstbestand." });
   };
 
+  // ---> NIEUW: Function to delete a note <--- 
+  const handleDeleteNote = async (noteIdToDelete: string) => {
+    if (!noteIdToDelete) return;
+
+    // Optimistic UI update: Remove message immediately
+    const originalMessages = messages;
+    setMessages(prev => prev.filter(msg => msg.dbId !== noteIdToDelete));
+
+    try {
+      const { error } = await supabase
+        .from('task_notes')
+        .delete()
+        .eq('id', noteIdToDelete);
+
+      if (error) throw error;
+
+      toast({ 
+        title: "Notitie Verwijderd", 
+        description: "De notitie is succesvol verwijderd."
+      });
+
+    } catch (error: unknown) {
+      console.error('Error deleting note:', error);
+      // Revert optimistic update on error
+      setMessages(originalMessages);
+      let errorDescription = "Kon de notitie niet verwijderen.";
+      if (error instanceof Error) {
+        errorDescription = error.message;
+      }
+      toast({
+        variant: "destructive",
+        title: "Verwijderen Mislukt",
+        description: errorDescription,
+      });
+    } 
+    // Geen setIsLoading nodig hier, tenzij we een aparte laadindicator per bericht willen
+  };
+  // ---> EINDE NIEUW <--- 
+
+  // ---> NIEUW: Function to delete saved research <--- 
+  const handleDeleteResearch = async (researchIdToDelete: string) => {
+    if (!researchIdToDelete) return;
+
+    // Optimistic UI update: Remove message immediately
+    const originalMessages = messages;
+    setMessages(prev => prev.filter(msg => msg.dbId !== researchIdToDelete || msg.messageType !== 'saved_research_display'));
+
+    try {
+      // Roep de nieuwe Edge Function aan
+      const { error } = await supabase.functions.invoke('delete-research', {
+        body: { researchId: researchIdToDelete }
+      });
+
+      if (error) throw error; // Gooi de fout zodat de catch het oppakt
+
+      toast({ 
+        title: "Onderzoek Verwijderd", 
+        description: "Het opgeslagen onderzoek is succesvol verwijderd."
+      });
+
+    } catch (error: unknown) {
+      console.error('Error deleting saved research:', error);
+      // Revert optimistic update on error
+      setMessages(originalMessages);
+      let errorDescription = "Kon het opgeslagen onderzoek niet verwijderen.";
+      if (error instanceof Error) {
+        errorDescription = error.message;
+      }
+      toast({
+        variant: "destructive",
+        title: "Verwijderen Mislukt",
+        description: errorDescription,
+      });
+    } 
+    // Optioneel: setIsLoading state toevoegen als het lang duurt?
+  };
+  // ---> EINDE NIEUW <--- 
+
   return (
     <>
       <div className="chat-window p-4 flex-grow relative overflow-y-auto scrollbar-thin">
@@ -752,67 +984,98 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
             key={index} 
             className={`group flex items-start gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}
           >
-            {message.role === 'assistant' && (
+            {/* Conditionally render icons based on role and messageType */}
+            {/* Toon Bot icon voor assistent, BEHALVE voor opgeslagen onderzoek */}
+            {(message.role === 'assistant' && message.messageType !== 'saved_research_display') && (
               <div className="mt-1 flex-shrink-0">
                 <Bot className="h-5 w-5 text-muted-foreground" /> 
+              </div>
+            )}
+            {/* Toon BookOpen icon ALLEEN voor opgeslagen onderzoek */}
+            {message.messageType === 'saved_research_display' && (
+              <div className="mt-1 flex-shrink-0">
+                <BookOpen className="h-5 w-5 text-purple-400" /> 
               </div>
             )}
             <div
               className={`chat-message relative p-3 rounded-lg max-w-[80%] group ${ 
                 message.messageType === 'note_saved' 
                   ? "chat-message-note-saved"
-                  : message.role === "user"
-                    ? "chat-message-user"
-                    : message.messageType === 'research_result' 
-                      ? "chat-message-research"
-                      : "chat-message-ai" // Default AI style
+                  : message.messageType === 'saved_research_display'
+                    ? "chat-message-saved-research"
+                    : message.role === "user"
+                      ? "chat-message-user"
+                      : message.messageType === 'research_result' 
+                        ? "chat-message-research"
+                        : "chat-message-ai"
               }`}
             >
-              {message.messageType === 'note_saved' ? (
-                <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+              {(message.messageType === 'note_saved' || message.messageType === 'saved_research_display') ? (
+                <div className="text-sm">
+                  <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                      components={{
+                        p: ({node, ...props}) => <p className="mb-2" {...props} />,
+                        h1: ({node, ...props}) => <h1 className="text-xl font-semibold mb-3 mt-4" {...props} />,
+                        h2: ({node, ...props}) => <h2 className="text-lg font-semibold mb-3 mt-4" {...props} />,
+                        h3: ({node, ...props}) => <h3 className="text-base font-semibold mb-2 mt-4" {...props} />,
+                        ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 ml-1" {...props} />,
+                        ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 ml-1" {...props} />,
+                        li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                        a: ({node, ...props}) => <a className="text-blue-400 hover:underline" {...props} target="_blank" rel="noopener noreferrer" /> 
+                      }}
+                    >
+                      {message.content} 
+                  </ReactMarkdown>
+                </div>
               ) : message.role === 'assistant' ? (
                 <div className="text-sm">
                   <ReactMarkdown 
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeRaw]}
                     components={{
-                      // Voeg expliciete marges toe aan paragrafen en koppen
                       p: ({node, ...props}) => <p className="mb-2" {...props} />,
-                      h1: ({node, ...props}) => <h1 className="text-xl font-semibold mb-3 mt-1" {...props} />,
-                      h2: ({node, ...props}) => <h2 className="text-lg font-semibold mb-3 mt-1" {...props} />,
-                      h3: ({node, ...props}) => <h3 className="text-base font-semibold mb-2 mt-1" {...props} />,
-                      // Voeg eventueel styling toe aan ul/li als nodig
+                      h1: ({node, ...props}) => <h1 className="text-xl font-semibold mb-3 mt-4" {...props} />,
+                      h2: ({node, ...props}) => <h2 className="text-lg font-semibold mb-3 mt-4" {...props} />,
+                      h3: ({node, ...props}) => <h3 className="text-base font-semibold mb-2 mt-4" {...props} />,
                       ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 ml-1" {...props} />,
+                      ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 ml-1" {...props} />,
                       li: ({node, ...props}) => <li className="mb-1" {...props} />,
-                      // Linkjes openen in nieuw tabblad
                       a: ({node, ...props}) => <a className="text-blue-400 hover:underline" {...props} target="_blank" rel="noopener noreferrer" /> 
                     }}
                   >
                     {message.content}
                   </ReactMarkdown>
-                  {message.messageType === 'research_result' && message.citations && message.citations.length > 0 && (
-                    <div className="mt-4 border-t border-white/10 pt-2">
-                      <h4 className="text-xs font-semibold mb-1 text-muted-foreground">Bronnen:</h4>
-                      <ol className="list-decimal list-inside text-xs space-y-1">
-                        {message.citations.map((url, index) => (
-                          <li key={index}>
-                            <a 
-                              href={url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-blue-400 hover:underline break-all"
-                            >
-                              {url}
-                            </a>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
                 </div>
               ) : (
                 <p className="whitespace-pre-wrap text-sm">{message.content}</p>
               )}
+
+              {/* ---> NIEUW: Toon citaties voor ELK bericht dat ze heeft <---
+              Dit blok staat nu BUITEN de conditionele rendering voor messageType/role,
+              dus het wordt getoond als message.citations bestaat, ongeacht bericht type. */}
+              {message.citations && message.citations.length > 0 && (
+                <div className="mt-4 border-t border-white/10 pt-2">
+                  <h4 className="text-xs font-semibold mb-1 text-muted-foreground">Bronnen:</h4>
+                  <ol className="list-decimal list-inside text-xs space-y-1">
+                    {message.citations.map((url, index) => (
+                      <li key={index}>
+                        <a 
+                          href={url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:underline break-all"
+                        >
+                          {url}
+                        </a>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+              {/* ---> EINDE NIEUW <--- */}
+
               {message.timestamp && (
                 <div className="text-xs opacity-60 mt-1 text-right">
                   {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -821,9 +1084,8 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
               <Button 
                 variant="ghost"
                 size="icon"
-                className={`absolute h-5 w-5 opacity-0 group-hover:opacity-75 transition-opacity duration-200 text-current hover:bg-transparent ${ // Reduced hover opacity
-                  // User icon left, AI icon right (adjusted further)
-                  message.role === 'user' ? 'bottom-1.5 left-1.5' : 'bottom-1.5 right-12' // Moved AI icon further left again
+                className={`absolute h-5 w-5 opacity-0 group-hover:opacity-75 transition-opacity duration-200 text-current hover:bg-transparent ${
+                  message.role === 'user' ? 'bottom-1.5 left-1.5' : 'bottom-1.5 right-12'
                 }`} 
                 onClick={() => handleCopy(message.content)}
                 title="Kopieer bericht"
@@ -831,39 +1093,76 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
                 <Copy className="h-4 w-4" />
                 <span className="sr-only">Kopieer bericht</span>
               </Button>
-              {/* --- NIEUW: Save button for research results --- */}
               {message.messageType === 'research_result' && (
                 <Button
                   variant="ghost"
                   size="icon"
                   className={`absolute h-5 w-5 opacity-0 group-hover:opacity-75 transition-opacity duration-200 text-current hover:bg-transparent ${
-                    message.role === 'user' ? 'bottom-1.5 left-8' : 'bottom-1.5 right-[4.5rem]' // Position adjusted to 4.5rem (18 units)
+                    message.role === 'user' ? 'bottom-1.5 left-8' : 'bottom-1.5 right-[4.5rem]'
                   }`}
                   onClick={() => handleSaveResearch(message)}
                   title="Sla onderzoek op"
-                  disabled={isLoading} // Disable while any loading is active
+                  disabled={isLoading}
                 >
                   <Save className="h-4 w-4" />
                   <span className="sr-only">Sla onderzoek op</span>
                 </Button>
               )}
-              {/* --- Einde NIEUW --- */}
+              {message.messageType === 'note_saved' && message.dbId && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`absolute h-5 w-5 opacity-0 group-hover:opacity-75 transition-opacity duration-200 text-current hover:bg-transparent hover:text-foreground ${
+                    'bottom-1.5 left-8' 
+                  }`}
+                  onClick={() => handleDeleteNote(message.dbId!)}
+                  title="Verwijder notitie"
+                  disabled={isLoading} 
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="sr-only">Verwijder notitie</span>
+                </Button>
+              )}
+              {message.messageType === 'saved_research_display' && message.dbId && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`absolute h-5 w-5 opacity-0 group-hover:opacity-75 transition-opacity duration-200 text-current hover:bg-transparent hover:text-foreground ${
+                    'bottom-1.5 right-[4.5rem]'
+                  }`}
+                  onClick={() => handleDeleteResearch(message.dbId!)}
+                  title="Verwijder onderzoek"
+                  disabled={isLoading}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="sr-only">Verwijder onderzoek</span>
+                </Button>
+              )}
             </div>
           </div>
         ))}
         {isLoading && (
-          <div className="group flex items-start gap-2 justify-start mb-4"> {/* Outer container */}
-             <div className="mt-1 flex-shrink-0"> {/* Icon container */}
+          <div className="group flex items-start gap-2 justify-start mb-4">
+             <div className="mt-1 flex-shrink-0">
                <Bot className="h-5 w-5 text-muted-foreground" />
              </div>
-            <div className="chat-message chat-message-ai p-3 rounded-lg max-w-[80%]"> {/* Bubble */}
-              <div className="flex items-center gap-2"> {/* Inner content */}
+            <div className="chat-message chat-message-ai p-3 rounded-lg max-w-[80%]">
+              <div className="flex items-center gap-2">
                 <GradientLoader size="sm" />
                 <p>{isResearching ? "Aan het onderzoeken..." : "Aan het typen..."}</p>
               </div>
             </div>
           </div>
         )}
+        {/* ---> NIEUW: Toon Annuleerknop tijdens onderzoek <--- */}
+        {isResearching && (
+           <div className="flex justify-center my-2">
+              <Button variant="destructive" size="sm" onClick={handleCancelResearch}>
+                Annuleer Onderzoek
+              </Button>
+           </div>
+        )}
+        {/* ---> EINDE NIEUW <--- */}
         <div ref={messagesEndRef} />
       </div>
       
@@ -948,12 +1247,10 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="glass-effect min-w-[180px]">
               <DropdownMenuItem onClick={handleClearHistory} disabled={isLoading}>
-                {/* Optional: Add an icon like Trash2 */} 
                 Wis Geschiedenis
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleExportChat}>
-                {/* Optional: Add an icon like Download */} 
                 Exporteer Gesprek (.txt)
               </DropdownMenuItem>
             </DropdownMenuContent>

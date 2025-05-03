@@ -370,8 +370,6 @@ export default function TaskDetail() {
               <TaskAIChat
                 task={task}
                 selectedSubtaskTitle={selectedSubtaskTitle}
-                onSubtaskHandled={() => setSelectedSubtaskTitle(null)}
-                className="flex-grow min-h-0"
               />
             )}
           </Card>
