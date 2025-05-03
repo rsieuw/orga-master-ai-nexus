@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
-import { ArrowLeft, Trash2, Edit, CalendarDays, Flag, Tag, CheckCircle2, Circle, PlusCircle, Sparkles } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
@@ -40,7 +40,7 @@ import { Task, SubTask, TaskPriority } from "@/types/task";
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
-  const { getTaskById, deleteTask, isLoading: tasksLoading, updateSubtask, addSubtask, expandTask } = useTask();
+  const { getTaskById, deleteTask, isLoading: tasksLoading, updateSubtask, addSubtask, expandTask, deleteSubtask } = useTask();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -249,20 +249,13 @@ export default function TaskDetail() {
                       </Badge>
                     )}
                   </div>
-
                   <div className="mb-4"></div>
-
                   <div>
                     <h3 className="font-medium mb-2">Beschrijving</h3>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                       {task.description || "Geen beschrijving"}
                     </p>
                   </div>
-                </div>
-
-                <div className="flex-grow overflow-y-auto min-h-0 space-y-3 pr-2 
-                               scrollbar-thin scrollbar-thumb-muted-foreground 
-                               scrollbar-track-transparent scrollbar-thumb-rounded">
                   <Separator className="my-4" />
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="font-medium">Subtaken</h3>
@@ -277,22 +270,65 @@ export default function TaskDetail() {
                       {isGeneratingSubtasks ? "Genereren..." : "Genereer AI Subtaken"}
                     </Button>
                   </div>
+                </div>
+
+                <div className="flex-grow overflow-y-auto min-h-0 space-y-1.5 
+                               scrollbar-thin scrollbar-thumb-muted-foreground 
+                               scrollbar-track-transparent scrollbar-thumb-rounded">
                   {task.subtasks.length > 0 ? (
-                    <div className="space-y-3">
-                      {task.subtasks.map((subtask: SubTask) => (
-                        <div key={subtask.id} className={cn("flex items-center space-x-3 rounded-md p-2 hover:bg-muted/50", subtask.completed && "opacity-50")}>
-                          <Checkbox
-                            id={`subtask-${subtask.id}`}
-                            checked={subtask.completed}
-                            onCheckedChange={(checked: boolean | string | undefined) => handleSubtaskToggle(subtask.id, !!checked)}
-                            className={subtask.completed ? "border-primary" : ""}
-                          />
-                          <label
-                            htmlFor={`subtask-${subtask.id}`}
-                            className={cn("text-sm font-medium leading-none cursor-pointer", subtask.completed && "line-through text-muted-foreground")}
-                          >
-                            {subtask.title}
-                          </label>
+                    <div className="space-y-1.5">
+                      {task.subtasks.map((subtask: SubTask, index: number) => (
+                        <div key={subtask.id} className={cn(
+                          "group flex items-start justify-between space-x-3 rounded-md px-2 py-1.5 hover:bg-muted/50", 
+                          subtask.completed && "opacity-50"
+                        )}>
+                          <div className="flex items-start space-x-2 flex-grow">
+                            <span className="font-normal text-muted-foreground/70 w-5 text-right flex-shrink-0 text-xs pt-[3px]">{`${index + 1}.`}</span>
+                            <Checkbox
+                              id={`subtask-${subtask.id}`}
+                              checked={subtask.completed}
+                              onCheckedChange={(checked: boolean | string | undefined) => handleSubtaskToggle(subtask.id, !!checked)}
+                              className={cn(subtask.completed ? "border-primary" : "", "mt-[3px]")}
+                            />
+                            <label
+                              onClick={() => setSelectedSubtaskTitle(subtask.title)}
+                              className={cn(
+                                "text-sm font-normal leading-normal cursor-pointer hover:text-primary transition-colors", 
+                                subtask.completed && "line-through text-muted-foreground hover:text-muted-foreground/80"
+                              )}
+                            >
+                              {subtask.title}
+                            </label>
+                          </div>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
+                                aria-label={`Verwijder subtaak ${subtask.title}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-card/90 backdrop-blur-lg border border-white/5">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Subtaak verwijderen?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Weet je zeker dat je de subtaak "{subtask.title}" wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="bg-secondary/80 border-white/10">Annuleren</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteSubtask(task.id, subtask.id)}
+                                  className="bg-destructive hover:bg-destructive/90"
+                                >
+                                  Verwijderen
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       ))}
                     </div>

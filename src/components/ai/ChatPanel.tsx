@@ -13,6 +13,23 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client.ts";
 import { useTask } from "@/contexts/TaskContext.tsx";
 import { useAuth } from "@/contexts/AuthContext.tsx";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+
+// ---> NIEUW: Helper functie voor MessageType validatie <---
+const validMessageTypes = [
+  'standard', 'research_result', 'system', 'error', 'note_saved', 'action_confirm'
+] as const; // Gebruik 'as const' voor een tuple type
+
+type ValidMessageType = typeof validMessageTypes[number]; // Maak een type van de waarden
+
+function isValidMessageType(type: string | null | undefined): type is ValidMessageType {
+  if (!type) return false;
+  // Cast type naar string voor de includes check (null/undefined zijn al gefilterd)
+  return (validMessageTypes as ReadonlyArray<string>).includes(type);
+}
+// ---> EINDE NIEUW <---
 
 interface ChatPanelProps {
   task: Task;
@@ -35,13 +52,14 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
   const [isLoading, setIsLoading] = useState(true);
   const [isNoteMode, setIsNoteMode] = useState(false);
   const [selectedModel, setSelectedModel] = useState("default");
+  const [isResearching, setIsResearching] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isLoading]);
 
   // Function to save a message to the database
   const saveMessageToDb = async (message: Message) => {
@@ -113,24 +131,18 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
         if (notesError) throw notesError;
 
         // Define interfaces for fetched data to avoid 'any'
-        interface DbMessage {
-          role: 'user' | 'assistant';
-          content: string;
-          created_at: string;
-          message_type: Message['messageType'];
-        }
         interface DbNote {
            content: string;
            created_at: string;
         }
 
         // Map chat messages
-        const loadedChatMessages: Message[] = (dbMessages || []).map((msg: DbMessage) => ({
-          role: msg.role,
+        const loadedChatMessages: Message[] = (dbMessages || []).map((msg) => ({
+          role: msg.role as 'user' | 'assistant',
           content: msg.content,
           timestamp: new Date(msg.created_at).getTime(),
-          messageType: msg.message_type
-        }));
+          messageType: isValidMessageType(msg.message_type) ? msg.message_type : undefined
+        })) as Message[];
 
         // Map notes
         const loadedNotes: Message[] = (dbNotes || []).map((note: DbNote) => ({
@@ -248,8 +260,116 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
       // --- AI Chat Logic ---
       const userMessage: Message = { role: "user", content: currentInput, timestamp: Date.now(), messageType: 'standard' };
       setMessages((prev) => [...prev, userMessage]);
-      setIsLoading(true); 
-      await saveMessageToDb(userMessage); 
+      // Save user message *before* potential AI interaction
+      await saveMessageToDb(userMessage);
+
+      // ---> Nogmaals Aangepaste Check voor Trigger Phrases (NL/EN) <---
+      const inputLower = currentInput.toLowerCase();
+
+      // Definieer keywords per taal
+      const dutchVerbs = ["genere", "maak", "splits", "deel "];
+      // Voeg 'taken' toe aan de nouns
+      const dutchNouns = ["subta", "taken"]; 
+      const englishVerbs = ["generate", "create", "split", "break "];
+      // Voeg 'tasks' toe aan de nouns
+      const englishNouns = ["subtask", "tasks"];
+
+      // Check of een van de werkwoorden aanwezig is
+      const hasDutchVerb = dutchVerbs.some(verb => inputLower.includes(verb));
+      const hasEnglishVerb = englishVerbs.some(verb => inputLower.includes(verb));
+
+      // Check of een van de zelfstandige naamwoorden aanwezig is
+      const hasDutchNoun = dutchNouns.some(noun => inputLower.includes(noun));
+      const hasEnglishNoun = englishNouns.some(noun => inputLower.includes(noun));
+
+      // Combineer de checks: (NL Werkwoord EN NL Noun) OF (EN Werkwoord EN EN Noun)
+      const requiresSubtaskGeneration = (hasDutchVerb && hasDutchNoun) || (hasEnglishVerb && hasEnglishNoun);
+
+      // Gedetailleerde logging (aangepast)
+      console.log(`[DEBUG] Checking input: "${inputLower}"`);
+      console.log(`[DEBUG] NL Check: Verb? ${hasDutchVerb}, Noun? ${hasDutchNoun}. EN Check: Verb? ${hasEnglishVerb}, Noun? ${hasEnglishNoun}.`);
+      console.log(`[DEBUG] Requires Generation? ${requiresSubtaskGeneration}`);
+
+      if (requiresSubtaskGeneration) {
+        console.log("[DEBUG] *** Subtask generation keywords DETECTED ***");
+        setIsLoading(true); // Toon laadindicator
+        try {
+          // Roep de nieuwe Edge Function aan
+          console.log(`[DEBUG] Invoking generate-subtasks for taskId: ${task.id}`); // Log function call
+          const { data: subtaskData, error: subtaskError } = await supabase.functions.invoke('generate-subtasks', {
+            body: { taskId: task.id }
+          });
+
+          console.log("[DEBUG] Response from generate-subtasks:", { subtaskData, subtaskError }); // Log response
+
+          if (subtaskError) throw subtaskError;
+          // Extra check op de structuur van subtaskData
+          if (!subtaskData || typeof subtaskData !== 'object' || !Array.isArray(subtaskData.subtasks)) {
+            console.error("[DEBUG] Invalid subtaskData structure:", subtaskData);
+            throw new Error("Ongeldige response structuur ontvangen van generate-subtasks functie.");
+          }
+
+          // Haal huidige taak data op om subtaken te mergen (via context)
+          // We gaan ervan uit dat 'task' prop up-to-date is, of we moeten opnieuw fetchen.
+          // Laten we aannemen dat task.subtasks de huidige array bevat.
+          const existingSubtasks = task.subtasks || []; 
+          const newSubtasks = subtaskData.subtasks.map((st: { title: string }) => ({ // <-- Type hier expliciet maken
+            id: crypto.randomUUID(), // Genereer een unieke ID aan de frontend kant
+            title: st.title,
+            completed: false,
+            created_at: new Date().toISOString() // Optioneel: timestamp toevoegen?
+          }));
+          
+          const combinedSubtasks = [...existingSubtasks, ...newSubtasks];
+          console.log("[DEBUG] Combined subtasks to save:", combinedSubtasks); // Log data to save
+
+          // Update de taak in de database via TaskContext
+          await updateTask(task.id, { subtasks: combinedSubtasks });
+
+          // Maak een bevestigingsbericht met expliciete HTML lijst
+          let confirmationContent = "Oké, ik heb de volgende subtaken toegevoegd:\n<ul>\n"; // Start HTML lijst
+          newSubtasks.forEach((st: { title: string }) => {
+            // Wrap elk item in <li> tags
+            confirmationContent += `  <li>${st.title}</li>\n`; 
+          });
+          confirmationContent += "</ul>"; // Sluit HTML lijst
+
+          const confirmationMessage: Message = {
+            role: "assistant",
+            content: confirmationContent,
+            timestamp: Date.now(),
+            messageType: 'action_confirm'
+          };
+          setMessages((prev) => [...prev, confirmationMessage]);
+          await saveMessageToDb(confirmationMessage);
+
+          toast({ title: "Subtaken gegenereerd en toegevoegd!" });
+          // Optioneel: Forceer refresh van taakdetails/lijst als context niet automatisch update
+
+        } catch (error) {
+          console.error("[DEBUG] Fout in generate-subtasks catch block:", error); // Log de specifieke error
+          const errorMsg = error instanceof Error ? error.message : "Onbekende fout";
+          const errorMessage: Message = { 
+            role: "assistant", 
+            content: `Sorry, het genereren van subtaken is mislukt: ${errorMsg}`,
+            timestamp: Date.now(),
+            messageType: 'error'
+          };
+          setMessages((prev) => [...prev, errorMessage]);
+          await saveMessageToDb(errorMessage); 
+          toast({ variant: "destructive", title: "Subtaak Generatie Mislukt", description: errorMsg });
+        } finally {
+          setIsLoading(false);
+        }
+        // Sla de normale chat AI aanroep over
+        return; // Belangrijk: stop hier de executie voor dit bericht
+      } else {
+        console.log("[DEBUG] Subtask generation keywords NIET gedetecteerd. Door naar normale chat.");
+      }
+      // ---> EINDE Nogmaals Aangepaste Check <---
+
+      // Als de trigger niet is gedetecteerd, ga door met de normale chat flow
+      setIsLoading(true); // Zet isLoading hier, na de check
       
       try {
         // Prepare Chat History
@@ -428,6 +548,43 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
     });
   };
 
+  // --- NIEUW: Function to save research result ---
+  const handleSaveResearch = async (message: Message) => {
+    if (message.messageType !== 'research_result' || !task?.id) return;
+    setIsLoading(true); // Show loading indicator while saving
+    try {
+      const { data, error } = await supabase.functions.invoke('save-research', {
+        body: {
+          taskId: task.id,
+          researchContent: message.content,
+          citations: message.citations
+        },
+      });
+
+      if (error) throw error;
+
+      toast({ 
+        title: "Onderzoek Opgeslagen", 
+        description: data?.message || "Het onderzoeksresultaat is opgeslagen."
+      });
+
+    } catch (error: unknown) {
+      console.error('Error calling save-research function:', error);
+      let errorDescription = "Kon het onderzoek niet opslaan.";
+      if (error instanceof Error) {
+        errorDescription = error.message;
+      }
+      toast({
+        variant: "destructive",
+        title: "Opslaan Mislukt",
+        description: errorDescription,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  // --- Einde NIEUW ---
+
   // Function to handle closing the chat view
   const handleCloseChat = () => {
     navigate('/'); // Navigeer naar de dashboard pagina
@@ -437,6 +594,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
   const handleDeepResearch = async () => {
     if (!task?.id) return; // Ensure task.id is available
     
+    setIsResearching(true);
     const researchQuery = task.title;
     const researchInitiationMessage: Message = {
       role: "assistant",
@@ -449,8 +607,16 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
     setIsLoading(true);
     
     try {
+      // Haal taalvoorkeur op, met fallback naar 'nl'
+      const languagePreference = user?.language_preference || 'nl';
+      console.log(`Starting deep research for "${researchQuery}" in language: ${languagePreference}`);
+      
       const { data, error } = await supabase.functions.invoke('deep-research', {
-        body: { query: researchQuery },
+        body: { 
+          query: researchQuery, 
+          description: task.description || "",
+          languagePreference: languagePreference // Stuur taalvoorkeur mee
+        },
       });
 
       if (error) throw error;
@@ -458,6 +624,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
       const resultMessage: Message = {
         role: "assistant",
         content: data?.researchResult || "Kon geen onderzoeksresultaten vinden.",
+        citations: data?.citations,
         timestamp: Date.now(),
         messageType: 'research_result'
       };
@@ -485,6 +652,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
       });
     } finally {
       setIsLoading(false);
+      setIsResearching(false);
     }
   };
 
@@ -602,6 +770,46 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
             >
               {message.messageType === 'note_saved' ? (
                 <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+              ) : message.role === 'assistant' ? (
+                <div className="text-sm">
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw]}
+                    components={{
+                      // Voeg expliciete marges toe aan paragrafen en koppen
+                      p: ({node, ...props}) => <p className="mb-2" {...props} />,
+                      h1: ({node, ...props}) => <h1 className="text-xl font-semibold mb-3 mt-1" {...props} />,
+                      h2: ({node, ...props}) => <h2 className="text-lg font-semibold mb-3 mt-1" {...props} />,
+                      h3: ({node, ...props}) => <h3 className="text-base font-semibold mb-2 mt-1" {...props} />,
+                      // Voeg eventueel styling toe aan ul/li als nodig
+                      ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 ml-1" {...props} />,
+                      li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                      // Linkjes openen in nieuw tabblad
+                      a: ({node, ...props}) => <a className="text-blue-400 hover:underline" {...props} target="_blank" rel="noopener noreferrer" /> 
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                  {message.messageType === 'research_result' && message.citations && message.citations.length > 0 && (
+                    <div className="mt-4 border-t border-white/10 pt-2">
+                      <h4 className="text-xs font-semibold mb-1 text-muted-foreground">Bronnen:</h4>
+                      <ol className="list-decimal list-inside text-xs space-y-1">
+                        {message.citations.map((url, index) => (
+                          <li key={index}>
+                            <a 
+                              href={url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:underline break-all"
+                            >
+                              {url}
+                            </a>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <p className="whitespace-pre-wrap text-sm">{message.content}</p>
               )}
@@ -618,18 +826,41 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
                   message.role === 'user' ? 'bottom-1.5 left-1.5' : 'bottom-1.5 right-12' // Moved AI icon further left again
                 }`} 
                 onClick={() => handleCopy(message.content)}
+                title="Kopieer bericht"
               >
                 <Copy className="h-4 w-4" />
                 <span className="sr-only">Kopieer bericht</span>
               </Button>
+              {/* --- NIEUW: Save button for research results --- */}
+              {message.messageType === 'research_result' && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`absolute h-5 w-5 opacity-0 group-hover:opacity-75 transition-opacity duration-200 text-current hover:bg-transparent ${
+                    message.role === 'user' ? 'bottom-1.5 left-8' : 'bottom-1.5 right-[4.5rem]' // Position adjusted to 4.5rem (18 units)
+                  }`}
+                  onClick={() => handleSaveResearch(message)}
+                  title="Sla onderzoek op"
+                  disabled={isLoading} // Disable while any loading is active
+                >
+                  <Save className="h-4 w-4" />
+                  <span className="sr-only">Sla onderzoek op</span>
+                </Button>
+              )}
+              {/* --- Einde NIEUW --- */}
             </div>
           </div>
         ))}
         {isLoading && (
-          <div className="chat-message chat-message-ai">
-            <div className="flex items-center gap-2">
-              <GradientLoader size="sm" />
-              <p>Aan het typen...</p>
+          <div className="group flex items-start gap-2 justify-start mb-4"> {/* Outer container */}
+             <div className="mt-1 flex-shrink-0"> {/* Icon container */}
+               <Bot className="h-5 w-5 text-muted-foreground" />
+             </div>
+            <div className="chat-message chat-message-ai p-3 rounded-lg max-w-[80%]"> {/* Bubble */}
+              <div className="flex items-center gap-2"> {/* Inner content */}
+                <GradientLoader size="sm" />
+                <p>{isResearching ? "Aan het onderzoeken..." : "Aan het typen..."}</p>
+              </div>
             </div>
           </div>
         )}

@@ -17,8 +17,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Parse the request body to get the query
-    const { query } = await req.json();
+    // Parse the request body to get the query, description, and language preference
+    const { query, description, languagePreference = 'nl' } = await req.json();
 
     if (!query) {
       return new Response(
@@ -46,8 +46,28 @@ Deno.serve(async (req) => {
 
     const perplexityUrl = "https://api.perplexity.ai/chat/completions";
 
+    // Declareer variabelen vóór de try-catch
+    let researchResult = "Kon geen onderzoeksresultaten vinden.";
+    let citations: string[] | undefined = undefined;
+
+    // --- Vertaalde Koppen --- 
+    let headers = {
+      summary: "Key Concept Summary",
+      challenges: "Potential Challenges or Considerations",
+      steps: "Actionable First Steps",
+      resources: "Relevant Resources (Optional)"
+    };
+    if (languagePreference === 'nl') {
+      headers = {
+        summary: "Kernconcept Samenvatting",
+        challenges: "Mogelijke Uitdagingen of Overwegingen",
+        steps: "Concrete Eerste Stappen",
+        resources: "Relevante Bronnen (Optioneel)"
+      };
+    }
+    // --- Einde Vertaalde Koppen ---
+
     // --- Perplexity API call ---
-    let researchResult = "Kon geen onderzoeksresultaten vinden."; // Default value
     try {
       const response = await fetch(perplexityUrl, {
         method: "POST",
@@ -58,8 +78,26 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           model: "sonar-pro", // Or another suitable model like sonar-medium-online
           messages: [
-            { role: "system", content: "Provide a concise and informative answer based on your search results." },
-            { role: "user", content: query },
+            {
+              role: "system",
+              content: `You are an expert research assistant helping a user understand and execute a task in their project management workflow.
+
+Task Title: "${query}"
+Task Description: "${description || 'No description provided.'}"
+
+Based on your search results and understanding of the core topic, provide a structured and practical response to help the user move forward with this task. Your response should include the following sections:
+
+1.  **${headers.summary}** – Briefly explain the main topic or concept behind the task in simple terms.
+2.  **${headers.challenges}** – Identify common pitfalls, dependencies, or factors the user should watch out for. **Use markdown bullet points (e.g., \`- Challenge one\`) for each item.**
+3.  **${headers.steps}** – List 2–4 clear and specific actions the user can take right away to begin working on the task. **Use markdown numbered list format (e.g., \`1. Step one\`) for each step.**
+4.  **${headers.resources}** – If applicable, suggest one or two high-quality resources (articles, tools, or references) that directly support this task. **Format these as markdown links: \`[Resource Title](URL)\`**. 
+
+Keep your response concise, practical, and focused on helping the user make meaningful progress within their project.
+
+**Respond in the following language: ${languagePreference}.**`
+            },
+            // Voeg een user message toe als laatste item, zoals vereist door Perplexity
+            { role: "user", content: `Provide research based on the task: "${query}"` }
           ],
         }),
       });
@@ -75,7 +113,15 @@ Deno.serve(async (req) => {
       if (result.choices && result.choices.length > 0 && result.choices[0].message && result.choices[0].message.content) {
         researchResult = result.choices[0].message.content;
       } else {
-        console.warn("Unexpected response structure from Perplexity:", result);
+        console.warn("Unexpected response structure from Perplexity (content):", result);
+      }
+
+      // Extract citations if available
+      if (result.citations && Array.isArray(result.citations)) {
+        citations = result.citations.filter((c: unknown): c is string => typeof c === 'string');
+        console.log(`Extracted ${citations.length} citations.`);
+      } else {
+        console.log("No citations array found in Perplexity response.");
       }
 
     } catch (apiError) {
@@ -93,6 +139,7 @@ Deno.serve(async (req) => {
 
     const data = {
       researchResult: researchResult,
+      citations: citations
     };
 
     return new Response(
@@ -122,6 +169,6 @@ Deno.serve(async (req) => {
   curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/deep-research' \
     --header 'Authorization: Bearer YOUR_SUPABASE_ANON_KEY' \
     --header 'Content-Type: application/json' \
-    --data '{"query":"Your research topic here"}'
+    --data '{"query":"Your research topic here", "description":"Optional description", "languagePreference":"en"}'
 
 */

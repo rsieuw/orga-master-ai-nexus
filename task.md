@@ -77,4 +77,4 @@
 - ❌ **[UI] Wit Thema:**
   - Implementeer een licht/wit thema als alternatief voor het donkere thema.
 - ❌ **[FEATURE] Sub-subtaken:**
-  - Sta toe dat subtaken verder worden onderverdeeld in sub-subtaken. 
+  - Sta toe dat subtaken verder worden onderverdeeld in sub-subtaken.

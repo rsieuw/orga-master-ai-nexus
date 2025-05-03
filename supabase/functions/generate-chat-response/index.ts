@@ -73,7 +73,7 @@ serve(async (req) => {
     }
 
     // 5. Prepare Prompt and Parameters for OpenAI
-    let baseSystemPrompt = `You are a helpful AI assistant specialized in task management for the 'OrgaMaster AI' application. Your goal is to understand user requests about a specific task and potentially manage its subtasks or the main task itself. Respond ONLY in ${preferredLanguage}.`;
+    let baseSystemPrompt = `You are a helpful AI assistant specialized in task management for the 'OrgaMaster AI' application. Your goal is to understand user requests about a specific task and potentially manage its subtasks or the main task itself. Respond ONLY in ${preferredLanguage}. The ID of the current main task is ${taskId}.`;
     let temperature = 0.5;
 
     // Add mode-specific instructions
@@ -104,9 +104,8 @@ If the user asks you to rename or update the title of the main task:
 `;
 
     // --- Add Subtask Management Instructions ---
-    const subtaskInstructions = `
-You can manage subtasks based on the user's request **if they explicitly mention 'subtask'**. The current subtasks for this task are:
-${currentSubtasks.length > 0 ? JSON.stringify(currentSubtasks) : "No subtasks currently exist."}
+    const subtaskInstructions = `\
+You can manage subtasks based on the user's request **if they explicitly mention 'subtask'**. The current subtasks for this task (ID: ${taskId}) are:\n${currentSubtasks.length > 0 ? JSON.stringify(currentSubtasks) : "No subtasks currently exist."}
 
 If the user **explicitly asks to add, update, or delete a 'subtask'**:
 1. Acknowledge the request in your natural language response.
@@ -115,7 +114,7 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
    - For updating title: { "action": "UPDATE_SUBTASK", "payload": { "subtaskId": "ID_OF_SUBTASK_TO_UPDATE", "updates": { "title": "Updated Title" } } }
    - For completing: { "action": "UPDATE_SUBTASK", "payload": { "subtaskId": "ID_OF_SUBTASK_TO_COMPLETE", "updates": { "completed": true } } }
    - For deleting: { "action": "DELETE_SUBTASK", "payload": { "subtaskId": "ID_OF_SUBTASK_TO_DELETE" } }
-   - For deleting ALL subtasks: { "action": "DELETE_ALL_SUBTASKS", "payload": { "taskId": "ID_OF_THE_MAIN_TASK" } }
+   - For deleting ALL subtasks: { "action": "DELETE_ALL_SUBTASKS", "payload": { "taskId": "${taskId}" } }
 3. Use the provided subtask IDs when generating the payload for update/delete actions. If the user refers to a subtask by title, find the corresponding ID from the list above. If multiple match, ask for clarification instead of performing an action.
 4. **Only include the 'action' and 'payload' fields if you are actually performing a subtask modification based on an explicit 'subtask' request.** For regular chat or requests about the main task, only return the 'response' field.
 5. Ensure the 'response' field always contains your user-facing text answer.
