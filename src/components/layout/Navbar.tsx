@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plus, User, LogOut } from "lucide-react";
+import { Plus, User, LogOut, Settings, CircleUserRound, Shield } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -14,7 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
   DialogTrigger,
   DialogPortal,
 } from "@/components/ui/dialog";
@@ -91,15 +91,26 @@ export default function Navbar() {
                     </span>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <Link to="/profile" className="flex w-full">
+                    <Link to="/profile" className="flex w-full items-center">
+                      <CircleUserRound className="mr-2 h-4 w-4" />
                       Profiel
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <Link to="/settings" className="flex w-full">
+                    <Link to="/settings" className="flex w-full items-center">
+                      <Settings className="mr-2 h-4 w-4" />
                       Instellingen
                     </Link>
                   </DropdownMenuItem>
+                  {user?.role === 'admin' && (
+                    <DropdownMenuItem>
+                      <Link to="/admin" className="flex w-full items-center">
+                        <Shield className="mr-2 h-4 w-4" />
+                        Admin
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => logout()}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Uitloggen

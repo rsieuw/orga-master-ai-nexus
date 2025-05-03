@@ -18,6 +18,11 @@ import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
+// Importeer de nieuwe admin componenten
+import AdminRouteGuard from "./components/auth/AdminRouteGuard";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+
 const queryClient = new QueryClient();
 
 // New component to handle conditional rendering based on auth loading state
@@ -49,6 +54,15 @@ const AppContent = () => {
             <Route path="/task/edit/:id" element={<TaskForm />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/profile" element={<Profile />} />
+            
+            {/* Admin Routes */}
+            <Route element={<AdminRouteGuard />}>
+              <Route path="/admin" element={<AdminDashboardPage />} />
+              {/* Voeg hier toekomstige admin routes toe, bv.: */}
+              <Route path="/admin/users" element={<AdminUsersPage />} />
+              {/* <Route path="/admin/features" element={<AdminFeaturesPage />} /> */}
+            </Route>
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

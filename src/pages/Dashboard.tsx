@@ -1,10 +1,14 @@
 // import React from 'react'; // Verwijderd, niet meer nodig na vervangen Fragment
-import { useTask } from "@/contexts/TaskContext";
-import { useAuth } from "@/contexts/AuthContext";
-import TaskCard from "@/components/task/TaskCard";
-import AppLayout from "@/components/layout/AppLayout";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Task, TasksByDate, TaskPriority } from "@/types/task";
+import React from 'react'; // Add React import for React.isValidElement
+import { useTask } from "@/contexts/TaskContext.tsx";
+import { useAuth } from "@/contexts/AuthContext.tsx";
+import TaskCard from "@/components/task/TaskCard.tsx";
+import AppLayout from "@/components/layout/AppLayout.tsx";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
+import { Task, TasksByDate, TaskPriority } from "@/types/task.ts";
+import { Button } from "@/components/ui/button.tsx";
+import { Link } from "react-router-dom";
+import { Plus } from 'lucide-react'; // Import Plus icon
 
 const getCategoryTitle = (category: keyof TasksByDate): string => {
   switch (category) {
@@ -46,12 +50,12 @@ export default function Dashboard() {
 
   // allTasksOrdered wordt nu gemaakt met de gesorteerde groepen
   const allTasksOrdered: { task: Task; category: keyof TasksByDate }[] = [
-    ...taskGroups.overdue.map(task => ({ task, category: 'overdue' as const })),
-    ...taskGroups.today.map(task => ({ task, category: 'today' as const })),
-    ...taskGroups.tomorrow.map(task => ({ task, category: 'tomorrow' as const })),
-    ...taskGroups.dayAfterTomorrow.map(task => ({ task, category: 'dayAfterTomorrow' as const })),
-    ...taskGroups.nextWeek.map(task => ({ task, category: 'nextWeek' as const })),
-    ...taskGroups.later.map(task => ({ task, category: 'later' as const })),
+    ...taskGroups.overdue.map((task: Task) => ({ task, category: 'overdue' as const })),
+    ...taskGroups.today.map((task: Task) => ({ task, category: 'today' as const })),
+    ...taskGroups.tomorrow.map((task: Task) => ({ task, category: 'tomorrow' as const })),
+    ...taskGroups.dayAfterTomorrow.map((task: Task) => ({ task, category: 'dayAfterTomorrow' as const })),
+    ...taskGroups.nextWeek.map((task: Task) => ({ task, category: 'nextWeek' as const })),
+    ...taskGroups.later.map((task: Task) => ({ task, category: 'later' as const })),
   ];
 
   // --- Logica voor 4-4-5 kolomverdeling ---
@@ -61,7 +65,6 @@ export default function Dashboard() {
   const totalTasks = allTasksOrdered.length;
   
   const baseTasks = Math.floor(totalTasks / numColumns); 
-  const extraTasks = totalTasks % numColumns;          
   const columnBreak1 = baseTasks; 
   const columnBreak2 = baseTasks * 2; 
 
@@ -130,23 +133,34 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {totalTasks > 0 ? (
           columns.map((columnItems, colIndex) => (
-            <div key={colIndex} className="flex flex-col gap-0"> 
-              {columnItems.map((item, itemIndex) => {
-                const isFirstItemInLaterColumn = itemIndex === 0 && colIndex > 0;
-                const isCardWrapper = typeof item.key === 'string' && !item.key.startsWith('title-'); 
+            <div key={colIndex} className="flex flex-col gap-0">
+              {columnItems.map((item) => {
+                // Bepaal of het de eerste kaart is in een latere kolom
+                const isCardDiv = React.isValidElement(item) && item.type === 'div';
+                const isFirstItemInColumn = columnItems[0] === item;
+                const needsAlignment = isFirstItemInColumn && colIndex > 0 && isCardDiv;
 
-                const alignmentClass = (isFirstItemInLaterColumn && isCardWrapper) ? "mt-[2.5rem]" : ""; 
-
-                if (alignmentClass) {
-                    return <div key={item.key} className={alignmentClass}>{item}</div>;
+                if (needsAlignment) {
+                  // Wikkel de kaart-div in een div met de margin
+                  return <div className="mt-[2.5rem]" key={(item as React.ReactElement).key}>{item}</div>;
                 } else {
-                    return item; 
+                  // Geef de titel of kaart-div direct weer
+                  return item;
                 }
               })}
             </div>
           ))
         ) : (
-          <p className="text-muted-foreground col-span-1 md:col-span-3">Je hebt nog geen taken.</p>
+          <div className="text-center col-span-1 md:col-span-3 mt-8">
+            <p className="text-muted-foreground mb-4">Je hebt nog geen taken.</p>
+            <Link to="/new-task">
+              {/* Added size="lg" and Plus icon */}
+              <Button size="lg" className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white">
+                <Plus className="mr-2 h-5 w-5" /> {/* Icon added */} 
+                Nieuwe Taak Toevoegen
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
     </AppLayout>

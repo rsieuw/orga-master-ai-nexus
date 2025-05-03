@@ -34,9 +34,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "unstable": [
-    "sloppy-imports"
-  ],
   // Optioneel: Als je wilt dat Deno de compiler opties van tsconfig.json respecteert
   // "compilerOptions": {
   //   "jsx": "react-jsx",

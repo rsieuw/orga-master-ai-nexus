@@ -5,10 +5,14 @@ import { renderWithProviders } from '@/test/utils';
 import Navbar from './Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Mock de AuthContext hook
-vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: vi.fn(),
-}));
+// Mock de AuthContext hook, maar behoud de originele provider
+vi.mock('@/contexts/AuthContext', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/contexts/AuthContext')>();
+  return {
+    ...original, // Exporteer alle originele onderdelen (inclusief AuthProvider)
+    useAuth: vi.fn(), // Overschrijf alleen useAuth met de mock
+  };
+});
 
 describe('Navbar', () => {
   describe('Niet-geauthenticeerde gebruiker', () => {

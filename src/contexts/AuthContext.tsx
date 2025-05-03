@@ -1,31 +1,34 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { User as SupabaseUser, Session, AuthChangeEvent, AuthError } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client.ts"; // Corrected path
-// import { supabase } from "../integrations/supabase/client"; // Use relative path
-import { useToast } from "@/hooks/use-toast.ts"; // Corrected path
-import { GradientLoader } from "@/components/ui/loader.tsx"; // Corrected path
-import { Database } from "@/integrations/supabase/types.ts"; // Corrected path
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { Session, AuthChangeEvent } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client.ts";
+import { useToast } from "@/hooks/use-toast.ts";
 
-// This is a placeholder until Supabase integration
-// This is a placeholder until Supabase integration
-export type UserRole = "admin" | "free" | "paid";
+export type UserRole = "admin" | "paid" | "free";
 
-// Update Profile type to include language_preference
-type Profile = Database['public']['Tables']['profiles']['Row'] & {
-  language_preference?: string | null; // Add explicitly if not in generated types yet
-};
-
-// Update UserProfile to include language_preference
-export interface UserProfile extends Profile {
+export interface UserProfile {
   id: string;
   email: string;
-  name: string | null; // Allow null for name
+  name: string | null;
   role: UserRole;
-  avatar_url: string | null; // Add avatar_url back
-  language_preference: string; // Make non-null in context, default to 'nl'
+  avatar_url: string | null;
+  language_preference: string;
+  created_at: string;
+  updated_at: string;
+  status?: string;
 }
 
-interface AuthContextProps {
+interface FetchedProfileData {
+    id: string;
+    name: string | null;
+    role: string | null;
+    avatar_url: string | null;
+    language_preference: string | null;
+    created_at: string;
+    updated_at: string;
+    status?: string;
+}
+
+export interface AuthContextProps {
   isAuthenticated: boolean;
   user: UserProfile | null;
   session: Session | null;
@@ -46,10 +49,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [initialAuthCheckComplete, setInitialAuthCheckComplete] = useState<boolean>(false);
   const { toast } = useToast();
 
-  // Effect voor het luisteren naar auth state changes
+  const logout = useCallback(async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error: unknown) {
+      console.error("Logout failed:", error);
+      const message = error instanceof Error ? error.message : "Er is iets misgegaan bij het uitloggen.";
+      toast({
+        variant: "destructive",
+        title: "Uitloggen mislukt",
+        description: message,
+      });
+      throw error;
+    }
+  }, [toast]);
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event: AuthChangeEvent, currentSession: Session | null) => {
+      (_event: AuthChangeEvent, currentSession: Session | null) => {
         setSession(currentSession);
         setIsAuthenticated(!!currentSession);
         
@@ -62,31 +80,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase, initialAuthCheckComplete]);
+  }, [initialAuthCheckComplete]);
 
-  // Effect voor het ophalen van het profiel ZODRA de sessie bekend is NA de initiële check
   useEffect(() => {
     const fetchProfile = async () => {
       if (initialAuthCheckComplete && session?.user) {
         setIsLoading(true); 
         try {
-          const { data: profile, error } = await supabase
+          const { data: profileData, error } = await supabase
             .from('profiles')
-            .select('*') // Select all columns, including the new one
+            .select('id, name, role, avatar_url, language_preference, created_at, updated_at, status')
             .eq('id', session.user.id)
-            .single<Profile>(); // Use updated Profile type
+            .single<FetchedProfileData>();
           
           if (error) {
             console.error('Profile Effect: Error fetching profile:', error);
             setUser(null);
-          } else if (profile) {
-            setUser({
-              ...profile,
-              email: session.user?.email || '',
-              role: profile.role as UserRole || 'free',
-              // Set language_preference, default to 'nl' if null/undefined
-              language_preference: profile.language_preference || 'nl',
-            });
+          } else if (profileData) {
+            if (profileData.status === 'inactive') {
+              console.warn('User is inactive, logging out.');
+              logout(); 
+              setUser(null);
+            } else {
+              setUser({
+                id: session.user.id,
+                email: session.user.email || '',
+                name: profileData.name,
+                role: (profileData.role === 'admin' || profileData.role === 'paid') ? profileData.role : 'free',
+                avatar_url: profileData.avatar_url,
+                language_preference: profileData.language_preference || 'nl',
+                created_at: profileData.created_at,
+                updated_at: profileData.updated_at,
+                status: profileData.status || 'active'
+              });
+            }
           } else {
             console.warn('Profile Effect: Profile not found for user:', session.user?.id);
             setUser(null);
@@ -104,20 +131,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     fetchProfile();
-  }, [session, initialAuthCheckComplete, supabase]);
+  }, [session, initialAuthCheckComplete, logout, toast]);
 
-  // Keep Supabase login function from HEAD
   const login = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) throw error;
       
-      // User state is updated via onAuthStateChange listener
-      // No need to manually set user/isAuthenticated here
       return;
     } catch (error: unknown) {
       console.error("Login failed:", error);
@@ -131,44 +155,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Keep Supabase logout function from HEAD
-  const logout = async () => {
-    // Mock implementation until Supabase integration
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      // State updates handled by listener
-    } catch (error: unknown) {
-      console.error("Logout failed:", error);
-      const message = error instanceof Error ? error.message : "Er is iets misgegaan bij het uitloggen.";
-      toast({
-        variant: "destructive",
-        title: "Uitloggen mislukt",
-        description: message,
-      });
-      throw error;
-    }
-  };
-      
-  // Keep Supabase register function from HEAD
   const register = async (email: string, password: string, name: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            // Add name to user_metadata during signup if needed
-            // Note: This usually doesn't automatically create a profile row
-            name: name, 
+            name: name,
           },
         },
       });
       
       if (error) throw error;
       
-      // Suggest user checks email for confirmation
-       toast({ title: "Registratie succesvol", description: "Controleer je e-mail om je account te bevestigen." });
+      toast({ title: "Registratie succesvol", description: "Controleer je e-mail om je account te bevestigen." });
       return;
 
     } catch (error: unknown) {
@@ -183,38 +184,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Update updateUser function
-  const updateUser = async (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference'>>) => {
+  const updateUser = async (data: Partial<Pick<UserProfile, 'name' | 'language_preference'>>) => {
     if (!session?.user) {
       throw new Error("Gebruiker niet ingelogd");
     }
 
     try {
-      const authUpdatePayload: { data?: { name?: string }; email?: string } = {};
-      // Update payload type for profiles table
-      const profileUpdatePayload: Partial<Pick<Profile, 'name' | 'language_preference'>> = {}; 
-
-      if (data.name !== undefined) {
-         // Only include name in auth update if it's not null
-         if (data.name !== null) {
-           authUpdatePayload.data = { name: data.name };
-         }
-         // Profile update can handle null
-         profileUpdatePayload.name = data.name;
+      if (data.name !== undefined && data.name !== user?.name) {
+          if (data.name !== null) { 
+              const { error: updateAuthError } = await supabase.auth.updateUser({ data: { name: data.name } });
+              if (updateAuthError) throw updateAuthError; 
+          }
       }
+      
+      const profileUpdatePayload: Partial<Pick<FetchedProfileData, 'name' | 'language_preference'>> = {};
+      if (data.name !== undefined) profileUpdatePayload.name = data.name;
+      if (data.language_preference !== undefined) profileUpdatePayload.language_preference = data.language_preference;
 
-      // Add language_preference to profile update payload if provided
-      if (data.language_preference !== undefined) {
-          profileUpdatePayload.language_preference = data.language_preference;
-      }
-
-      // Update Auth user metadata (only name for now)
-      if (authUpdatePayload.data) {
-        const { error: updateAuthError } = await supabase.auth.updateUser(authUpdatePayload);
-        if (updateAuthError) throw updateAuthError;
-      }
-
-      // Update profiles table if there are changes
       if (Object.keys(profileUpdatePayload).length > 0) {
         const { error: updateProfileError } = await supabase
           .from('profiles')
@@ -223,15 +209,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (updateProfileError) throw updateProfileError;
       }
 
-      // Manually update local user state for immediate feedback
-      // Use a functional update to safely access previous state
       setUser(currentUser => {
           if (!currentUser) return null;
-          return {
-              ...currentUser,
-              ...(data.name !== undefined && { name: data.name }), // Update name if present
-              ...(data.language_preference !== undefined && { language_preference: data.language_preference }) // Update language if present
-          };
+          const updatedUser = { ...currentUser };
+          if (data.name !== undefined) updatedUser.name = data.name;
+          if (data.language_preference !== undefined) updatedUser.language_preference = data.language_preference;
+          return updatedUser;
       });
       
     } catch (error: unknown) {
@@ -251,6 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
