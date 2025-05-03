@@ -1,5 +1,6 @@
+import React from 'react';
+import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { useParams, useNavigate } from "react-router-dom";
-import { useTask } from "@/contexts/TaskContext";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

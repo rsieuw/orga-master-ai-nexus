@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button.tsx";
+import { useAuth } from "@/contexts/AuthContext.tsx";
 import { Plus, User, LogOut, Settings, CircleUserRound, Shield } from "lucide-react";
 import {
   DropdownMenu,
@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu.tsx";
 import {
   Dialog,
   DialogContent,
@@ -17,8 +17,8 @@ import {
   DialogDescription,
   DialogTrigger,
   DialogPortal,
-} from "@/components/ui/dialog";
-import NewTaskDialog from "@/components/tasks/NewTaskDialog";
+} from "@/components/ui/dialog.tsx";
+import NewTaskDialog from "@/components/tasks/NewTaskDialog.tsx";
 import { useState } from "react";
 
 export default function Navbar() {
@@ -106,7 +106,7 @@ export default function Navbar() {
                     <DropdownMenuItem>
                       <Link to="/admin" className="flex w-full items-center">
                         <Shield className="mr-2 h-4 w-4" />
-                        Admin
+                        Admin Dashboard
                       </Link>
                     </DropdownMenuItem>
                   )}

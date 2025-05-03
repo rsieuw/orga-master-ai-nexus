@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
-import { renderWithProviders } from '@/test/utils';
-import { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './card';
+import { renderWithProviders } from '@/test/utils.tsx';
+import { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './card.tsx';
 
 describe('Card', () => {
   it('rendert een Card component', () => {

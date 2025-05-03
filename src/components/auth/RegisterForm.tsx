@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { Input } from "@/components/ui/input.tsx";
+import { Label } from "@/components/ui/label.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast.ts";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function RegisterForm() {
@@ -54,7 +54,7 @@ export default function RegisterForm() {
               id="name"
               placeholder="Jouw naam"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
               required
             />
           </div>
@@ -65,7 +65,7 @@ export default function RegisterForm() {
               type="email"
               placeholder="jouw@email.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               required
             />
           </div>
@@ -75,7 +75,7 @@ export default function RegisterForm() {
               id="password"
               type={showPassword ? "text" : "password"}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               required
               className="pr-10"
               autoComplete="new-password"
@@ -103,8 +103,8 @@ export default function RegisterForm() {
               className="w-full bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
               disabled={isLoading}
             >
-              {isLoading ? "Registreren..." : "Registreren"}
-            </Button>
+            {isLoading ? "Registreren..." : "Registreren"}
+          </Button>
           </div>
         </form>
       </CardContent>

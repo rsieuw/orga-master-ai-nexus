@@ -1,28 +1,16 @@
 import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { Loader } from "@/components/ui/loader";
+import { Button } from "@/components/ui/button.tsx";
+import { Loader } from "@/components/ui/loader.tsx";
 
 interface ResearchPanelProps {
   deepResearch: boolean;
   setDeepResearch: (value: boolean) => void;
-  setActiveTab: (tab: string) => void;
   loading: boolean;
   error: string | null;
   handleResearch: () => void;
 }
 
-export default function ResearchPanel({ deepResearch, setDeepResearch, setActiveTab, loading, error, handleResearch }: ResearchPanelProps) {
-  const { toast } = useToast();
-
-  const handleResearchActivation = () => {
-    setActiveTab("chat");
-    toast({
-      title: deepResearch ? "Diep onderzoek geactiveerd" : "Diep onderzoek gedeactiveerd",
-      description: deepResearch ? "De AI zal nu diep onderzoek uitvoeren" : "De AI zal geen diep onderzoek uitvoeren",
-    });
-  };
-
+export default function ResearchPanel({ deepResearch, setDeepResearch, loading, error, handleResearch }: ResearchPanelProps) {
   return (
     <div className="space-y-4">
       <h3 className="font-medium">Diep onderzoek met Perplexity</h3>

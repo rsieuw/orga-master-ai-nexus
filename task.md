@@ -1,21 +1,27 @@
 # Takenlijst: OrgaMaster AI
 
-**Prioriteit 1: Basisfunctionaliteit**
+## Prioriteit 1: Basisfunctionaliteit
 
 - ✅ **[AUTH] Gebruikersauthenticatie Opzetten:**
   - ✅ Implementeer Supabase Auth voor gebruikersregistratie en login (Context, basis functies).
-  - ✅ Maak login/registratie formulieren/pagina's (AuthModal).
+  - ✅ Maak login/registratie formulieren/pagina's (AuthModal, Login.tsx, Register.tsx).
+    - ✅ Visuele pariteit tussen Login en Register pagina's (gradient achtergrond, icoon).
+    - ✅ Gradient styling voor registratieknop.
+    - ✅ Wachtwoord zichtbaarheid toggle in registratieformulier.
   - ✅ Beveilig routes/data zodat alleen ingelogde gebruikers toegang hebben.
+  - ✅ Implementeer check voor 'inactive' status bij inloggen (in AuthContext).
 - ✅ **[CORE] Taak CRUD Operaties:**
   - ✅ Definieer database schema voor taken (titel, beschrijving, status, prioriteit, deadline, user_id, subtasks).
   - ✅ Implementeer Supabase functies/API-calls voor het aanmaken, lezen, updaten, en verwijderen van taken.
   - ✅ Bouw UI componenten voor het weergeven van takenlijsten.
   - ✅ Bouw UI componenten (bv. een formulier/modal) voor het toevoegen/bewerken van taken.
+  - ❌ **[OPEN]** Definieer/implementeer de actie voor de "Nieuwe Taak Toevoegen" knop op het lege dashboard.
 - ✅ **[UI] Basis Layout & Navigatie:**
   - ✅ Ontwerp en implementeer de hoofd layout van de applicatie (bv. sidebar, header).
   - ✅ Zet basis navigatie op tussen verschillende secties (bv. Takenlijst, Instellingen).
+  - ✅ Refactor Admin secties (Gebruikers, Permissies) naar tabs in Admin Dashboard.
 
-**Prioriteit 2: Kern AI Functies**
+## Prioriteit 2: Kern AI Functies
 
 - ✅ **[AI] Generatie Taak Titel/Beschrijving:**
   - ✅ Integreer met een AI model (via een Supabase Edge Function) voor het genereren van tekst.
@@ -35,9 +41,10 @@
   - ✅ Opgeslagen onderzoek wordt persistent getoond (`saved_research_display` type) en behouden na wissen geschiedenis.
   - ✅ Verwijderknop toegevoegd voor opgeslagen onderzoek (`delete-research` functie).
   - ✅ Prompt aangepast om meer detail en stappen te vragen; `max_tokens` verhoogd naar 1500.
+  - ✅ Implementeer rol-gebaseerde toegang tot deze feature (`role_permissions` tabel, DB functie, `hasPermission` helper, UI aanpassing).
   - 🟡 AI volgt opmaakinstructies (genummerde lijst) nog niet perfect.
 
-**Prioriteit 3: Verbeteringen & Extra's**
+## Prioriteit 3: Verbeteringen & Extra's
 
 - ✅ **[UI] Chat UI/UX:**
   - ✅ Notities (`task_notes`) worden persistent getoond in chat (`note_saved` type) en behouden na wissen geschiedenis.
@@ -53,38 +60,33 @@
   - 🟡 Verbeter layout en interactie in taakdetails (Voortgangsbalk, deadline toevoegen).
   - 🟡 Verbeter layout en interactie in chat sidebar (Checkboxes, tekst wrapping, uitlijning). (Basis aanwezig)
   - ✅ Tekst uitlijning subtaken in `TaskDetail.tsx` verbeterd.
-  - ✅ Notities (`task_notes`) persistent getoond in chat (`note_saved`) en behouden na wissen geschiedenis.
-  - ✅ Verwijderknop toegevoegd voor notitieberichten.
-  - ✅ Opgeslagen onderzoek persistent getoond (`saved_research_display`).
-  - ✅ Verwijderknop toegevoegd voor opgeslagen onderzoek.
-  - ✅ Markdown rendering verbeterd (`rehype-raw`, kop styling).
-  - ✅ Styling chatberichten (notities, onderzoek) en iconen verbeterd.
+- ❌ **[Admin] Gebruikersbeheer UI Verbetering:**
+  - ❌ Toon 'inactive' status in de tabel i.p.v. gebruiker te filteren na deactivatie.
+  - ❌ Voeg een "Activeer Gebruiker" actie toe (mogelijk in het dropdown menu).
+  - ❌ Overweeg filter/zoek opties voor de gebruikerstabel.
+  - ❌ Besluit of het `email` veld nodig is en haal het eventueel op uit `auth.users`.
+- ❌ **[Admin] Permissiebeheer UI Verbetering:**
+  - ❌ Maak de tabel gebruiksvriendelijker (bv. switches, groepering per rol).
+  - ❌ Overweeg filter/zoek opties.
 - 🟡 **[TEST] Unit & Integratie Tests:**
   - ✅ Basis testomgeving opgezet met Vitest, React Testing Library en Jest-DOM.
-  - ✅ Tests geschreven voor TaskCard component.
-  - ✅ Tests geschreven voor AuthContext.
-  - ✅ Tests geschreven voor Supabase API integratie.
-  - ✅ Tests geschreven voor Button component.
-  - ✅ Tests geschreven voor Card component.
-  - ✅ Tests geschreven voor Badge component.
-  - ✅ Tests geschreven voor Textarea component.
-  - ✅ Tests geschreven voor TaskSection component.
+  - ✅ Tests geschreven voor diverse componenten en functies (zie lijst in vorige versie).
   - 🟡 Tests geschreven voor Navbar component (issue met AuthContext mock).
-  - 🟡 Meer tests schrijven voor andere componenten, hooks, en API-integraties.
+  - 🟡 Meer tests schrijven voor andere componenten, hooks, en API-integraties (incl. Admin tabs, permissies).
 - ❌ **[OPS] Logging & Monitoring:**
   - Zet basis logging en monitoring op (bv. met Supabase logs of een externe service).
 - 🟡 **[SEC] Beveiligingscheck:**
   - ✅ Meerdere lockfiles opgelost (`deno.lock`, `bun.lockb`).
   - 🟡 `npm audit` toont nog kwetsbaarheden (geaccepteerd risico).
-  - ❌ Voer een grondigere beveiligingscheck uit.
-- ❌ **[UI] API Sleutel Validatie:**
-  - Voeg een "Test Verbinding" knop toe in de AI Model Configuratie.
+  - ❌ Voer een grondigere beveiligingscheck uit (RLS, input validatie).
 - ❌ **[UI] Duidelijkere Koppeling Subtaak <-> Chat:**
   - Verbeter de visuele link tussen geselecteerde subtaken en chatberichten.
 - ❌ **[UI] Zoekfunctie Chatgeschiedenis:**
   - Voeg een zoekbalk toe aan het chatpaneel.
+- ❌ **[BUG] Hardnekkige Deno Lint Fouten Oplossen:**
+  - Onderzoek en los de terugkerende `deno-lint(no-sloppy-imports)` en missende extensie fouten op. Controleer configuraties (Deno, ESLint, Vite, TSConfig).
 
-**Prioriteit 4: Toekomstige Ideeën (Optioneel)**
+## Prioriteit 4: Toekomstige Ideeën (Optioneel)
 
 - ❌ **[AI] Taak Generatie vanuit Tekst:**
   - Laat AI taken genereren uit ongestructureerde tekst (bv. notities, e-mails).
@@ -95,11 +97,8 @@
 - ❌ **[AI] Spraak naar Tekst / Tekst naar Spraak:**
   - Integreer spraakherkenning voor taakinvoer en tekst-naar-spraak voor taakvoorlezing.
 - ✅ **[FEATURE] Gesprek Export:** (Geïmplementeerd in ChatPanel)
-  - Sta gebruikers toe om chatgesprekken te exporteren.
 - ✅ **[FEATURE] Notities bij Gesprekken:** (Geïmplementeerd via task_notes)
-  - Sta gebruikers toe om notities toe te voegen gekoppeld aan specifieke gesprekken of berichten.
 - ✅ **[AI] Verbeterde AI Redenering & Web Search:** (Perplexity onderzoek geïntegreerd)
-  - Verbeter de redeneercapaciteiten van de AI en stel deze in staat om het internet te doorzoeken voor actuele informatie.
 - ❌ **[FEATURE] Kalenderweergave:**
   - Voeg een kalenderweergave toe voor taken met deadlines.
 - ❌ **[FEATURE] Bijlagen aan Taken:**
@@ -107,16 +106,29 @@
 - ❌ **[FEATURE] Beloningsysteem:**
   - Implementeer een systeem om gebruikers te belonen voor voltooide taken.
 - ✅ **[FEATURE] Meertaligheid:** (Basis `languagePreference` doorgegeven aan AI)
-  - Voeg ondersteuning toe voor meerdere talen in de UI.
 - ❌ **[UI] Wit Thema:**
   - Implementeer een licht/wit thema als alternatief voor het donkere thema.
 - ❌ **[FEATURE] Sub-subtaken:**
   - Sta toe dat subtaken verder worden onderverdeeld in sub-subtaken.
+- ❌ **[PERF] Optimalisaties:**
+  - Analyseer bundle size en laadtijden. Voer performance profiling uit.
+- ❌ **[DOCS] Documentatie:**
+  - Voeg JSDoc toe aan componenten en functies. Breid `README.md` uit.
+- ❌ **[STATE] State Management Evaluatie:**
+  - Evalueer of een specifiekere state management library nodig is naarmate de applicatie groeit.
 
 **Debug/Issues:**
+
 - ✅ Probleem met Supabase CLI link naar verkeerd project opgelost.
 - ✅ Problemen met TypeScript types (`supabase gen types`, `Message` interface) opgelost.
 - ✅ Fout bij `DELETE_ALL_SUBTASKS` AI actie (ontbrekende taskId) opgelost.
 - ✅ Terminal glitches bij deploy commando's.
 - ✅ Meerdere lockfiles (`deno.lock`, `bun.lockb`) opgelost.
 - ✅ Chatgeschiedenis wissen aangepast om notities en opgeslagen onderzoek te behouden.
+- ✅ Registratie/Login UI pariteit issues opgelost.
+- ✅ Wachtwoord zichtbaarheid in registratie toegevoegd.
+- ✅ Permissies voor Deep Research geïmplementeerd.
+- ✅ Admin pagina's gerefactored naar tabs.
+- ✅ OpenAI API Key input in Settings verwijderd (was niet functioneel/veilig).
+- 🟡 React Hook dependency errors grotendeels opgelost (bv. in `AuthContext`, `ChatPanel`, `AdminUsersPage`).
+- 🟡 Deno Lint import fouten deels opgelost/onderdrukt, maar blijven hardnekkig (zie taak P3).

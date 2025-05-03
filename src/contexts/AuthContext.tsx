@@ -15,17 +15,7 @@ export interface UserProfile {
   created_at: string;
   updated_at: string;
   status?: string;
-}
-
-interface FetchedProfileData {
-    id: string;
-    name: string | null;
-    role: string | null;
-    avatar_url: string | null;
-    language_preference: string | null;
-    created_at: string;
-    updated_at: string;
-    status?: string;
+  enabled_features: string[];
 }
 
 export interface AuthContextProps {
@@ -88,38 +78,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(true); 
         try {
           const { data: profileData, error } = await supabase
-            .from('profiles')
-            .select('id, name, role, avatar_url, language_preference, created_at, updated_at, status')
-            .eq('id', session.user.id)
-            .single<FetchedProfileData>();
+            .rpc('get_user_profile_with_permissions', { user_id: session.user.id })
+            .single();
           
           if (error) {
-            console.error('Profile Effect: Error fetching profile:', error);
+            console.error('Profile Effect: Error calling get_user_profile_with_permissions:', error);
             setUser(null);
           } else if (profileData) {
-            if (profileData.status === 'inactive') {
+            const fullProfile = profileData as unknown as UserProfile;
+
+            if (fullProfile.status === 'inactive') {
               console.warn('User is inactive, logging out.');
+              toast({ 
+                variant: "destructive", 
+                title: "Account gedeactiveerd", 
+                description: "Dit account is momenteel niet actief."
+              });
               logout(); 
               setUser(null);
             } else {
               setUser({
-                id: session.user.id,
-                email: session.user.email || '',
-                name: profileData.name,
-                role: (profileData.role === 'admin' || profileData.role === 'paid') ? profileData.role : 'free',
-                avatar_url: profileData.avatar_url,
-                language_preference: profileData.language_preference || 'nl',
-                created_at: profileData.created_at,
-                updated_at: profileData.updated_at,
-                status: profileData.status || 'active'
-              });
+                ...fullProfile,
+                role: (fullProfile.role === 'admin' || fullProfile.role === 'paid') ? fullProfile.role : 'free'
+              }); 
             }
           } else {
-            console.warn('Profile Effect: Profile not found for user:', session.user?.id);
+            console.warn('Profile Effect: Profile not found via function for user:', session.user?.id);
             setUser(null);
           }
         } catch (catchError: unknown) {
-          console.error('Profile Effect: CATCH block error fetching profile:', catchError);
+          console.error('Profile Effect: CATCH block error calling function:', catchError);
           setUser(null);
         } finally {
           setIsLoading(false); 
@@ -197,7 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
       }
       
-      const profileUpdatePayload: Partial<Pick<FetchedProfileData, 'name' | 'language_preference'>> = {};
+      const profileUpdatePayload: Partial<Pick<UserProfile, 'name' | 'language_preference'>> = {};
       if (data.name !== undefined) profileUpdatePayload.name = data.name;
       if (data.language_preference !== undefined) profileUpdatePayload.language_preference = data.language_preference;
 

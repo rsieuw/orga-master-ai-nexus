@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { renderWithProviders } from '@/test/utils';
-import { Textarea } from './textarea';
+import { renderWithProviders } from '@/test/utils.ts';
+import { Textarea } from './textarea.tsx';
 
 describe('Textarea', () => {
   it('rendert een textarea element', () => {

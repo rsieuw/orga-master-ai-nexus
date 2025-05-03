@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Task } from "@/types/task.ts";
 import { Button } from "@/components/ui/button.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
@@ -11,11 +11,12 @@ import { Message, aiModels, AIModel } from "./types.ts";
 import React, { ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client.ts";
-import { useTask } from "@/contexts/TaskContext.tsx";
+import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { useAuth } from "@/contexts/AuthContext.tsx";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import { hasPermission } from "@/lib/permissions.ts";
 
 // ---> NIEUW: Helper functie voor MessageType validatie <---
 const validMessageTypes = [
@@ -34,10 +35,9 @@ function isValidMessageType(type: string | null | undefined): type is ValidMessa
 interface ChatPanelProps {
   task: Task;
   selectedSubtaskTitle: string | null;
-  onSubtaskHandled: () => void;
 }
 
-export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled }: ChatPanelProps) {
+export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps) {
   const {
     addSubtask,
     updateSubtask,
@@ -58,12 +58,8 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading]);
-
-  // Function to save a message to the database
-  const saveMessageToDb = async (message: Message) => {
+  // --- Define saveMessageToDb with useCallback --- 
+  const saveMessageToDb = useCallback(async (message: Message) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Gebruiker niet ingelogd");
@@ -71,25 +67,29 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
       const { error } = await supabase
         .from('chat_messages')
         .insert({
-          task_id: task.id,
+          task_id: task.id, // Use task.id from component scope
           user_id: user.id,
           role: message.role,
           content: message.content,
-          message_type: message.messageType // Kan null zijn
+          message_type: message.messageType
         });
 
       if (error) throw error;
 
     } catch (error) {
       console.error("Fout bij opslaan bericht:", error);
-      // Optioneel: Toon een toast aan de gebruiker
       toast({
         variant: "destructive",
         title: "Opslaan mislukt",
         description: "Kon het bericht niet opslaan in de database.",
       });
     }
-  };
+  }, [task?.id, toast]); // Dependencies for useCallback
+  // --- End saveMessageToDb definition ---
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading]);
 
   // Effect to load messages on component mount
   useEffect(() => {
@@ -157,8 +157,8 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
           id: string;
           research_content: string;
           created_at: string;
-          // Gebruik 'any' omdat 'Json' type niet direct geëxporteerd wordt
-          citations: any | null; 
+          // Reverted Json type to unknown to fix import error
+          citations: unknown | null; 
         }
         // ---> EINDE NIEUW <---
 
@@ -225,11 +225,11 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
     };
 
     loadMessagesAndNotes();
-  }, [task?.id, toast]);
+  }, [task?.id, task?.title, toast]);
 
   // Effect to handle selected subtask
   useEffect(() => {
-    if (selectedSubtaskTitle && task?.id) { // Ensure task.id is available
+    if (selectedSubtaskTitle && task?.id) {
       const handleSubtaskSelection = async () => {
           const systemMessage: Message = {
             role: "assistant",
@@ -238,12 +238,11 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
             messageType: 'system'
           };
           setMessages((prev) => [...prev, systemMessage]);
-          await saveMessageToDb(systemMessage); // Save the system message
+          await saveMessageToDb(systemMessage);
       };
       handleSubtaskSelection();
     }
-    // No dependency on saveMessageToDb as it's stable if defined outside useEffect
-  }, [selectedSubtaskTitle, task?.id]);
+  }, [selectedSubtaskTitle, task?.id, saveMessageToDb]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -683,6 +682,17 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
 
   // Function to trigger deep research
   const handleDeepResearch = async () => {
+    // --- Use hasPermission check --- 
+    if (!hasPermission(user, 'deepResearch')) { // Check using the new function
+      toast({
+        variant: "default", 
+        title: "Feature niet beschikbaar",
+        description: "Deep Research is alleen beschikbaar voor uw account type.", // Adjusted message slightly
+      });
+      return; 
+    }
+    // --- End permission check ---
+
     if (!task?.id || isResearching) return; // Voorkom dubbel starten
 
     // ---> NIEUW: Reset cancel state <---
@@ -1200,9 +1210,10 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
           <Button 
             variant="outline" 
             size="sm" 
-            className={`gap-1 border-white/10 hover:bg-secondary bg-secondary/50`}
+            className={`gap-1 border-white/10 hover:bg-secondary bg-secondary/50 ${!hasPermission(user, 'deepResearch') ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={handleDeepResearch}
-            disabled={isLoading || isNoteMode}
+            disabled={isLoading || isNoteMode || !hasPermission(user, 'deepResearch')}
+            title={!hasPermission(user, 'deepResearch') ? "Deep Research is niet beschikbaar voor uw account type." : "Start diepgaand onderzoek"}
           >
             <BrainCircuit className="h-4 w-4" />
             <span className="hidden sm:inline">Onderzoek</span>

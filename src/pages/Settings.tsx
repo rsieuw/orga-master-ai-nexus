@@ -16,13 +16,8 @@ import { Button } from "@/components/ui/button.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { useToast } from "@/hooks/use-toast.ts";
-import { Settings, User, Palette, Languages, HelpCircle } from "lucide-react";
+import { Settings, User, Palette, Languages } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
-import { 
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card.tsx";
 import {
   Drawer,
   DrawerClose,
@@ -39,7 +34,6 @@ export default function SettingsPage() {
   const { user, updateUser } = useAuth();
   const [language, setLanguage] = useState<string>(user?.language_preference || "nl");
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [apiKey, setApiKey] = useState("");
   const { toast } = useToast();
 
   // State for account form
@@ -69,21 +63,6 @@ export default function SettingsPage() {
         variant: "destructive",
         title: "Fout bij opslaan taal",
         description: "Kon taalvoorkeur niet opslaan.",
-      });
-    }
-  };
-
-  const handleSaveAPIKey = () => {
-    if (apiKey) {
-      toast({
-        title: "API sleutel opgeslagen",
-        description: "Je API sleutel is succesvol opgeslagen",
-      });
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Fout bij opslaan",
-        description: "Voer alsjeblieft een geldige API sleutel in",
       });
     }
   };
@@ -235,33 +214,6 @@ export default function SettingsPage() {
                     <SelectItem value="en">Engels</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              
-              <div className="space-y-2 pt-4">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="api-key">OpenAI API Sleutel</Label>
-                  <HoverCard>
-                    <HoverCardTrigger asChild>
-                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </HoverCardTrigger>
-                    <HoverCardContent className="w-80">
-                      <p className="text-sm">
-                        Je API sleutel wordt veilig opgeslagen en wordt gebruikt om AI functionaliteiten te ontsluiten.
-                      </p>
-                    </HoverCardContent>
-                  </HoverCard>
-                </div>
-                <div className="flex gap-2">
-                  <Input 
-                    id="api-key" 
-                    type="password" 
-                    placeholder="sk-..." 
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    className="bg-gray-700"
-                  />
-                  <Button onClick={handleSaveAPIKey}>Opslaan</Button>
-                </div>
               </div>
               
               <div className="pt-4">

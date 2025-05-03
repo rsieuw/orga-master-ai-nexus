@@ -1,9 +1,11 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Task, TaskPriority, TaskStatus, TasksByDate, SubTask } from "../types/task.ts";
 import { useAuth } from "./AuthContext.tsx";
 import { supabase } from "@/integrations/supabase/client.ts";
 import { useToast } from "@/hooks/use-toast.ts";
 import { v4 as uuidv4 } from 'uuid';
+// Import the context and props type from the hooks file
+import { TaskContext, type TaskContextProps } from "./TaskContext.hooks.ts";
 
 // Define the structure of the raw data fetched from Supabase
 interface FetchedTaskData {
@@ -29,26 +31,6 @@ type TaskDatabaseUpdatePayload = {
   deadline?: string | null;
   subtasks?: SubTask[];
 };
-
-// Update interface to include subtask management functions
-interface TaskContextProps {
-  tasks: Task[];
-  isLoading: boolean;
-  createTask: (task: Omit<Task, "id" | "userId" | "createdAt" | "subtasks">) => Promise<Task>;
-  updateTask: (id: string, task: Partial<Task>) => Promise<Task>;
-  deleteTask: (id: string) => Promise<void>;
-  getTaskById: (id: string) => Task | undefined;
-  groupTasksByDate: () => TasksByDate;
-  suggestPriority: (title: string, description: string) => Promise<TaskPriority>;
-  // New functions for subtasks
-  addSubtask: (taskId: string, title: string) => Promise<void>;
-  updateSubtask: (taskId: string, subtaskId: string, updates: Partial<Omit<SubTask, 'id' | 'taskId'>>) => Promise<void>;
-  deleteSubtask: (taskId: string, subtaskId: string) => Promise<void>;
-  expandTask: (taskId: string) => Promise<void>;
-  deleteAllSubtasks: (taskId: string) => Promise<void>;
-}
-
-const TaskContext = createContext<TaskContextProps | undefined>(undefined);
 
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -640,11 +622,3 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   return <TaskContext.Provider value={contextValue}>{children}</TaskContext.Provider>;
 }
-
-export const useTask = () => {
-  const context = useContext(TaskContext);
-  if (context === undefined) {
-    throw new Error("useTask must be used within a TaskProvider");
-  }
-  return context;
-};

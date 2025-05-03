@@ -1,29 +1,46 @@
 import React from 'react';
-import AppLayout from '@/components/layout/AppLayout'; // Gebruik dezelfde layout als de rest vd app, of maak een AdminLayout
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button'; // Importeer Button
-import { Link } from 'react-router-dom'; // Importeer Link
-import { Users } from 'lucide-react'; // Importeer Users icoon
+import AppLayout from '@/components/layout/AppLayout.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx"; // Importeer Tabs
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card.tsx';
+import { UsersManagementTable } from "./AdminUsersPage.tsx"; // Importeer de tabel componenten
+import { PermissionsManagementTable } from "./AdminPermissionsPage.tsx";
 
 const AdminDashboardPage: React.FC = () => {
   return (
     <AppLayout>
       <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Beheer Opties</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p>Selecteer een optie om te beheren:</p>
-          <Button asChild variant="outline">
-            <Link to="/admin/users">
-              <Users className="mr-2 h-4 w-4" />
-              Gebruikers Beheren
-            </Link>
-          </Button>
-          {/* Voeg hier knoppen/links toe voor andere beheersecties */}
-        </CardContent>
-      </Card>
+      
+      <Tabs defaultValue="users" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="users">Gebruikers</TabsTrigger>
+          <TabsTrigger value="permissions">Permissies</TabsTrigger>
+        </TabsList>
+        <TabsContent value="users" className="mt-4">
+          {/* Card wrapper voor consistentie */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Gebruikersbeheer</CardTitle>
+              <CardDescription>Bekijk en beheer alle geregistreerde gebruikers.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <UsersManagementTable />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="permissions" className="mt-4">
+          {/* Card wrapper voor consistentie */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Rol Permissies Beheren</CardTitle>
+              <CardDescription>Schakel features in of uit per gebruikersrol.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PermissionsManagementTable />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
     </AppLayout>
   );
 };

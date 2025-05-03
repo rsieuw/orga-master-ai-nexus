@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { GradientLoader } from '@/components/ui/loader';
+import { useAuth } from '@/contexts/AuthContext.tsx';
+import { GradientLoader } from '@/components/ui/loader.tsx';
 
 const AdminRouteGuard: React.FC = () => {
   const { user, isLoading, isAuthenticated } = useAuth();

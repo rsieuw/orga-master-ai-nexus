@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext.tsx";
 import LoginForm from "@/components/auth/LoginForm";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";

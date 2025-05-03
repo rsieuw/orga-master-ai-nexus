@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { renderWithProviders } from '@/test/utils';
-import { Button } from './button';
+import { renderWithProviders } from '@/test/utils.tsx';
+import { Button } from './button.tsx';
 
 describe('Button', () => {
   it('rendert een button element standaard', () => {

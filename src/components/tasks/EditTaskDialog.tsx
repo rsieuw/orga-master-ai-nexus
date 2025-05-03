@@ -1,25 +1,25 @@
 import { useState } from "react";
-import { useTask } from "@/contexts/TaskContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { useTask } from "@/contexts/TaskContext.hooks.ts";
+import { Button } from "@/components/ui/button.tsx";
+import { Input } from "@/components/ui/input.tsx";
+import { Label } from "@/components/ui/label.tsx";
+import { Textarea } from "@/components/ui/textarea.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select.tsx";
 import { CalendarIcon } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast.ts";
 import { format, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
-import { Task, TaskPriority, TaskStatus } from "@/types/task";
-import { cn } from "@/lib/utils";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { GradientLoader } from "@/components/ui/loader";
+import { Task, TaskPriority, TaskStatus } from "@/types/task.ts";
+import { cn } from "@/lib/utils.ts";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx";
+import { Calendar } from "@/components/ui/calendar.tsx";
+import { GradientLoader } from "@/components/ui/loader.tsx";
 
 interface EditTaskDialogProps {
   task: Task;
@@ -31,7 +31,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
   const { toast } = useToast();
 
   const [title, setTitle] = useState(task.title);
-  const [description, setDescription] = useState(task.description);
+  const [description, setDescription] = useState(task.description ?? "");
   const [priority, setPriority] = useState<TaskPriority>(task.priority);
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [deadline, setDeadline] = useState<Date | undefined>(() => {
@@ -49,7 +49,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
     setIsLoading(true);
 
     try {
-      const deadlineISO = deadline ? deadline.toISOString() : null;
+      const deadlineISO = deadline ? deadline.toISOString() : undefined;
       
       const taskData: Partial<Task> = {
         title,
@@ -93,7 +93,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
          <Label htmlFor="edit-description">Beschrijving</Label>
          <Textarea
            id="edit-description"
-           value={description}
+           value={description ?? ""}
            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
            placeholder="Beschrijf de taak..."
            rows={4}
@@ -141,7 +141,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
             <Popover>
                 <PopoverTrigger asChild>
                     <Button
-                        variant={"outline"}
+                        variant="outline"
                         className={cn(
                             "w-full justify-start text-left font-normal",
                             !deadline && "text-muted-foreground"

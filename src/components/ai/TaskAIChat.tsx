@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Task } from "@/types/task";
-import ChatPanel from "./ChatPanel";
+import { Task } from "@/types/task.ts";
+import ChatPanel from "./ChatPanel.tsx";
 // Removed unused NotesPanel import
 // Removed Bot, BrainCircuit, PenSquare imports as they are no longer used here
 // Removed Tabs imports
@@ -10,11 +10,11 @@ import ChatPanel from "./ChatPanel";
 interface TaskAIChatProps {
   task: Task;
   selectedSubtaskTitle: string | null;
-  onSubtaskHandled: () => void;
+  // onSubtaskHandled: () => void;
 }
 
-export default function TaskAIChat({ task, selectedSubtaskTitle, onSubtaskHandled }: TaskAIChatProps) {
-  const [activeTab, setActiveTab] = useState("chat");
+export default function TaskAIChat({ task, selectedSubtaskTitle /*, onSubtaskHandled */ }: TaskAIChatProps) {
+  const [activeTab] = useState("chat");
   // Removed deepResearch state, assuming it's managed within ResearchPanel now
 
   return (
@@ -26,9 +26,7 @@ export default function TaskAIChat({ task, selectedSubtaskTitle, onSubtaskHandle
         {activeTab === "chat" && (
           <ChatPanel 
             task={task} 
-            setActiveTab={setActiveTab} 
             selectedSubtaskTitle={selectedSubtaskTitle}
-            onSubtaskHandled={onSubtaskHandled}
           />
         )}
         {/* Temporarily commented out to resolve TS error */}

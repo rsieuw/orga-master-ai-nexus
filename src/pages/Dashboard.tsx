@@ -1,6 +1,6 @@
 // import React from 'react'; // Verwijderd, niet meer nodig na vervangen Fragment
 import React from 'react'; // Add React import for React.isValidElement
-import { useTask } from "@/contexts/TaskContext.tsx";
+import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { useAuth } from "@/contexts/AuthContext.tsx";
 import TaskCard from "@/components/task/TaskCard.tsx";
 import AppLayout from "@/components/layout/AppLayout.tsx";

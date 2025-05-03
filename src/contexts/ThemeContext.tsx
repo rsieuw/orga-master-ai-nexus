@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light";
@@ -28,7 +27,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("theme", theme);
     
     // Update document class for tailwind dark mode
-    const root = window.document.documentElement;
+    const root = document.documentElement;
     
     if (theme === "dark") {
       root.classList.add("dark");

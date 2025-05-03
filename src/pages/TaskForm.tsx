@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useTask } from "@/contexts/TaskContext";
-import AppLayout from "@/components/layout/AppLayout";
+import { useTask } from "@/contexts/TaskContext.hooks.ts";
+import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { Input } from "@/components/ui/input.tsx";
+import { Label } from "@/components/ui/label.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { useNavigate, Link } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast.ts";
+import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginForm() {
@@ -56,7 +56,7 @@ export default function LoginForm() {
               type="email"
               placeholder="jouw@email.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               required
             />
           </div>
@@ -66,7 +66,7 @@ export default function LoginForm() {
               id="password"
               type={showPassword ? "text" : "password"}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               required
               className="pr-10"
               autoComplete="current-password"
@@ -93,7 +93,7 @@ export default function LoginForm() {
               <Checkbox
                 id="remember-me"
                 checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
+                onCheckedChange={(checked: boolean | 'indeterminate') => setRememberMe(Boolean(checked))}
               />
               <Label htmlFor="remember-me" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Onthoud mij

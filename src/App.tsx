@@ -1,27 +1,26 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { TaskProvider } from "@/contexts/TaskContext";
+import { Toaster } from "@/components/ui/toaster.tsx";
+import { Toaster as Sonner } from "@/components/ui/sonner.tsx";
+import { TooltipProvider } from "@/components/ui/tooltip.tsx";
+import { ThemeProvider } from "@/contexts/ThemeContext.tsx";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext.tsx";
+import { TaskProvider } from "@/contexts/TaskContext.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { GradientLoader } from "@/components/ui/loader";
+import { GradientLoader } from "@/components/ui/loader.tsx";
 
 // Pages
-import Dashboard from "./pages/Dashboard";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import TaskDetail from "./pages/TaskDetail";
-import TaskForm from "./pages/TaskForm";
-import Settings from "./pages/Settings";
-import Profile from "./pages/Profile";
-import NotFound from "./pages/NotFound";
+import Dashboard from "./pages/Dashboard.tsx";
+import Login from "./pages/Login.tsx";
+import Register from "./pages/Register.tsx";
+import TaskDetail from "./pages/TaskDetail.tsx";
+import TaskForm from "./pages/TaskForm.tsx";
+import Settings from "./pages/Settings.tsx";
+import Profile from "./pages/Profile.tsx";
+import NotFound from "./pages/NotFound.tsx";
 
 // Importeer de nieuwe admin componenten
-import AdminRouteGuard from "./components/auth/AdminRouteGuard";
-import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
-import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminRouteGuard from "./components/auth/AdminRouteGuard.tsx";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -58,9 +57,6 @@ const AppContent = () => {
             {/* Admin Routes */}
             <Route element={<AdminRouteGuard />}>
               <Route path="/admin" element={<AdminDashboardPage />} />
-              {/* Voeg hier toekomstige admin routes toe, bv.: */}
-              <Route path="/admin/users" element={<AdminUsersPage />} />
-              {/* <Route path="/admin/features" element={<AdminFeaturesPage />} /> */}
             </Route>
 
             <Route path="*" element={<NotFound />} />

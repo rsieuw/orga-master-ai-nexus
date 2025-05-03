@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Task } from "@/types/task";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader } from "@/components/ui/loader";
+import { Task } from "@/types/task.ts";
+import { Button } from "@/components/ui/button.tsx";
+import { Textarea } from "@/components/ui/textarea.tsx";
+import { useToast } from "@/hooks/use-toast.ts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
+import { Loader } from "@/components/ui/loader.tsx";
 import { Save } from "lucide-react";
 
 interface NotesPanelProps {
@@ -56,7 +56,7 @@ export default function NotesPanel({ task }: NotesPanelProps) {
             className="min-h-[200px] border-white/10 bg-secondary/30 focus:ring-primary/40"
             placeholder="Schrijf hier je notities..."
             value={note}
-            onChange={(e) => setNote(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNote(e.target.value)}
           />
           
           <div className="flex justify-end gap-2">

@@ -1,5 +1,5 @@
-import { Task } from "@/types/task";
-import TaskCard from "./TaskCard";
+import { Task } from "@/types/task.ts";
+import TaskCard from "./TaskCard.tsx";
 
 interface TaskSectionProps {
   title: string;

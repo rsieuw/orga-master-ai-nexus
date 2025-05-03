@@ -1,8 +1,5 @@
-import { Task, TaskPriority } from "@/types/task";
-import { formatDistance } from "date-fns";
-import { nl } from "date-fns/locale";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { Task, SubTask } from "@/types/task.ts";
+import { Card } from "@/components/ui/card.tsx";
 import { Link } from "react-router-dom";
 
 interface TaskCardProps {
@@ -11,23 +8,19 @@ interface TaskCardProps {
 
 export default function TaskCard({ task }: TaskCardProps) {
   const priorityClass = `priority-${task.priority}`;
-  const completedSubtasks = task.subtasks.filter(st => st.completed).length;
+  const completedSubtasks = task.subtasks.filter((st: SubTask) => st.completed).length;
 
-  // Handle potential invalid date for deadline
+  // Deadline calculation logic can be simplified or removed if deadline is not displayed
+  /* 
   let deadline: Date | null = null;
-  let isOverdue = false;
-  let deadlineText = "-"; // Default text if no valid deadline
-
-  if (task.deadline) { // Check if deadline exists and is not empty string/null/undefined
+  if (task.deadline) { 
     const parsedDeadline = new Date(task.deadline);
-    // Check if the parsed date is valid
     if (!isNaN(parsedDeadline.getTime())) {
       deadline = parsedDeadline;
-  const now = new Date();
-      isOverdue = deadline < now && task.status !== "done";
-      deadlineText = isOverdue ? "Verlopen" : formatDistance(deadline, now, { addSuffix: true, locale: nl });
+      const now = new Date();
     } 
   }
+  */
 
   const statusColor: Record<string, string> = {
     todo: "bg-yellow-500",
