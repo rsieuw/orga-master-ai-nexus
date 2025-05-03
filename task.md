@@ -21,25 +21,25 @@
   - ✅ Integreer met een AI model (via een Supabase Edge Function) voor het genereren van tekst.
   - ✅ Ontwikkel logica in de Edge Function die een initiële input (bv. een korte zin van de gebruiker) ontvangt en een gestructureerde suggestie retourneert voor een `titel` en `beschrijving` van de taak.
   - ✅ Roep de Edge Function aan vanuit de "Genereer Taakdetails" knop in `NewTaskDialog.tsx` en vul de titel/beschrijving velden in met de AI-suggestie.
-- 🟡 **[AI] Subtaak Generatie:**
+- ✅ **[AI] Subtaak Generatie:**
   - ✅ Edge Function `generate-subtasks` gemaakt die op basis van `taskId` taakdetails, chat, notities en **opgeslagen onderzoek** ophaalt en subtaken genereert via AI.
   - ✅ Frontend (`ChatPanel.tsx`) triggert deze functie via keywords ("maak/genereer/splits/aanmaken subtaken/taken" in NL/EN).
   - ✅ Gegenereerde subtaken worden toegevoegd aan de taak.
   - ✅ Bevestiging met gegenereerde subtaken wordt getoond in chat (met `<ul><li>` HTML-opmaak via `rehype-raw`).
-  - 🟡 Prompt aangepast om ook onopgeslagen onderzoek uit *recente* chatgeschiedenis mee te nemen (betrouwbaarheid minder gegarandeerd dan opgeslagen onderzoek).
-- 🟡 **[AI] "Deep Research" Integratie:**
+  - ✅ Prompt aangepast om ook onopgeslagen onderzoek uit *recente* chatgeschiedenis mee te nemen.
+- ✅ **[AI] "Deep Research" Integratie:**
   - ✅ Bestaande `deep-research` Supabase functie onderzocht en gebruikt nu Perplexity AI.
   - ✅ Integreer deze functie zodat gebruikers AI kunnen vragen om onderzoek te doen gerelateerd aan een specifieke taak (Via knop en chat trigger geïmplementeerd in `ChatPanel.tsx`).
   - ✅ Toon de onderzoeksresultaten in de UI, gekoppeld aan de taak (Getoond in `ChatPanel` met type `research_result`).
   - ✅ "Sla onderzoek op" knop toegevoegd (`save-research` functie).
   - ✅ Opgeslagen onderzoek wordt persistent getoond (`saved_research_display` type) en behouden na wissen geschiedenis.
   - ✅ Verwijderknop toegevoegd voor opgeslagen onderzoek (`delete-research` functie).
-  - 🟡 Prompt aangepast om meer detail en stappen te vragen; `max_tokens` verhoogd.
+  - ✅ Prompt aangepast om meer detail en stappen te vragen; `max_tokens` verhoogd naar 1500.
   - 🟡 AI volgt opmaakinstructies (genummerde lijst) nog niet perfect.
 
 **Prioriteit 3: Verbeteringen & Extra's**
 
-- 🟡 **[UI] Chat UI/UX:**
+- ✅ **[UI] Chat UI/UX:**
   - ✅ Notities (`task_notes`) worden persistent getoond in chat (`note_saved` type) en behouden na wissen geschiedenis.
   - ✅ Verwijderknop toegevoegd voor notitieberichten (`deleteNote`).
   - ✅ Opgeslagen onderzoek (`saved_research`) wordt persistent getoond (`saved_research_display`).
@@ -88,7 +88,7 @@
   - Sta gebruikers toe om chatgesprekken te exporteren.
 - ✅ **[FEATURE] Notities bij Gesprekken:** (Geïmplementeerd via task_notes)
   - Sta gebruikers toe om notities toe te voegen gekoppeld aan specifieke gesprekken of berichten.
-- 🟡 **[AI] Verbeterde AI Redenering & Web Search:** (Basis Perplexity onderzoek geïntegreerd)
+- ✅ **[AI] Verbeterde AI Redenering & Web Search:** (Perplexity onderzoek geïntegreerd)
   - Verbeter de redeneercapaciteiten van de AI en stel deze in staat om het internet te doorzoeken voor actuele informatie.
 - ❌ **[FEATURE] Kalenderweergave:**
   - Voeg een kalenderweergave toe voor taken met deadlines.
@@ -96,7 +96,7 @@
   - Sta toe dat bestanden aan taken worden gekoppeld.
 - ❌ **[FEATURE] Beloningsysteem:**
   - Implementeer een systeem om gebruikers te belonen voor voltooide taken.
-- 🟡 **[FEATURE] Meertaligheid:** (Basis `languagePreference` doorgegeven aan AI)
+- ✅ **[FEATURE] Meertaligheid:** (Basis `languagePreference` doorgegeven aan AI)
   - Voeg ondersteuning toe voor meerdere talen in de UI.
 - ❌ **[UI] Wit Thema:**
   - Implementeer een licht/wit thema als alternatief voor het donkere thema.
@@ -109,3 +109,4 @@
 - ✅ Fout bij `DELETE_ALL_SUBTASKS` AI actie (ontbrekende taskId) opgelost.
 - ✅ Terminal glitches bij deploy commando's.
 - ✅ Meerdere lockfiles (`deno.lock`, `bun.lockb`) opgelost.
+- ✅ Chatgeschiedenis wissen aangepast om notities en opgeslagen onderzoek te behouden.
