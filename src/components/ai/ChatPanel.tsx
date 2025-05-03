@@ -1,17 +1,18 @@
 import { useState, useRef, useEffect } from "react";
-import { Task, SubTask } from "@/types/task";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Task } from "@/types/task.ts";
+import { Button } from "@/components/ui/button.tsx";
+import { Textarea } from "@/components/ui/textarea.tsx";
 import { Send, Settings, Bot, BrainCircuit, PenSquare, Copy, X, Save } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { GradientLoader } from "@/components/ui/loader";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Message, aiModels } from "./types";
+import { useToast } from "@/hooks/use-toast.ts";
+import { GradientLoader } from "@/components/ui/loader.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select.tsx";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu.tsx";
+import { Message, aiModels, AIModel } from "./types.ts";
 import React, { ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useTask } from "@/contexts/TaskContext";
+import { supabase } from "@/integrations/supabase/client.ts";
+import { useTask } from "@/contexts/TaskContext.tsx";
+import { useAuth } from "@/contexts/AuthContext.tsx";
 
 interface ChatPanelProps {
   task: Task;
@@ -23,8 +24,11 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
   const {
     addSubtask,
     updateSubtask,
-    deleteSubtask
+    deleteSubtask,
+    updateTask,
+    deleteAllSubtasks
   } = useTask();
+  const { user } = useAuth();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -70,7 +74,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
 
   // Effect to load messages on component mount
   useEffect(() => {
-    const loadMessagesAndNotes = async () => { // Renamed function
+    const loadMessagesAndNotes = async () => {
       if (!task?.id) {
         setMessages([]);
         setIsLoading(false);
@@ -93,7 +97,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
         // Fetch chat messages
         const { data: dbMessages, error: chatError } = await supabase
           .from('chat_messages')
-          .select('role, content, created_at, message_type') // Select specific columns
+          .select('role, content, created_at, message_type')
           .eq('task_id', task.id)
           .order('created_at', { ascending: true });
 
@@ -102,27 +106,38 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
         // Fetch task notes
         const { data: dbNotes, error: notesError } = await supabase
           .from('task_notes')
-          .select('content, created_at') // Select specific columns
+          .select('content, created_at')
           .eq('task_id', task.id)
-          // .eq('user_id', user.id) // Only load own notes? Depends on requirements
           .order('created_at', { ascending: true });
         
         if (notesError) throw notesError;
 
+        // Define interfaces for fetched data to avoid 'any'
+        interface DbMessage {
+          role: 'user' | 'assistant';
+          content: string;
+          created_at: string;
+          message_type: Message['messageType'];
+        }
+        interface DbNote {
+           content: string;
+           created_at: string;
+        }
+
         // Map chat messages
-        const loadedChatMessages: Message[] = (dbMessages || []).map((msg: any) => ({
-          role: msg.role as 'user' | 'assistant',
+        const loadedChatMessages: Message[] = (dbMessages || []).map((msg: DbMessage) => ({
+          role: msg.role,
           content: msg.content,
           timestamp: new Date(msg.created_at).getTime(),
-          messageType: msg.message_type as Message['messageType']
+          messageType: msg.message_type
         }));
 
         // Map notes
-        const loadedNotes: Message[] = (dbNotes || []).map((note: any) => ({
-          role: 'user', // Notes are from the user
+        const loadedNotes: Message[] = (dbNotes || []).map((note: DbNote) => ({
+          role: 'user',
           content: note.content,
           timestamp: new Date(note.created_at).getTime(),
-          messageType: 'note_saved' // Use the specific type
+          messageType: 'note_saved'
         }));
 
         // Combine and sort messages and notes
@@ -146,10 +161,8 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
       }
     };
 
-    loadMessagesAndNotes(); // Call the combined function
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [task?.id]); // Reload messages if the task ID changes
+    loadMessagesAndNotes();
+  }, [task?.id, toast]);
 
   // Effect to handle selected subtask
   useEffect(() => {
@@ -204,7 +217,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
     } catch (error: unknown) {
       console.error("Fout bij opslaan notitie:", error);
       let errorMsg = "Kon notitie niet opslaan.";
-      if (error instanceof Error) { errorMsg = error.message; }
+      if (error instanceof Error) errorMsg = error.message;
       toast({ variant: "destructive", title: "Opslaan Mislukt", description: errorMsg });
       success = false;
     } finally {
@@ -213,13 +226,16 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
     return success;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent | React.KeyboardEvent) => {
+    // Allow calling without event (from handleKeyDown)
+    if (e) {
+      e.preventDefault();
+    }
     
     if (!input.trim() || !task?.id) return;
     
     const currentInput = input;
-    setInput("");
+    setInput(""); 
 
     if (isNoteMode) {
       // --- Save Note Logic ---
@@ -229,125 +245,177 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
       }
       // --- End Save Note Logic ---
     } else {
-      // --- Existing AI Chat Logic ---
-      const userMessage: Message = { role: "user", content: currentInput, timestamp: Date.now() };
+      // --- AI Chat Logic ---
+      const userMessage: Message = { role: "user", content: currentInput, timestamp: Date.now(), messageType: 'standard' };
       setMessages((prev) => [...prev, userMessage]);
-      // Set loading state *before* saving user message to DB for faster feedback
       setIsLoading(true); 
-      await saveMessageToDb(userMessage); // Save user message after setting loading
-      // Input is already cleared above
+      await saveMessageToDb(userMessage); 
       
       try {
         // Prepare Chat History
         const historyToInclude = messages
-          .slice(1) 
-          .filter(msg => msg.role === 'user' || (msg.role === 'assistant' && (msg.messageType === 'standard' || msg.messageType === 'note_saved'))) // Include saved notes in context? Maybe not.
-          .slice(-8)
+          .filter(msg => msg.role === 'user' || (msg.role === 'assistant' && (msg.messageType === 'standard'))) 
+          .slice(-8) 
           .map(msg => ({ role: msg.role, content: msg.content }));
 
-        console.log(`Calling generate-chat-response with mode: ${selectedModel} and ${historyToInclude.length} history messages.`);
+        // Haal taalvoorkeur op, met fallback naar 'nl'
+        const languagePreference = user?.language_preference || 'nl'; 
+        console.log(`Calling generate-chat-response function with mode: ${selectedModel}, lang: ${languagePreference}, and ${historyToInclude.length} history messages.`);
 
-        // API Call
-        const { data, error } = await supabase.functions.invoke('generate-chat-response', {
+        // --- Actual API Call to Supabase Edge Function --- 
+        const { data: aiResponseData, error: functionError } = await supabase.functions.invoke('generate-chat-response', {
           body: {
             query: currentInput,
             mode: selectedModel,
             taskId: task.id,
-            chatHistory: historyToInclude
+            chatHistory: historyToInclude,
+            languagePreference: languagePreference // Stuur taalvoorkeur mee
           },
         });
 
-        if (error) throw error;
+        // ----> NIEUW: Log de ontvangen data
+        console.log("AI Response Received:", JSON.stringify(aiResponseData, null, 2)); 
 
-        let responseContent = "Sorry, kon geen antwoord genereren.";
-        if (data?.response) { 
-          responseContent = data.response;
-        } else {
-          console.warn("Received no response content from function");
+        if (functionError) throw functionError; // Throw error from function call
+
+        if (!aiResponseData) { 
+          throw new Error("AI function returned no data.");
         }
-          
-        const aiResponse: Message = { 
-          role: "assistant", 
-          content: responseContent,
-          timestamp: Date.now(),
-          messageType: 'standard'
-        };
-          
-        setMessages((prev) => [...prev, aiResponse]);
-        await saveMessageToDb(aiResponse);
-        
-        // --- NIEUW: Handel AI Acties af ---
-        if (data?.action && data?.payload) {
+        // --- End API Call ---
+       
+        // --- Process AI Response ---
+        let assistantMessageContent = "";
+        let messageToSave: Message | null = null;
+
+        if (aiResponseData.action) {
           try {
-            switch (data.action) {
-              case 'ADD_SUBTASK':
-                if (data.payload.title) {
-                  await addSubtask(task.id, data.payload.title);
-                  toast({ title: "AI Actie", description: "Subtaak toegevoegd via AI." });
-                } else {
-                  console.warn("AI Action (ADD_SUBTASK): Missing title in payload", data.payload);
-                  toast({ variant:"destructive", title: "AI Actie Fout", description: "AI gaf geen titel op voor de nieuwe subtaak." });
+            switch (aiResponseData.action) {
+              case "UPDATE_TASK_TITLE": {
+                 if (!aiResponseData.payload?.newTitle) {
+                   throw new Error("Ongeldige payload voor UPDATE_TASK_TITLE");
                 }
+                await updateTask(task.id, { title: aiResponseData.payload.newTitle });
+                assistantMessageContent = `Taak succesvol hernoemd naar "${aiResponseData.payload.newTitle}".`;
+                toast({ title: "Taak Bijgewerkt" });
                 break;
-              case 'UPDATE_SUBTASK':
-                if (data.payload.subtaskId && data.payload.updates) {
-                  // Zorg ervoor dat updates alleen geldige SubTask velden bevatten (excl. id, taskId)
-                  const { id, taskId, ...validUpdates } = data.payload.updates as Partial<SubTask>; 
-                  await updateSubtask(task.id, data.payload.subtaskId, validUpdates);
-                  toast({ title: "AI Actie", description: "Subtaak bijgewerkt via AI." });
-                } else {
-                  console.warn("AI Action (UPDATE_SUBTASK): Missing subtaskId or updates in payload", data.payload);
-                  toast({ variant:"destructive", title: "AI Actie Fout", description: "AI gaf onvolledige informatie voor het bijwerken van de subtaak." });
+              }
+              case "UPDATE_SUBTASK": {
+                if (!aiResponseData.payload?.subtaskId || !aiResponseData.payload?.updates?.title) {
+                   throw new Error("Ongeldige payload voor UPDATE_SUBTASK");
                 }
+                // Definieer een type voor de updates die we toestaan
+                type AllowedSubtaskUpdates = Partial<Pick<import("@/types/task.ts").SubTask, 'title' | 'completed'>>;
+                
+                const validSubtaskUpdates: AllowedSubtaskUpdates = { title: aiResponseData.payload.updates.title }; 
+                if (aiResponseData.payload.updates.completed !== undefined) {
+                   validSubtaskUpdates.completed = aiResponseData.payload.updates.completed;
+                }
+                await updateSubtask(task.id, aiResponseData.payload.subtaskId, validSubtaskUpdates);
+                assistantMessageContent = `Subtaak succesvol hernoemd naar "${aiResponseData.payload.updates.title}".`;
+                toast({ title: "Subtaak Bijgewerkt" });
                 break;
-              case 'DELETE_SUBTASK':
-                 if (data.payload.subtaskId) {
-                   await deleteSubtask(task.id, data.payload.subtaskId);
-                   toast({ title: "AI Actie", description: "Subtaak verwijderd via AI." });
-                 } else {
-                   console.warn("AI Action (DELETE_SUBTASK): Missing subtaskId in payload", data.payload);
-                   toast({ variant:"destructive", title: "AI Actie Fout", description: "AI gaf niet aan welke subtaak verwijderd moest worden." });
+               }
+              case "ADD_SUBTASK": {
+                 if (!aiResponseData.payload?.title) {
+                   throw new Error("Ongeldige payload voor ADD_SUBTASK");
+                }
+                await addSubtask(task.id, aiResponseData.payload.title);
+                assistantMessageContent = `Subtaak "${aiResponseData.payload.title}" toegevoegd.`;
+                 toast({ title: "Subtaak Toegevoegd" });
+                break;
+               }
+              case "DELETE_SUBTASK": {
+                 if (!aiResponseData.payload?.subtaskId) {
+                   throw new Error("Ongeldige payload voor DELETE_SUBTASK");
+                }
+                await deleteSubtask(task.id, aiResponseData.payload.subtaskId);
+                assistantMessageContent = `Subtaak (ID: ${aiResponseData.payload.subtaskId}) verwijderd.`;
+                break;
+               }
+              case "DELETE_ALL_SUBTASKS": {
+                 if (!aiResponseData.payload?.taskId || aiResponseData.payload.taskId !== task.id) {
+                   throw new Error("Ongeldige of ontbrekende taskId payload voor DELETE_ALL_SUBTASKS");
                  }
-                break;
-              default:
-                console.warn("Unknown AI action received:", data.action);
+                 await deleteAllSubtasks(task.id);
+                 assistantMessageContent = `Alle subtaken voor deze taak zijn verwijderd.`;
+                 toast({ title: "Alle subtaken verwijderd" });
+                 break;
+               }
+              default: {
+                 console.warn("Onbekende AI actie:", aiResponseData.action);
+                 assistantMessageContent = aiResponseData.content || `Actie "${aiResponseData.action}" ontvangen, maar weet niet hoe te verwerken.`;
+              }
             }
-          } catch (actionError: unknown) {
-             console.error("Error executing AI action:", data.action, actionError);
-             const message = actionError instanceof Error ? actionError.message : "Onbekende fout";
-             toast({
-               variant: "destructive",
-               title: `Fout bij uitvoeren AI actie (${data.action})`,
-               description: message,
-             });
+            // Create user-friendly message AFTER action success
+            messageToSave = {
+              role: "assistant",
+              content: assistantMessageContent,
+              timestamp: Date.now(),
+              messageType: 'action_confirm' 
+            };
+
+          } catch (actionError) {
+             console.error(`Fout bij uitvoeren AI actie ${aiResponseData.action}:`, actionError);
+             let errorDesc = "Kon de gevraagde actie niet uitvoeren.";
+             if (actionError instanceof Error) errorDesc = actionError.message;
+             toast({ variant: "destructive", title: "Actie Mislukt", description: errorDesc });
+             messageToSave = {
+               role: "assistant",
+               content: `Sorry, er ging iets mis bij het uitvoeren van de actie: ${errorDesc}`,
+               timestamp: Date.now(),
+               messageType: 'error'
+             };
           }
+        } else if (aiResponseData.response) {
+           assistantMessageContent = aiResponseData.response;
+            messageToSave = {
+              role: "assistant",
+              content: assistantMessageContent,
+              timestamp: Date.now(),
+              messageType: 'standard'
+            };
+        } else {
+           console.error("Onverwachte AI response structuur (geen action of response key):", aiResponseData);
+           assistantMessageContent = "Sorry, ik ontving een onverwachte reactie.";
+            messageToSave = {
+              role: "assistant",
+              content: assistantMessageContent,
+              timestamp: Date.now(),
+              messageType: 'error'
+            };
         }
-        // --- Einde AI Acties afhandelen ---
-          
-      } catch (error: unknown) {
-        console.error('Error calling generate-chat-response function:', error);
-        let errorDescription = "Kon de AI functie niet aanroepen.";
-        if (error instanceof Error) {
-          errorDescription = error.message;
+
+        // Add the final message to state and save it
+        if (messageToSave) {
+           setMessages((prev) => [...prev, messageToSave]);
+           await saveMessageToDb(messageToSave);
         }
-        const errorMessage: Message = {
-          role: "assistant",
-          content: `Sorry, er is een fout opgetreden: ${errorDescription}`,
-          timestamp: Date.now(),
-          messageType: 'error'
+        
+      } catch (error) {
+        console.error("Fout bij communicatie met AI functie:", error);
+        const errorMsg: Message = { 
+            role: "assistant", 
+            content: "Sorry, er ging iets mis met de verbinding naar de AI functie.", 
+            timestamp: Date.now(),
+            messageType: 'error'
         };
-        setMessages(prev => [...prev, errorMessage]);
-        await saveMessageToDb(errorMessage);
-        toast({
-          variant: "destructive",
-          title: "AI Fout",
-          description: errorDescription,
-        });
+        setMessages((prev) => [...prev, errorMsg]);
+        await saveMessageToDb(errorMsg); 
       } finally {
         setIsLoading(false);
       }
       // --- End AI Chat Logic ---
     }
+  };
+
+  // Function to handle key presses in the textarea
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      e.preventDefault(); // Prevent default newline on Ctrl+Enter
+      handleSubmit(); // Call submit logic
+    } 
+    // Enter alone will now just create a newline by default
+    // No need for specific Shift+Enter handling unless we want to intercept Enter completely
   };
 
   // Function to copy text
@@ -523,20 +591,16 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
             )}
             <div
               className={`chat-message relative p-3 rounded-lg max-w-[80%] group ${ 
-                // Apply specific style for saved notes first
                 message.messageType === 'note_saved' 
                   ? "chat-message-note-saved"
-                // Then apply styles based on role or other types
                   : message.role === "user"
                     ? "chat-message-user"
                     : message.messageType === 'research_result' 
                       ? "chat-message-research"
-                      : message.messageType === 'notes_display'
-                        ? "chat-message-notes" 
-                        : "chat-message-ai" // Default AI style
+                      : "chat-message-ai" // Default AI style
               }`}
             >
-              {message.messageType === 'notes_display' || message.messageType === 'note_saved' ? (
+              {message.messageType === 'note_saved' ? (
                 <div className="whitespace-pre-wrap text-sm">{message.content}</div>
               ) : (
                 <p className="whitespace-pre-wrap text-sm">{message.content}</p>
@@ -572,18 +636,20 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
         <div ref={messagesEndRef} />
       </div>
       
-      <form onSubmit={handleSubmit} className="p-4">
+      <form className="p-4">
         <div className="relative flex items-end gap-2">
           <Textarea
             className="chat-input flex-grow resize-none pr-10 pt-3 pb-1"
-            placeholder={isNoteMode ? "Schrijf een notitie..." : "Stel een vraag over deze taak..."}
+            placeholder={isNoteMode ? "Schrijf een notitie..." : "Ctrl+Enter om te sturen..."}
             value={input}
             onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
             rows={1}
             disabled={isLoading}
           />
           <Button
-            type="submit"
+            type="button"
+            onClick={() => handleSubmit()}
             size="icon"
             disabled={isLoading || !input.trim()}
             className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
@@ -629,10 +695,10 @@ export default function ChatPanel({ task, selectedSubtaskTitle, onSubtaskHandled
               className="w-auto h-8 px-2 bg-secondary/50 border-white/10 hover:bg-secondary focus:ring-0 focus:ring-offset-0 disabled:opacity-50"
               aria-label="Kies AI Model"
             >
-              {React.createElement(aiModels.find((m: any) => m.id === selectedModel)?.icon || Settings, { className: "h-4 w-4" })}
+              {React.createElement(aiModels.find((m: AIModel) => m.id === selectedModel)?.icon || Settings, { className: "h-4 w-4" })}
             </SelectTrigger>
             <SelectContent className="glass-effect min-w-[180px]">
-              {aiModels.map((model: any) => (
+              {aiModels.map((model: AIModel) => (
                 <SelectItem key={model.id} value={model.id}>
                   <div className="flex items-center gap-2">
                     {React.createElement(model.icon, { className: "h-4 w-4" })}

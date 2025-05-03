@@ -1,28 +1,28 @@
 import { useState, useEffect } from "react";
-import AppLayout from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useTheme } from "@/contexts/ThemeContext";
-import { useAuth } from "@/contexts/AuthContext";
+import AppLayout from "@/components/layout/AppLayout.tsx";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card.tsx";
+import { useTheme } from "@/contexts/ThemeContext.tsx";
+import { useAuth } from "@/contexts/AuthContext.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
+} from "@/components/ui/select.tsx";
+import { Switch } from "@/components/ui/switch.tsx";
+import { Label } from "@/components/ui/label.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { Textarea } from "@/components/ui/textarea.tsx";
+import { Input } from "@/components/ui/input.tsx";
+import { useToast } from "@/hooks/use-toast.ts";
 import { Settings, User, Palette, Languages, HelpCircle } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { 
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from "@/components/ui/hover-card";
+} from "@/components/ui/hover-card.tsx";
 import {
   Drawer,
   DrawerClose,
@@ -32,34 +32,45 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer";
+} from "@/components/ui/drawer.tsx";
 
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
   const { user, updateUser } = useAuth();
-  const [language, setLanguage] = useState("nl"); // Default to Dutch
+  const [language, setLanguage] = useState<string>(user?.language_preference || "nl");
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [apiKey, setApiKey] = useState("");
   const { toast } = useToast();
 
   // State for account form
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
 
   // Initialize form state when user data is available
   useEffect(() => {
     if (user) {
       setName(user.name || "");
       setEmail(user.email || "");
+      setLanguage(user.language_preference || "nl");
     }
   }, [user]);
 
-  const handleLanguageChange = (value: string) => {
+  const handleLanguageChange = async (value: string) => {
     setLanguage(value);
-    toast({
-      title: "Taal gewijzigd",
-      description: value === "nl" ? "Taal is gewijzigd naar Nederlands" : "Language has been changed to English",
-    });
+    try {
+      await updateUser({ language_preference: value });
+      toast({
+        title: "Taal gewijzigd",
+        description: value === "nl" ? "Taal is gewijzigd naar Nederlands" : "Language has been changed to English",
+      });
+    } catch (error) {
+      console.error("Failed to update language preference:", error);
+      toast({
+        variant: "destructive",
+        title: "Fout bij opslaan taal",
+        description: "Kon taalvoorkeur niet opslaan.",
+      });
+    }
   };
 
   const handleSaveAPIKey = () => {

@@ -1,25 +1,28 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { User as SupabaseUser, Session, AuthChangeEvent, AuthError } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client"; // Old alias import
+import { supabase } from "@/integrations/supabase/client.ts"; // Corrected path
 // import { supabase } from "../integrations/supabase/client"; // Use relative path
-import { useToast } from "@/hooks/use-toast";
-import { GradientLoader } from "@/components/ui/loader";
-import { Database } from "@/integrations/supabase/types";
+import { useToast } from "@/hooks/use-toast.ts"; // Corrected path
+import { GradientLoader } from "@/components/ui/loader.tsx"; // Corrected path
+import { Database } from "@/integrations/supabase/types.ts"; // Corrected path
 
 // This is a placeholder until Supabase integration
 // This is a placeholder until Supabase integration
 export type UserRole = "admin" | "free" | "paid";
 
-// Define Profile type based on Database types if possible, or keep explicit
-type Profile = Database['public']['Tables']['profiles']['Row'];
+// Update Profile type to include language_preference
+type Profile = Database['public']['Tables']['profiles']['Row'] & {
+  language_preference?: string | null; // Add explicitly if not in generated types yet
+};
 
-// Keep UserProfile interface from HEAD
+// Update UserProfile to include language_preference
 export interface UserProfile extends Profile {
   id: string;
   email: string;
   name: string | null; // Allow null for name
   role: UserRole;
   avatar_url: string | null; // Add avatar_url back
+  language_preference: string; // Make non-null in context, default to 'nl'
 }
 
 interface AuthContextProps {
@@ -30,7 +33,7 @@ interface AuthContextProps {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
-  updateUser: (data: Partial<Pick<UserProfile, 'name' | 'email'>>) => Promise<void>;
+  updateUser: (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference'>>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -69,9 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const { data: profile, error } = await supabase
             .from('profiles')
-            .select('*')
+            .select('*') // Select all columns, including the new one
             .eq('id', session.user.id)
-            .single<Profile>();
+            .single<Profile>(); // Use updated Profile type
           
           if (error) {
             console.error('Profile Effect: Error fetching profile:', error);
@@ -81,6 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               ...profile,
               email: session.user?.email || '',
               role: profile.role as UserRole || 'free',
+              // Set language_preference, default to 'nl' if null/undefined
+              language_preference: profile.language_preference || 'nl',
             });
           } else {
             console.warn('Profile Effect: Profile not found for user:', session.user?.id);
@@ -178,15 +183,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Keep Supabase updateUser function from HEAD
-  const updateUser = async (data: Partial<Pick<UserProfile, 'name' | 'email'>>) => {
+  // Update updateUser function
+  const updateUser = async (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference'>>) => {
     if (!session?.user) {
       throw new Error("Gebruiker niet ingelogd");
     }
 
     try {
       const authUpdatePayload: { data?: { name?: string }; email?: string } = {};
-      const profileUpdatePayload: Partial<Profile> = {};
+      // Update payload type for profiles table
+      const profileUpdatePayload: Partial<Pick<Profile, 'name' | 'language_preference'>> = {}; 
 
       if (data.name !== undefined) {
          // Only include name in auth update if it's not null
@@ -197,24 +203,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
          profileUpdatePayload.name = data.name;
       }
 
-      if (authUpdatePayload.data) {
-        const { error: updateAuthError } = await supabase.auth.updateUser(authUpdatePayload);
-      if (updateAuthError) throw updateAuthError;
+      // Add language_preference to profile update payload if provided
+      if (data.language_preference !== undefined) {
+          profileUpdatePayload.language_preference = data.language_preference;
       }
 
+      // Update Auth user metadata (only name for now)
+      if (authUpdatePayload.data) {
+        const { error: updateAuthError } = await supabase.auth.updateUser(authUpdatePayload);
+        if (updateAuthError) throw updateAuthError;
+      }
+
+      // Update profiles table if there are changes
       if (Object.keys(profileUpdatePayload).length > 0) {
-      const { error: updateProfileError } = await supabase
-        .from('profiles')
-           .update(profileUpdatePayload)
-        .eq('id', session.user.id);
-      if (updateProfileError) throw updateProfileError;
+        const { error: updateProfileError } = await supabase
+          .from('profiles')
+          .update(profileUpdatePayload)
+          .eq('id', session.user.id);
+        if (updateProfileError) throw updateProfileError;
       }
 
       // Manually update local user state for immediate feedback
-      if (data.name !== undefined && user) {
-        // Ensure name is explicitly null if undefined in data
-        setUser({ ...user, name: data.name ?? null }); 
-      }
+      // Use a functional update to safely access previous state
+      setUser(currentUser => {
+          if (!currentUser) return null;
+          return {
+              ...currentUser,
+              ...(data.name !== undefined && { name: data.name }), // Update name if present
+              ...(data.language_preference !== undefined && { language_preference: data.language_preference }) // Update language if present
+          };
+      });
       
     } catch (error: unknown) {
       console.error("Update user failed:", error);

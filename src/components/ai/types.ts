@@ -1,11 +1,11 @@
-import { Task } from "@/types/task";
+import { Task } from "@/types/task.ts";
 import { LucideIcon, Bot, Brain, Zap } from "lucide-react";
 
 export interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp?: number;
-  messageType?: 'standard' | 'research_result' | 'system' | 'error';
+  messageType?: 'standard' | 'research_result' | 'system' | 'error' | 'note_saved' | 'action_confirm';
 }
 
 export interface AIModel {

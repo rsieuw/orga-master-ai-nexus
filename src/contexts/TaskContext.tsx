@@ -45,6 +45,7 @@ interface TaskContextProps {
   updateSubtask: (taskId: string, subtaskId: string, updates: Partial<Omit<SubTask, 'id' | 'taskId'>>) => Promise<void>;
   deleteSubtask: (taskId: string, subtaskId: string) => Promise<void>;
   expandTask: (taskId: string) => Promise<void>;
+  deleteAllSubtasks: (taskId: string) => Promise<void>;
 }
 
 const TaskContext = createContext<TaskContextProps | undefined>(undefined);
@@ -393,25 +394,62 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const task = tasks.find((t: Task) => t.id === taskId);
     if (!task) {
       console.error("Task not found for AI generation");
+      toast({ variant: "destructive", title: "Fout", description: "Taak niet gevonden om subtaken te genereren." });
       return [];
     }
-    console.warn("generateSubtasksAI is a placeholder and does not call a real AI service.");
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const baseTitle = task.title.substring(0, 15);
-    const generatedSubtasks: SubTask[] = [
-      { id: uuidv4(), taskId: taskId, title: `${baseTitle} - Stap 1: Onderzoek`, completed: false },
-      { id: uuidv4(), taskId: taskId, title: `${baseTitle} - Stap 2: Ontwerp`, completed: false },
-      { id: uuidv4(), taskId: taskId, title: `${baseTitle} - Stap 3: Implementatie`, completed: false },
-      { id: uuidv4(), taskId: taskId, title: `${baseTitle} - Stap 4: Testen`, completed: false },
-      { id: uuidv4(), taskId: taskId, title: `${baseTitle} - Stap 5: Afronden`, completed: false },
-    ];
-    
-    if (task.description && task.description.toLowerCase().includes("video")) {
-      generatedSubtasks.splice(2, 0, { id: uuidv4(), taskId: taskId, title: `${baseTitle} - Extra: Script schrijven`, completed: false });
+
+    console.log(`Calling generate-subtasks function for task: ${task.id}`);
+
+    try {
+      // Voorbereiden van de data voor de Edge Function
+      const taskDetails = {
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        deadline: task.deadline,
+        // TODO: Voeg eventueel chat context toe (zie Edge Function)
+      };
+
+      // Aanroepen van de Edge Function
+      const { data, error } = await supabase.functions.invoke('generate-subtasks', {
+        body: taskDetails,
+      });
+
+      if (error) {
+        throw error; // Wordt opgevangen door de catch hieronder
+      }
+
+      // Verwerken van de response
+      if (data?.error) { // Check voor functionele errors vanuit de Edge Function
+        throw new Error(data.error);
+      }
+
+      if (!data?.subtasks || !Array.isArray(data.subtasks)) {
+        console.error("Ongeldige response van generate-subtasks function:", data);
+        throw new Error("Ongeldig antwoord ontvangen van de AI-subtaak generator.");
+      }
+
+      // Map de suggesties naar het SubTask formaat
+      const generatedSubtasks: SubTask[] = data.subtasks.map((suggestion: { title: string }) => ({
+        id: uuidv4(),
+        taskId: taskId,
+        title: suggestion.title,
+        completed: false,
+      }));
+
+      console.log(`Successfully generated ${generatedSubtasks.length} subtasks via AI.`);
+      return generatedSubtasks;
+
+    } catch (error: unknown) {
+      console.error("Error calling generate-subtasks function:", error);
+      const errorMessage = error instanceof Error ? error.message : "Onbekende fout bij genereren subtaken";
+      toast({
+        variant: "destructive",
+        title: "Genereren Mislukt",
+        description: errorMessage,
+      });
+      return []; // Return lege array bij fout
     }
-    
-    return generatedSubtasks;
   };
 
   const addSubtask = async (taskId: string, title: string): Promise<void> => {
@@ -516,6 +554,38 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const deleteAllSubtasks = async (taskId: string): Promise<void> => {
+    const taskIndex = tasks.findIndex((t: Task) => t.id === taskId);
+    if (taskIndex === -1) {
+      toast({ variant: "destructive", title: "Taak niet gevonden" });
+      return;
+    }
+
+    const originalTask = tasks[taskIndex];
+    if (!originalTask.subtasks || originalTask.subtasks.length === 0) {
+      toast({ title: "Geen subtaken", description: "Er zijn geen subtaken om te verwijderen." });
+      return; // No subtasks to delete
+    }
+
+    const updatedTasks = [...tasks];
+    updatedTasks[taskIndex] = { ...originalTask, subtasks: [] }; // Clear subtasks locally
+
+    setTasks(updatedTasks); // Optimistic update
+
+    try {
+      await updateTask(taskId, { subtasks: [] }); // Update in database
+      toast({ title: "Alle subtaken verwijderd" });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Verwijderen mislukt",
+        description: "Kon de subtaken niet verwijderen uit de database.",
+      });
+      // Revert optimistic update on error
+      setTasks(tasks.map(t => t.id === taskId ? originalTask : t));
+    }
+  };
+
   const expandTask = async (taskId: string): Promise<void> => {
     const taskIndex = tasks.findIndex((t: Task) => t.id === taskId);
     if (taskIndex === -1) {
@@ -565,6 +635,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     updateSubtask,
     deleteSubtask,
     expandTask,
+    deleteAllSubtasks,
   };
 
   return <TaskContext.Provider value={contextValue}>{children}</TaskContext.Provider>;
