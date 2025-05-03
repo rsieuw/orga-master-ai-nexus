@@ -64,6 +64,8 @@
   - ✅ Tests geschreven voor TaskCard component.
   - ✅ Tests geschreven voor AuthContext.
   - ✅ Tests geschreven voor Supabase API integratie.
+  - ✅ Tests geschreven voor Button component.
+  - ✅ Tests geschreven voor Card component.
   - 🟡 Meer tests schrijven voor andere componenten, hooks, en API-integraties.
 - ❌ **[OPS] Logging & Monitoring:**
   - Zet basis logging en monitoring op (bv. met Supabase logs of een externe service).
