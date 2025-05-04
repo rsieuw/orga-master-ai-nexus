@@ -15,7 +15,7 @@
   - ✅ Implementeer Supabase functies/API-calls voor het aanmaken, lezen, updaten, en verwijderen van taken.
   - ✅ Bouw UI componenten voor het weergeven van takenlijsten.
   - ✅ Bouw UI componenten (bv. een formulier/modal) voor het toevoegen/bewerken van taken.
-  - ❌ **[OPEN]** Definieer/implementeer de actie voor de "Nieuwe Taak Toevoegen" knop op het lege dashboard.
+  - ✅ **[OPEN]** Definieer/implementeer de actie voor de "Nieuwe Taak Toevoegen" knop op het lege dashboard.
 - ✅ **[UI] Basis Layout & Navigatie:**
   - ✅ Ontwerp en implementeer de hoofd layout van de applicatie (bv. sidebar, header).
   - ✅ Zet basis navigatie op tussen verschillende secties (bv. Takenlijst, Instellingen).
@@ -85,6 +85,11 @@
   - Voeg een zoekbalk toe aan het chatpaneel.
 - ❌ **[BUG] Hardnekkige Deno Lint Fouten Oplossen:**
   - Onderzoek en los de terugkerende `deno-lint(no-sloppy-imports)` en missende extensie fouten op. Controleer configuraties (Deno, ESLint, Vite, TSConfig).
+- ❌ **[UI] Mobiele Weergave/Responsiviteit:**
+  - ❌ **[NIEUW]** Verbeter de weergave en bruikbaarheid op mobiele apparaten. **(Prioriteit: Hoog)**
+- ❌ **[Admin] API Management:**
+  - ❌ **[NIEUW]** Gebruikers API verbruik monitor in admin dashboard.
+  - ❌ **[NIEUW]** Gebruikers rate limit instellen (bv. op basis van tokens/calls per periode).
 
 ## Prioriteit 4: Toekomstige Ideeën (Optioneel)
 
@@ -99,6 +104,8 @@
 - ✅ **[FEATURE] Gesprek Export:** (Geïmplementeerd in ChatPanel)
 - ✅ **[FEATURE] Notities bij Gesprekken:** (Geïmplementeerd via task_notes)
 - ✅ **[AI] Verbeterde AI Redenering & Web Search:** (Perplexity onderzoek geïntegreerd)
+- ❌ **[FEATURE] Daily Knowledge Bot:**
+  - ❌ **[NIEUW]** Integreer een bot die dagelijks kennis/tips deelt van Perplexity.
 - ❌ **[FEATURE] Kalenderweergave:**
   - Voeg een kalenderweergave toe voor taken met deadlines.
 - ❌ **[FEATURE] Bijlagen aan Taken:**
@@ -110,10 +117,14 @@
   - Implementeer een licht/wit thema als alternatief voor het donkere thema.
 - ❌ **[FEATURE] Sub-subtaken:**
   - Sta toe dat subtaken verder worden onderverdeeld in sub-subtaken.
+- ❌ **[FEATURE] Upgrade Optie:**
+  - ❌ **[NIEUW]** Implementeer de mogelijkheid voor gebruikers om te upgraden naar een betaald plan (UI + Backend).
 - ❌ **[PERF] Optimalisaties:**
   - Analyseer bundle size en laadtijden. Voer performance profiling uit.
 - ❌ **[DOCS] Documentatie:**
   - Voeg JSDoc toe aan componenten en functies. Breid `README.md` uit.
+  - ❌ **[NIEUW]** Vul de inhoud van de Support en Documentatie pagina's aan.
+  - ❌ **[NIEUW]** Maak een 3-minuten YouTube handleiding/demo video voor de Perplexity Hackathon.
 - ❌ **[STATE] State Management Evaluatie:**
   - Evalueer of een specifiekere state management library nodig is naarmate de applicatie groeit.
 

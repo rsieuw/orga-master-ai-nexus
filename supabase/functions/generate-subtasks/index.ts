@@ -3,6 +3,9 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Importeer de Supabase client
+import { corsHeaders } from "../_shared/cors.ts";
+import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import { OpenAI } from "https://deno.land/x/openai@v4.52.7/mod.ts";
 
 // --- CORS Headers ---
 const corsHeaders = {
@@ -28,7 +31,7 @@ interface FunctionResponse {
 
 // --- Einde Nieuwe Interfaces ---
 
-console.log("generate-subtasks function started - v2 (with context)");
+// console.log("generate-subtasks function started - v2 (with context)");
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -39,7 +42,7 @@ serve(async (req) => {
   try {
     // 1. Extract data from request - Nu verwachten we taskId
     const { taskId } = await req.json();
-    console.log("Received taskId:", taskId);
+    // console.log("Received taskId:", taskId);
 
     if (!taskId || typeof taskId !== 'string') { // Check of het een string is, pas type aan indien nodig (bv number)
       throw new Error("Valid taskId is required in the request body");
@@ -60,7 +63,7 @@ serve(async (req) => {
     });
 
     // 4. Haal data op uit Supabase
-    console.log(`Fetching data for taskId: ${taskId}`);
+    // console.log(`Fetching data for taskId: ${taskId}`);
 
     // Haal hoofdtaak details op
     const { data: taskData, error: taskError } = await supabase
@@ -104,7 +107,7 @@ serve(async (req) => {
 
     // --- Werkelijke AI Logica ---
     // Construeer de prompt met de extra context
-    const systemPrompt = `Je bent een AI-assistent gespecialiseerd in het opsplitsen van complexe taken in concrete, behapbare subtaken.
+    const systemPrompt = `You are an AI assistant specialized in breaking down tasks into actionable subtasks.
 
 Gebruik de hoofdtaak, de bijbehorende chatgeschiedenis, notities en onderzoeksresultaten om een lijst van logische, actiegerichte subtaken te genereren. 
 Let specifiek ook op berichten in de chatgeschiedenis die gemarkeerd zijn als onderzoeksresultaten (ook als ze niet apart als 'Onderzoeksresultaten' zijn aangeleverd); deze bevatten mogelijk waardevolle context.
@@ -156,7 +159,7 @@ Geef uitsluitend dit JSON-object terug — geen toelichting of extra tekst.
     userPromptContent += `\nGenereer nu de subtaken voor de bovenstaande hoofdtaak, gebruikmakend van alle verstrekte context.`;
 
     // Roep OpenAI aan
-    console.log("Calling OpenAI to generate subtasks...");
+    // console.log("Calling OpenAI to generate subtasks...");
     const completion = await fetch("https://api.openai.com/v1/chat/completions", {
       method: 'POST',
       headers: {
@@ -182,7 +185,7 @@ Geef uitsluitend dit JSON-object terug — geen toelichting of extra tekst.
 
     // Parse de response
     const rawData = await completion.text(); 
-    console.log("Raw OpenAI Response for subtasks:", rawData);
+    // console.log("Raw OpenAI Response for subtasks:", rawData);
 
     // Definieer een type voor de verwachte OpenAI response structuur
     type OpenAIResponse = {
@@ -231,7 +234,7 @@ Geef uitsluitend dit JSON-object terug — geen toelichting of extra tekst.
        throw new Error("Kon geen valide subtaken array extraheren uit AI antwoord: " + aiContent);
     }
 
-    console.log(`Generated ${generatedSubtasks.length} subtasks.`);
+    // console.log(`Generated ${generatedSubtasks.length} subtasks.`);
     // --- Einde Werkelijke AI Logica ---
 
     const responsePayload: FunctionResponse = { subtasks: generatedSubtasks };

@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client.ts';
 
 // --- Mock ONLY Hooks --- (Remove Supabase module mock)
 vi.mock('../../contexts/AuthContext.tsx');
-vi.mock('../ui/use-toast.tsx');
+vi.mock('../../hooks/use-toast.ts');
 
 describe('ChatPanel', () => {
   const mockToast = vi.fn();
@@ -64,28 +64,41 @@ describe('ChatPanel', () => {
               order: vi.fn().mockResolvedValue({ data: [mockTask], error: null }) // TaskProvider needs task data
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any;
-      }
-      // Default for other tables used by ChatPanel (chat_messages, notes, research)
-      return {
-        select: selectMock, // Returns eq/order chain
-        insert: insertMock,
-        delete: deleteMock.mockReturnValue({ // Mock delete().eq() chain
+      } else {
+        // Default mock for chat_messages, task_notes, saved_research etc.
+        // Ensure the chain works: select -> eq -> order
+        const eqOrderChain = { order: orderMock };
+        const selectEqChain = { eq: vi.fn(() => eqOrderChain) }; // eq returns order chain
+        selectMock.mockReturnValue(selectEqChain); // select returns eq chain
+
+        return {
+          select: selectMock, // Use the configured selectMock
+          insert: insertMock,
+          delete: deleteMock.mockReturnValue({
              eq: eqMock.mockResolvedValue({ data: null, error: null })
            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-           } as any),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any;
+           } as any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+      }
     });
     // --- End Spies Setup ---
 
-    // Mock useAuth
-    (useAuth as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+    // Mock useAuth correctly
+    vi.mocked(useAuth).mockReturnValue({
       isAuthenticated: true,
-      user: { id: 'test-user-id', email: 'test@example.com' },
+      user: { id: 'test-user-id', email: 'test@example.com' } as any, // Cast user to any to satisfy broader type if needed
+      // Voeg hier eventueel andere gemockte functies/waarden van useAuth toe indien nodig voor ChatPanel
+      session: null, // Add missing properties with mock values
+      isLoading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+      register: vi.fn(),
+      updateUser: vi.fn(),
     });
 
-    // Mock useToast
-    (useToast as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+    // Mock useToast correctly
+    vi.mocked(useToast).mockReturnValue({
       toast: mockToast,
     });
   });
@@ -175,8 +188,99 @@ describe('ChatPanel', () => {
     });
   });
 
+  it('should load and display saved notes', async () => {
+    const mockNotes = [
+      { id: 'note-1', content: 'Dit is een opgeslagen notitie', created_at: new Date().toISOString(), task_id: mockTask.id, user_id: mockTask.userId },
+    ];
+
+    // Mock specific responses for this test
+    orderMock.mockResolvedValueOnce({ data: [], error: null }); // chat_messages
+    orderMock.mockResolvedValueOnce({ data: mockNotes, error: null }); // task_notes
+    orderMock.mockResolvedValueOnce({ data: [], error: null }); // saved_research
+
+    renderWithProviders(<ChatPanel task={mockTask} selectedSubtaskTitle={null} />);
+
+    // Wait for the note to be displayed
+    await waitFor(() => {
+      expect(screen.getByText('Dit is een opgeslagen notitie')).toBeInTheDocument();
+      // Optionally check for a specific class or structure indicating it's a note
+      // expect(screen.getByText('Dit is een opgeslagen notitie').closest('.chat-message-note-saved')).toBeInTheDocument();
+    });
+
+    // Verify calls for notes
+    expect(fromSpy).toHaveBeenCalledWith('task_notes');
+    expect(selectMock).toHaveBeenCalledWith('id, content, created_at');
+    expect(eqMock).toHaveBeenCalledWith('task_id', mockTask.id);
+    expect(orderMock).toHaveBeenCalledWith('created_at', { ascending: true });
+  });
+
+  it('should load and display saved research', async () => {
+    const mockResearch = [
+      { id: 'research-1', research_content: 'Dit is opgeslagen onderzoek.', created_at: new Date().toISOString(), task_id: mockTask.id, user_id: mockTask.userId, citations: ['http://example.com'] },
+    ];
+
+    // Mock specific responses for this test
+    orderMock.mockResolvedValueOnce({ data: [], error: null }); // chat_messages
+    orderMock.mockResolvedValueOnce({ data: [], error: null }); // task_notes
+    orderMock.mockResolvedValueOnce({ data: mockResearch, error: null }); // saved_research
+
+    renderWithProviders(<ChatPanel task={mockTask} selectedSubtaskTitle={null} />);
+
+    // Wait for the research to be displayed
+    await waitFor(() => {
+      expect(screen.getByText('Dit is opgeslagen onderzoek.')).toBeInTheDocument();
+      // Optionally check for a specific class or structure indicating it's research
+      // expect(screen.getByText('Dit is opgeslagen onderzoek.').closest('.chat-message-saved-research')).toBeInTheDocument();
+    });
+
+    // Verify calls for research
+    expect(fromSpy).toHaveBeenCalledWith('saved_research');
+    expect(selectMock).toHaveBeenCalledWith('id, research_content, created_at, citations');
+    expect(eqMock).toHaveBeenCalledWith('task_id', mockTask.id);
+    expect(orderMock).toHaveBeenCalledWith('created_at', { ascending: true });
+  });
+
+  it('should copy message content when copy button is clicked', async () => {
+    const mockMessages = [
+      { id: 'msg-1', role: 'assistant' as const, content: 'Inhoud om te kopiëren', created_at: new Date().toISOString(), task_id: mockTask.id, message_type: 'assistant', user_id: 'ai' }
+    ];
+    orderMock.mockResolvedValueOnce({ data: mockMessages, error: null }); // chat_messages
+    orderMock.mockResolvedValueOnce({ data: [], error: null }); // task_notes
+    orderMock.mockResolvedValueOnce({ data: [], error: null }); // saved_research
+
+    // Mock clipboard API
+    const writeTextSpy = vi.spyOn(navigator.clipboard, 'writeText');
+    writeTextSpy.mockResolvedValueOnce(); // Mock succesvol schrijven
+
+    renderWithProviders(<ChatPanel task={mockTask} selectedSubtaskTitle={null} />);
+    const user = userEvent.setup();
+
+    // Wacht tot het bericht is weergegeven
+    await waitFor(() => {
+      expect(screen.getByText('Inhoud om te kopiëren')).toBeInTheDocument();
+    });
+
+    // Zoek de kopieerknop bij het bericht
+    // De knop is niet direct gelabeld, we vinden hem via de title
+    const messageContainer = screen.getByText('Inhoud om te kopiëren').closest('.group'); // Ga naar de parent div met class 'group'
+    expect(messageContainer).toBeInTheDocument();
+    // querySelector is hier een pragmatische manier om de knop binnen de container te vinden
+    const copyButton = messageContainer?.querySelector('button[title="Kopieer bericht"]'); 
+    expect(copyButton).toBeInTheDocument();
+
+    if (copyButton) {
+        await user.click(copyButton);
+    }
+
+    // Verifieer clipboard call en toast
+    expect(writeTextSpy).toHaveBeenCalledWith('Inhoud om te kopiëren');
+    expect(mockToast).toHaveBeenCalledWith({
+      title: "Gekopieerd",
+      description: "Tekst gekopieerd naar klembord",
+    });
+  });
+
   // TODO: Add more tests for:
-  // - Loading/displaying notes and saved research
   // - Sending message and getting AI response (needs mocking edge function call or another mechanism?)
   // - Handling Supabase errors (auth, select, insert, delete)
   // - Clicking action buttons (regenerate, copy, delete, save research, delete research, save note, delete note)

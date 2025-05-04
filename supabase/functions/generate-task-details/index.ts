@@ -7,6 +7,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
 // Removed import for serve
 import { corsHeaders } from "../_shared/cors.ts"; // Keep CORS headers import
+import { OpenAI } from "https://deno.land/x/openai@v4.52.7/mod.ts";
 
 // Interface for the expected JSON response from OpenAI
 interface OpenAIResponse {
@@ -14,7 +15,7 @@ interface OpenAIResponse {
   description: string;
 }
 
-console.log("Hello from generate-task-details Function!");
+// console.log("Hello from generate-task-details Function!"); // Verwijderd
 
 // Use Deno.serve directly as in the original boilerplate
 Deno.serve(async (req) => {
@@ -25,8 +26,8 @@ Deno.serve(async (req) => {
 
   try {
     // 1. Get OpenAI API Key from secrets
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!apiKey) {
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    if (!OPENAI_API_KEY) {
       console.error("OPENAI_API_KEY is not set in Supabase secrets.");
       return new Response(
         JSON.stringify({ error: "Interne serverfout: API configuratie ontbreekt." }),
@@ -57,58 +58,43 @@ Deno.serve(async (req) => {
     const userPrompt = `Gebruikersinput: "${userInput}"`;
 
     // 4. Call OpenAI API (Chat Completions)
-    const openaiUrl = "https://api.openai.com/v1/chat/completions";
-    const model = "gpt-3.5-turbo"; // Or consider gpt-4o-mini for potentially lower cost/latency
-
-    console.log(`Calling OpenAI API for input: "${userInput}"`);
-
-    const openaiResponse = await fetch(openaiUrl, {
-      method: 'POST',
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        // Request JSON output directly if model supports it
-        response_format: { type: "json_object" },
-        temperature: 0.5, // Lower temperature for more deterministic results
-        max_tokens: 150, // Limit response length
-      }),
+    const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+    // console.log(`Calling OpenAI API for input: "${userInput}"`); // Verwijderd
+    const chatCompletion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      // Request JSON output directly if model supports it
+      response_format: { type: "json_object" },
+      temperature: 0.5, // Lower temperature for more deterministic results
+      max_tokens: 150, // Limit response length
     });
 
-    if (!openaiResponse.ok) {
-      const errorBody = await openaiResponse.text();
-      console.error(`OpenAI API error (${openaiResponse.status}):`, errorBody);
-      throw new Error(`Fout bij communicatie met AI service (${openaiResponse.status}).`);
-    }
+    const aiResponse = chatCompletion.choices?.[0]?.message?.content;
 
-    const result = await openaiResponse.json();
-    const content = result.choices?.[0]?.message?.content;
-
-    if (!content) {
-      console.error("OpenAI response did not contain expected content:", result);
+    if (!aiResponse) {
+      console.error("OpenAI response did not contain expected content:", chatCompletion);
       throw new Error("AI service gaf geen bruikbaar antwoord.");
     }
 
-    // 5. Parse the AI's JSON response
+    // 5. Parse and validate the response
     let generatedData: OpenAIResponse;
     try {
-      generatedData = JSON.parse(content);
+      generatedData = JSON.parse(aiResponse);
       // Basic validation
       if (typeof generatedData.title !== 'string' || typeof generatedData.description !== 'string') {
           throw new Error("Ongeldig JSON formaat van AI.");
       }
     } catch (e) {
-      console.error("Failed to parse OpenAI JSON response:", content, e);
-      throw new Error("Kon het antwoord van de AI service niet verwerken.");
+      console.error("Failed to parse OpenAI JSON response:", aiResponse, e);
+      // Type check for error message
+      const errorMessage = e instanceof Error ? e.message : "Kon het antwoord van de AI service niet verwerken.";
+      throw new Error(errorMessage);
     }
 
-    console.log(`OpenAI generated:`, generatedData);
+    // console.log(`OpenAI generated:`, generatedData); // Verwijderd
 
     // 6. Return the generated title and description
     return new Response(
@@ -117,11 +103,13 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Error in Edge Function:", error);
-  return new Response(
-      JSON.stringify({ error: error.message || "Er is een onverwachte fout opgetreden." }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    // console.error("Error in generate-task-details:", error); // Behoud of verwijder server-side logging indien nodig
+    // Type check for error message
+    const errorMessage = error instanceof Error ? error.message : "Interne serverfout bij genereren taakdetails";
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
 

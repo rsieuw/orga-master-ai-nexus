@@ -56,30 +56,24 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
     }
     setIsGeneratingTask(true);
     setDetailsVisible(false);
-    console.log("AI Task Gen: Starting generation for input:", initialInput);
 
     try {
-      console.log("AI Task Gen: Invoking edge function 'generate-task-details'...");
       const { data, error } = await supabase.functions.invoke(
         'generate-task-details',
         {
           body: { input: initialInput },
         }
       );
-      console.log("AI Task Gen: Edge function invocation finished.", { data, error });
 
       if (error) {
-        console.error("Edge function invocation error:", error);
-        throw new Error(error.message || "Kon de AI functie niet aanroepen.");
-      }
-
-      if (data?.error) {
-         console.error("Edge function returned an error:", data.error);
-         throw new Error(data.error);
+        toast({
+          variant: "destructive",
+          title: "Genereren mislukt",
+          description: error instanceof Error ? error.message : "Er is een fout opgetreden.",
+        });
       }
 
       if (data && data.title && data.description) {
-        console.log("AI Task Gen: Received valid data:", data);
         setTitle(data.title);
         setDescription(data.description);
         toast({
@@ -88,12 +82,10 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
         });
         setDetailsVisible(true);
       } else {
-        console.error("AI Task Gen: Invalid data structure returned:", data);
         throw new Error("Onverwachte response van AI service.");
       }
 
     } catch (error: unknown) {
-      console.error("AI Task Gen: Failed to generate task details:", error);
       const message = error instanceof Error ? error.message : "Er is een fout opgetreden.";
       toast({
         variant: "destructive",
@@ -102,7 +94,6 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
       });
     } finally {
       setIsGeneratingTask(false);
-      console.log("AI Task Gen: Generation process finished.");
     }
   };
 

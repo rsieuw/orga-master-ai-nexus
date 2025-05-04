@@ -2,8 +2,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
+// import { supabaseAdmin } from "../_shared/supabaseAdmin.ts"
 
-console.log(`Function 'delete-research' booting up.`);
+// console.log(`Function 'delete-research' booting up.`);
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -23,7 +24,7 @@ Deno.serve(async (req) => {
     // 2. Get user from Auth context
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
-      console.error("User authentication error:", userError);
+      // console.error("User authentication error:", userError);
       return new Response(JSON.stringify({ error: 'Niet geautoriseerd' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
@@ -42,8 +43,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Attempting to delete research ID: ${researchId} for user: ${user.id}`);
-
     // 4. Delete data from the saved_research table
     const { error: deleteError } = await supabaseClient
       .from('saved_research')
@@ -52,30 +51,25 @@ Deno.serve(async (req) => {
       .eq('user_id', user.id); // Extra check: only delete if it belongs to the user
 
     if (deleteError) {
-      console.error("Error deleting saved research:", deleteError);
+      // console.error("Error deleting saved research:", deleteError);
       // Differentiate between not found and other errors?
       // For now, just throw generic error
       throw new Error(`Database error: ${deleteError.message}`);
     }
 
     // 5. Return success response
-    console.log(`Research with ID ${researchId} deleted successfully.`);
-    return new Response(
-      JSON.stringify({ message: "Onderzoek succesvol verwijderd!" }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200 
-      }
-    );
+    // console.log(`Research with ID ${researchId} deleted successfully.`);
+    return new Response(JSON.stringify({ message: "Onderzoek succesvol verwijderd!" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
 
   } catch (error) {
-    console.error("Error in delete-research function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "Interne serverfout" }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" }, 
-        status: 500 
-      }
-    );
+    // console.error("Error in delete-research function:", error);
+    const errorMessage = error instanceof Error ? error.message : "Interne serverfout bij verwijderen onderzoek.";
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 }); 

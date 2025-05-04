@@ -4,6 +4,8 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Import Supabase client
+import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import { OpenAI } from "https://deno.land/x/openai@v4.52.7/mod.ts";
 
 // Interface for Subtask (adjust if your structure is different)
 interface SubTask {
@@ -21,7 +23,7 @@ interface AIResponse {
 }
 // --- End AI Response structure definition ---
 
-console.log("generate-chat-response function started V2");
+// console.log("generate-chat-response function started V2");
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -31,8 +33,8 @@ serve(async (req) => {
 
   try {
     // 1. Extract data from request
-    const { query, mode, taskId, chatHistory, languagePreference } = await req.json();
-    console.log(`V2: Received query: ${query}, mode: ${mode}, taskId: ${taskId}, lang: ${languagePreference}, history length: ${chatHistory?.length || 0}`);
+    const { query, mode, taskId, chatHistory, languagePreference = 'en' } = await req.json();
+    // console.log(`V2: Received query: ${query}, mode: ${mode}, taskId: ${taskId}, lang: ${languagePreference}, history length: ${chatHistory?.length || 0}`);
     if (!query) throw new Error("Query is required");
     if (!mode) throw new Error("Mode is required");
     if (!taskId) throw new Error("taskId is required"); // Need taskId to fetch subtasks
@@ -53,7 +55,7 @@ serve(async (req) => {
     });
 
     // 4. Fetch current subtasks for context
-    let currentSubtasks: SubTask[] = [];
+    let currentSubtasks: { title: string; is_completed: boolean }[] = [];
     try {
         const { data: taskData, error: taskError } = await supabase
             .from('tasks')
@@ -66,7 +68,7 @@ serve(async (req) => {
             // Don't throw, proceed without subtask context if fetching fails
         } else if (taskData && Array.isArray(taskData.subtasks)) {
             currentSubtasks = taskData.subtasks;
-            console.log(`V2: Fetched ${currentSubtasks.length} subtasks for context.`);
+            // console.log(`V2: Fetched ${currentSubtasks.length} subtasks for context.`);
         }
     } catch (e) {
         console.error("Exception fetching subtasks:", e);
@@ -75,21 +77,27 @@ serve(async (req) => {
     // 5. Prepare Prompt and Parameters for OpenAI
     let baseSystemPrompt = `You are a helpful AI assistant specialized in task management for the 'OrgaMaster AI' application. Your goal is to understand user requests about a specific task and potentially manage its subtasks or the main task itself. Respond ONLY in ${preferredLanguage}. The ID of the current main task is ${taskId}.`;
     let temperature = 0.5;
+    let model = "gpt-4o-mini";
 
     // Add mode-specific instructions
      switch(mode){
       case 'precise':
         baseSystemPrompt += " Respond precisely and factually. Stick strictly to known information.";
         temperature = 0.2;
-        console.log("V2: Using Precise Mode settings");
+        model = "gpt-4o";
+        baseSystemPrompt += "\n\nMODE: Precise. Respond with factual, accurate, and concise responses.";
+        // console.log("V2: Using Precise Mode settings");
         break;
       case 'creative':
         baseSystemPrompt += " Be creative, brainstorm ideas, and use imaginative language regarding the task.";
         temperature = 0.8;
-        console.log("V2: Using Creative Mode settings");
+        model = "gpt-4o";
+        baseSystemPrompt += "\n\nMODE: Creative. Be imaginative, explore possibilities, and suggest novel ideas.";
+        // console.log("V2: Using Creative Mode settings");
         break;
       default:
-        console.log("V2: Using Default (GPT-4o mini) settings");
+        baseSystemPrompt += "\n\nMODE: Balanced (Default). Provide helpful, relevant, and concise responses.";
+        // console.log("V2: Using Default (GPT-4o mini) settings");
         break;
     }
 
@@ -127,7 +135,7 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
     const finalSystemPrompt = `${baseSystemPrompt}\n${mainTaskInstructions}\n${subtaskInstructions}${languageInstruction}`;
 
     // --- Make the OpenAI API call ---
-    console.log(`V2: Making API call with prompt starting: '${finalSystemPrompt.substring(0, 100)}...' and temp: ${temperature}`);
+    // console.log(`V2: Making API call with prompt starting: '${finalSystemPrompt.substring(0, 100)}...' and temp: ${temperature}`);
 
     const completion = await fetch("https://api.openai.com/v1/chat/completions", {
       method: 'POST',
@@ -136,7 +144,7 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
         'Authorization': `Bearer ${openAIApiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", 
+        model: model,
         messages: [
           { role: "system", content: finalSystemPrompt },
           ...Array.isArray(chatHistory) ? chatHistory.map(msg => ({ role: msg.role, content: msg.content })) : [], // Ensure history format is correct
@@ -155,7 +163,7 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
 
     // --- Response Parsing ---
     const rawData = await completion.text(); 
-    console.log("V2: Raw OpenAI Response:", rawData);
+    // console.log("V2: Raw OpenAI Response:", rawData);
 
     let structuredData: any; // Keep as any for parsing flexibility
     try {
@@ -167,68 +175,78 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
 
     // ---> HERZIENE LOGICA <---
     // Extract the main content part from the AI response first
-    const aiContentString = structuredData?.choices?.[0]?.message?.content?.trim() ?? null;
+    let aiContentString: string | null = null;
+    try {
+      aiContentString = structuredData?.choices?.[0]?.message?.content?.trim() ?? null;
+    } catch (error) {
+      // console.error("V2: Error accessing OpenAI response content:", error); // Optional
+      // Handle cases where the structure might be different or null
+    }
 
     // Initialize finalResponseObject with defaults
-    let finalAction: string | undefined = undefined;
-    let finalPayload: Record<string, unknown> | undefined = undefined;
-    let finalResponseText: string = "Sorry, ik kon geen antwoord genereren."; // Default text
+    let finalAction: string | null = null;
+    let finalPayload: unknown = null;
+    let finalResponse: string = "Sorry, ik kon geen antwoord genereren."; // Default text
 
     if (aiContentString) {
         // Try to parse the content string itself as JSON (in case AI wrapped the whole action object)
         try {
-            const contentJson = JSON.parse(aiContentString);
+            const aiResponseParsed: unknown = JSON.parse(aiContentString);
             // Check if this parsed JSON contains the action/payload
-            if (typeof contentJson === 'object' && contentJson !== null) {
-                if ('action' in contentJson && typeof contentJson.action === 'string') {
-                    finalAction = contentJson.action;
-                    console.log("V2: Parsed 'action' from aiContentString:", finalAction);
+            if (typeof aiResponseParsed === 'object' && aiResponseParsed !== null) {
+                // Type check for properties
+                const action = (aiResponseParsed as { action?: unknown }).action;
+                const payload = (aiResponseParsed as { payload?: unknown }).payload;
+                const response = (aiResponseParsed as { response?: unknown }).response;
+
+                if (typeof action === 'string') {
+                    finalAction = action;
+                    // console.log("V2: Parsed 'action' from aiContentString:", finalAction);
                 }
-                if ('payload' in contentJson && typeof contentJson.payload === 'object') {
-                    finalPayload = contentJson.payload as Record<string, unknown>;
-                    console.log("V2: Parsed 'payload' from aiContentString.");
-                }
-                 // Also try to get a natural language response from within this object
-                if ('response' in contentJson && typeof contentJson.response === 'string') {
-                     finalResponseText = contentJson.response;
-                     console.log("V2: Parsed 'response' text from aiContentString.");
+                // Keep payload as unknown, specific handling should occur where it's used
+                finalPayload = payload;
+                // console.log("V2: Parsed 'payload' from aiContentString.");
+
+                if (typeof response === 'string') {
+                    finalResponse = response;
+                    // console.log("V2: Parsed 'response' text from aiContentString.");
                 } else if (finalAction) {
                     // If we found an action but no explicit response text, use a default
-                    finalResponseText = "Oké, ik voer de actie uit."; 
+                    finalResponse = "Oké, ik voer de actie uit."; 
                 } else {
                    // If it's JSON but not our action structure, treat contentJson as the response text?
                    // Or stick to default error. Let's stick to default for now.
-                   console.warn("V2: Parsed contentJson but it doesn't match expected action structure.");
-                   finalResponseText = aiContentString; // Fallback to using the raw string if JSON parse worked but structure unknown
+                   // console.warn("V2: Parsed contentJson but it doesn't match expected action structure.");
+                   finalResponse = aiContentString; // Fallback to using the raw string if JSON parse worked but structure unknown
                 }
             } else {
                  // Parsed contentJson is not an object, treat original string as text
-                console.log("V2: aiContentString parsed, but is not an object. Treating as plain text.");
-                finalResponseText = aiContentString;
+                // console.log("V2: aiContentString parsed, but is not an object. Treating as plain text.");
+                finalResponse = aiContentString;
             }
         } catch (e) {
             // Parsing aiContentString failed, it's just plain text
-            console.log("V2: aiContentString is plain text.");
-            finalResponseText = aiContentString;
+            // console.log("V2: aiContentString is plain text.");
+            finalResponse = aiContentString;
         }
     } else {
         // aiContentString was null/empty from the start
-        console.warn("V2: AI response content was missing or empty.");
-        // finalResponseText keeps its default error message
+        // console.warn("V2: AI response content was missing or empty.");
+        // finalResponse keeps its default error message
     }
 
     // Construct the final object
-    const finalResponseObject: AIResponse = { response: finalResponseText };
+    const finalResponseObject: AIResponse = { response: finalResponse };
     if (finalAction) {
         finalResponseObject.action = finalAction;
     }
-    if (finalPayload) {
+    if (finalPayload !== undefined) {
         finalResponseObject.payload = finalPayload;
     }
     // ---> EINDE HERZIENE LOGICA <---
 
     // 6. Return the structured response
-    console.log(`V2: Final structured response being sent:`, finalResponseObject);
+    // console.log(`V2: Final structured response being sent:`, finalResponseObject);
     return new Response(JSON.stringify(finalResponseObject), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

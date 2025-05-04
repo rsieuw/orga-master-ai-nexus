@@ -7,8 +7,10 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
 // Import standard libraries if needed (e.g., for CORS)
 import { corsHeaders } from "../_shared/cors.ts"
+import { Perplexity } from "https://deno.land/x/perplexity_ai@0.1.0/mod.ts"; // Replaced $VERSION with 0.1.0
+// import { supabaseAdmin } from "../_shared/supabaseAdmin.ts"; // Removed unused import
 
-console.log(`Function 'deep-research' up and running!`);
+// console.log(`Function 'deep-research' up and running!`); // Verwijderd
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -18,19 +20,20 @@ Deno.serve(async (req) => {
 
   try {
     // Parse the request body to get the query, description, contextQuery, and language preference
-    const { query, description, contextQuery, languagePreference = 'nl' } = await req.json();
+    const { query, description, contextQuery, languagePreference = 'nl', taskId } = await req.json();
+    // const authHeader = req.headers.get("Authorization")!; // Removed unused variable
 
-    if (!query) {
+    // console.log(`Received research query: ${query}`); // Verwijderd
+
+    if (!query || !taskId) {
       return new Response(
-        JSON.stringify({ error: "Missing 'query' in request body" }),
+        JSON.stringify({ error: "Missing 'query' or 'taskId' in request body" }),
         { 
           headers: { ...corsHeaders, "Content-Type": "application/json" }, 
           status: 400 
         }
       );
     }
-
-    console.log(`Received research query: ${query}`);
 
     // Retrieve Perplexity API key from secrets
     const perplexityApiKey = Deno.env.get("PERPLEXITY_API_KEY");
@@ -44,16 +47,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ---> TOEKOMSTIGE CHECK: Betaalde Functie Toegangscontrole <---
-    // TODO: Implementeer hier de logica om te checken of de gebruiker een betaald abonnement heeft.
-    // Bijvoorbeeld: haal user op met req.headers.get('Authorization')!, 
-    // check tegen een 'subscriptions' tabel.
-    const isPaidUser = true; // Placeholder: later vervangen door echte check
-    console.log("[PLACEHOLDER] Checking user payment status (currently always true)...");
+    // [PLACEHOLDER] Check user payment status
+    // console.log("[PLACEHOLDER] Checking user payment status (currently always true)..."); // Verwijderd
+    const isPaidUser = true; // Assume true for now
 
     if (!isPaidUser) { 
       // Dit blok wordt nu overgeslagen.
-      console.warn("Access denied: Deep research is a paid feature.");
+      // console.warn("Access denied: Deep research is a paid feature."); // Verwijderd
       return new Response(
         JSON.stringify({ error: "Toegang geweigerd: Deze functie vereist een actief abonnement." }),
         {
@@ -64,104 +64,68 @@ Deno.serve(async (req) => {
     }
     // ---> EINDE Placeholder Check <---
 
-    const perplexityUrl = "https://api.perplexity.ai/chat/completions";
+    const perplexity = new Perplexity(perplexityApiKey);
 
-    // Declareer variabelen vóór de try-catch
-    let researchResult = "Kon geen onderzoeksresultaten vinden.";
-    let citations: string[] | undefined = undefined;
+    const researchResult = await perplexity.search(query, {
+      model: "sonar-pro", // Or another suitable model like sonar-medium-online
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert research assistant helping a user understand and execute a task or subtask in their project management workflow.
 
-    // --- Vertaalde Koppen --- 
-    let headers = {
-      summary: "Key Concept Summary",
-      challenges: "Potential Challenges or Considerations",
-      steps: "Actionable First Steps",
-      resources: "Relevant Resources (Optional)"
-    };
-    if (languagePreference === 'nl') {
-      headers = {
-        summary: "Kernconcept Samenvatting",
-        challenges: "Mogelijke Uitdagingen of Overwegingen",
-        steps: "Concrete Eerste Stappen",
-        resources: "Relevante Bronnen (Optioneel)"
-      };
-    }
-    // --- Einde Vertaalde Koppen ---
+${contextQuery
+  ? `The main task context is: "${contextQuery}". The specific subtask to research is: "${query}".`
+  : `The task to research is: "${query}".`}
 
-    // --- Perplexity API call ---
-    try {
-      const response = await fetch(perplexityUrl, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${perplexityApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "sonar-pro", // Or another suitable model like sonar-medium-online
-          messages: [
-            {
-              role: "system",
-              content: `You are an expert research assistant helping a user understand and execute a task or subtask in their project management workflow.
+${description ? `Additional description provided: "${description}".` : ''}
 
-${contextQuery 
-  ? `Main Task Title: \"${contextQuery}\"\nSubtask to Research: \"${query}\"` 
-  : `Task Title: \"${query}\"\nTask Description: \"${description || 'No description provided.'}\"`
-}
+Your goal is to provide a concise yet comprehensive research summary covering:
+1.  **Key Concept Summary:** Explain the core ideas or background needed.
+2.  **Potential Challenges or Considerations:** Highlight potential difficulties or important factors.
+3.  **Actionable First Steps:** Suggest concrete initial actions the user can take.
+4.  **(Optional) Relevant Resources:** Include links to high-quality articles, tools, or documentation if applicable and genuinely helpful.
 
-Based on your search results and understanding of the core topic (${contextQuery ? 'the subtask "' + query + '" in the context of the main task' : 'the task "' + query + '"'}), provide a structured and practical response to help the user move forward. Your response should include the following sections:
-
-1.  **${headers.summary}** – Briefly explain the main topic or concept behind the task/subtask in simple terms.
-2.  **${headers.challenges}** – Identify common pitfalls, dependencies, or factors the user should watch out for. **Use markdown bullet points (e.g., \`- Challenge one\`) for each item.**
-3.  **${headers.steps}** – List at least 4 clear and specific actions the user can take right away to begin working on the task/subtask. **Start EACH step STRICTLY with a number followed by a period and a space (e.g., \`1. Step one\`, \`2. Step two\`). Do NOT use bold text or other formatting at the beginning of the step itself.**
-4.  **${headers.resources}** – If applicable, suggest one or two high-quality resources (articles, tools, or references) that directly support this task/subtask. **Format these as markdown links: \`[Resource Title](URL)\`**. 
-
-Provide a comprehensive and detailed response, practical, and focused on helping the user make meaningful progress within their project.
+Format your response clearly using Markdown.
 
 **Respond in the following language: ${languagePreference}.**`
-            },
-            // Voeg een user message toe als laatste item, zoals vereist door Perplexity
-            { role: "user", content: `Provide research based on the ${contextQuery ? 'subtask: "' + query + '" (related to main task: "' + contextQuery + '")' : 'task: "' + query + '"'}` }
-          ],
-          max_tokens: 1500 
-        }),
-      });
+        },
+        // Voeg een user message toe als laatste item, zoals vereist door Perplexity
+        { role: "user", content: `Provide research based on the ${contextQuery ? `subtask: "${query}" (related to main task: "${contextQuery}")` : `task: "${query}"`}` }
+      ],
+      max_tokens: 1500
+    });
 
-      if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`Perplexity API error: ${response.status} ${response.statusText} - ${errorBody}`);
-      }
-
-      const result = await response.json();
-      
-      // Extract the content from the first assistant choice
-      if (result.choices && result.choices.length > 0 && result.choices[0].message && result.choices[0].message.content) {
-        researchResult = result.choices[0].message.content;
-      } else {
-        console.warn("Unexpected response structure from Perplexity (content):", result);
-      }
-
-      // Extract citations if available
-      if (result.citations && Array.isArray(result.citations)) {
-        citations = result.citations.filter((c: unknown): c is string => typeof c === 'string');
-        console.log(`Extracted ${citations.length} citations.`);
-      } else {
-        console.log("No citations array found in Perplexity response.");
-      }
-
-    } catch (apiError) {
-      console.error("Error calling Perplexity API:", apiError);
-      // Return the API error message to the client for more specific feedback
-      return new Response(
-        JSON.stringify({ error: `Failed to get research result: ${apiError.message}` }),
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" }, 
-          status: 502 // Bad Gateway might be appropriate here
-        }
-      );
+    if (!researchResult.ok) {
+      const errorBody = await researchResult.text();
+      throw new Error(`Perplexity API error: ${researchResult.status} ${researchResult.statusText} - ${errorBody}`);
     }
-    // ---
+
+    const result = await researchResult.json();
+    
+    // Declare a variable to hold the extracted content
+    let finalContent: string = "Kon geen onderzoeksresultaten vinden."; 
+
+    // Extract the content from the first assistant choice
+    if (result.choices && result.choices.length > 0 && result.choices[0].message && result.choices[0].message.content) {
+      // Assign to the new variable instead of the constant
+      finalContent = result.choices[0].message.content;
+    } else {
+      // console.warn("Unexpected response structure from Perplexity (content):", result); // Verwijderd
+      // finalContent behoudt de default waarde
+    }
+
+    // Extract citations if available
+    let citations: string[] | undefined = undefined;
+    if (result.citations && Array.isArray(result.citations)) {
+      citations = result.citations.filter((c: unknown): c is string => typeof c === 'string');
+      // console.log(`Extracted ${citations.length} citations.`); // Verwijderd
+    } else {
+      // console.log("No citations array found in Perplexity response."); // Verwijderd
+    }
 
     const data = {
-      researchResult: researchResult,
+      // Use the new variable here
+      researchResult: finalContent,
       citations: citations
     };
 
@@ -173,9 +137,11 @@ Provide a comprehensive and detailed response, practical, and focused on helping
       }
     );
   } catch (error) {
-    console.error("Error processing request:", error);
+    // console.error("Error processing request:", error); // Verwijderd
+    // Check if error is an instance of Error before accessing .message
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" }, 
         status: 500 

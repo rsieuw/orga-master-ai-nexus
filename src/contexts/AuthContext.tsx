@@ -5,6 +5,9 @@ import { useToast } from "@/hooks/use-toast.ts";
 
 export type UserRole = "admin" | "paid" | "free";
 
+// Define the possible AI modes as a literal type
+export type AiMode = 'gpt4o' | 'creative' | 'precise';
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -12,6 +15,8 @@ export interface UserProfile {
   role: UserRole;
   avatar_url: string | null;
   language_preference: string;
+  email_notifications_enabled: boolean;
+  ai_mode_preference: AiMode; // Added field using the literal type
   created_at: string;
   updated_at: string;
   status?: string;
@@ -26,7 +31,7 @@ export interface AuthContextProps {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
-  updateUser: (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference'>>) => Promise<void>;
+  updateUser: (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference'>>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -172,7 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateUser = async (data: Partial<Pick<UserProfile, 'name' | 'language_preference'>>) => {
+  const updateUser = async (data: Partial<Pick<UserProfile, 'name' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference'>>) => {
     if (!session?.user) {
       throw new Error("Gebruiker niet ingelogd");
     }
@@ -185,9 +190,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
       }
       
-      const profileUpdatePayload: Partial<Pick<UserProfile, 'name' | 'language_preference'>> = {};
+      const profileUpdatePayload: Partial<Pick<UserProfile, 'name' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference'>> = {};
       if (data.name !== undefined) profileUpdatePayload.name = data.name;
       if (data.language_preference !== undefined) profileUpdatePayload.language_preference = data.language_preference;
+      if (data.email_notifications_enabled !== undefined) profileUpdatePayload.email_notifications_enabled = data.email_notifications_enabled;
+      if (data.ai_mode_preference !== undefined) profileUpdatePayload.ai_mode_preference = data.ai_mode_preference;
 
       if (Object.keys(profileUpdatePayload).length > 0) {
         const { error: updateProfileError } = await supabase
@@ -202,6 +209,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const updatedUser = { ...currentUser };
           if (data.name !== undefined) updatedUser.name = data.name;
           if (data.language_preference !== undefined) updatedUser.language_preference = data.language_preference;
+          if (data.email_notifications_enabled !== undefined) updatedUser.email_notifications_enabled = data.email_notifications_enabled;
+          if (data.ai_mode_preference !== undefined) updatedUser.ai_mode_preference = data.ai_mode_preference as AiMode;
           return updatedUser;
       });
       

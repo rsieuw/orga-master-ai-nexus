@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card.tsx";
 import { useTheme } from "@/contexts/ThemeContext.tsx";
-import { useAuth } from "@/contexts/AuthContext.tsx";
+import { useAuth, AiMode } from "@/contexts/AuthContext.tsx";
 import {
   Select,
   SelectContent,
@@ -28,12 +28,22 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer.tsx";
+import { Loader } from "@/components/ui/loader.tsx";
+
+const aiModeOptions: { value: AiMode; label: string }[] = [
+  { value: 'gpt4o', label: 'GPT-4o (Gebalanceerd)' },
+  { value: 'creative', label: 'Creatieve Modus' },
+  { value: 'precise', label: 'Precieze Modus' },
+];
 
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
   const { user, updateUser } = useAuth();
   const [language, setLanguage] = useState<string>(user?.language_preference || "nl");
   const [emailNotifications, setEmailNotifications] = useState(true);
+  const [isSavingNotifications, setIsSavingNotifications] = useState(false);
+  const [selectedAiMode, setSelectedAiMode] = useState<AiMode>('precise');
+  const [isSavingAiMode, setIsSavingAiMode] = useState(false);
   const { toast } = useToast();
 
   // State for account form
@@ -46,6 +56,8 @@ export default function SettingsPage() {
       setName(user.name || "");
       setEmail(user.email || "");
       setLanguage(user.language_preference || "nl");
+      setEmailNotifications(user.email_notifications_enabled ?? true);
+      setSelectedAiMode(user.ai_mode_preference || 'precise');
     }
   }, [user]);
 
@@ -67,12 +79,28 @@ export default function SettingsPage() {
     }
   };
 
-  const handleToggleNotifications = (checked: boolean) => {
+  const handleToggleNotifications = async (checked: boolean) => {
+    setIsSavingNotifications(true);
+    const originalValue = emailNotifications;
     setEmailNotifications(checked);
-    toast({
-      title: `E-mail notificaties ${checked ? 'ingeschakeld' : 'uitgeschakeld'}`,
-      description: `Je zult ${checked ? 'nu' : 'geen'} e-mail notificaties ontvangen voor naderende deadlines`,
-    });
+
+    try {
+      await updateUser({ email_notifications_enabled: checked });
+      toast({
+        title: `E-mail notificaties ${checked ? 'opgeslagen' : 'opgeslagen'}`,
+        description: `Voorkeur voor e-mail notificaties is ${checked ? 'ingeschakeld' : 'uitgeschakeld'}.`,
+      });
+    } catch (error) {
+      setEmailNotifications(originalValue);
+      console.error("Failed to update email notification preference:", error);
+      toast({
+        variant: "destructive",
+        title: "Fout bij opslaan",
+        description: "Kon voorkeur voor e-mail notificaties niet opslaan.",
+      });
+    } finally {
+      setIsSavingNotifications(false);
+    }
   };
 
   const handleSaveAccount = async () => {
@@ -90,6 +118,32 @@ export default function SettingsPage() {
         title: "Fout bij bijwerken",
         description: "Kon accountgegevens niet opslaan",
       });
+    }
+  };
+
+  const handleAiModeChange = async (value: string) => {
+    const newMode = value as AiMode;
+    setIsSavingAiMode(true);
+    const originalMode = selectedAiMode;
+    setSelectedAiMode(newMode);
+
+    try {
+      await updateUser({ ai_mode_preference: newMode });
+      const modeLabel = aiModeOptions.find(opt => opt.value === newMode)?.label || newMode;
+      toast({
+        title: "AI Modus Opgeslagen",
+        description: `Standaard AI modus ingesteld op: ${modeLabel}`,
+      });
+    } catch (error) {
+      setSelectedAiMode(originalMode);
+      console.error("Failed to update AI mode preference:", error);
+      toast({
+        variant: "destructive",
+        title: "Fout bij opslaan",
+        description: "Kon voorkeur voor AI modus niet opslaan.",
+      });
+    } finally {
+      setIsSavingAiMode(false);
     }
   };
 
@@ -185,7 +239,9 @@ export default function SettingsPage() {
                   id="email-notifications"
                   checked={emailNotifications}
                   onCheckedChange={handleToggleNotifications}
+                  disabled={isSavingNotifications}
                 />
+                {isSavingNotifications && <Loader size="sm" className="ml-2" />}
               </div>
             </CardContent>
           </Card>
@@ -216,7 +272,35 @@ export default function SettingsPage() {
                 </Select>
               </div>
               
-              <div className="pt-4">
+              <div className="flex items-center justify-between pt-4 border-t border-border/10">
+                <div>
+                  <Label htmlFor="ai-mode" className="text-base">Standaard AI Modus</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Kies het standaard gedrag voor AI interacties
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select 
+                    value={selectedAiMode} 
+                    onValueChange={handleAiModeChange}
+                    disabled={isSavingAiMode}
+                  >
+                    <SelectTrigger id="ai-mode" className="w-48">
+                      <SelectValue placeholder="Selecteer modus" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {aiModeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {isSavingAiMode && <Loader size="sm" />} 
+                </div>
+              </div>
+              
+              <div className="pt-4 border-t border-border/10">
                 <Drawer>
                   <DrawerTrigger asChild>
                     <Button variant="outline" className="w-full">AI Model Configuratie</Button>

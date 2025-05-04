@@ -1,11 +1,26 @@
-
+import { useMemo } from "react";
 import AppLayout from "@/components/layout/AppLayout.tsx";
 import { useAuth } from "@/contexts/AuthContext.tsx";
+import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
+import { Task } from "@/types/task.ts";
 
 export default function Profile() {
   const { user } = useAuth();
+  const { tasks, isLoading: isLoadingTasks } = useTask();
+
+  const statistics = useMemo(() => {
+    if (!tasks) return { total: 0, completed: 0, todo: 0, inProgress: 0 };
+
+    const total = tasks.length;
+    const completed = tasks.filter((task: Task) => task.status === 'done').length;
+    const todo = tasks.filter((task: Task) => task.status === 'todo').length;
+    const inProgress = tasks.filter((task: Task) => task.status === 'in_progress').length;
+
+    return { total, completed, todo, inProgress };
+  }, [tasks]);
 
   if (!user) {
     return null;
@@ -54,24 +69,33 @@ export default function Profile() {
           <CardTitle>Gebruikers Statistieken</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-accent/50 rounded-lg">
-              <p className="text-sm text-muted-foreground">Totaal Taken</p>
-              <p className="text-2xl font-bold">6</p>
+          {isLoadingTasks ? (
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
             </div>
-            <div className="p-4 bg-accent/50 rounded-lg">
-              <p className="text-sm text-muted-foreground">Voltooid</p>
-              <p className="text-2xl font-bold">2</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-accent/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Totaal Taken</p>
+                <p className="text-2xl font-bold">{statistics.total}</p>
+              </div>
+              <div className="p-4 bg-accent/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Voltooid</p>
+                <p className="text-2xl font-bold">{statistics.completed}</p>
+              </div>
+              <div className="p-4 bg-accent/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Te doen</p>
+                <p className="text-2xl font-bold">{statistics.todo}</p>
+              </div>
+              <div className="p-4 bg-accent/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">In Behandeling</p>
+                <p className="text-2xl font-bold">{statistics.inProgress}</p>
+              </div>
             </div>
-            <div className="p-4 bg-accent/50 rounded-lg">
-              <p className="text-sm text-muted-foreground">Te doen</p>
-              <p className="text-2xl font-bold">3</p>
-            </div>
-            <div className="p-4 bg-accent/50 rounded-lg">
-              <p className="text-sm text-muted-foreground">In Behandeling</p>
-              <p className="text-2xl font-bold">1</p>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </AppLayout>

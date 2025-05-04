@@ -1,14 +1,15 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { corsHeaders } from "../_shared/cors.ts";
 
-console.log(`Function 'save-research' up and running!`);
+// console.log(`Function 'save-research' up and running!`); // Verwijderd
 
 // Define CORS headers directly for simplicity
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*', // Adjust in production!
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// const corsHeaders = {
+//   'Access-Control-Allow-Origin': '*', // Adjust in production!
+//   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// };
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -71,7 +72,7 @@ Deno.serve(async (req) => {
     }
 
     // 5. Return success response, inclusief de nieuwe ID
-    console.log(`Research saved successfully (ID: ${savedData.id}) for task ${taskId} by user ${user.id}`);
+    // console.log(`Research saved successfully (ID: ${savedData.id}) for task ${taskId} by user ${user.id}`); // Verwijderd
     return new Response(
       // ---> NIEUW: Stuur ID mee in de response <--- 
       JSON.stringify({ message: "Onderzoek succesvol opgeslagen!", savedResearchId: savedData.id }),
@@ -82,13 +83,14 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Error processing request:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "Interne serverfout" }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" }, 
-        status: 500 
-      }
-    );
+    // console.error("Error saving research:", error); // Optioneel: log de fout server-side
+    let errorMessage = "Internal Server Error";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 }); 

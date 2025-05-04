@@ -339,22 +339,22 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       const requiresResearch = researchKeywords.some(keyword => inputLower.includes(keyword));
 
       // Gedetailleerde logging (uitgebreid)
-      console.log(`[DEBUG] Checking input: "${inputLower}"`);
-      console.log(`[DEBUG] NL Check: Verb? ${hasDutchVerb}, Noun? ${hasDutchNoun}. EN Check: Verb? ${hasEnglishVerb}, Noun? ${hasEnglishNoun}.`);
-      console.log(`[DEBUG] Requires Subtask Generation? ${requiresSubtaskGeneration}`);
-      console.log(`[DEBUG] Requires Research? ${requiresResearch}`); // <-- Nieuwe log
+      // console.log(`[DEBUG] Checking input: "${inputLower}"`);
+      // console.log(`[DEBUG] NL Check: Verb? ${hasDutchVerb}, Noun? ${hasDutchNoun}. EN Check: Verb? ${hasEnglishVerb}, Noun? ${hasEnglishNoun}.`);
+      // console.log(`[DEBUG] Requires Subtask Generation? ${requiresSubtaskGeneration}`);
+      // console.log(`[DEBUG] Requires Research? ${requiresResearch}`); // <-- Nieuwe log
 
       if (requiresSubtaskGeneration) {
-        console.log("[DEBUG] *** Subtask generation keywords DETECTED ***");
+        // console.log("[DEBUG] *** Subtask generation keywords DETECTED ***");
         setIsLoading(true); // Toon laadindicator
         try {
           // Roep de nieuwe Edge Function aan
-          console.log(`[DEBUG] Invoking generate-subtasks for taskId: ${task.id}`); // Log function call
+          // console.log(`[DEBUG] Invoking generate-subtasks for taskId: ${task.id}`); // Log function call
           const { data: subtaskData, error: subtaskError } = await supabase.functions.invoke('generate-subtasks', {
             body: { taskId: task.id }
           });
 
-          console.log("[DEBUG] Response from generate-subtasks:", { subtaskData, subtaskError }); // Log response
+          // console.log("[DEBUG] Response from generate-subtasks:", { subtaskData, subtaskError }); // Log response
 
           if (subtaskError) throw subtaskError;
           // Extra check op de structuur van subtaskData
@@ -375,7 +375,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
           }));
           
           const combinedSubtasks = [...existingSubtasks, ...newSubtasks];
-          console.log("[DEBUG] Combined subtasks to save:", combinedSubtasks); // Log data to save
+          // console.log("[DEBUG] Combined subtasks to save:", combinedSubtasks); // Log data to save
 
           // Update de taak in de database via TaskContext
           await updateTask(task.id, { subtasks: combinedSubtasks });
@@ -418,14 +418,14 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         // Sla de normale chat AI aanroep over
         return; // Belangrijk: stop hier de executie voor dit bericht
       } else if (requiresResearch) { // <-- Nieuwe ELSE IF voor Onderzoek
-        console.log("[DEBUG] *** Research keywords DETECTED ***");
+        // console.log("[DEBUG] *** Research keywords DETECTED ***");
         // Roep de bestaande handleDeepResearch functie aan
         handleDeepResearch(); 
         // Belangrijk: Sla de normale chat AI aanroep over
         return; 
       } else {
         // Aangepaste log voor als geen enkele trigger matcht
-        console.log("[DEBUG] Geen speciale keywords gedetecteerd. Door naar normale chat."); 
+        // console.log("[DEBUG] Geen speciale keywords gedetecteerd. Door naar normale chat."); 
       }
       // ---> EINDE Checks <---
 
@@ -441,7 +441,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
 
         // Haal taalvoorkeur op, met fallback naar 'nl'
         const languagePreference = user?.language_preference || 'nl'; 
-        console.log(`Calling generate-chat-response function with mode: ${selectedModel}, lang: ${languagePreference}, and ${historyToInclude.length} history messages.`);
+        // console.log(`Calling generate-chat-response function with mode: ${selectedModel}, lang: ${languagePreference}, and ${historyToInclude.length} history messages.`);
 
         // --- Actual API Call to Supabase Edge Function --- 
         const { data: aiResponseData, error: functionError } = await supabase.functions.invoke('generate-chat-response', {
@@ -455,7 +455,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         });
 
         // ----> NIEUW: Log de ontvangen data
-        console.log("AI Response Received:", JSON.stringify(aiResponseData, null, 2)); 
+        // console.log("AI Response Received:", JSON.stringify(aiResponseData, null, 2)); 
 
         if (functionError) throw functionError; // Throw error from function call
 
@@ -743,14 +743,14 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         requestBody.description = researchDescription;
       }
       // ---> NIEUW: Log de waarden vlak voor de API call <---
-      console.log('[DEBUG] handleDeepResearch - Values before invoke:', {
-        selectedSubtaskTitle, 
-        researchQuery, 
-        researchDescription, 
-        contextQuery,
-        languagePreference,
-        requestBody 
-      });
+      // console.log('[DEBUG] handleDeepResearch - Values before invoke:', {
+      //   selectedSubtaskTitle, 
+      //   researchQuery, 
+      //   researchDescription, 
+      //   contextQuery,
+      //   languagePreference,
+      //   requestBody 
+      // });
       // ---> EINDE NIEUW <---
       
       const { data, error } = await supabase.functions.invoke('deep-research', {
@@ -761,7 +761,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
 
       // ---> NIEUW: Check of onderzoek geannuleerd is <---
       if (researchCancelled) {
-        console.log("[DEBUG] Research was cancelled by user. Discarding result.");
+        // console.log("[DEBUG] Research was cancelled by user. Discarding result.");
         return; // Stop verwerking als geannuleerd
       }
       // ---> EINDE NIEUW <---
@@ -806,7 +806,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
 
   // ---> NIEUW: Functie voor annuleren <---
   const handleCancelResearch = () => {
-    console.log("[DEBUG] Cancelling research...");
+    // console.log("[DEBUG] Cancelling research...");
     setResearchCancelled(true); // Zet de vlag
     setIsResearching(false); // Stop de laadindicator
     setIsLoading(false); // Stop ook algemene laadindicator

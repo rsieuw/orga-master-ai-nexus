@@ -17,6 +17,8 @@ import TaskForm from "./pages/TaskForm.tsx";
 import Settings from "./pages/Settings.tsx";
 import Profile from "./pages/Profile.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import SupportPage from "./pages/Support.tsx";
+import DocumentationPage from "./pages/Documentation.tsx";
 
 // Importeer de nieuwe admin componenten
 import AdminRouteGuard from "./components/auth/AdminRouteGuard.tsx";
@@ -53,6 +55,8 @@ const AppContent = () => {
             <Route path="/task/edit/:id" element={<TaskForm />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/support" element={<SupportPage />} />
+            <Route path="/documentation" element={<DocumentationPage />} />
             
             {/* Admin Routes */}
             <Route element={<AdminRouteGuard />}>

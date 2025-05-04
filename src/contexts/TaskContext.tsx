@@ -184,7 +184,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (Object.keys(taskToUpdate).length === 0) {
-        console.log("No changes detected for update.");
+        // console.log("No changes detected for update."); // Verwijderd
         const currentTask = tasks.find((t: Task) => t.id === id);
         if (!currentTask) throw new Error("Task not found for no-op update");
         return currentTask;
@@ -381,7 +381,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       return [];
     }
 
-    console.log(`Calling generate-subtasks function for task: ${task.id}`);
+    // console.log(`Calling generate-subtasks function for task: ${task.id}`); // Verwijderd
 
     try {
       // Voorbereiden van de data voor de Edge Function
@@ -420,7 +420,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         completed: false,
       }));
 
-      console.log(`Successfully generated ${generatedSubtasks.length} subtasks via AI.`);
+      // console.log(`Successfully generated ${generatedSubtasks.length} subtasks via AI.`); // Verwijderd
       return generatedSubtasks;
 
     } catch (error: unknown) {
