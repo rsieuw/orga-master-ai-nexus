@@ -44,11 +44,15 @@ Deno.serve(async (req) => {
     }
 
     // 4. Delete data from the saved_research table
-    const { error: deleteError } = await supabaseClient
+    const { count, error: deleteError } = await supabaseClient
       .from('saved_research')
-      .delete()
+      .delete({ count: 'exact' })
       .eq('id', researchId)
       .eq('user_id', user.id); // Extra check: only delete if it belongs to the user
+
+    // ---> NIEUW: Log het resultaat van de delete operatie <---
+    console.log(`[delete-research] Attempted delete for researchId: ${researchId}, userId: ${user.id}. Result count: ${count}`);
+    // ---> EINDE NIEUW <---
 
     if (deleteError) {
       // console.error("Error deleting saved research:", deleteError);
@@ -56,6 +60,20 @@ Deno.serve(async (req) => {
       // For now, just throw generic error
       throw new Error(`Database error: ${deleteError.message}`);
     }
+
+    // ---> NIEUW: Check of er daadwerkelijk iets is verwijderd <---
+    if (count === 0) {
+      console.warn(`[delete-research] No research found with id ${researchId} for user ${user.id}, or deletion prevented (e.g., RLS).`);
+      // Besluit of je hier een fout wilt teruggeven of succes (als 'niet gevonden' ook ok is)
+      // Voor nu geven we een mildere foutmelding terug
+      return new Response(JSON.stringify({ 
+        warning: `Onderzoek met ID ${researchId} niet gevonden of kon niet worden verwijderd.` 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 404, // Of 403 als RLS waarschijnlijker is
+      });
+    }
+    // ---> EINDE NIEUW <---
 
     // 5. Return success response
     // console.log(`Research with ID ${researchId} deleted successfully.`);

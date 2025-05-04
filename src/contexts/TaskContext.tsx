@@ -233,6 +233,14 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           )
         );
 
+        // --- NIEUWE LOGICA: Pas prioriteit aan bij voltooien ---
+        // Als de status expliciet naar 'done' wordt gezet in deze update,
+        // forceer dan de prioriteit naar 'none'.
+        if (updatedTaskData.status === 'done') {
+          updatedTaskData.priority = 'none'; // Gewijzigd van 'low' naar 'none'
+        }
+        // --- EINDE NIEUWE LOGICA ---
+
         return taskWithValidSubtasks;
       } else {
         throw new Error("Task update succeeded but no data returned.");
@@ -484,22 +492,79 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // Maak kopieën voor lokale update
     const updatedTasks = [...tasks];
     const updatedSubtasks = [...originalSubtasks];
     updatedSubtasks[subtaskIndex] = { ...updatedSubtasks[subtaskIndex], ...updates };
-    updatedTasks[taskIndex] = { ...originalTask, subtasks: updatedSubtasks };
+
+    let newParentTaskStatus: TaskStatus = originalTask.status;
+    let newParentTaskPriority: TaskPriority = originalTask.priority;
+
+    // --- NIEUWE LOGICA: Terugzetten van status/prioriteit bij uitvinken --- 
+    if (updates.completed === false && originalTask.status === 'done') {
+        newParentTaskStatus = 'in_progress';
+        newParentTaskPriority = 'medium'; // Zet terug naar standaard prioriteit
+    } 
+    // --- OF: Controleren op voltooien bij aanvinken --- 
+    else if (updates.completed === true) { 
+        const allSubtasksCompleted = updatedSubtasks.length > 0 && updatedSubtasks.every(st => st.completed);
+        if (allSubtasksCompleted) {
+            newParentTaskStatus = 'done';
+            newParentTaskPriority = 'none';
+        }
+    }
+    // Anders blijven status en prioriteit ongewijzigd
+
+    // Update de taak in de lokale state (optimistisch)
+    updatedTasks[taskIndex] = {
+      ...originalTask,
+      subtasks: updatedSubtasks,
+      status: newParentTaskStatus,
+      priority: newParentTaskPriority, // Update ook de prioriteit hier
+    };
 
     setTasks(updatedTasks);
 
-    try {
-      await updateTask(taskId, { subtasks: updatedSubtasks });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Subtaak bijwerken mislukt",
-        description: "Kon de wijzigingen niet synchroniseren met de database.",
-      });
-      setTasks(tasks);
+    // Bereid de data voor om naar de database te sturen
+    const updatesToPersist: { subtasks: SubTask[]; status?: TaskStatus; priority?: TaskPriority } = {
+      subtasks: updatedSubtasks,
+    };
+
+    // Voeg status/prioriteit toe aan payload indien gewijzigd
+    if (newParentTaskStatus !== originalTask.status) {
+      updatesToPersist.status = newParentTaskStatus;
+    }
+    if (newParentTaskPriority !== originalTask.priority) {
+        updatesToPersist.priority = newParentTaskPriority;
+    }
+
+    // Probeer de wijzigingen op te slaan in de database
+    // Alleen opslaan als er daadwerkelijk iets gewijzigd is (subtaken of status/prio)
+    if (Object.keys(updatesToPersist).length > 1) { // Meer dan alleen 'subtasks'
+      try {
+        await updateTask(taskId, updatesToPersist);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Subtaak bijwerken mislukt",
+          description: "Kon de wijzigingen niet synchroniseren met de database.",
+        });
+        // Zet de state terug naar de originele staat bij een fout
+        setTasks(tasks);
+      }
+    } else {
+        // Alleen subtaak update (geen status/prio wijziging), toch proberen op te slaan
+        // Dit pad zou minder vaak moeten voorkomen met de nieuwe logica
+         try {
+             await updateTask(taskId, { subtasks: updatedSubtasks });
+         } catch (error) {
+             toast({
+                 variant: "destructive",
+                 title: "Subtaak bijwerken mislukt",
+                 description: "Kon de subtaak wijziging niet synchroniseren.",
+             });
+             setTasks(tasks);
+         }
     }
   };
 

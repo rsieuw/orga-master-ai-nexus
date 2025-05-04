@@ -17,6 +17,11 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { hasPermission } from "@/lib/permissions.ts";
+import { Database } from "@/types/supabase.ts"; // Wijzig .tsx naar .ts
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip.tsx";
+
+// Definieer een alias voor het specifieke tabelrij type
+type SavedResearchRow = Database['public']['Tables']['saved_research']['Row'];
 
 // ---> NIEUW: Helper functie voor MessageType validatie <---
 const validMessageTypes = [
@@ -57,6 +62,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
   // --- Define saveMessageToDb with useCallback --- 
   const saveMessageToDb = useCallback(async (message: Message) => {
@@ -134,10 +140,13 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         // ---> NIEUW: Fetch saved research (inclusief citations) <---
         const { data: dbResearch, error: researchError } = await supabase
           .from('saved_research')
-          // ---> NIEUW: Selecteer ook 'citations' <---
-          .select('id, research_content, created_at, citations') 
+          // ---> NIEUW: Selecteer ook 'citations' en 'subtask_title' <---
+          .select('id, research_content, created_at, citations, subtask_title') 
           .eq('task_id', task.id)
           .order('created_at', { ascending: true });
+        
+        // Typeer dbResearch expliciet
+        const typedDbResearch = dbResearch as SavedResearchRow[] | null;
 
         if (researchError) {
           // Log de fout, maar ga verder, misschien is er geen onderzoek
@@ -151,16 +160,6 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
            content: string;
            created_at: string;
         }
-
-        // ---> NIEUW: Interface voor opgeslagen onderzoek <--- 
-        interface DbResearch {
-          id: string;
-          research_content: string;
-          created_at: string;
-          // Reverted Json type to unknown to fix import error
-          citations: unknown | null; 
-        }
-        // ---> EINDE NIEUW <---
 
         // Map chat messages
         const loadedChatMessages: Message[] = (dbMessages || []).map((msg) => ({
@@ -180,7 +179,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         }));
 
         // ---> NIEUW: Map saved research <--- 
-        const loadedResearch: Message[] = (dbResearch || []).map((research: DbResearch) => {
+        const loadedResearch: Message[] = (typedDbResearch || []).map((research: SavedResearchRow) => { 
           // Type assertion en validatie voor citations
           let mappedCitations: string[] | undefined = undefined;
           // Check of het een array is
@@ -198,7 +197,8 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
               timestamp: new Date(research.created_at).getTime(),
               messageType: 'saved_research_display',
               dbId: research.id,
-              citations: mappedCitations // Gebruik de gevalideerde/gemapte array
+              citations: mappedCitations, // Gebruik de gevalideerde/gemapte array
+              subtask_title: research.subtask_title // <-- NIEUW: subtask_title toevoegen
           };
         });
         // ---> EINDE NIEUW <---
@@ -225,7 +225,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     };
 
     loadMessagesAndNotes();
-  }, [task?.id, task?.title, toast]);
+  }, [task?.id, task?.title, toast, reloadTrigger]);
 
   // Effect to handle selected subtask
   useEffect(() => {
@@ -613,12 +613,17 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
   const handleSaveResearch = async (message: Message) => {
     if (message.messageType !== 'research_result' || !task?.id) return;
     setIsLoading(true); // Show loading indicator while saving
+
+    // DEBUG: Controleer de waarde van selectedSubtaskTitle bij opslaan
+    console.log('[DEBUG] handleSaveResearch - selectedSubtaskTitle:', selectedSubtaskTitle); 
+
     try {
       const { data, error } = await supabase.functions.invoke('save-research', {
         body: {
           taskId: task.id,
           researchContent: message.content,
-          citations: message.citations
+          citations: message.citations,
+          subtaskTitle: selectedSubtaskTitle // <-- NIEUW: Stuur geselecteerde subtaak mee
         },
       });
 
@@ -941,10 +946,6 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
   const handleDeleteResearch = async (researchIdToDelete: string) => {
     if (!researchIdToDelete) return;
 
-    // Optimistic UI update: Remove message immediately
-    const originalMessages = messages;
-    setMessages(prev => prev.filter(msg => msg.dbId !== researchIdToDelete || msg.messageType !== 'saved_research_display'));
-
     try {
       // Roep de nieuwe Edge Function aan
       const { error } = await supabase.functions.invoke('delete-research', {
@@ -957,11 +958,10 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         title: "Onderzoek Verwijderd", 
         description: "Het opgeslagen onderzoek is succesvol verwijderd."
       });
+      setReloadTrigger(prev => prev + 1); // <-- TRIGGER HERLADEN NA SUCCES
 
     } catch (error: unknown) {
       console.error('Error deleting saved research:', error);
-      // Revert optimistic update on error
-      setMessages(originalMessages);
       let errorDescription = "Kon het opgeslagen onderzoek niet verwijderen.";
       if (error instanceof Error) {
         errorDescription = error.message;
@@ -975,6 +975,9 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     // Optioneel: setIsLoading state toevoegen als het lang duurt?
   };
   // ---> EINDE NIEUW <--- 
+
+  // DEBUG: Log messages state before returning JSX
+  console.log('[DEBUG] ChatPanel messages state before render:', messages);
 
   return (
     <>
@@ -1020,6 +1023,14 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
                         : "chat-message-ai"
               }`}
             >
+              {/* ---> NIEUW: Toon subtaak referentie indien aanwezig <--- */}
+              {message.messageType === 'saved_research_display' && message.subtask_title && (
+                <p className="text-xs text-muted-foreground/80 mb-2 border-b border-white/10 pb-1.5 italic">
+                  Onderzoek voor subtaak: "{message.subtask_title}"
+                </p>
+              )}
+              {/* ---> EINDE NIEUW <--- */}
+              
               {(message.messageType === 'note_saved' || message.messageType === 'saved_research_display') ? (
                 <div className="text-sm">
                   <ReactMarkdown
@@ -1180,28 +1191,37 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         <div className="relative flex items-end gap-2">
           <Textarea
             className="chat-input flex-grow resize-none pr-10 pt-3 pb-1"
-            placeholder={isNoteMode ? "Schrijf een notitie..." : "Ctrl+Enter om te sturen..."}
+            placeholder={isNoteMode ? "Schrijf een notitie..." : "Typ je bericht..."}
             value={input}
             onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={1}
             disabled={isLoading}
           />
-          <Button
-            type="button"
-            onClick={() => handleSubmit()}
-            size="icon"
-            disabled={isLoading || !input.trim()}
-            className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
-          >
-            {isLoading ? (
-              <GradientLoader size="sm" />
-            ) : isNoteMode ? (
-              <Save className="h-4 w-4" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  onClick={() => handleSubmit()}
+                  size="icon"
+                  disabled={isLoading || !input.trim()}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
+                >
+                  {isLoading ? (
+                    <GradientLoader size="sm" />
+                  ) : isNoteMode ? (
+                    <Save className="h-4 w-4" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" align="end" sideOffset={5} className="bg-popover/90 backdrop-blur-lg">
+                <p>{isNoteMode ? "Notitie Opslaan" : "Verzenden (Ctrl+Enter)"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </form>
 

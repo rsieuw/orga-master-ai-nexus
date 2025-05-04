@@ -49,8 +49,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_mode_preference: string | null
           avatar_url: string | null
           created_at: string
+          email_notifications_enabled: boolean | null
           id: string
           language_preference: string | null
           name: string | null
@@ -59,8 +61,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_mode_preference?: string | null
           avatar_url?: string | null
           created_at?: string
+          email_notifications_enabled?: boolean | null
           id: string
           language_preference?: string | null
           name?: string | null
@@ -69,8 +73,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_mode_preference?: string | null
           avatar_url?: string | null
           created_at?: string
+          email_notifications_enabled?: boolean | null
           id?: string
           language_preference?: string | null
           name?: string | null
@@ -101,6 +107,7 @@ export type Database = {
           created_at: string
           id: string
           research_content: string
+          subtask_title: string | null
           task_id: string
           user_id: string
         }
@@ -109,6 +116,7 @@ export type Database = {
           created_at?: string
           id?: string
           research_content: string
+          subtask_title?: string | null
           task_id: string
           user_id: string
         }
@@ -117,6 +125,7 @@ export type Database = {
           created_at?: string
           id?: string
           research_content?: string
+          subtask_title?: string | null
           task_id?: string
           user_id?: string
         }
@@ -215,6 +224,8 @@ export type Database = {
           role: string
           avatar_url: string
           language_preference: string
+          email_notifications_enabled: boolean
+          ai_mode_preference: string
           created_at: string
           updated_at: string
           status: string

@@ -162,7 +162,8 @@
 
 .priority-high::before,
 .priority-medium::before,
-.priority-low::before {
+.priority-low::before,
+.priority-none::before {
   content: '';
   position: absolute;
   left: 0;
@@ -190,6 +191,19 @@
   /* Verwijderd: @apply border-l-4 border-l-priority-low; */
   /* Gradient van blue-400 naar blue-600 */
   @apply bg-gradient-to-b from-blue-400 to-blue-600;
+}
+
+.priority-none::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-top-left-radius: inherit;
+  border-bottom-left-radius: inherit;
+  /* Gradient van green-400 naar green-600 */
+  @apply bg-gradient-to-b from-green-400 to-green-600;
 }
 
 /* Firebase Studio inspired styles */

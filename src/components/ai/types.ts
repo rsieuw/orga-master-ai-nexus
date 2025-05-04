@@ -9,6 +9,7 @@ export interface Message {
   messageType?: 'standard' | 'research_result' | 'system' | 'error' | 'note_saved' | 'action_confirm' | 'saved_research_display';
   citations?: string[];
   dbId?: string;
+  subtask_title?: string | null;
 }
 
 export interface AIModel {

@@ -37,28 +37,23 @@ Deno.serve(async (req) => {
     }
 
     // 3. Parse request body
-    const { taskId, researchContent, citations } = await req.json();
-    if (!taskId || !researchContent) {
-      return new Response(
-        JSON.stringify({ error: "Missing 'taskId' or 'researchContent' in request body" }),
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" }, 
-          status: 400 
-        }
-      );
+    const { taskId, researchContent, citations, subtaskTitle } = await req.json();
+    if (!taskId || typeof taskId !== 'string') {
+      return new Response(JSON.stringify({ error: "Missing or invalid 'taskId'" }), { status: 400, headers: corsHeaders });
     }
 
     // 4. Insert data into the saved_research table
     const { data: savedData, error: insertError } = await supabaseClient
       .from('saved_research')
-      .insert({ 
-        task_id: taskId, 
-        user_id: user.id, 
+      .insert({
+        task_id: taskId,
+        user_id: user.id,
         research_content: researchContent,
-        citations: citations // citations can be null/undefined, JSONB handles it
+        citations: citations,
+        subtask_title: subtaskTitle || null
       })
-      .select('id') // Selecteer de ID van het ingevoegde record
-      .single(); // We verwachten maar één record terug
+      .select('id') // Selecteer de ID van de nieuwe rij
+      .single(); // Verwacht één resultaat
 
     if (insertError) {
       console.error("Error inserting saved research:", insertError);

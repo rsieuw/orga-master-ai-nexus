@@ -12,6 +12,7 @@
   - ✅ Implementeer check voor 'inactive' status bij inloggen (in AuthContext).
 - ✅ **[CORE] Taak CRUD Operaties:**
   - ✅ Definieer database schema voor taken (titel, beschrijving, status, prioriteit, deadline, user_id, subtasks).
+    - **Opmerking over Deadline:** De `deadline` wordt opgeslagen als een `timestamp with time zone`. Bij het specificeren van een deadline kan optioneel ook een tijdstip worden meegegeven (bv. "2024-08-15 17:00"). Als geen tijdstip wordt opgegeven, kan een standaard tijd (bv. einde van de dag) worden aangenomen.
   - ✅ Implementeer Supabase functies/API-calls voor het aanmaken, lezen, updaten, en verwijderen van taken.
   - ✅ Bouw UI componenten voor het weergeven van takenlijsten.
   - ✅ Bouw UI componenten (bv. een formulier/modal) voor het toevoegen/bewerken van taken.
@@ -119,6 +120,8 @@
   - Sta toe dat subtaken verder worden onderverdeeld in sub-subtaken.
 - ❌ **[FEATURE] Upgrade Optie:**
   - ❌ **[NIEUW]** Implementeer de mogelijkheid voor gebruikers om te upgraden naar een betaald plan (UI + Backend).
+- ❌ **[FEATURE] Emoticons in Chat:**
+  - ❌ **[NIEUW]** Voeg ondersteuning toe voor het invoegen en weergeven van emoticons in het chatvenster.
 - ❌ **[PERF] Optimalisaties:**
   - Analyseer bundle size en laadtijden. Voer performance profiling uit.
 - ❌ **[DOCS] Documentatie:**

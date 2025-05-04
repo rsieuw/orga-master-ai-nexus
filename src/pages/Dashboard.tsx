@@ -23,10 +23,11 @@ const getCategoryTitle = (category: keyof TasksByDate): string => {
 };
 
 // Prioriteitsmapping voor sorteren
-const priorityOrder: { [key in TaskPriority]: number } = {
+const priorityOrder: Record<TaskPriority, number> = {
   high: 3,
   medium: 2,
   low: 1,
+  none: 0,
 };
 
 // Sorteerfunctie voor taken op prioriteit (aflopend)

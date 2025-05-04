@@ -38,6 +38,7 @@ import EditTaskDialog from "@/components/tasks/EditTaskDialog.tsx";
 import { cn } from "@/lib/utils.ts";
 import { Input } from "@/components/ui/input.tsx";
 import { Task, SubTask, TaskPriority } from "@/types/task.ts";
+import { Progress } from "@/components/ui/progress.tsx";
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
@@ -53,6 +54,13 @@ export default function TaskDetail() {
   const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
 
   const task: Task | undefined = getTaskById(id || "");
+
+  // Bereken subtaak voortgang
+  const totalSubtasks = task?.subtasks.length ?? 0;
+  const completedSubtasks = task?.subtasks.filter(st => st.completed).length ?? 0;
+  const progressValue = totalSubtasks > 0
+    ? (completedSubtasks / totalSubtasks) * 100
+    : 0;
 
   if (tasksLoading) {
     return null;
@@ -107,8 +115,9 @@ export default function TaskDetail() {
 
     setIsAddingSubtask(true);
     try {
-      await addSubtask(task.id, newSubtaskTitle.trim());
-      toast({ title: "Subtaak toegevoegd" });
+      const titleToAdd = newSubtaskTitle.trim();
+      await addSubtask(task.id, titleToAdd);
+      toast({ title: "Subtaak toegevoegd", description: `"${titleToAdd}" is toegevoegd.` });
       setNewSubtaskTitle("");
       setShowAddSubtaskForm(false);
     } catch (error) {
@@ -134,6 +143,7 @@ export default function TaskDetail() {
     high: "bg-priority-high",
     medium: "bg-priority-medium",
     low: "bg-priority-low",
+    none: "bg-green-500",
   };
 
   const statusLabel: Record<string, string> = {
@@ -142,23 +152,48 @@ export default function TaskDetail() {
     done: "Voltooid",
   };
 
-  const priorityLabel: Record<string, string> = {
+  const statusColor: Record<string, string> = {
+    todo: "border-gray-500 text-gray-500 dark:text-gray-400",
+    in_progress: "border-blue-500 text-blue-500 dark:text-blue-400",
+    done: "border-green-500 text-green-500 dark:text-green-400",
+  };
+
+  const priorityLabel: Record<TaskPriority, string> = {
     high: "Hoog",
     medium: "Middel",
     low: "Laag",
+    none: "Geen",
+  };
+
+  const priorityBadgeColor: Record<TaskPriority, string> = {
+    high: "border-red-500 text-red-500 dark:text-red-400",
+    medium: "border-orange-500 text-orange-500 dark:text-orange-400",
+    low: "border-blue-500 text-blue-500 dark:text-blue-400",
+    none: "border-green-500 text-green-500 dark:text-green-400",
   };
 
   let deadlineText = "Geen deadline";
+  let deadlineColor = "border-gray-500 text-gray-500 dark:text-gray-400";
+  let isOverdue = false;
+
   if (task.deadline) {
     try {
       const parsedDeadline = parseISO(task.deadline);
       const now = new Date();
-      const isOverdue = parsedDeadline < now && task.status !== 'done';
+      isOverdue = parsedDeadline < now && task.status !== 'done';
       deadlineText = format(parsedDeadline, "PPP", { locale: nl });
-      if (isOverdue) deadlineText += " (Verlopen)";
+      if (isOverdue) {
+        deadlineText += " (Verlopen)";
+        deadlineColor = "border-red-500 text-red-500 dark:text-red-400";
+      } else if (task.status === 'done') {
+        deadlineColor = "border-green-500 text-green-500 dark:text-green-400";
+      } else {
+        deadlineColor = "border-blue-500 text-blue-500 dark:text-blue-400";
+      }
     } catch (e) {
       console.error("Invalid date format for deadline:", task.deadline);
       deadlineText = "Ongeldige datum";
+      deadlineColor = "border-red-500 text-red-500 dark:text-red-400";
     }
   }
 
@@ -180,7 +215,7 @@ export default function TaskDetail() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full ${task && priorityColor[task.priority]}`}></div>
-                <CardTitle>{task?.title}</CardTitle>
+                <CardTitle className="text-xl font-semibold">{task?.title}</CardTitle>
               </div>
             </CardHeader>
 
@@ -242,10 +277,12 @@ export default function TaskDetail() {
               <CardContent className="flex flex-col flex-grow min-h-0">
                 <div className="flex-shrink-0">
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline">{statusLabel[task.status]}</Badge>
-                    <Badge variant="outline">Prioriteit: {priorityLabel[task.priority]}</Badge>
+                    <Badge variant="outline" className={cn("border", statusColor[task.status])}>{statusLabel[task.status]}</Badge>
+                    {task.priority !== 'none' && (
+                      <Badge variant="outline" className={cn("border", priorityBadgeColor[task.priority])}>Prioriteit: {priorityLabel[task.priority]}</Badge>
+                    )}
                     {task.deadline && (
-                      <Badge variant="outline">
+                      <Badge variant="outline" className={cn("border", deadlineColor)}>
                         Deadline: {deadlineText}
                       </Badge>
                     )}
@@ -259,7 +296,21 @@ export default function TaskDetail() {
                   </div>
                   <Separator className="my-4" />
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-medium">Subtaken</h3>
+                    {/* Container voor heading en voortgang */}
+                    <div className="flex items-center gap-3"> 
+                      <h3 className="font-medium">Subtaken</h3>
+                      {totalSubtasks > 0 && (
+                        <div className="flex items-center gap-2">
+                           <span className="text-xs text-muted-foreground">
+                               {completedSubtasks}/{totalSubtasks}
+                           </span>
+                           <Progress value={progressValue} className="h-1.5 w-20" />
+                           <span className="text-xs font-medium text-muted-foreground/90">
+                             ({Math.round(progressValue)}%)
+                           </span>
+                        </div>
+                       )}
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
@@ -280,7 +331,7 @@ export default function TaskDetail() {
                     <div className="space-y-1.5">
                       {task.subtasks.map((subtask: SubTask, index: number) => (
                         <div key={subtask.id} className={cn(
-                          "group flex items-start justify-between space-x-3 rounded-md px-2 py-1.5 hover:bg-muted/50", 
+                          "group flex items-start justify-between space-x-3 rounded-md py-1.5 hover:bg-muted/50", 
                           subtask.completed && "opacity-50"
                         )}>
                           <div className="flex items-start space-x-2 flex-grow">
@@ -336,9 +387,9 @@ export default function TaskDetail() {
                   ) : (
                     <p className="text-muted-foreground text-sm">Geen subtaken</p>
                   )}
-                  <div className="mt-2">
+                  <div className="mt-2 px-1">
                     {showAddSubtaskForm ? (
-                      <form onSubmit={handleAddSubtask} className="flex items-center gap-2">
+                      <form onSubmit={handleAddSubtask} className="flex items-center gap-3">
                         <Input
                           type="text"
                           placeholder="Nieuwe subtaak titel"
@@ -347,7 +398,7 @@ export default function TaskDetail() {
                           className="h-8 flex-grow"
                           disabled={isAddingSubtask}
                         />
-                        <Button type="submit" size="sm" className="h-8" disabled={isAddingSubtask || !newSubtaskTitle.trim()}>
+                        <Button type="submit" size="sm" className="h-8 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900" disabled={isAddingSubtask || !newSubtaskTitle.trim()}>
                           {isAddingSubtask ? <GradientLoader size="sm" /> : "Opslaan"}
                         </Button>
                         <Button type="button" variant="ghost" size="sm" className="h-8" onClick={() => setShowAddSubtaskForm(false)} disabled={isAddingSubtask}>

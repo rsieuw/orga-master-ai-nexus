@@ -1,0 +1,16 @@
+/* Nog specifiekere selector om mt-4 te overschrijven voor het eerste element */
+.chat-message .text-sm > h1.mt-4:first-child,
+.chat-message .text-sm > h2.mt-4:first-child {
+  margin-top: 0 !important; /* Overschrijf mt-4 */
+}
+
+/* Verwijder de algemene marge regel, mt-4 in component regelt dit nu */
+/*
+.chat-message .text-sm h1,
+.chat-message .text-sm h2 {
+  margin-top: 1rem;
+}
+*/
+
+/* Verwijder de oude regel indien aanwezig */
+/* .chat-window h1:first-of-type { margin-top: 0; } */ 
