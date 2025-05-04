@@ -1,9 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext.tsx";
-import LoginForm from "@/components/auth/LoginForm";
+import LoginForm from "@/components/auth/LoginForm.tsx";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import React from "react";
 
 export default function Login() {
   const { isAuthenticated } = useAuth();

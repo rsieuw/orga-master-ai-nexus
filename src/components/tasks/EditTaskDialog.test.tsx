@@ -1,23 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { renderWithProviders } from '@/test/utils';
-import EditTaskDialog from './EditTaskDialog';
-import { useTask } from '@/contexts/TaskContext';
-import { useToast } from '@/components/ui/use-toast';
-import { Task } from '@/types/task';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { renderWithProviders } from '@/test/utils.tsx';
+import EditTaskDialog from './EditTaskDialog.tsx';
+import { useTask } from '@/contexts/TaskContext.hooks.ts';
+import { useToast } from '@/hooks/use-toast.ts';
+import { Task } from '@/types/task.ts';
+import { Dialog, DialogContent } from "@/components/ui/dialog.tsx";
 
 // Mock hooks
-vi.mock('@/contexts/TaskContext');
-vi.mock('@/components/ui/use-toast');
+vi.mock('@/contexts/TaskContext.tsx');
+vi.mock('@/hooks/use-toast.tsx');
 
 // Helper renders the dialog open directly
 const renderEditDialog = (task: Task) => {
   const user = userEvent.setup();
   const mockSetOpen = vi.fn(); 
   renderWithProviders(
-    <Dialog open={true} onOpenChange={mockSetOpen}> 
+    <Dialog open onOpenChange={mockSetOpen}> 
       <DialogContent>
         <EditTaskDialog task={task} setOpen={mockSetOpen} />
       </DialogContent>
@@ -49,7 +49,7 @@ describe('EditTaskDialog', () => {
     mockUpdateTask.mockResolvedValue({ ...mockTask, title: 'Updated Task' });
   });
 
-  it('should render dialog content and pre-fill form fields', async () => {
+  it('should render dialog content and pre-fill form fields', () => {
     renderEditDialog(mockTask); 
 
     expect(screen.getByRole('heading', { name: /taak bewerken/i })).toBeInTheDocument();

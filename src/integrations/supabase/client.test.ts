@@ -17,7 +17,7 @@ describe('Supabase Client', () => {
   
   it('initialiseert de client met de juiste URL en key', async () => {
     // Dynamisch importeren van client voor elke test
-    await import('./client');
+    await import('./client.ts');
     
     // Controleer of createClient is aangeroepen
     expect(createClient).toHaveBeenCalled();
@@ -38,7 +38,7 @@ describe('Supabase Client', () => {
   
   it('exporteert de supabase client', async () => {
     // Dynamisch importeren van client voor elke test
-    const { supabase } = await import('./client');
+    const { supabase } = await import('./client.ts');
     
     // Controleer of de client een object is
     expect(typeof supabase).toBe('object');

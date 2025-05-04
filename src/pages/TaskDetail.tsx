@@ -1,14 +1,14 @@
 import React from 'react';
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { useParams, useNavigate } from "react-router-dom";
-import AppLayout from "@/components/layout/AppLayout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import AppLayout from "@/components/layout/AppLayout.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
 import { format, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
 import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@/components/ui/separator.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog.tsx";
 import {
   Dialog,
   DialogContent,
@@ -28,16 +28,16 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogPortal,
-} from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
+} from "@/components/ui/dialog.tsx";
+import { useToast } from "@/hooks/use-toast.ts";
 import { useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import TaskAIChat from "@/components/ai/TaskAIChat";
-import { GradientLoader } from "@/components/ui/loader";
-import EditTaskDialog from "@/components/tasks/EditTaskDialog";
-import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-import { Task, SubTask, TaskPriority } from "@/types/task";
+import { Checkbox } from "@/components/ui/checkbox.tsx";
+import TaskAIChat from "@/components/ai/TaskAIChat.tsx";
+import { GradientLoader } from "@/components/ui/loader.tsx";
+import EditTaskDialog from "@/components/tasks/EditTaskDialog.tsx";
+import { cn } from "@/lib/utils.ts";
+import { Input } from "@/components/ui/input.tsx";
+import { Task, SubTask, TaskPriority } from "@/types/task.ts";
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();

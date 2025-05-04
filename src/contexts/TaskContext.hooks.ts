@@ -1,5 +1,5 @@
 import { useContext, createContext } from "react";
-import { Task, TaskPriority, TaskStatus, TasksByDate, SubTask } from "../types/task.ts";
+import { Task, TaskPriority, TasksByDate, SubTask } from "../types/task.ts";
 
 // Define Props interface here
 export interface TaskContextProps {

@@ -2,9 +2,9 @@ import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { TaskProvider } from '@/contexts/TaskContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { AuthProvider } from '@/contexts/AuthContext.tsx';
+import { TaskProvider } from '@/contexts/TaskContext.tsx';
+import { ThemeProvider } from '@/contexts/ThemeContext.tsx';
 import { vi } from 'vitest';
 
 // Maak een nieuwe QueryClient voor elke test

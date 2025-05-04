@@ -1,8 +1,8 @@
 
-import AppLayout from "@/components/layout/AppLayout";
-import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import AppLayout from "@/components/layout/AppLayout.tsx";
+import { useAuth } from "@/contexts/AuthContext.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
 
 export default function Profile() {
   const { user } = useAuth();

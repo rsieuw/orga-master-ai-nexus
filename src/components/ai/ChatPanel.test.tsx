@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach, Mocked } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { renderWithProviders } from '@/test/utils';
-import ChatPanel from './ChatPanel';
-import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../ui/use-toast';
-import { Task } from '@/types/task';
-import { supabase } from '@/integrations/supabase/client';
+import { renderWithProviders } from '@/test/utils.tsx';
+import ChatPanel from './ChatPanel.tsx';
+import { useAuth } from '../../contexts/AuthContext.tsx';
+import { useToast } from '../../hooks/use-toast.ts';
+import { Task } from '@/types/task.ts';
+import { supabase } from '@/integrations/supabase/client.ts';
 
 // --- Mock ONLY Hooks --- (Remove Supabase module mock)
-vi.mock('../../contexts/AuthContext');
-vi.mock('../ui/use-toast');
+vi.mock('../../contexts/AuthContext.tsx');
+vi.mock('../ui/use-toast.tsx');
 
 describe('ChatPanel', () => {
   const mockToast = vi.fn();
@@ -42,16 +42,19 @@ describe('ChatPanel', () => {
     vi.clearAllMocks();
 
     // --- Setup Spies --- 
-    getUserSpy = vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({ data: { user: { id: 'test-user-id' } }, error: null } as any);
+    // @ts-expect-error: Type mismatch between MockInstance and Mocked type
+    getUserSpy = vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({ data: { user: { id: 'test-user-id' } }, error: null });
 
     // Default implementation for chained methods
     eqMock.mockReturnThis(); // .eq() returns the object for further chaining
     orderMock.mockResolvedValue({ data: [], error: null }); // Default empty select result
     insertMock.mockResolvedValue({ data: [{ id: 'new-id' }], error: null });
     deleteMock.mockResolvedValue({ data: null, error: null });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     selectMock.mockReturnValue({ eq: eqMock, order: orderMock } as any);
 
     // Spy on 'from' and provide default implementation covering TaskProvider load
+    // @ts-expect-error: Type mismatch between MockInstance and Mocked type
     fromSpy = vi.spyOn(supabase, 'from').mockImplementation((tableName: string) => {
       if (tableName === 'tasks') {
           // Mock the select chain for tasks (used by TaskProvider)
@@ -59,6 +62,7 @@ describe('ChatPanel', () => {
               select: vi.fn().mockReturnThis(),
               eq: vi.fn().mockReturnThis(),
               order: vi.fn().mockResolvedValue({ data: [mockTask], error: null }) // TaskProvider needs task data
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any;
       }
       // Default for other tables used by ChatPanel (chat_messages, notes, research)
@@ -67,7 +71,9 @@ describe('ChatPanel', () => {
         insert: insertMock,
         delete: deleteMock.mockReturnValue({ // Mock delete().eq() chain
              eq: eqMock.mockResolvedValue({ data: null, error: null })
+           // eslint-disable-next-line @typescript-eslint/no-explicit-any
            } as any),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
     });
     // --- End Spies Setup ---
@@ -89,7 +95,7 @@ describe('ChatPanel', () => {
   });
 
   it('should render the chat input and send button', async () => {
-    renderWithProviders(<ChatPanel task={mockTask} selectedSubtaskTitle={null} onSubtaskHandled={vi.fn()} />);
+    renderWithProviders(<ChatPanel task={mockTask} selectedSubtaskTitle={null} />);
     
     // Wait for the input field to appear, indicating loading is complete
     await waitFor(() => {
@@ -113,7 +119,7 @@ describe('ChatPanel', () => {
     orderMock.mockResolvedValueOnce({ data: [], error: null }); // 2nd .order call from('task_notes')
     orderMock.mockResolvedValueOnce({ data: [], error: null }); // 3rd .order call from('saved_research')
 
-    renderWithProviders(<ChatPanel task={mockTask} selectedSubtaskTitle={null} onSubtaskHandled={vi.fn()} />);
+    renderWithProviders(<ChatPanel task={mockTask} selectedSubtaskTitle={null} />);
 
     // Wait for messages to be displayed
     await waitFor(() => {
@@ -134,7 +140,7 @@ describe('ChatPanel', () => {
 
   it('should send a message and save it to db', async () => {
     // Specific mock for insert on chat_messages table
-    insertMock.mockImplementationOnce(async (dataToInsert) => {
+    insertMock.mockImplementationOnce((dataToInsert) => {
       expect(dataToInsert).toEqual({
         task_id: mockTask.id,
         user_id: 'test-user-id',
@@ -145,7 +151,7 @@ describe('ChatPanel', () => {
       return { data: [{ id: 'inserted-msg-id' }], error: null };
     });
 
-    renderWithProviders(<ChatPanel task={mockTask} selectedSubtaskTitle={null} onSubtaskHandled={vi.fn()} />);
+    renderWithProviders(<ChatPanel task={mockTask} selectedSubtaskTitle={null} />);
     const user = userEvent.setup();
 
     // Wait for initial render to complete

@@ -14,4 +14,4 @@ class ResizeObserverMock {
   disconnect() { /* doe niets */ }
 }
 
-window.ResizeObserver = ResizeObserverMock; 
+globalThis.ResizeObserver = ResizeObserverMock; 

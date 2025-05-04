@@ -55,6 +55,7 @@ export type Database = {
           language_preference: string | null
           name: string | null
           role: string | null
+          status: string
           updated_at: string
         }
         Insert: {
@@ -64,6 +65,7 @@ export type Database = {
           language_preference?: string | null
           name?: string | null
           role?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -73,7 +75,23 @@ export type Database = {
           language_preference?: string | null
           name?: string | null
           role?: string | null
+          status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      role_permissions: {
+        Row: {
+          enabled_features: string[]
+          role: string
+        }
+        Insert: {
+          enabled_features?: string[]
+          role: string
+        }
+        Update: {
+          enabled_features?: string[]
+          role?: string
         }
         Relationships: []
       }
@@ -185,7 +203,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_my_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_user_profile_with_permissions: {
+        Args: { user_id: string }
+        Returns: {
+          id: string
+          name: string
+          role: string
+          avatar_url: string
+          language_preference: string
+          created_at: string
+          updated_at: string
+          status: string
+          email: string
+          enabled_features: string[]
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
