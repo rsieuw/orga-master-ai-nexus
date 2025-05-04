@@ -35,7 +35,7 @@ export default function Footer() {
             <span>Documentatie</span>
           </Link>
           <Link 
-            to="mailto:support@orgamaster.ai" 
+            to="/contact"
             className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
           >
             <Mail className="h-4 w-4" />

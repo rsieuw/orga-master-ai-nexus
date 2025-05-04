@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "@/": "./src/",
+    "shared/": "./supabase/functions/_shared/"
+  }
+} 

@@ -19,6 +19,7 @@ import Profile from "./pages/Profile.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import SupportPage from "./pages/Support.tsx";
 import DocumentationPage from "./pages/Documentation.tsx";
+import ContactPage from "./pages/ContactPage.tsx";
 
 // Importeer de nieuwe admin componenten
 import AdminRouteGuard from "./components/auth/AdminRouteGuard.tsx";
@@ -57,6 +58,7 @@ const AppContent = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/support" element={<SupportPage />} />
             <Route path="/documentation" element={<DocumentationPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             
             {/* Admin Routes */}
             <Route element={<AdminRouteGuard />}>

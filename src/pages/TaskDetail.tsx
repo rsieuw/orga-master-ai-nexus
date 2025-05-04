@@ -37,12 +37,13 @@ import { GradientLoader } from "@/components/ui/loader.tsx";
 import EditTaskDialog from "@/components/tasks/EditTaskDialog.tsx";
 import { cn } from "@/lib/utils.ts";
 import { Input } from "@/components/ui/input.tsx";
-import { Task, SubTask, TaskPriority } from "@/types/task.ts";
+import { Task, SubTask, TaskPriority, TaskStatus } from "@/types/task.ts";
 import { Progress } from "@/components/ui/progress.tsx";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu.tsx";
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
-  const { getTaskById, deleteTask, isLoading: tasksLoading, updateSubtask, addSubtask, expandTask, deleteSubtask } = useTask();
+  const { getTaskById, deleteTask, isLoading: tasksLoading, updateSubtask, addSubtask, expandTask, deleteSubtask, toggleTaskCompletion, updateTask } = useTask();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -139,23 +140,30 @@ export default function TaskDetail() {
     }
   };
 
+  const handleStatusChange = (newStatus: string) => {
+    if (!newStatus || !task || newStatus === task.status) return;
+    
+    if (newStatus === 'done') {
+      toggleTaskCompletion(task.id, true);
+    } else if (task.status === 'done' && (newStatus === 'in_progress' || newStatus === 'todo')) {
+      toggleTaskCompletion(task.id, false);
+    } else if (task.status !== 'done' && (newStatus === 'in_progress' || newStatus === 'todo')) {
+      updateTask(task.id, { status: newStatus as TaskStatus });
+    }
+  };
+
+  // Handler voor prioriteit wijziging
+  const handlePriorityChange = (newPriority: string) => {
+    if (!newPriority || !task || newPriority === task.priority) return;
+    // Roep updateTask aan om alleen prioriteit te wijzigen
+    updateTask(task.id, { priority: newPriority as TaskPriority });
+  };
+
   const priorityColor: Record<TaskPriority, string> = {
     high: "bg-priority-high",
     medium: "bg-priority-medium",
     low: "bg-priority-low",
     none: "bg-green-500",
-  };
-
-  const statusLabel: Record<string, string> = {
-    todo: "Te doen",
-    in_progress: "In behandeling",
-    done: "Voltooid",
-  };
-
-  const statusColor: Record<string, string> = {
-    todo: "border-gray-500 text-gray-500 dark:text-gray-400",
-    in_progress: "border-blue-500 text-blue-500 dark:text-blue-400",
-    done: "border-green-500 text-green-500 dark:text-green-400",
   };
 
   const priorityLabel: Record<TaskPriority, string> = {
@@ -196,6 +204,19 @@ export default function TaskDetail() {
       deadlineColor = "border-red-500 text-red-500 dark:text-red-400";
     }
   }
+
+  // Herstel statusLabel en statusColor
+  const statusLabel: Record<string, string> = {
+    todo: "Te doen",
+    in_progress: "In behandeling",
+    done: "Voltooid",
+  };
+
+  const statusColor: Record<string, string> = {
+    todo: "border-gray-500 text-gray-500 dark:text-gray-400",
+    in_progress: "border-blue-500 text-blue-500 dark:text-blue-400",
+    done: "border-green-500 text-green-500 dark:text-green-400",
+  };
 
   return (
     <AppLayout>
@@ -276,13 +297,55 @@ export default function TaskDetail() {
             {task && (
               <CardContent className="flex flex-col flex-grow min-h-0">
                 <div className="flex-shrink-0">
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline" className={cn("border", statusColor[task.status])}>{statusLabel[task.status]}</Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          className={cn("border h-7 px-2.5 text-xs", statusColor[task.status])}
+                        >
+                          {statusLabel[task.status]}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="bg-popover/90 backdrop-blur-lg">
+                        <DropdownMenuItem onSelect={() => handleStatusChange('todo')}>
+                          Te doen
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleStatusChange('in_progress')}>
+                          In behandeling
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleStatusChange('done')}>
+                          Voltooid
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* Dropdown voor Prioriteit (alleen tonen als niet 'none') */}
                     {task.priority !== 'none' && (
-                      <Badge variant="outline" className={cn("border", priorityBadgeColor[task.priority])}>Prioriteit: {priorityLabel[task.priority]}</Badge>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            className={cn("border h-7 px-2.5 text-xs", priorityBadgeColor[task.priority])}
+                          >
+                            Prioriteit: {priorityLabel[task.priority]}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="bg-popover/90 backdrop-blur-lg">
+                          <DropdownMenuItem onSelect={() => handlePriorityChange('high')}>
+                            Hoog
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => handlePriorityChange('medium')}>
+                            Middel
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => handlePriorityChange('low')}>
+                            Laag
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                     {task.deadline && (
-                      <Badge variant="outline" className={cn("border", deadlineColor)}>
+                      <Badge variant="outline" className={cn("border h-7 px-2.5 text-xs", deadlineColor)}>
                         Deadline: {deadlineText}
                       </Badge>
                     )}
@@ -296,7 +359,6 @@ export default function TaskDetail() {
                   </div>
                   <Separator className="my-4" />
                   <div className="flex justify-between items-center mb-2">
-                    {/* Container voor heading en voortgang */}
                     <div className="flex items-center gap-3"> 
                       <h3 className="font-medium">Subtaken</h3>
                       {totalSubtasks > 0 && (

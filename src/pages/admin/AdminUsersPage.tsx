@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client.ts";
-import { UserProfile, UserRole } from '@/contexts/AuthContext.tsx';
+import { UserProfile, UserRole, AiMode } from '@/contexts/AuthContext.tsx';
 import {
   Table,
   TableBody,
@@ -12,57 +12,91 @@ import {
 import { Button } from '@/components/ui/button.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, ArrowUpDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast.ts';
 import { GradientLoader } from '@/components/ui/loader.tsx';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog.tsx";
 
-// Definieer de verwachte structuur
-interface FetchedProfileData {
+// Definieer de verwachte structuur van de data geretourneerd door de Edge Function
+// Deze moet nu ook het email adres bevatten
+interface FetchedUserData {
     id: string;
+    email: string | null; // Email komt nu direct van de functie
     name: string | null;
-    role: string | null; 
+    role: string | null;
     avatar_url: string | null;
     language_preference: string | null;
     created_at: string;
     updated_at: string;
-    status?: string; 
+    status?: string;
+    email_notifications_enabled?: boolean | null;
+    ai_mode_preference?: string | null;
 }
 
+// Definieer de props die de tabel component nu verwacht
+interface UsersManagementTableProps {
+  searchTerm: string;
+  selectedRole: UserRole | 'all';
+  selectedStatus: string;
+}
+
+// Type voor sorteerconfiguratie
+type SortDirection = 'asc' | 'desc';
+type SortConfig = {
+  key: keyof UserProfile | null;
+  direction: SortDirection;
+} | null;
+
 // Component voor gebruikersbeheer tabel
-export const UsersManagementTable: React.FC = () => {
+export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({ 
+  searchTerm,
+  selectedRole,
+  selectedStatus 
+}) => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'created_at', direction: 'desc'}); // Default sort
   const { toast } = useToast();
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error: fetchError } = await supabase
-        .from('profiles')
-        .select('id, name, role, avatar_url, language_preference, created_at, updated_at, status');
+      // Roep de Edge Function aan om alle gebruikersdata (inclusief emails) veilig op te halen
+      const { data: usersData, error: functionError } = await supabase.functions.invoke<FetchedUserData[]>('get-all-users');
 
-      if (fetchError) {
-        throw fetchError;
+      if (functionError) {
+        // Specifieke error handling voor function invocation
+        if (functionError instanceof Error && functionError.message.includes('Function not found')) {
+             throw new Error("Edge Function 'get-all-users' niet gevonden. Deploy de functie eerst.");
+        }
+        throw functionError; // Gooi andere functie-gerelateerde fouten door
       }
-      
-      const profileData = data as unknown as FetchedProfileData[] | null;
 
-      const mappedUsers = profileData ? profileData.map(profile => ({
-          id: profile.id,
-          email: '-', 
-          name: profile.name || null,
-          role: ((profile.role === 'admin' || profile.role === 'paid') ? profile.role : 'free') as UserRole,
-          avatar_url: profile.avatar_url || null,
-          language_preference: profile.language_preference || 'nl',
-          created_at: profile.created_at, 
-          updated_at: profile.updated_at,
-          status: profile.status || 'active',
-          enabled_features: []
-      })) : [];
-      
+      if (!usersData) {
+        setUsers([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Map de ontvangen data naar UserProfile
+      // De mapping is nu simpeler omdat email al is toegevoegd door de Edge Function
+      const mappedUsers = usersData.map(user => ({
+          id: user.id,
+          email: user.email || '-', // Email komt nu van de Edge Function data
+          name: user.name || null,
+          role: ((user.role === 'admin' || user.role === 'paid') ? user.role : 'free') as UserRole,
+          avatar_url: user.avatar_url || null,
+          language_preference: user.language_preference || 'nl',
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          status: user.status || 'active',
+          email_notifications_enabled: user.email_notifications_enabled ?? true,
+          ai_mode_preference: (user.ai_mode_preference || 'gpt4o') as AiMode,
+          enabled_features: [] // Behoud of pas aan indien nodig
+      }));
+
       setUsers(mappedUsers);
 
     } catch (err: unknown) {
@@ -131,10 +165,14 @@ export const UsersManagementTable: React.FC = () => {
         .update({ status: 'inactive' })
         .eq('id', userId);
       if (updateError) throw updateError;
-      setUsers(currentUsers => currentUsers.filter(user => user.id !== userId)); 
-      toast({ 
-        title: "Gebruiker gedeactiveerd", 
-        description: `Gebruiker ${userName} is succesvol gedeactiveerd.` 
+      setUsers(currentUsers =>
+        currentUsers.map(user =>
+          user.id === userId ? { ...user, status: 'inactive' } : user
+        )
+      );
+      toast({
+        title: "Gebruiker gedeactiveerd",
+        description: `Gebruiker ${userName} is succesvol gedeactiveerd.`
       });
     } catch (err: unknown) {
        console.error("Error deactivating user:", err);
@@ -142,6 +180,85 @@ export const UsersManagementTable: React.FC = () => {
        toast({ variant: "destructive", title: "Fout bij deactiveren", description: message });
     }
   };
+
+  // Nieuwe functie om gebruiker te activeren
+  const handleActivateUser = async (userId: string) => {
+    const userToUpdate = users.find(u => u.id === userId);
+    const userName = userToUpdate?.name || userToUpdate?.email || userId;
+    try {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ status: 'active' }) // Zet status terug naar active
+        .eq('id', userId);
+      if (updateError) throw updateError;
+      // Update state:
+      setUsers(currentUsers =>
+        currentUsers.map(user =>
+          user.id === userId ? { ...user, status: 'active' } : user
+        )
+      );
+      toast({
+        title: "Gebruiker geactiveerd",
+        description: `Gebruiker ${userName} is succesvol geactiveerd.`
+      });
+    } catch (err: unknown) {
+       console.error("Error activating user:", err);
+       const message = err instanceof Error ? err.message : "Kon gebruiker niet activeren.";
+       toast({ variant: "destructive", title: "Fout bij activeren", description: message });
+    }
+  };
+
+  // Verplaats sorteer- en filterlogica naar boven de returns
+  // 1. Sorteer de gebruikers eerst
+  const sortedUsers = React.useMemo(() => {
+    const sortableUsers = [...users]; // Gebruik const
+    if (sortConfig !== null && sortConfig.key) { // Check ook of key niet null is
+      sortableUsers.sort((a, b) => {
+        const aValue = a[sortConfig.key!];
+        const bValue = b[sortConfig.key!];
+
+        // Handle null/undefined strings
+        const valA = aValue ?? ""; 
+        const valB = bValue ?? "";
+
+        if (sortConfig.key === 'created_at') {
+            // Date comparison
+            const dateA = new Date(valA as string).getTime();
+            const dateB = new Date(valB as string).getTime();
+            // Handle potential NaN from invalid dates
+            const validDateA = isNaN(dateA) ? (sortConfig.direction === 'asc' ? Infinity : -Infinity) : dateA;
+            const validDateB = isNaN(dateB) ? (sortConfig.direction === 'asc' ? Infinity : -Infinity) : dateB;
+            if (validDateA < validDateB) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (validDateA > validDateB) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        } else {
+           // String/Role/Status comparison (case-insensitive)
+           const strA = String(valA).toLowerCase();
+           const strB = String(valB).toLowerCase();
+           if (strA < strB) {
+             return sortConfig.direction === 'asc' ? -1 : 1;
+           }
+           if (strA > strB) {
+             return sortConfig.direction === 'asc' ? 1 : -1;
+           }
+           return 0;
+        }
+      });
+    }
+    return sortableUsers;
+  }, [users, sortConfig]);
+
+  // 2. Filter de gesorteerde gebruikers
+  const filteredUsers = sortedUsers.filter(user => {
+    const matchesSearchTerm = (
+      (user.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (user.email?.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+    const matchesRole = selectedRole === 'all' || user.role === selectedRole;
+    const matchesStatus = selectedStatus === 'all' || user.status === selectedStatus;
+
+    return matchesSearchTerm && matchesRole && matchesStatus;
+  });
 
   if (isLoading) {
     return <div className="flex justify-center items-center py-10"><GradientLoader /></div>;
@@ -151,88 +268,152 @@ export const UsersManagementTable: React.FC = () => {
     return <p className="text-destructive">{error}</p>;
   }
   
+  // Functie om sorteerconfiguratie aan te passen
+  const requestSort = (key: keyof UserProfile) => {
+    let direction: SortDirection = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  // Helper om sorteericoon te tonen
+  const getSortIcon = (columnKey: keyof UserProfile) => {
+     if (!sortConfig || sortConfig.key !== columnKey) {
+       return <ArrowUpDown className="ml-2 h-3 w-3 opacity-30" />; 
+     }
+     return sortConfig.direction === 'asc' ? 
+       <ArrowUpDown className="ml-2 h-3 w-3" /> : 
+       <ArrowUpDown className="ml-2 h-3 w-3 transform rotate-180" />;
+  };
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Naam</TableHead>
-          <TableHead>Rol</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Geregistreerd op</TableHead>
-          <TableHead className="text-right">Acties</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {users.length > 0 ? users.map((user) => (
-          <TableRow key={user.id}>
-            <TableCell>{user.name || '-'}</TableCell>
-            <TableCell>
-              <Badge variant={getRoleBadgeVariant(user.role)}>{user.role}</Badge>
-            </TableCell>
-            <TableCell>
-              <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
-                {user.status || 'active'}
-              </Badge>
-            </TableCell>
-            <TableCell>
-              {user.created_at ? new Date(user.created_at).toLocaleDateString('nl-NL') : '-'}
-            </TableCell>
-            <TableCell className="text-right">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-8 w-8 p-0">
-                    <span className="sr-only">Open menu</span>
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'admin')}>Promoveer tot Admin</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'paid')}>Maak Betaalde Gebruiker</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'free')}>Maak Gratis Gebruiker</DropdownMenuItem>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                        onSelect={(e: Event) => e.preventDefault()}
-                      >
-                        Deactiveer Gebruiker
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Weet je het zeker?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Deze actie zal gebruiker {user.name || user.email || user.id} deactiveren.
-                          Ze kunnen niet meer inloggen. Dit kan meestal niet ongedaan gemaakt worden via de UI.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuleren</AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          onClick={() => handleDeactivateUser(user.id)}
-                        >
-                          Deactiveren
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TableCell>
-          </TableRow>
-        )) : (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
           <TableRow>
-            <TableCell colSpan={5} className="text-center text-muted-foreground">Geen gebruikers gevonden.</TableCell>
+            {/* Maak koppen klikbaar en zet tekst/icoon naast elkaar */}
+            <TableHead onClick={() => requestSort('name')} className="cursor-pointer hover:bg-muted/50 transition-colors">
+               <div className="flex items-center"> {/* Flex container */} 
+                 Naam {getSortIcon('name')}
+               </div>
+            </TableHead>
+            <TableHead onClick={() => requestSort('email')} className="cursor-pointer hover:bg-muted/50 transition-colors">
+               <div className="flex items-center"> {/* Flex container */} 
+                 Email {getSortIcon('email')}
+               </div>
+            </TableHead>
+            <TableHead onClick={() => requestSort('role')} className="cursor-pointer hover:bg-muted/50 transition-colors">
+               <div className="flex items-center"> {/* Flex container */} 
+                 Rol {getSortIcon('role')}
+               </div>
+            </TableHead>
+            <TableHead onClick={() => requestSort('status')} className="cursor-pointer hover:bg-muted/50 transition-colors">
+               <div className="flex items-center"> {/* Flex container */} 
+                 Status {getSortIcon('status')}
+               </div>
+            </TableHead>
+            <TableHead onClick={() => requestSort('created_at')} className="cursor-pointer hover:bg-muted/50 transition-colors">
+               <div className="flex items-center"> {/* Flex container */} 
+                 Geregistreerd op {getSortIcon('created_at')}
+               </div>
+            </TableHead>
+            <TableHead className="text-right">Acties</TableHead>
           </TableRow>
-        )}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {filteredUsers.length > 0 ? filteredUsers.map((user) => (
+            <TableRow key={user.id}>
+              <TableCell>{user.name || '-'}</TableCell>
+              <TableCell>{user.email || '-'}</TableCell>
+              <TableCell>
+                <Badge variant={getRoleBadgeVariant(user.role)}>{user.role}</Badge>
+              </TableCell>
+              <TableCell>
+                <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
+                  {user.status || 'active'}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                {user.created_at ? new Date(user.created_at).toLocaleDateString('nl-NL') : '-'}
+              </TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <span className="sr-only">Open menu</span>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'admin')}>Promoveer tot Admin</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'paid')}>Maak Betaalde Gebruiker</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'free')}>Maak Gratis Gebruiker</DropdownMenuItem>
+                    
+                    {/* Conditioneel tonen van Activeren/Deactiveren */}
+                    {user.status === 'active' ? (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                            onSelect={(e: Event) => e.preventDefault()} // Voorkom sluiten menu bij selectie
+                          >
+                            Deactiveer Gebruiker
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Weet je het zeker?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Deze actie zal gebruiker {user.name || user.email || user.id} deactiveren.
+                              Ze kunnen niet meer inloggen.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={() => handleDeactivateUser(user.id)}
+                            >
+                              Deactiveren
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    ) : (
+                       <DropdownMenuItem
+                          className="text-green-600 focus:text-green-700 focus:bg-green-100" // Geef een positieve kleur
+                          onClick={() => handleActivateUser(user.id)}
+                       >
+                         Activeer Gebruiker
+                       </DropdownMenuItem>
+                    )}
+                    
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          )) : (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center text-muted-foreground">
+                {searchTerm || selectedRole !== 'all' || selectedStatus !== 'all' 
+                  ? "Geen gebruikers gevonden die voldoen aan de filters."
+                  : "Geen gebruikers gevonden."
+                } 
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 
+// De AdminUsersPage exporteert nu niets meer direct, maar kan blijven bestaan
+// als je later specifieke logica voor alleen deze pagina wilt toevoegen.
 const AdminUsersPage: React.FC = () => {
-  return <UsersManagementTable />;
+  // Deze component rendert nu niets meer direct, de tabel wordt gebruikt in AdminDashboardPage
+  return null; 
 };
 
 export default AdminUsersPage; 

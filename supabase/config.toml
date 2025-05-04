@@ -20,3 +20,30 @@ entrypoint = "./functions/deep-research/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/deep-research/*.html" ]
+
+[functions.get-all-users]
+enabled = true
+verify_jwt = true
+import_map = "./functions/get-all-users/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/get-all-users/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/get-all-users/*.html" ]
+
+# Nieuwe/aangepaste secties voor Stripe functies
+[functions.create-checkout-session]
+enabled = true
+verify_jwt = true # Meestal nodig als je user data uit token haalt
+import_map = "../import_map.json" # Verwijs naar de nieuwe import map
+entrypoint = "./functions/create-checkout-session/index.ts"
+
+[functions.stripe-webhooks]
+enabled = true
+verify_jwt = false # Webhooks hebben geen user JWT nodig, maar Stripe signature wel!
+import_map = "../import_map.json" # Verwijs naar de nieuwe import map
+entrypoint = "./functions/stripe-webhooks/index.ts"
+
+# Mogelijk moet je ook de import maps voor de andere functies aanpassen
+# als zij ook afhankelijkheden of aliassen uit de root deno.jsonc gaan gebruiken.

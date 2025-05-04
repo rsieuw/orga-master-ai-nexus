@@ -16,6 +16,7 @@ export interface TaskContextProps {
   deleteSubtask: (taskId: string, subtaskId: string) => Promise<void>;
   expandTask: (taskId: string) => Promise<void>;
   deleteAllSubtasks: (taskId: string) => Promise<void>;
+  toggleTaskCompletion: (taskId: string, isDone: boolean) => Promise<void>;
 }
 
 // Define Context here

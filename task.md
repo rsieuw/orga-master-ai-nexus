@@ -55,17 +55,19 @@
   - ✅ Markdown rendering verbeterd (`rehype-raw` voor lijsten, styling koppen `mt-4`).
   - ✅ Styling voor notities (geel) en opgeslagen onderzoek (paars) toegevoegd.
   - ✅ Styling en positionering van icoontjes (Bot, BookOpen, Copy, Trash2, Save) gecorrigeerd.
+  - ✅ Chat placeholder tekst aangepast.
+  - ✅ Tooltip toegevoegd aan verzendknop chat (inclusief positioneringsfixes).
   - 🟡 **[OPEN]** Consistentie opmaak onderzoeksresultaten (live vs. opgeslagen) verbeterd, maar nog niet perfect (bv. extra secties AI?).
-- 🟡 **[UI] Gebruikersvriendelijkheid Verbeteringen:**
-  - 🟡 Optimaliseer knoppen en interacties in takenlijst (Details/Verwijderen knoppen, subtaak status klikbaar).
-  - 🟡 Verbeter layout en interactie in taakdetails (Voortgangsbalk, deadline toevoegen).
+- ✅ **[UI] Gebruikersvriendelijkheid Verbeteringen:**
+  - ✅ Optimaliseer knoppen en interacties in takenlijst (Details/Verwijderen knoppen, subtaak status klikbaar, subtaak indicator met tooltip).
+  - ✅ Verbeter layout en interactie in taakdetails (Voortgangsbalk, deadline toevoegen, subtaak inspringing, animatie progress bar).
   - 🟡 Verbeter layout en interactie in chat sidebar (Checkboxes, tekst wrapping, uitlijning). (Basis aanwezig)
   - ✅ Tekst uitlijning subtaken in `TaskDetail.tsx` verbeterd.
-- ❌ **[Admin] Gebruikersbeheer UI Verbetering:**
-  - ❌ Toon 'inactive' status in de tabel i.p.v. gebruiker te filteren na deactivatie.
-  - ❌ Voeg een "Activeer Gebruiker" actie toe (mogelijk in het dropdown menu).
-  - ❌ Overweeg filter/zoek opties voor de gebruikerstabel.
-  - ❌ Besluit of het `email` veld nodig is en haal het eventueel op uit `auth.users`.
+- ✅ **[Admin] Gebruikersbeheer UI Verbetering:**
+  - ✅ Haal email op via beveiligde Edge Function (`get-all-users`) en toon in tabel.
+  - ✅ Toon 'inactive' status in de tabel (gebruiker wordt niet meer gefilterd).
+  - ✅ Voeg een "Activeer Gebruiker" actie toe aan het dropdown menu.
+  - ✅ Implementeer filter/zoek opties (naam, email, rol, status) voor de gebruikerstabel.
 - ❌ **[Admin] Permissiebeheer UI Verbetering:**
   - ❌ Maak de tabel gebruiksvriendelijker (bv. switches, groepering per rol).
   - ❌ Overweeg filter/zoek opties.
@@ -146,3 +148,39 @@
 - ✅ OpenAI API Key input in Settings verwijderd (was niet functioneel/veilig).
 - 🟡 React Hook dependency errors grotendeels opgelost (bv. in `AuthContext`, `ChatPanel`, `AdminUsersPage`).
 - 🟡 Deno Lint import fouten deels opgelost/onderdrukt, maar blijven hardnekkig (zie taak P3).
+- 🟡 **[NIEUW]** Linterfout/waarschuwing `priorityOrder` in `Dashboard.tsx` (nog open).
+
+## Nieuwe Features / Grote Taken
+
+- ❌ **[Feature] Betaalde Plannen (Stripe Integratie):**
+    - **Database (Supabase):**
+        - Maak tabellen aan: `customers` (linkt Supabase user ID aan Stripe customer ID), `products`, `prices`, `subscriptions`.
+        - Overweeg Stripe Foreign Data Wrapper (FDW) of Webhooks voor synchronisatie.
+    - **Backend (Supabase Edge Functions):**
+        - **Webhook Handler:** Luister naar Stripe events (`checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`, etc.) en update Supabase DB (klant aanmaken, subscription status bijwerken).
+            - **Configuratie Stappen:**
+                1. **Supabase Types:** Zorg dat types gegenereerd zijn (`supabase gen types typescript ...`). Controleer pad in `index.ts`.
+                2. **Secrets Instellen (Supabase):** Stel `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SIGNING_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` in via Project Settings > Secrets. Gebruik **test** keys voor sandbox, **live** keys voor productie.
+                3. **Functie Deployen:** `supabase functions deploy stripe-webhooks --project-ref <jouw-project-ref> --no-verify-jwt`.
+                4. **Stripe Webhook Endpoint Configureren:**
+                    - Maak endpoint aan in Stripe Dashboard (Developers > Webhooks).
+                    - Gebruik de **URL** van de gedeployde Supabase functie.
+                    - Selecteer relevante events (zie `relevantEvents` in `index.ts`).
+                    - Kopieer de **Signing secret** en stel in als `STRIPE_WEBHOOK_SIGNING_SECRET` in Supabase (zie stap 2).
+        - **Checkout Sessie Endpoint:** Functie die een Stripe Checkout sessie aanmaakt (input: user ID, price ID) en gebruiker doorstuurt.
+    - **Frontend (React):**
+        - **Prijs-/Upgrade Pagina:** Toon plannen (uit `products`/`prices` tabel).
+        - **Upgrade Knop:** Roept Checkout Sessie Endpoint aan.
+        - **Account/Instellingen Pagina:** Toon huidige subscription status (uit `subscriptions` tabel); Link naar Stripe Customer Portal.
+        - **Conditionele Features:** Schakel UI/functionaliteit in/uit op basis van actieve subscription.
+    - **Stripe Configuratie:**
+        - Maak producten en prijzen aan in Stripe Dashboard.
+        - Configureer Webhooks (endpoint naar Supabase Edge Function).
+        - Configureer Stripe Customer Portal.
+        - Beheer API keys (Publishable & Secret).
+    - **Beveiliging:**
+        - Beveilig webhook endpoint.
+        - Gebruik environment variables voor API keys.
+        - Implementeer Row Level Security (RLS) op Supabase tabellen.
+
+*Dit is een voorlopig plan gebaseerd op onderzoek. Details kunnen wijzigen tijdens implementatie.*

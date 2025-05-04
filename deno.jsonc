@@ -20,7 +20,8 @@
   },
   "imports": {
     // Definieer hier je pad-aliassen
-    "@/": "./src/"
+    "@/": "./src/",
+    "shared/": "./supabase/functions/_shared/"
   },
   "compilerOptions": {
     "lib": [

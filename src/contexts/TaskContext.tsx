@@ -670,6 +670,66 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // --- NIEUW: Functie om hoofdtaak voltooiing te toggelen --- 
+  const toggleTaskCompletion = async (taskId: string, isDone: boolean): Promise<void> => {
+    const taskIndex = tasks.findIndex((t: Task) => t.id === taskId);
+    if (taskIndex === -1) {
+      toast({ variant: "destructive", title: "Taak niet gevonden" });
+      return;
+    }
+
+    const originalTask = tasks[taskIndex];
+    const originalSubtasks = originalTask.subtasks || [];
+
+    let newStatus: TaskStatus;
+    let newPriority: TaskPriority;
+    let newSubtasks: SubTask[];
+
+    if (isDone) {
+      // Markeer als voltooid
+      newStatus = 'done';
+      newPriority = 'none';
+      newSubtasks = originalSubtasks.map(subtask => ({ ...subtask, completed: true }));
+    } else {
+      // Markeer als actief (niet voltooid)
+      newStatus = 'in_progress'; // Zet terug naar 'in_progress'
+      newPriority = 'medium'; // Zet terug naar standaard prioriteit
+      newSubtasks = originalSubtasks.map(subtask => ({ ...subtask, completed: false }));
+    }
+
+    // Bereid de updates voor
+    const updatesToPersist: Partial<Omit<Task, 'id' | 'userId' | 'createdAt'>> = {
+      status: newStatus,
+      priority: newPriority,
+      subtasks: newSubtasks,
+    };
+
+    // Optimistische update van de lokale state
+    const updatedTasks = [...tasks];
+    updatedTasks[taskIndex] = {
+        ...originalTask,
+        status: newStatus,
+        priority: newPriority,
+        subtasks: newSubtasks,
+    };
+    setTasks(updatedTasks);
+
+    // Probeer de wijzigingen op te slaan via updateTask
+    try {
+        await updateTask(taskId, updatesToPersist);
+        // Toon eventueel een success toast hier?
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Status bijwerken mislukt",
+            description: "Kon de taakstatus niet synchroniseren met de database.",
+        });
+        // Zet de state terug naar de originele staat bij een fout
+        setTasks(tasks);
+    }
+  };
+  // --- EINDE NIEUWE FUNCTIE ---
+
   const contextValue: TaskContextProps = {
     tasks,
     isLoading,
@@ -684,6 +744,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     deleteSubtask,
     expandTask,
     deleteAllSubtasks,
+    toggleTaskCompletion,
   };
 
   return <TaskContext.Provider value={contextValue}>{children}</TaskContext.Provider>;
