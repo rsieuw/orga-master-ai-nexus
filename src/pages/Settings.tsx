@@ -253,12 +253,14 @@ export default function SettingsPage() {
                 <Label htmlFor="email">E-mail</Label>
                 <Input id="email" type="email" placeholder="Je e-mail" className="bg-gray-700" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
-              <Button 
-                className="mt-4 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white" 
-                onClick={handleSaveAccount}
-              >
-                Opslaan
-              </Button>
+              <div className="flex justify-end pt-4"> 
+                <Button 
+                  className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white" 
+                  onClick={handleSaveAccount}
+                >
+                  Opslaan
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

@@ -75,8 +75,8 @@
   - ✅ Implementeer filter/zoek opties (naam, email, rol, status) voor de gebruikerstabel.
 - 🟡 **[Admin] Permissiebeheer UI Verbetering:**
   - ✅ Toon feature `choose_research_model` in admin permissietabel.
-  - ❌ Maak de tabel gebruiksvriendelijker (bv. switches, groepering per rol).
-  - ❌ Overweeg filter/zoek opties.
+  - ✅ **[NIEUW]** Gebruik switches voor aan/uitzetten permissies per rol.
+  - ❌ **[NIEUW]** Groepeer permissies logisch (bv. per feature/rol).
 - 🟡 **[TEST] Unit & Integratie Tests:**
   - ✅ Basis testomgeving opgezet met Vitest, React Testing Library en Jest-DOM.
   - ✅ Tests geschreven voor diverse componenten en functies (zie lijst in vorige versie).

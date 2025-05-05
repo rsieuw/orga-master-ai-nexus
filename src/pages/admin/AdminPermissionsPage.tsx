@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client.ts";
 import { Feature } from "@/lib/permissions.ts"; // Import Feature type
 import { Button } from "@/components/ui/button.tsx";
-import { Checkbox } from "@/components/ui/checkbox.tsx";
+import { Switch } from "@/components/ui/switch.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.tsx";
 import { useToast } from "@/hooks/use-toast.ts";
 import { UserRole } from '@/contexts/AuthContext.tsx'; // Import UserRole if needed
@@ -65,8 +65,8 @@ export const PermissionsManagementTable: React.FC = () => {
     fetchPermissions();
   }, [toast]); // Dependency alleen op toast nu
 
-  // Handle checkbox change
-  const handlePermissionChange = (role: UserRole, feature: Feature, checked: boolean | string) => {
+  // Handle switch change (type toegevoegd aan checked)
+  const handlePermissionChange = (role: UserRole, feature: Feature, checked: boolean) => {
     setPermissions(currentPermissions =>
       currentPermissions.map(p => {
         if (p.role === role) {
@@ -137,10 +137,11 @@ export const PermissionsManagementTable: React.FC = () => {
               <TableCell className="font-medium capitalize">{role}</TableCell>
               {ALL_FEATURES.map(feature => (
                 <TableCell key={`${role}-${feature}`} className="text-center">
-                  <Checkbox
+                  <Switch
                     checked={enabled_features.includes(feature)}
-                    onCheckedChange={(checked) => handlePermissionChange(role, feature, checked)}
-                    // disabled={role === 'admin' && feature === 'adminPanel'} 
+                    onCheckedChange={(checked: boolean) => handlePermissionChange(role, feature, checked)}
+                    id={`${role}-${feature}`}
+                    aria-label={`Permissie ${FEATURE_DISPLAY_NAMES[feature] || feature} voor rol ${role}`}
                   />
                 </TableCell>
               ))}
@@ -148,9 +149,16 @@ export const PermissionsManagementTable: React.FC = () => {
           ))}
         </TableBody>
       </Table>
-      <Button onClick={handleSaveChanges} disabled={isLoading} className="mt-6">
-        Wijzigingen Opslaan
-      </Button>
+      {/* Wrapper div om knop naar rechts uit te lijnen */}
+      <div className="flex justify-end mt-6">
+        <Button 
+          onClick={handleSaveChanges} 
+          disabled={isLoading} 
+          className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
+        >
+          Wijzigingen Opslaan
+        </Button>
+      </div>
     </div>
   );
 };
