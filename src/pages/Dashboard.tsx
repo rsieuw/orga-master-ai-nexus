@@ -221,7 +221,7 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      {/* Header Section */}
+      {/* Verpak header in een flex container - maak responsive */}
       <div className="mb-6 flex flex-col md:flex-row md:justify-between md:items-center">
         {/* Linker gedeelte (Begroeting) */}
         <div className="mb-6 md:mb-0">
@@ -261,25 +261,36 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Remove the z-index wrapper div */}
-      {isLoading ? (
-         <div className="space-y-6">
-           {/* ... Loading Skeleton ... */}
-         </div>
-      ) : (
-         <>
-           {emptyStateMessage} 
-           {filteredTasks.length > 0 && (
-             <div className="md:grid md:grid-cols-3 md:gap-6">
-               {columns.map((columnContent, index) => (
-                 <div key={index} className="space-y-4">
-                   {columnContent}
-                 </div>
-               ))}
-             </div>
-           )}
-         </>
-      )}
+      {/* Geen gap op mobiel */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6 items-start">
+        {totalTasks > 0 ? ( // Gebruik totalTasks gebaseerd op gefilterde lijst
+          // Render de vooraf gevulde kolom-arrays
+          columns.map((columnItems, colIndex) => (
+            <div key={colIndex} className="flex flex-col gap-0"> 
+              {/* --- Placeholder Logica --- */}
+              {
+                // Controleer of het eerste item bestaat en GEEN h2 is
+                columnItems.length > 0 && 
+                React.isValidElement(columnItems[0]) && 
+                columnItems[0].type !== 'h2' && (
+                  // Render placeholder met geschatte hoogte van titel + marge
+                  // Verberg op mobiel (default), toon vanaf md: breakpoint
+                  <div className="hidden md:block h-10"></div> 
+                )
+              }
+              {/* --- Einde Placeholder Logica --- */}
+              {columnItems.map((item) => {
+                // Item is al een ReactNode (h2 of div)
+                return item;
+              })}
+            </div>
+          ))
+        ) : (
+          <div className="text-center col-span-1 md:col-span-3 mt-8">
+            {emptyStateMessage} {/* Render the determined message */}
+          </div>
+        )}
+      </div>
     </AppLayout>
   );
 }
