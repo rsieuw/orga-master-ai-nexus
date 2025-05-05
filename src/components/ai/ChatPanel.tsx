@@ -1258,7 +1258,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
             >
               {React.createElement(aiModels.find((m: AIModel) => m.id === selectedModel)?.icon || Settings, { className: "h-4 w-4" })}
             </SelectTrigger>
-            <SelectContent className="glass-effect min-w-[180px]">
+            <SelectContent align="end" side="top" className="glass-effect min-w-[180px]">
               {aiModels.map((model: AIModel) => {
                 // Determine if the option should be disabled based on permission
                 const isDisabled = 
@@ -1307,14 +1307,22 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
                 <Settings className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="glass-effect min-w-[180px]">
+            <DropdownMenuContent side="top" align="end" className="glass-effect">
+              {/* DEBUG Logs verwijderd */}
+              
               <DropdownMenuItem onClick={handleClearHistory} disabled={isLoading}>
                 Wis Geschiedenis
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleExportChat}>
-                Exporteer Gesprek (.txt)
-              </DropdownMenuItem>
+              {/* Separator alleen tonen als Export ook getoond wordt */}
+              {(user && user.enabled_features && user.enabled_features.includes('exportChat')) && (
+                <DropdownMenuSeparator />
+              )}
+              {/* Directe check i.p.v. hasPermission */}
+              {(user && user.enabled_features && user.enabled_features.includes('exportChat')) && ( 
+                <DropdownMenuItem onClick={handleExportChat}>
+                  Exporteer Gesprek (.txt)
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 

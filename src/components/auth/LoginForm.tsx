@@ -106,9 +106,10 @@ export default function LoginForm() {
               Wachtwoord vergeten?
             </Link>
           </div>
-          <Button 
-            type="submit" 
-            className="w-full mt-8 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white" 
+          <Button
+            type="submit"
+            className="w-full mt-8 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
+            size="lg"
             disabled={isLoading}
           >
             {isLoading ? "Inloggen..." : "Inloggen"}

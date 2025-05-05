@@ -21,6 +21,8 @@ import SupportPage from "./pages/Support.tsx";
 import DocumentationPage from "./pages/Documentation.tsx";
 import ContactPage from "./pages/ContactPage.tsx";
 import PricingPage from "./pages/Pricing.tsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.tsx";
+import UpdatePasswordPage from "./pages/UpdatePasswordPage.tsx";
 
 // Importeer de nieuwe admin componenten
 import AdminRouteGuard from "./components/auth/AdminRouteGuard.tsx";
@@ -52,6 +54,8 @@ const AppContent = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/update-password" element={<UpdatePasswordPage />} />
             <Route path="/task/:id" element={<TaskDetail />} />
             <Route path="/new-task" element={<TaskForm />} />
             <Route path="/task/edit/:id" element={<TaskForm />} />

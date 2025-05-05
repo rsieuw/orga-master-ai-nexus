@@ -14,6 +14,10 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@capacitor/android": "^7.2.0",
+    "@capacitor/cli": "^7.2.0",
+    "@capacitor/core": "^7.2.0",
+    "@capacitor/ios": "^7.2.0",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -70,6 +74,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@eslint/js": "^9.9.0",
     "@tailwindcss/typography": "^0.5.15",
     "@testing-library/jest-dom": "^6.6.3",
@@ -86,8 +91,8 @@
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.6",
     "globals": "^15.9.0",
-    "jsdom": "^26.1.0",
     "jest": "^29.7.0",
+    "jsdom": "^26.1.0",
     "postcss": "^8.4.38",
     "tailwind-scrollbar": "^3.1.0",
     "tailwindcss": "^3.4.3",

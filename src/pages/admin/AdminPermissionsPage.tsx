@@ -28,6 +28,12 @@ const FEATURE_DISPLAY_NAMES: Record<Feature, string> = {
 };
 // --- EINDE NIEUW ---
 
+// --- NIEUW: Sorteer features op weergavenaam voor logische kolomvolgorde ---
+const sortedFeatures = ALL_FEATURES.sort((a, b) => 
+  (FEATURE_DISPLAY_NAMES[a] || a).localeCompare(FEATURE_DISPLAY_NAMES[b] || b)
+);
+// --- EINDE NIEUW ---
+
 // De component die de tabel en logica bevat
 export const PermissionsManagementTable: React.FC = () => {
   const { toast } = useToast();
@@ -119,7 +125,7 @@ export const PermissionsManagementTable: React.FC = () => {
         <TableHeader>
           <TableRow>
             <TableHead>Rol</TableHead>
-            {ALL_FEATURES.map(feature => (
+            {sortedFeatures.map(feature => (
               <TableHead key={feature} className="text-center">
                 {FEATURE_DISPLAY_NAMES[feature] || feature} 
               </TableHead>
@@ -135,7 +141,7 @@ export const PermissionsManagementTable: React.FC = () => {
             .map(({ role, enabled_features }) => (
             <TableRow key={role}>
               <TableCell className="font-medium capitalize">{role}</TableCell>
-              {ALL_FEATURES.map(feature => (
+              {sortedFeatures.map(feature => (
                 <TableCell key={`${role}-${feature}`} className="text-center">
                   <Switch
                     checked={enabled_features.includes(feature)}

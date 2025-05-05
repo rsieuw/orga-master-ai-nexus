@@ -76,7 +76,6 @@
 - 🟡 **[Admin] Permissiebeheer UI Verbetering:**
   - ✅ Toon feature `choose_research_model` in admin permissietabel.
   - ✅ **[NIEUW]** Gebruik switches voor aan/uitzetten permissies per rol.
-  - ❌ **[NIEUW]** Groepeer permissies logisch (bv. per feature/rol).
 - 🟡 **[TEST] Unit & Integratie Tests:**
   - ✅ Basis testomgeving opgezet met Vitest, React Testing Library en Jest-DOM.
   - ✅ Tests geschreven voor diverse componenten en functies (zie lijst in vorige versie).
@@ -195,11 +194,20 @@
 - ❌ **[Feature] Developer Mode:**
   - **Functionaliteit:** Bied een optionele modus die gebruik maakt van geavanceerdere AI-modellen voor taken zoals onderzoek en tekstgeneratie.
   - **Modellen:** Gebruik [Claude 3.7](https://www.anthropic.com/news/claude-3-5-sonnet) (Sonnet/Opus afhankelijk van beschikbaarheid/kosten) OF [Gemini 2.5 Pro](https://deepmind.google/technologies/gemini/pro/). Keuze mogelijk configureerbaar maken.
+  
+  - **Nieuwe Overwegingen (Gebaseerd op Discussie 2024-07-24):**
+    - **Huidige Setup (voor documentatie):** Creative Mode & Precise Mode draaien op GPT-4o mini.
+    - **Voorstel 1 (Aanbevolen Start):** Voeg een krachtiger model toe (bv. GPT-4o volledig, Claude 3 Sonnet/Opus) als premium selectie voor bestaande modi. Dit biedt directe kwaliteitsverbetering.
+    - **Voorstel 2 (Volgende Stap):** Introduceer een nieuwe modus, bv. "Analyse & Inzicht Modus", die zich richt op het interpreteren van taakdata (voortgang, trends, knelpunten). Deze modus kan dan ook profiteren van de modelkeuze (GPT-4o mini vs. krachtiger model).
+    - **Combinatie:** Uiteindelijk kan de gebruiker mogelijk zowel een Modus (Efficiëntie, Creatief, Analyse) als een Model (Snel/Efficiënt, Geavanceerd/Krachtig) kiezen.
+
   - **Integratie:**
-    - Koppel deze modus aan een **betaald abonnement** (vereist voltooide Stripe-integratie).
-    - Pas bestaande Edge Functions (bv. `generate-chat-response`, `deep-research`) aan om conditioneel het geselecteerde geavanceerde model aan te roepen op basis van de gebruikersrol/abonnement.
-    - Voeg een instelling toe (bv. in `Settings.tsx`) waar betalende gebruikers de Developer Mode kunnen in-/uitschakelen.
+    - Koppel deze modus/modelkeuze aan een **betaald abonnement** (vereist voltooide Stripe-integratie).
+    - Pas bestaande Edge Functions (bv. `generate-chat-response`, `deep-research`) aan om conditioneel het geselecteerde geavanceerde model aan te roepen op basis van de gebruikersrol/abonnement/instelling.
+    - Voeg een instelling toe (bv. in `Settings.tsx`) waar betalende gebruikers de modus/model kunnen selecteren/instellen.
     - Overweeg API-sleutelbeheer voor de geselecteerde modellen (bv. via Supabase Vault of environment variables).
   - **UI:**
-    - Geef visueel aan wanneer de Developer Mode actief is (bv. een badge in de chat of header).
-    - Communiceer duidelijk de voordelen (en mogelijk hogere kosten/langere responstijden) van deze modus.
+    - Geef visueel aan wanneer de Developer Mode / geavanceerd model actief is (bv. een badge in de chat of header).
+    - Communiceer duidelijk de voordelen (en mogelijk hogere kosten/langere responstijden) van deze modus/model.
+
+*Dit is een voorlopig plan gebaseerd op onderzoek. Details kunnen wijzigen tijdens implementatie.*
