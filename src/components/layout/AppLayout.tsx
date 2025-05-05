@@ -30,9 +30,9 @@ export default function AppLayout({
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative z-0">
       <Navbar openNewTaskModal={() => setIsNewTaskOpen(true)} />
-      <main className="flex-1 container mx-auto px-4 pt-8 pb-20 mb-4 md:pb-4">
+      <main className="flex-1 container mx-auto px-4 pt-8 pb-20 mb-4 md:pb-4 relative z-10">
         {children}
       </main>
       <Footer />

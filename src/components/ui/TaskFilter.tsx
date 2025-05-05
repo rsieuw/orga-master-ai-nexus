@@ -40,11 +40,10 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          size="sm"
-          className="h-8 gap-1" // Removed border-dashed for default look
+          size="icon"
+          className="h-10 w-10 rounded-full"
         >
-          <Filter className="h-3.5 w-3.5" />
-          <span>Filter</span>
+          <Filter className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 
@@ -55,6 +54,7 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
           Status
         </div>
         <DropdownMenuCheckboxItem
+          className="cursor-pointer"
           checked={status === "all"}
           onCheckedChange={() => handleStatusChange("all")}
         >
@@ -62,6 +62,7 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
           {status === "all" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
+          className="cursor-pointer"
           checked={status === "completed"}
           onCheckedChange={() => handleStatusChange("completed")}
         >
@@ -69,6 +70,7 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
           {status === "completed" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
+          className="cursor-pointer"
           checked={status === "incomplete"}
           onCheckedChange={() => handleStatusChange("incomplete")}
         >
@@ -82,6 +84,7 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
           Prioriteit
         </div>
         <DropdownMenuCheckboxItem
+          className="cursor-pointer"
           checked={priority === "all"}
           onCheckedChange={() => handlePriorityChange("all")}
         >
@@ -89,6 +92,7 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
           {priority === "all" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
+          className="cursor-pointer"
           checked={priority === "high"}
           onCheckedChange={() => handlePriorityChange("high")}
         >
@@ -96,6 +100,7 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
           {priority === "high" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
+          className="cursor-pointer"
           checked={priority === "medium"}
           onCheckedChange={() => handlePriorityChange("medium")}
         >
@@ -103,18 +108,12 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
           {priority === "medium" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
+          className="cursor-pointer"
           checked={priority === "low"}
           onCheckedChange={() => handlePriorityChange("low")}
         >
           Laag
           {priority === "low" && <Check className="h-4 w-4 ml-auto" />}
-        </DropdownMenuCheckboxItem>
-         <DropdownMenuCheckboxItem
-          checked={priority === "none"}
-          onCheckedChange={() => handlePriorityChange("none")}
-        >
-          Geen
-          {priority === "none" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
       </DropdownMenuContent>
     </DropdownMenu>

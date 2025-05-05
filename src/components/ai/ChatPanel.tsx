@@ -977,7 +977,14 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
   // ---> EINDE NIEUW <--- 
 
   // DEBUG: Log messages state before returning JSX
-  console.log('[DEBUG] ChatPanel messages state before render:', messages);
+  // console.log('[DEBUG] ChatPanel messages state before render:', messages);
+
+  useEffect(() => {
+    // console.log('[DEBUG] ChatPanel messages state before render:', messages);
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   return (
     <>

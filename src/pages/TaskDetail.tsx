@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout.tsx";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.t
 import { Badge } from "@/components/ui/badge.tsx";
 import { format, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
-import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save } from "lucide-react";
 import { Separator } from "@/components/ui/separator.tsx";
 import {
   AlertDialog,
@@ -39,6 +39,7 @@ import { Input } from "@/components/ui/input.tsx";
 import { Task, SubTask, TaskPriority, TaskStatus } from "@/types/task.ts";
 import { Progress } from "@/components/ui/progress.tsx";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu.tsx";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip.tsx";
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
@@ -54,12 +55,44 @@ export default function TaskDetail() {
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
+  const [showMobileActions, setShowMobileActions] = useState(true);
+  const hideTimerRef = useRef<number | null>(null);
 
   const task: Task | undefined = getTaskById(id || "");
 
   useEffect(() => {
     setActiveMobileView(location.hash === '#chat' ? 'chat' : 'details');
   }, [location.hash]);
+
+  useEffect(() => {
+    const INACTIVITY_TIMEOUT = 2500;
+
+    const handleActivity = () => {
+      if (hideTimerRef.current !== null) {
+        clearTimeout(hideTimerRef.current);
+      }
+      setShowMobileActions(true);
+      hideTimerRef.current = setTimeout(() => {
+        setShowMobileActions(false);
+      }, INACTIVITY_TIMEOUT) as number;
+    };
+
+    handleActivity();
+
+    // Add scroll listener
+    globalThis.addEventListener('scroll', handleActivity, { passive: true });
+    // Add click listener
+    globalThis.addEventListener('click', handleActivity, { capture: true }); // Use capture to catch clicks early
+
+    // Cleanup on unmount
+    return () => {
+      globalThis.removeEventListener('scroll', handleActivity);
+      globalThis.removeEventListener('click', handleActivity, { capture: true }); // Remove click listener
+      if (hideTimerRef.current !== null) { 
+        clearTimeout(hideTimerRef.current);
+      }
+    };
+  }, []);
 
   // Bereken subtaak voortgang
   const totalSubtasks = task?.subtasks.length ?? 0;
@@ -164,13 +197,6 @@ export default function TaskDetail() {
     updateTask(task.id, { priority: newPriority as TaskPriority });
   };
 
-  const priorityColor: Record<TaskPriority, string> = {
-    high: "bg-priority-high",
-    medium: "bg-priority-medium",
-    low: "bg-priority-low",
-    none: "bg-green-500",
-  };
-
   const priorityLabel: Record<TaskPriority, string> = {
     high: "Hoog",
     medium: "Middel",
@@ -179,14 +205,14 @@ export default function TaskDetail() {
   };
 
   const priorityBadgeColor: Record<TaskPriority, string> = {
-    high: "border-red-500 text-red-500 dark:text-red-400",
-    medium: "border-orange-500 text-orange-500 dark:text-orange-400",
-    low: "border-blue-500 text-blue-500 dark:text-blue-400",
-    none: "border-green-500 text-green-500 dark:text-green-400",
+    high: "border-red-400 text-red-400",
+    medium: "border-orange-400 text-orange-400",
+    low: "border-blue-400 text-blue-400",
+    none: "border-green-400 text-green-400",
   };
 
   let deadlineText = "Geen deadline";
-  let deadlineColor = "border-gray-500 text-gray-500 dark:text-gray-400";
+  let deadlineColor = "border-gray-400 text-gray-400";
   let isOverdue = false;
 
   if (task.deadline) {
@@ -196,16 +222,16 @@ export default function TaskDetail() {
       isOverdue = parsedDeadline < now && task.status !== 'done';
       deadlineText = format(parsedDeadline, "PPP", { locale: nl });
       if (isOverdue) {
-        deadlineColor = "border-red-500 text-red-500 dark:text-red-400";
+        deadlineColor = "border-red-400 text-red-400";
       } else if (task.status === 'done') {
-        deadlineColor = "border-green-500 text-green-500 dark:text-green-400";
+        deadlineColor = "border-green-400 text-green-400";
       } else {
-        deadlineColor = "border-blue-500 text-blue-500 dark:text-blue-400";
+        deadlineColor = "border-blue-400 text-blue-400";
       }
     } catch (e) {
       console.error("Invalid date format for deadline:", task.deadline);
       deadlineText = "Ongeldige datum";
-      deadlineColor = "border-red-500 text-red-500 dark:text-red-400";
+      deadlineColor = "border-red-400 text-red-400";
     }
   }
 
@@ -217,9 +243,9 @@ export default function TaskDetail() {
   };
 
   const statusColor: Record<string, string> = {
-    todo: "border-gray-500 text-gray-500 dark:text-gray-400",
-    in_progress: "border-blue-500 text-blue-500 dark:text-blue-400",
-    done: "border-green-500 text-green-500 dark:text-green-400",
+    todo: "border-red-400 text-red-400",
+    in_progress: "border-yellow-400 text-yellow-400",
+    done: "border-green-400 text-green-400",
   };
 
   return (
@@ -235,14 +261,13 @@ export default function TaskDetail() {
           <span className="sr-only">Terug</span>
         </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:h-[calc(100vh-12rem)]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:h-[calc(100vh-12rem)] relative z-0">
           <Card className={cn(
-            "firebase-card flex-col relative overflow-hidden",
+            "firebase-card flex-col relative overflow-hidden z-10",
             activeMobileView === 'chat' ? 'hidden lg:flex' : 'flex' 
           )}>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${task && priorityColor[task.priority]}`}></div>
                 <CardTitle className="text-xl font-semibold">{task?.title}</CardTitle>
               </div>
             </CardHeader>
@@ -308,8 +333,8 @@ export default function TaskDetail() {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button 
-                          variant="outline" 
-                          className={cn("border h-6 px-2 sm:h-7 sm:px-2.5 text-xs", statusColor[task.status])}
+                          variant="ghost"
+                          className={cn("h-6 px-2 text-xs font-normal rounded-md bg-muted/30", statusColor[task.status])}
                         >
                           {statusLabel[task.status]}
                         </Button>
@@ -332,8 +357,8 @@ export default function TaskDetail() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button 
-                            variant="outline" 
-                            className={cn("border h-6 px-2 sm:h-7 sm:px-2.5 text-xs", priorityBadgeColor[task.priority])}
+                            variant="ghost"
+                            className={cn("h-6 px-2 text-xs font-normal rounded-md bg-muted/30", priorityBadgeColor[task.priority])}
                           >
                             <span className="hidden sm:inline">Prioriteit:&nbsp;</span> 
                             {priorityLabel[task.priority]}
@@ -354,8 +379,8 @@ export default function TaskDetail() {
                     )}
                     {task.deadline && (
                       <Badge 
-                        variant="outline" 
-                        className={cn("border h-6 px-2 sm:h-7 sm:px-2.5 text-xs", deadlineColor)}
+                        variant="secondary"
+                        className={cn("h-6 px-2 text-xs font-normal border-none bg-muted/30", deadlineColor)}
                       >
                         <span className="hidden sm:inline">Deadline:&nbsp;</span> 
                         {deadlineText}
@@ -379,7 +404,7 @@ export default function TaskDetail() {
                            <span className="text-xs text-muted-foreground">
                                {completedSubtasks}/{totalSubtasks}
                            </span>
-                           <Progress value={progressValue} className="h-1.5 w-20" />
+                           <Progress value={progressValue} className="h-1.5 w-20 lg:w-40" />
                            <span className="text-xs font-medium text-muted-foreground/90">
                              ({Math.round(progressValue)}%)
                            </span>
@@ -389,9 +414,10 @@ export default function TaskDetail() {
                   </div>
                 </div>
 
+                {/* Scrollable Subtasks List (NO desktop buttons/form here anymore) */}
                 <div className="flex-grow overflow-y-auto min-h-0 space-y-1.5 
                                scrollbar-thin scrollbar-thumb-muted-foreground 
-                               scrollbar-track-transparent scrollbar-thumb-rounded">
+                               scrollbar-track-transparent scrollbar-thumb-rounded pb-2">
                   {task.subtasks.length > 0 ? (
                     <div className="space-y-1.5">
                       {task.subtasks.map((subtask: SubTask, index: number) => (
@@ -452,43 +478,90 @@ export default function TaskDetail() {
                   ) : (
                     <p className="text-muted-foreground text-sm">Geen subtaken</p>
                   )}
-                  <div className="mt-4 px-1 flex-shrink-0">
-                    {showAddSubtaskForm ? (
-                      <form onSubmit={handleAddSubtask} className="flex items-center gap-3">
-                        <Input
-                          type="text"
-                          placeholder="Nieuwe subtaak titel"
-                          value={newSubtaskTitle}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubtaskTitle(e.target.value)}
-                          className="h-8 flex-grow"
-                          disabled={isAddingSubtask}
-                        />
-                        <Button type="submit" size="sm" className="h-8 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900" disabled={isAddingSubtask || !newSubtaskTitle.trim()}>
-                          {isAddingSubtask ? <GradientLoader size="sm" /> : "Opslaan"}
-                        </Button>
-                        <Button type="button" variant="ghost" size="sm" className="h-8" onClick={() => setShowAddSubtaskForm(false)} disabled={isAddingSubtask}>
-                          Annuleren
-                        </Button>
-                      </form>
-                    ) : (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setShowAddSubtaskForm(true)} className="h-8">
-                           <PlusCircle className="mr-2 h-4 w-4" />
-                           Subtaak toevoegen
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleGenerateSubtasks}
-                          disabled={isGeneratingSubtasks || isAddingSubtask}
-                          className="text-xs h-8 px-2 text-muted-foreground hover:text-foreground"
-                        >
-                           <Sparkles className={cn("mr-1 h-3 w-3", isGeneratingSubtasks && "animate-spin")} />
-                           Genereer Subtaken
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                </div>
+
+                {/* Desktop Buttons & Add Form - MOVED OUTSIDE SCROLL & PINNED BOTTOM */}
+                <div className="hidden lg:flex lg:items-center lg:gap-2 lg:px-1 border-t border-border pt-3 mt-auto">
+                  {showAddSubtaskForm ? (
+                    <form onSubmit={handleAddSubtask} className="flex items-center gap-3 flex-grow">
+                      <Input
+                        type="text"
+                        placeholder="Nieuwe subtaak titel"
+                        value={newSubtaskTitle}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubtaskTitle(e.target.value)}
+                        className="h-10 flex-grow"
+                        disabled={isAddingSubtask}
+                      />
+                      {/* Desktop Save Button - Icon */}
+                      <Button 
+                        type="submit" 
+                        size="icon"
+                        className="h-10 w-10 p-2.5 rounded-full bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
+                        disabled={isAddingSubtask || !newSubtaskTitle.trim()}
+                        aria-label="Subtaak opslaan"
+                      >
+                        {isAddingSubtask ? <GradientLoader size="sm" /> : <Save className="h-5 w-5" />}
+                      </Button>
+                      {/* Desktop Cancel Button - Icon */}
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-10 w-10 p-2.5 rounded-full"
+                        onClick={() => setShowAddSubtaskForm(false)} 
+                        disabled={isAddingSubtask}
+                        aria-label="Annuleren"
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </form>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-2 h-10">
+                      <Button 
+                        variant="outline"
+                        onClick={() => setShowAddSubtaskForm(true)} 
+                        className="h-10 px-4 text-muted-foreground hover:text-foreground"
+                      >
+                         <PlusCircle className="mr-2 h-4 w-4" />
+                         Subtaak toevoegen
+                      </Button>
+                      {/* Desktop Generate Subtasks Button with Confirmation */}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            disabled={isGeneratingSubtasks || isAddingSubtask}
+                            className="h-10 p-[1px] rounded-md bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 relative transition-colors duration-200"
+                          >
+                            <div className="bg-card h-full w-full rounded-[5px] flex items-center justify-center px-4">
+                              <span className="flex items-center bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+                                <Sparkles className={cn("mr-1 h-4 w-4 text-blue-500", isGeneratingSubtasks && "animate-spin")} />
+                                Genereer Subtaken
+                              </span>
+                            </div>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-card/90 backdrop-blur-lg border border-white/5">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Subtaken Genereren (AI)?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Wilt u de AI assistent vragen om relevante subtaken voor "{task.title}" voor te stellen op basis van de beschrijving?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="bg-secondary/80 border-white/10">Annuleren</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={handleGenerateSubtasks}
+                              className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
+                              disabled={isGeneratingSubtasks}
+                            >
+                              {isGeneratingSubtasks ? <GradientLoader size="sm" className="mr-2" /> : null}
+                              Ja, genereer subtaken
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             )}
@@ -511,6 +584,117 @@ export default function TaskDetail() {
       {isEditDialogOpen && (
         <EditTaskDialog task={task} setOpen={setIsEditDialogOpen} />
       )}
+
+      {/* Mobile Add Subtask Form Panel */}
+      {showAddSubtaskForm && (
+        <div className="lg:hidden fixed bottom-16 left-0 right-0 z-[60] p-4 bg-card border-t border-border shadow-lg">
+          <form onSubmit={handleAddSubtask} className="flex items-center gap-3">
+            {/* Container for Input and Close Button */}
+            <div className="relative flex-grow">
+              <Input
+                type="text"
+                placeholder="Nieuwe subtaak titel..."
+                value={newSubtaskTitle}
+                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                className="h-10 bg-background/50 rounded-md pr-10"
+                disabled={isAddingSubtask}
+                autoFocus
+              />
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full text-muted-foreground"
+                onClick={() => setShowAddSubtaskForm(false)} 
+                disabled={isAddingSubtask}
+                aria-label="Annuleren"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Submit Button */}
+            <Button 
+              type="submit" 
+              size="icon"
+              className="h-10 w-10 p-2.5 rounded-full bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 flex-shrink-0"
+              disabled={isAddingSubtask || !newSubtaskTitle.trim()}
+              aria-label="Subtaak opslaan"
+            >
+              {isAddingSubtask ? <GradientLoader size="sm" /> : <Save className="h-5 w-5" />} 
+            </Button>
+          </form>
+        </div>
+      )}
+
+      {/* Mobile Fixed Action Footer - Add conditional styling */}
+      <div className={cn(
+          "lg:hidden fixed bottom-16 left-0 right-0 z-40 flex justify-between items-center p-3",
+          showMobileActions ? 'opacity-100' : 'opacity-0 pointer-events-none',
+          'transition-opacity duration-300 ease-in-out'
+      )}>
+        {/* Mobile Generate button (Sparkles) with Confirmation & Tooltip */}
+        <AlertDialog>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="default"
+                  size="icon" 
+                  className="rounded-full h-12 w-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white shadow-lg"
+                  disabled={isGeneratingSubtasks || isAddingSubtask}
+                  aria-label="Genereer subtaken"
+                >
+                  <Sparkles className={cn("h-6 w-6", isGeneratingSubtasks && "animate-spin")} />
+                </Button>
+              </AlertDialogTrigger>
+              <TooltipContent side="top" className="bg-popover/90 backdrop-blur-lg">
+                <p>Genereer subtaken (AI)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <AlertDialogContent className="bg-card/90 backdrop-blur-lg border border-white/5">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Subtaken Genereren (AI)?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Wilt u de AI assistent vragen om relevante subtaken voor "{task.title}" voor te stellen op basis van de beschrijving?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-secondary/80 border-white/10">Annuleren</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleGenerateSubtasks}
+                className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
+                disabled={isGeneratingSubtasks}
+              >
+                {isGeneratingSubtasks ? <GradientLoader size="sm" className="mr-2" /> : null}
+                Ja, genereer subtaken
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Add button (PlusCircle) with Tooltip */}
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline"
+                size="icon" 
+                className="rounded-full h-12 w-12 bg-secondary/80 backdrop-blur-sm border-white/10 text-muted-foreground hover:text-foreground hover:bg-secondary shadow-lg"
+                onClick={() => setShowAddSubtaskForm(true)}
+                disabled={isAddingSubtask || isGeneratingSubtasks}
+                aria-label="Subtaak toevoegen"
+              >
+                <PlusCircle className="h-6 w-6" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="bg-popover/90 backdrop-blur-lg">
+              <p>Subtaak toevoegen</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     </AppLayout>
   );
 }

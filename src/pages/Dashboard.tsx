@@ -21,6 +21,7 @@ import {
   DialogPortal,
 } from "@/components/ui/dialog.tsx";
 import NewTaskDialog from "@/components/tasks/NewTaskDialog.tsx";
+import { TypeAnimation } from 'react-type-animation'; // Import the component
 
 const getCategoryTitle = (category: keyof TasksByDate): string => {
   switch (category) {
@@ -160,6 +161,9 @@ export default function Dashboard() {
   });
   // --- Einde logica voor evenwichtige verdeling ---
 
+  // Construct the greeting text dynamically
+  const greetingText = `Hallo, ${user?.name || "Gebruiker"}`;
+
   // --- Bepaal bericht voor lege staat ---
   let emptyStateMessage: React.ReactNode = null;
   if (filteredTasks.length === 0 && (searchTerm !== '' || filterStatus !== 'all' || filterPriority !== 'all')) {
@@ -217,14 +221,26 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      {/* Verpak header in een flex container - maak responsive */}
+      {/* Header Section */}
       <div className="mb-6 flex flex-col md:flex-row md:justify-between md:items-center">
         {/* Linker gedeelte (Begroeting) */}
-        <div className="mb-4 md:mb-0">
-          <h1 className="text-3xl font-bold">
-            <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-              Hallo, {user?.name || "Gebruiker"}
-            </span>
+        <div className="mb-6 md:mb-0">
+          <h1 className="text-3xl font-bold h-10"> {/* Or min-h-10 */}
+            {/* Use TypeAnimation here */}
+            {/* Added check to only render animation when user data is potentially available */}
+            {user !== undefined && (
+              <TypeAnimation
+                sequence={[
+                  100, // Start after a short delay
+                  greetingText,
+                ]}
+                wrapper="span"
+                speed={50}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent"
+                cursor
+                // repeat={0} // Default is 0 (no repeat)
+              />
+            )}
           </h1>
           <p className="text-muted-foreground">
             Hier is een overzicht van je taken
@@ -237,7 +253,7 @@ export default function Dashboard() {
             <SearchInput
               placeholder="Zoek taken..."
               /* Verwijder expliciete breedte, laat flexbox het regelen of pas aan indien nodig */
-              className="flex-grow min-w-0" // Laat zoekveld groeien, voorkom overflow
+              className="flex-grow min-w-0" // Removed ineffective h-10
               onChange={setSearchTerm} // Koppel aan state updater
             />
             <TaskFilter onFilterChange={handleFilterChange} /> {/* Filter knop neemt zijn eigen breedte */}
@@ -245,36 +261,25 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Geen gap op mobiel */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6 items-start">
-        {totalTasks > 0 ? ( // Gebruik totalTasks gebaseerd op gefilterde lijst
-          // Render de vooraf gevulde kolom-arrays
-          columns.map((columnItems, colIndex) => (
-            <div key={colIndex} className="flex flex-col gap-0"> 
-              {/* --- Placeholder Logica --- */}
-              {
-                // Controleer of het eerste item bestaat en GEEN h2 is
-                columnItems.length > 0 && 
-                React.isValidElement(columnItems[0]) && 
-                columnItems[0].type !== 'h2' && (
-                  // Render placeholder met geschatte hoogte van titel + marge
-                  // Verberg op mobiel (default), toon vanaf md: breakpoint
-                  <div className="hidden md:block h-10"></div> 
-                )
-              }
-              {/* --- Einde Placeholder Logica --- */}
-              {columnItems.map((item) => {
-                // Item is al een ReactNode (h2 of div)
-                return item;
-              })}
-            </div>
-          ))
-        ) : (
-          <div className="text-center col-span-1 md:col-span-3 mt-8">
-            {emptyStateMessage} {/* Render the determined message */}
-          </div>
-        )}
-      </div>
+      {/* Remove the z-index wrapper div */}
+      {isLoading ? (
+         <div className="space-y-6">
+           {/* ... Loading Skeleton ... */}
+         </div>
+      ) : (
+         <>
+           {emptyStateMessage} 
+           {filteredTasks.length > 0 && (
+             <div className="md:grid md:grid-cols-3 md:gap-6">
+               {columns.map((columnContent, index) => (
+                 <div key={index} className="space-y-4">
+                   {columnContent}
+                 </div>
+               ))}
+             </div>
+           )}
+         </>
+      )}
     </AppLayout>
   );
 }

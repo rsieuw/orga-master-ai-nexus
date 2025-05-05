@@ -157,7 +157,7 @@
 }
 
 .task-card {
-  @apply relative rounded-lg border p-3 shadow-sm transition-all hover:shadow-md hover:translate-y-[-2px] duration-200 glass-card;
+  @apply relative rounded-lg border p-3 shadow-sm transition-all hover:shadow-md hover:translate-y-[-2px] duration-200 glass-card overflow-hidden;
 }
 
 .priority-high::before,
@@ -170,9 +170,10 @@
   top: 0;
   bottom: 0;
   width: 4px; /* Breedte van de gradient-lijn */
-  /* Behoud afronding van de kaart zelf, de lijn is binnen de border */
-  border-top-left-radius: inherit; /* Probeer afronding over te nemen */
-  border-bottom-left-radius: inherit; /* Probeer afronding over te nemen */
+  /* Expliciet afronden i.p.v. inherit */
+  @apply rounded-l-lg; /* Tailwind class for left-top and left-bottom radius matching rounded-lg */
+  /* Verwijderd: border-top-left-radius: inherit; */
+  /* Verwijderd: border-bottom-left-radius: inherit; */
 }
 
 .priority-high::before {
@@ -193,15 +194,16 @@
   @apply bg-gradient-to-b from-blue-400 to-blue-600;
 }
 
+/* Keep only the background gradient apply rule for priority-none, remove duplicate properties */
 .priority-none::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  border-top-left-radius: inherit;
-  border-bottom-left-radius: inherit;
+  /* Removed content: ''; */
+  /* Removed position: absolute; */
+  /* Removed left: 0; */
+  /* Removed top: 0; */
+  /* Removed bottom: 0; */
+  /* Removed width: 4px; */
+  /* Removed border-top-left-radius: inherit; */
+  /* Removed border-bottom-left-radius: inherit; */
   /* Gradient van green-400 naar green-600 */
   @apply bg-gradient-to-b from-green-400 to-green-600;
 }
@@ -296,4 +298,12 @@
   .rdp-day_today:not(.rdp-day_outside) {
      @apply bg-primary text-primary-foreground;
   }
+}
+
+/* Hide browser default search cancel button */
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance:none;
 }
