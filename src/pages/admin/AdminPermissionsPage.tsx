@@ -16,7 +16,17 @@ interface RolePermission {
 
 // Define all available features (should match permissions.ts, but kept here for UI mapping)
 // Ideally, this comes from a single source of truth later
-const ALL_FEATURES: Feature[] = ['deepResearch', 'exportChat', 'adminPanel', 'choose_research_model'];
+const ALL_FEATURES: Feature[] = ['deepResearch', 'exportChat', 'adminPanel', 'choose_research_model', 'chatModes'];
+
+// --- NIEUW: Mapping voor weergavenamen ---
+const FEATURE_DISPLAY_NAMES: Record<Feature, string> = {
+  deepResearch: "Diep Onderzoek",
+  exportChat: "Chat Exporteren",
+  adminPanel: "Admin Paneel",
+  choose_research_model: "Onderzoeksmodel Kiezen",
+  chatModes: "Chat Modi" // Creative/Precise is impliciet
+};
+// --- EINDE NIEUW ---
 
 // De component die de tabel en logica bevat
 export const PermissionsManagementTable: React.FC = () => {
@@ -110,7 +120,9 @@ export const PermissionsManagementTable: React.FC = () => {
           <TableRow>
             <TableHead>Rol</TableHead>
             {ALL_FEATURES.map(feature => (
-              <TableHead key={feature} className="text-center">{feature}</TableHead>
+              <TableHead key={feature} className="text-center">
+                {FEATURE_DISPLAY_NAMES[feature] || feature} 
+              </TableHead>
             ))}
           </TableRow>
         </TableHeader>

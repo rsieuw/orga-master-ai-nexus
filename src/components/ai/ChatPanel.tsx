@@ -1259,14 +1259,45 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
               {React.createElement(aiModels.find((m: AIModel) => m.id === selectedModel)?.icon || Settings, { className: "h-4 w-4" })}
             </SelectTrigger>
             <SelectContent className="glass-effect min-w-[180px]">
-              {aiModels.map((model: AIModel) => (
-                <SelectItem key={model.id} value={model.id}>
-                  <div className="flex items-center gap-2">
-                    {React.createElement(model.icon, { className: "h-4 w-4" })}
-                    <span>{model.name}</span>
-                  </div>
-                </SelectItem>
-              ))}
+              {aiModels.map((model: AIModel) => {
+                // Determine if the option should be disabled based on permission
+                const isDisabled = 
+                  (model.id === 'creative' || model.id === 'precise') && 
+                  !hasPermission(user, 'chatModes');
+                
+                // Determine if the tooltip should be shown
+                const showTooltip = isDisabled && (model.id === 'creative' || model.id === 'precise');
+
+                const selectItemContent = (
+                  <SelectItem 
+                    key={model.id} 
+                    value={model.id}
+                    disabled={isDisabled}
+                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                    // Prevent closing the dropdown when a disabled item is clicked
+                    onSelect={(e) => { if (isDisabled) e.preventDefault(); }}
+                  >
+                    <div className="flex items-center gap-2">
+                      {React.createElement(model.icon, { className: "h-4 w-4" })}
+                      <span>{model.name}</span>
+                    </div>
+                  </SelectItem>
+                );
+
+                // Wrap with Tooltip only if needed
+                return showTooltip ? (
+                  <TooltipProvider key={model.id} delayDuration={100}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>{selectItemContent}</TooltipTrigger>
+                      <TooltipContent side="left" align="center" className="bg-popover/90 backdrop-blur-lg">
+                        <p>Chat Modes zijn niet beschikbaar voor uw account type.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  selectItemContent
+                );
+              })}
             </SelectContent>
           </Select>
 

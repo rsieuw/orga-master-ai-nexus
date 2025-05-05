@@ -6,6 +6,7 @@ export type Feature =
   | 'exportChat' 
   | 'adminPanel'
   | 'choose_research_model'
+  | 'chatModes'
   // Voeg hier meer features toe naarmate je ze implementeert
   // | 'someOtherFeature'
   ;

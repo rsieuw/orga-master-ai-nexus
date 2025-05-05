@@ -101,12 +101,12 @@ export default function Dashboard() {
   };
   // --- Einde callback ---
 
-  // --- Logica voor evenwichtige kolomverdeling ---
-  const numColumns = 3;
+  // --- Herstel logica voor evenwichtige kolomverdeling ---
+  const numColumns = 3; 
   const columns: React.ReactNode[][] = Array.from({ length: numColumns }, () => []);
   let lastCategory: keyof TasksByDate | null = null;
-  const totalTasks = filteredTasks.length; // Gebruik lengte van gefilterde taken
-  
+  const totalTasks = filteredTasks.length; 
+
   // Bereken basis aantal taken per kolom en de rest
   const baseTasks = Math.floor(totalTasks / numColumns);
   const remainder = totalTasks % numColumns;
@@ -116,23 +116,22 @@ export default function Dashboard() {
   let col1Size = baseTasks;
   let col2Size = baseTasks;
 
-  // Verdeel de rest over de kolommen (voorkeur voor middelste/laatste)
+  // Verdeel de rest (bijv. bij 10 taken -> 3, 4, 3; bij 11 taken -> 3, 4, 4)
   if (remainder === 1) {
     col1Size += 1; // Geef extra taak aan de middelste kolom
   } else if (remainder === 2) {
     col1Size += 1; // Geef extra taak aan middelste kolom
     col2Size += 1; // Geef extra taak aan laatste kolom
   }
-  // Bij remainder === 0 hebben alle kolommen baseTasks
 
   // Definieer de breekpunten voor kolomverdeling
   const columnBreak1 = col0Size;
   const columnBreak2 = col0Size + col1Size;
-  // De derde kolom bevat de rest (col2Size taken)
 
-  filteredTasks.forEach(({ task, category }, taskIndex) => { // Gebruik filteredTasks
+  filteredTasks.forEach(({ task, category }, taskIndex) => { 
     const showTitle = category !== lastCategory;
     
+    // Bepaal doelkolom op basis van index en breekpunten
     let targetColumnIndex;
     if (taskIndex < columnBreak1) {
         targetColumnIndex = 0; // Eerste kolom
@@ -144,7 +143,8 @@ export default function Dashboard() {
 
     if (showTitle) {
       columns[targetColumnIndex].push(
-        <h2 key={`title-${String(category)}`} className="text-lg font-semibold mb-3 pt-0 break-inside-avoid">
+        // Verwijder break-inside-avoid
+        <h2 key={`title-${String(category)}-${targetColumnIndex}`} className="text-lg font-semibold mb-3 pt-0"> 
           {getCategoryTitle(category)}
         </h2>
       );
@@ -152,7 +152,8 @@ export default function Dashboard() {
     lastCategory = category;
 
     columns[targetColumnIndex].push(
-      <div key={task.id} className="mb-6 break-inside-avoid">
+      // Verwijder break-inside-avoid
+      <div key={task.id} className="mb-6"> 
         <TaskCard task={task} />
       </div>
     );
@@ -242,23 +243,26 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Herstel CSS Grid layout en voeg items-start toe */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         {totalTasks > 0 ? ( // Gebruik totalTasks gebaseerd op gefilterde lijst
+          // Render de vooraf gevulde kolom-arrays
           columns.map((columnItems, colIndex) => (
-            <div key={colIndex} className="flex flex-col gap-0">
+            <div key={colIndex} className="flex flex-col gap-0"> 
+              {/* --- Placeholder Logica --- */}
+              {
+                // Controleer of het eerste item bestaat en GEEN h2 is
+                columnItems.length > 0 && 
+                React.isValidElement(columnItems[0]) && 
+                columnItems[0].type !== 'h2' && (
+                  // Render placeholder met geschatte hoogte van titel + marge
+                  <div className="h-10"></div> // h-10 is 2.5rem
+                )
+              }
+              {/* --- Einde Placeholder Logica --- */}
               {columnItems.map((item) => {
-                // Bepaal of het de eerste kaart is in een latere kolom
-                const isCardDiv = React.isValidElement(item) && item.type === 'div';
-                const isFirstItemInColumn = columnItems[0] === item;
-                const needsAlignment = isFirstItemInColumn && colIndex > 0 && isCardDiv;
-
-                if (needsAlignment) {
-                  // Wikkel de kaart-div in een div met de margin
-                  return <div className="mt-[2.5rem]" key={(item as React.ReactElement).key}>{item}</div>;
-                } else {
-                  // Geef de titel of kaart-div direct weer
-                  return item;
-                }
+                // Item is al een ReactNode (h2 of div)
+                return item;
               })}
             </div>
           ))

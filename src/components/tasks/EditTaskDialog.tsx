@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.tsx";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast.ts";
 import { format, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
@@ -138,34 +138,47 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
 
         <div className="space-y-2">
             <Label htmlFor="edit-deadline">Deadline</Label>
-            <Popover>
-                <PopoverTrigger asChild>
+            <div className="flex items-center space-x-2"> 
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !deadline && "text-muted-foreground"
+                            )}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {deadline ? format(deadline, "PPP", { locale: nl }) : <span>Kies een datum</span>}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-card/70 backdrop-blur-md border border-white/10">
+                        <Calendar
+                            mode="single"
+                            selected={deadline}
+                            onSelect={(date) => setDeadline(date)}
+                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                            initialFocus
+                            modifiersClassNames={{
+                              today: 'bg-primary text-primary-foreground rounded-md font-bold',
+                              outside: 'text-muted-foreground opacity-50',
+                            }}
+                            locale={nl}
+                        />
+                    </PopoverContent>
+                </Popover>
+                {deadline && (
                     <Button
-                        variant="outline"
-                        className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !deadline && "text-muted-foreground"
-                        )}
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeadline(undefined)}
+                        className="h-9 w-9"
                     >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {deadline ? format(deadline, "PPP", { locale: nl }) : <span>Kies een datum</span>}
+                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                        <span className="sr-only">Wis deadline</span>
                     </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-card/70 backdrop-blur-md border border-white/10">
-                    <Calendar
-                        mode="single"
-                        selected={deadline}
-                        onSelect={(date) => setDeadline(date)}
-                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                        initialFocus
-                        modifiersClassNames={{
-                          today: 'bg-primary text-primary-foreground rounded-md font-bold',
-                          outside: 'text-muted-foreground opacity-50',
-                        }}
-                        locale={nl}
-                    />
-                </PopoverContent>
-            </Popover>
+                )}
+            </div>
         </div>
 
       <div className="flex justify-end gap-2 pt-4">
