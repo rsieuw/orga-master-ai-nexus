@@ -287,3 +287,13 @@
 }
 
 /* Verwijderde debug CSS */
+
+@layer components {
+  /* Calendar */
+  .rdp-day_today {
+    @apply bg-primary text-primary-foreground rounded-md font-bold; /* Accentueer met primary kleur */
+  }
+  .rdp-day_today:not(.rdp-day_outside) {
+     @apply bg-primary text-primary-foreground;
+  }
+}

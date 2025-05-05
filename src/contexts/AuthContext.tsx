@@ -8,6 +8,10 @@ export type UserRole = "admin" | "paid" | "free";
 // Define the possible AI modes as a literal type
 export type AiMode = 'gpt4o' | 'creative' | 'precise';
 
+// Define possible research models - copying from Settings.tsx for now
+// Ideally, this would be defined in a shared types file
+type ResearchModel = 'perplexity-sonar' | 'gpt-4o-mini';
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -17,6 +21,7 @@ export interface UserProfile {
   language_preference: string;
   email_notifications_enabled: boolean;
   ai_mode_preference: AiMode; // Added field using the literal type
+  research_model_preference?: ResearchModel; // Add optional research model preference
   created_at: string;
   updated_at: string;
   status?: string;
@@ -31,7 +36,7 @@ export interface AuthContextProps {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
-  updateUser: (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference'>>) => Promise<void>;
+  updateUser: (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference'>>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -177,12 +182,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateUser = async (data: Partial<Pick<UserProfile, 'name' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference'>>) => {
+  const updateUser = async (data: Partial<Pick<UserProfile, 'name' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference'>>) => {
     if (!session?.user) {
       throw new Error("Gebruiker niet ingelogd");
     }
 
+    // --- START VALIDATION FOR AI MODE --- 
+    if (data.ai_mode_preference && user?.role === 'free' && data.ai_mode_preference !== 'gpt4o') {
+      toast({
+        variant: "destructive",
+        title: "Update niet toegestaan",
+        description: "Gratis gebruikers kunnen alleen de 'GPT-4o (Gebalanceerd)' modus gebruiken.",
+      });
+      // Gooi een error om de rest van de functie te stoppen
+      throw new Error("Invalid AI mode preference for free user."); 
+    }
+    // --- END VALIDATION FOR AI MODE ---
+
     try {
+      // Update auth.users if name changed (optional, consider if email should be updatable too)
       if (data.name !== undefined && data.name !== user?.name) {
           if (data.name !== null) { 
               const { error: updateAuthError } = await supabase.auth.updateUser({ data: { name: data.name } });
@@ -190,20 +208,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
       }
       
-      const profileUpdatePayload: Partial<Pick<UserProfile, 'name' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference'>> = {};
+      // Prepare payload for profiles table update
+      const profileUpdatePayload: Partial<Pick<UserProfile, 'name' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference'>> = {};
       if (data.name !== undefined) profileUpdatePayload.name = data.name;
       if (data.language_preference !== undefined) profileUpdatePayload.language_preference = data.language_preference;
       if (data.email_notifications_enabled !== undefined) profileUpdatePayload.email_notifications_enabled = data.email_notifications_enabled;
-      if (data.ai_mode_preference !== undefined) profileUpdatePayload.ai_mode_preference = data.ai_mode_preference;
+      if (data.ai_mode_preference !== undefined) profileUpdatePayload.ai_mode_preference = data.ai_mode_preference; // Payload contains the potentially invalid value, but validation above should catch it
+      if (data.research_model_preference !== undefined) profileUpdatePayload.research_model_preference = data.research_model_preference;
 
+      // Update profiles table if there's anything to update
       if (Object.keys(profileUpdatePayload).length > 0) {
         const { error: updateProfileError } = await supabase
           .from('profiles')
-          .update(profileUpdatePayload)
+          .update(profileUpdatePayload) // Update using the prepared payload
           .eq('id', session.user.id);
         if (updateProfileError) throw updateProfileError;
       }
 
+      // Update local user state optimistically
       setUser(currentUser => {
           if (!currentUser) return null;
           const updatedUser = { ...currentUser };
@@ -211,14 +233,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (data.language_preference !== undefined) updatedUser.language_preference = data.language_preference;
           if (data.email_notifications_enabled !== undefined) updatedUser.email_notifications_enabled = data.email_notifications_enabled;
           if (data.ai_mode_preference !== undefined) updatedUser.ai_mode_preference = data.ai_mode_preference as AiMode;
+          if (data.research_model_preference !== undefined) updatedUser.research_model_preference = data.research_model_preference as ResearchModel;
           return updatedUser;
       });
       
     } catch (error: unknown) {
+      // Handle errors (including the validation error thrown above)
       console.error("Update user failed:", error);
-      const message = error instanceof Error ? error.message : "Er is iets misgegaan bij het bijwerken.";
-      toast({ variant: "destructive", title: "Account bijwerken mislukt", description: message });
-      throw error;
+      // Don't show generic toast if it was our specific validation error (already shown)
+      if (!(error instanceof Error && error.message === "Invalid AI mode preference for free user.")) {
+          const message = error instanceof Error ? error.message : "Er is iets misgegaan bij het bijwerken.";
+          toast({ variant: "destructive", title: "Account bijwerken mislukt", description: message });
+      }
+      throw error; // Re-throw error for potential higher-level handling
     }
   };
 

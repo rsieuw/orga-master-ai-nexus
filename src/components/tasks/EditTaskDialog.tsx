@@ -155,8 +155,13 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
                     <Calendar
                         mode="single"
                         selected={deadline}
-                        onSelect={setDeadline}
+                        onSelect={(date) => setDeadline(date)}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                         initialFocus
+                        modifiersClassNames={{
+                          today: 'bg-primary text-primary-foreground rounded-md font-bold',
+                          outside: 'text-muted-foreground opacity-50',
+                        }}
                         locale={nl}
                     />
                 </PopoverContent>

@@ -30,6 +30,9 @@ import {
 } from "@/components/ui/drawer.tsx";
 import { Loader } from "@/components/ui/loader.tsx";
 
+// Define possible research models - use consistent identifiers with backend
+type ResearchModel = 'perplexity-sonar' | 'gpt-4o-mini';
+
 const aiModeOptions: { value: AiMode; label: string }[] = [
   { value: 'gpt4o', label: 'GPT-4o (Gebalanceerd)' },
   { value: 'creative', label: 'Creatieve Modus' },
@@ -44,6 +47,8 @@ export default function SettingsPage() {
   const [isSavingNotifications, setIsSavingNotifications] = useState(false);
   const [selectedAiMode, setSelectedAiMode] = useState<AiMode>('precise');
   const [isSavingAiMode, setIsSavingAiMode] = useState(false);
+  const [researchModelPreference, setResearchModelPreference] = useState<ResearchModel>('perplexity-sonar'); // Add state for research model
+  const [isSavingResearchModel, setIsSavingResearchModel] = useState(false); // Add loading state for research model
   const { toast } = useToast();
 
   // State for account form
@@ -58,6 +63,8 @@ export default function SettingsPage() {
       setLanguage(user.language_preference || "nl");
       setEmailNotifications(user.email_notifications_enabled ?? true);
       setSelectedAiMode(user.ai_mode_preference || 'precise');
+      // Initialize research model preference - use a default if not set
+      setResearchModelPreference(user.research_model_preference || 'perplexity-sonar'); 
     }
   }, [user]);
 
@@ -147,6 +154,34 @@ export default function SettingsPage() {
     }
   };
 
+  // Handler for research model change
+  const handleResearchModelChange = async (value: string) => {
+    const newMode = value as ResearchModel;
+    setIsSavingResearchModel(true);
+    const originalMode = researchModelPreference;
+    setResearchModelPreference(newMode);
+
+    try {
+      // Assume updateUser can handle `research_model_preference`
+      await updateUser({ research_model_preference: newMode }); 
+      const modeLabel = newMode === 'perplexity-sonar' ? 'Perplexity Sonar' : 'GPT-4o Mini'; // Simple label mapping
+      toast({
+        title: "Onderzoeksmodel Opgeslagen",
+        description: `Standaard onderzoeksmodel ingesteld op: ${modeLabel}`,
+      });
+    } catch (error) {
+      setResearchModelPreference(originalMode);
+      console.error("Failed to update research model preference:", error);
+      toast({
+        variant: "destructive",
+        title: "Fout bij opslaan",
+        description: "Kon voorkeur voor onderzoeksmodel niet opslaan.",
+      });
+    } finally {
+      setIsSavingResearchModel(false);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="flex items-center justify-between mb-6">
@@ -154,26 +189,28 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="appearance" className="space-y-6">
-        <TabsList className="grid grid-cols-4 mb-4">
-          <TabsTrigger value="appearance" className="flex items-center gap-2">
-            <Palette className="h-4 w-4" />
-            <span className="hidden sm:inline">Uiterlijk</span>
-          </TabsTrigger>
-          <TabsTrigger value="account" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            <span className="hidden sm:inline">Account</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">Notificaties</span>
-          </TabsTrigger>
-          <TabsTrigger value="ai" className="flex items-center gap-2">
-            <Languages className="h-4 w-4" />
-            <span className="hidden sm:inline">AI</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="max-w-3xl mx-auto">
+          <TabsList className="grid w-full grid-cols-4 mb-4">
+            <TabsTrigger value="appearance" className="flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              <span className="hidden sm:inline">Uiterlijk</span>
+            </TabsTrigger>
+            <TabsTrigger value="account" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">Account</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Notificaties</span>
+            </TabsTrigger>
+            <TabsTrigger value="ai" className="flex items-center gap-2">
+              <Languages className="h-4 w-4" />
+              <span className="hidden sm:inline">AI</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value="appearance" className="space-y-4">
+        <TabsContent value="appearance" className="space-y-4 max-w-3xl mx-auto">
           <Card className="firebase-card">
             <CardHeader>
               <CardTitle>Uiterlijk</CardTitle>
@@ -201,7 +238,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="account" className="space-y-4">
+        <TabsContent value="account" className="space-y-4 max-w-3xl mx-auto">
           <Card className="firebase-card">
             <CardHeader>
               <CardTitle>Account Instellingen</CardTitle>
@@ -216,12 +253,17 @@ export default function SettingsPage() {
                 <Label htmlFor="email">E-mail</Label>
                 <Input id="email" type="email" placeholder="Je e-mail" className="bg-gray-700" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
-              <Button className="mt-4" onClick={handleSaveAccount}>Opslaan</Button>
+              <Button 
+                className="mt-4 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white" 
+                onClick={handleSaveAccount}
+              >
+                Opslaan
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="notifications" className="space-y-4">
+        <TabsContent value="notifications" className="space-y-4 max-w-3xl mx-auto">
           <Card className="firebase-card">
             <CardHeader>
               <CardTitle>Notificatie Instellingen</CardTitle>
@@ -247,7 +289,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="ai" className="space-y-4">
+        <TabsContent value="ai" className="space-y-4 max-w-3xl mx-auto">
           <Card className="firebase-card">
             <CardHeader>
               <CardTitle>AI Instellingen</CardTitle>
@@ -276,21 +318,25 @@ export default function SettingsPage() {
                 <div>
                   <Label htmlFor="ai-mode" className="text-base">Standaard AI Modus</Label>
                   <p className="text-sm text-muted-foreground">
-                    Kies het standaard gedrag voor AI interacties
+                    Kies het standaard gedrag voor AI interacties.
+                    {user?.role === 'free' && (
+                       <span className="text-xs block text-amber-500">('Creative' en 'Precise' alleen voor betaalde gebruikers)</span>
+                    )}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Select 
                     value={selectedAiMode} 
                     onValueChange={handleAiModeChange}
-                    disabled={isSavingAiMode}
+                    disabled={isSavingAiMode || user?.role === 'free'} // Disable if saving OR user is free
                   >
                     <SelectTrigger id="ai-mode" className="w-48">
                       <SelectValue placeholder="Selecteer modus" />
                     </SelectTrigger>
                     <SelectContent>
                       {aiModeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
+                        <SelectItem key={option.value} value={option.value} 
+                          >
                           {option.label}
                         </SelectItem>
                       ))}
@@ -300,6 +346,36 @@ export default function SettingsPage() {
                 </div>
               </div>
               
+              {/* --- Research Model Selection --- */}
+              <div className="flex items-center justify-between pt-4 border-t border-border/10">
+                <div>
+                  <Label htmlFor="research-model" className="text-base">Onderzoeksmodel</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Kies het AI model voor de 'Deep Research' functie
+                    {user?.role === 'free' && (
+                      <span className="text-xs block text-amber-500">(Beschikbaar voor betaalde gebruikers)</span>
+                    )}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select 
+                    value={researchModelPreference} 
+                    onValueChange={handleResearchModelChange}
+                    disabled={isSavingResearchModel || user?.role === 'free'} // Disable if saving OR user is free
+                  >
+                    <SelectTrigger id="research-model" className="w-48">
+                      <SelectValue placeholder="Selecteer model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="perplexity-sonar">Perplexity Sonar</SelectItem>
+                      <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {isSavingResearchModel && <Loader size="sm" />} 
+                </div>
+              </div>
+              {/* --- End Research Model Selection --- */}
+
               <div className="pt-4 border-t border-border/10">
                 <Drawer>
                   <DrawerTrigger asChild>
@@ -312,16 +388,18 @@ export default function SettingsPage() {
                     </DrawerHeader>
                     <div className="p-4 space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="model">AI Model</Label>
-                        <Select defaultValue="gpt-3.5-turbo">
+                        <Label htmlFor="model">AI Model (Standaard)</Label>
+                        <Select defaultValue="gpt-4o-mini" disabled>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecteer model" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
                             <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
                           </SelectContent>
                         </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Selecteer het standaard AI model voor algemeen gebruik. Betaalde gebruikers kunnen geavanceerdere opties kiezen via Developer Mode.
+                        </p>
                       </div>
                       
                       <div className="space-y-2">
@@ -335,7 +413,9 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <DrawerFooter>
-                      <Button>Opslaan</Button>
+                      <Button className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white">
+                        Opslaan
+                      </Button>
                       <DrawerClose asChild>
                         <Button variant="outline">Annuleren</Button>
                       </DrawerClose>

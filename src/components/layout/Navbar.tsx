@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { useAuth } from "@/contexts/AuthContext.tsx";
-import { Plus, User, LogOut, Settings, CircleUserRound, Shield } from "lucide-react";
+import { Plus, User, LogOut, Settings, CircleUserRound, Shield, Star } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -107,6 +107,14 @@ export default function Navbar() {
                       <Link to="/admin" className="flex w-full items-center">
                         <Shield className="mr-2 h-4 w-4" />
                         Admin Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {user?.role === 'free' && (
+                    <DropdownMenuItem>
+                      <Link to="/pricing" className="flex w-full items-center text-yellow-500 hover:text-yellow-400">
+                         <Star className="mr-2 h-4 w-4" />
+                         Upgrade naar Premium
                       </Link>
                     </DropdownMenuItem>
                   )}

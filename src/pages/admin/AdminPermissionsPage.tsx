@@ -16,7 +16,7 @@ interface RolePermission {
 
 // Define all available features (should match permissions.ts, but kept here for UI mapping)
 // Ideally, this comes from a single source of truth later
-const ALL_FEATURES: Feature[] = ['deepResearch', 'exportChat', 'adminPanel']; 
+const ALL_FEATURES: Feature[] = ['deepResearch', 'exportChat', 'adminPanel', 'choose_research_model'];
 
 // De component die de tabel en logica bevat
 export const PermissionsManagementTable: React.FC = () => {

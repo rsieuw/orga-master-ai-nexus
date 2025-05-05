@@ -16,7 +16,7 @@
   - ✅ Implementeer Supabase functies/API-calls voor het aanmaken, lezen, updaten, en verwijderen van taken.
   - ✅ Bouw UI componenten voor het weergeven van takenlijsten.
   - ✅ Bouw UI componenten (bv. een formulier/modal) voor het toevoegen/bewerken van taken.
-  - ✅ **[OPEN]** Definieer/implementeer de actie voor de "Nieuwe Taak Toevoegen" knop op het lege dashboard.
+  - ✅ **[DONE]** Definieer/implementeer de actie voor de "Nieuwe Taak Toevoegen" knop op het lege dashboard (opent nu modal).
 - ✅ **[UI] Basis Layout & Navigatie:**
   - ✅ Ontwerp en implementeer de hoofd layout van de applicatie (bv. sidebar, header).
   - ✅ Zet basis navigatie op tussen verschillende secties (bv. Takenlijst, Instellingen).
@@ -42,7 +42,7 @@
   - ✅ Opgeslagen onderzoek wordt persistent getoond (`saved_research_display` type) en behouden na wissen geschiedenis.
   - ✅ Verwijderknop toegevoegd voor opgeslagen onderzoek (`delete-research` functie).
   - ✅ Prompt aangepast om meer detail en stappen te vragen; `max_tokens` verhoogd naar 1500.
-  - ✅ Implementeer rol-gebaseerde toegang tot deze feature (`role_permissions` tabel, DB functie, `hasPermission` helper, UI aanpassing).
+  - ✅ Implementeer rol-gebaseerde toegang tot deze feature (`role_permissions` (`choose_research_model`), DB functie, `hasPermission` helper, UI aanpassing, admin UI).
   - 🟡 AI volgt opmaakinstructies (genummerde lijst) nog niet perfect.
 
 ## Prioriteit 3: Verbeteringen & Extra's
@@ -61,6 +61,11 @@
 - ✅ **[UI] Gebruikersvriendelijkheid Verbeteringen:**
   - ✅ Optimaliseer knoppen en interacties in takenlijst (Details/Verwijderen knoppen, subtaak status klikbaar, subtaak indicator met tooltip).
   - ✅ Verbeter layout en interactie in taakdetails (Voortgangsbalk, deadline toevoegen, subtaak inspringing, animatie progress bar).
+  - ✅ Zoekfunctie toegevoegd aan dashboard.
+  - ✅ Filteropties (status, prioriteit) toegevoegd aan dashboard.
+  - ✅ Kalender: Huidige dag geaccentueerd.
+  - ✅ Kalender: Dagen buiten maand gedimd.
+  - ✅ Kalender: Nederlandse locale hersteld.
   - 🟡 Verbeter layout en interactie in chat sidebar (Checkboxes, tekst wrapping, uitlijning). (Basis aanwezig)
   - ✅ Tekst uitlijning subtaken in `TaskDetail.tsx` verbeterd.
 - ✅ **[Admin] Gebruikersbeheer UI Verbetering:**
@@ -68,7 +73,8 @@
   - ✅ Toon 'inactive' status in de tabel (gebruiker wordt niet meer gefilterd).
   - ✅ Voeg een "Activeer Gebruiker" actie toe aan het dropdown menu.
   - ✅ Implementeer filter/zoek opties (naam, email, rol, status) voor de gebruikerstabel.
-- ❌ **[Admin] Permissiebeheer UI Verbetering:**
+- 🟡 **[Admin] Permissiebeheer UI Verbetering:**
+  - ✅ Toon feature `choose_research_model` in admin permissietabel.
   - ❌ Maak de tabel gebruiksvriendelijker (bv. switches, groepering per rol).
   - ❌ Overweeg filter/zoek opties.
 - 🟡 **[TEST] Unit & Integratie Tests:**
@@ -115,13 +121,14 @@
   - Sta toe dat bestanden aan taken worden gekoppeld.
 - ❌ **[FEATURE] Beloningsysteem:**
   - Implementeer een systeem om gebruikers te belonen voor voltooide taken.
-- ✅ **[FEATURE] Meertaligheid:** (Basis `languagePreference` doorgegeven aan AI)
+- ✅ **[FEATURE] Meertaligheid:** (Instelbaar in Settings, frontend validatie voor AI modus)
 - ❌ **[UI] Wit Thema:**
   - Implementeer een licht/wit thema als alternatief voor het donkere thema.
 - ❌ **[FEATURE] Sub-subtaken:**
   - Sta toe dat subtaken verder worden onderverdeeld in sub-subtaken.
-- ❌ **[FEATURE] Upgrade Optie:**
-  - ❌ **[NIEUW]** Implementeer de mogelijkheid voor gebruikers om te upgraden naar een betaald plan (UI + Backend).
+- ✅ **[FEATURE] Upgrade Optie:**
+  - ✅ **[NIEUW]** Implementeer de mogelijkheid voor gebruikers om te upgraden naar een betaald plan (UI: Prijspagina, knop in profiel).
+  - ❌ **[NIEUW]** Backend integratie (Stripe, etc.).
 - ❌ **[FEATURE] Emoticons in Chat:**
   - ❌ **[NIEUW]** Voeg ondersteuning toe voor het invoegen en weergeven van emoticons in het chatvenster.
 - ❌ **[PERF] Optimalisaties:**
@@ -146,19 +153,20 @@
 - ✅ Permissies voor Deep Research geïmplementeerd.
 - ✅ Admin pagina's gerefactored naar tabs.
 - ✅ OpenAI API Key input in Settings verwijderd (was niet functioneel/veilig).
-- 🟡 React Hook dependency errors grotendeels opgelost (bv. in `AuthContext`, `ChatPanel`, `AdminUsersPage`).
+- ✅ React Hook dependency errors grotendeels opgelost (bv. in `AuthContext`, `ChatPanel`, `AdminUsersPage`).
 - 🟡 Deno Lint import fouten deels opgelost/onderdrukt, maar blijven hardnekkig (zie taak P3).
 - 🟡 **[NIEUW]** Linterfout/waarschuwing `priorityOrder` in `Dashboard.tsx` (nog open).
+- ✅ **[NIEUW]** Supabase migratie problemen opgelost (`db push`, `db pull`, `migration repair`).
 
 ## Nieuwe Features / Grote Taken
 
-- ❌ **[Feature] Betaalde Plannen (Stripe Integratie):**
-    - **Database (Supabase):**
-        - Maak tabellen aan: `customers` (linkt Supabase user ID aan Stripe customer ID), `products`, `prices`, `subscriptions`.
-        - Overweeg Stripe Foreign Data Wrapper (FDW) of Webhooks voor synchronisatie.
-    - **Backend (Supabase Edge Functions):**
-        - **Webhook Handler:** Luister naar Stripe events (`checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`, etc.) en update Supabase DB (klant aanmaken, subscription status bijwerken).
-            - **Configuratie Stappen:**
+- 🟡 **[Feature] Betaalde Plannen (Stripe Integratie):**
+  - **Database (Supabase):**
+    - ✅ Maak tabellen aan: `customers` (linkt Supabase user ID aan Stripe customer ID), `products`, `prices`, `subscriptions`.
+    - ❌ Overweeg Stripe Foreign Data Wrapper (FDW) of Webhooks voor synchronisatie.
+  - **Backend (Supabase Edge Functions):**
+    - **Webhook Handler:** Luister naar Stripe events (`checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`, etc.) en update Supabase DB (klant aanmaken, subscription status bijwerken).
+      - **Configuratie Stappen:**
                 1. **Supabase Types:** Zorg dat types gegenereerd zijn (`supabase gen types typescript ...`). Controleer pad in `index.ts`.
                 2. **Secrets Instellen (Supabase):** Stel `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SIGNING_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` in via Project Settings > Secrets. Gebruik **test** keys voor sandbox, **live** keys voor productie.
                 3. **Functie Deployen:** `supabase functions deploy stripe-webhooks --project-ref <jouw-project-ref> --no-verify-jwt`.
@@ -167,20 +175,31 @@
                     - Gebruik de **URL** van de gedeployde Supabase functie.
                     - Selecteer relevante events (zie `relevantEvents` in `index.ts`).
                     - Kopieer de **Signing secret** en stel in als `STRIPE_WEBHOOK_SIGNING_SECRET` in Supabase (zie stap 2).
-        - **Checkout Sessie Endpoint:** Functie die een Stripe Checkout sessie aanmaakt (input: user ID, price ID) en gebruiker doorstuurt.
-    - **Frontend (React):**
-        - **Prijs-/Upgrade Pagina:** Toon plannen (uit `products`/`prices` tabel).
-        - **Upgrade Knop:** Roept Checkout Sessie Endpoint aan.
-        - **Account/Instellingen Pagina:** Toon huidige subscription status (uit `subscriptions` tabel); Link naar Stripe Customer Portal.
-        - **Conditionele Features:** Schakel UI/functionaliteit in/uit op basis van actieve subscription.
-    - **Stripe Configuratie:**
-        - Maak producten en prijzen aan in Stripe Dashboard.
-        - Configureer Webhooks (endpoint naar Supabase Edge Function).
-        - Configureer Stripe Customer Portal.
-        - Beheer API keys (Publishable & Secret).
-    - **Beveiliging:**
-        - Beveilig webhook endpoint.
-        - Gebruik environment variables voor API keys.
-        - Implementeer Row Level Security (RLS) op Supabase tabellen.
+    - ✅ **Checkout Sessie Endpoint:** Functie die een Stripe Checkout sessie aanmaakt (input: user ID, price ID) en gebruiker doorstuurt.
+  - **Frontend (React):**
+    - ✅ **Upgrade Knop:** Roept Checkout Sessie Endpoint aan (Nu link naar /pricing).
+    - ✅ **Account/Instellingen Pagina:** Toon huidige subscription status (uit `subscriptions` tabel); Link naar Stripe Customer Portal. (Basis rolweergave in `Profile.tsx`, link ontbreekt).
+    - ✅ **Pricing Pagina:** Basis layout en structuur voor plannen geïmplementeerd.
+    - ❌ **Conditionele Features:** Schakel UI/functionaliteit in/uit op basis van actieve subscription.
+  - **Stripe Configuratie:**
+    - Maak producten en prijzen aan in Stripe Dashboard.
+    - Configureer Webhooks (endpoint naar Supabase Edge Function).
+    - Configureer Stripe Customer Portal.
+    - Beheer API keys (Publishable & Secret).
+    - Beveilig webhook endpoint.
+    - Gebruik environment variables voor API keys.
+    - Implementeer Row Level Security (RLS) op Supabase tabellen.
 
 *Dit is een voorlopig plan gebaseerd op onderzoek. Details kunnen wijzigen tijdens implementatie.*
+
+- ❌ **[Feature] Developer Mode:**
+  - **Functionaliteit:** Bied een optionele modus die gebruik maakt van geavanceerdere AI-modellen voor taken zoals onderzoek en tekstgeneratie.
+  - **Modellen:** Gebruik [Claude 3.7](https://www.anthropic.com/news/claude-3-5-sonnet) (Sonnet/Opus afhankelijk van beschikbaarheid/kosten) OF [Gemini 2.5 Pro](https://deepmind.google/technologies/gemini/pro/). Keuze mogelijk configureerbaar maken.
+  - **Integratie:**
+    - Koppel deze modus aan een **betaald abonnement** (vereist voltooide Stripe-integratie).
+    - Pas bestaande Edge Functions (bv. `generate-chat-response`, `deep-research`) aan om conditioneel het geselecteerde geavanceerde model aan te roepen op basis van de gebruikersrol/abonnement.
+    - Voeg een instelling toe (bv. in `Settings.tsx`) waar betalende gebruikers de Developer Mode kunnen in-/uitschakelen.
+    - Overweeg API-sleutelbeheer voor de geselecteerde modellen (bv. via Supabase Vault of environment variables).
+  - **UI:**
+    - Geef visueel aan wanneer de Developer Mode actief is (bv. een badge in de chat of header).
+    - Communiceer duidelijk de voordelen (en mogelijk hogere kosten/langere responstijden) van deze modus.

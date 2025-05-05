@@ -5,6 +5,7 @@ export type Feature =
   | 'deepResearch' 
   | 'exportChat' 
   | 'adminPanel'
+  | 'choose_research_model'
   // Voeg hier meer features toe naarmate je ze implementeert
   // | 'someOtherFeature'
   ;
