@@ -9,21 +9,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu.tsx";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-  DialogPortal,
-} from "@/components/ui/dialog.tsx";
-import NewTaskDialog from "@/components/tasks/NewTaskDialog.tsx";
-import { useState } from "react";
 
-export default function Navbar() {
+interface NavbarProps {
+  openNewTaskModal: () => void;
+}
+
+export default function Navbar({ openNewTaskModal }: NavbarProps) {
   const { isAuthenticated, logout, user } = useAuth();
-  const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
 
   return (
     <nav className="sticky top-0 z-40 bg-card border-b border-border">
@@ -55,28 +47,13 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <>
-              <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen} modal={false}>
-                <DialogTrigger asChild>
-                  <Button className="gap-1 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900">
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">Nieuwe Taak</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogPortal>
-                  {isNewTaskOpen && (
-                     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" aria-hidden="true" />
-                  )}
-                  <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card p-6 shadow-lg duration-200 sm:max-w-[600px] sm:rounded-lg z-50">
-                    <DialogHeader>
-                      <DialogTitle className="text-2xl">Nieuwe taak</DialogTitle>
-                      <DialogDescription>
-                        Beschrijf wat je wilt doen, en laat AI de details invullen.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <NewTaskDialog setOpen={setIsNewTaskOpen} />
-                  </DialogContent>
-                </DialogPortal>
-              </Dialog>
+              <Button 
+                className="gap-1 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
+                onClick={openNewTaskModal}
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Nieuwe Taak</span>
+              </Button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

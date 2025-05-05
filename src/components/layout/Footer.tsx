@@ -3,12 +3,12 @@ import { HelpCircle, BookOpen, Mail } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/10 py-6 md:py-0 bg-gradient-to-b from-transparent to-gray-900/50 backdrop-blur-sm">
-      <div className="container flex flex-col items-center gap-4 md:h-16 md:flex-row md:justify-between">
-        <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
+    <footer className="hidden md:block border-t border-white/10 py-6 bg-gradient-to-b from-transparent to-gray-900/50 backdrop-blur-sm">
+      <div className="container flex flex-col items-center gap-2 md:flex-row md:justify-between">
+        <p className="hidden md:block text-sm leading-loose text-muted-foreground">
           &copy; {new Date().getFullYear()} OrgaMaster AI. Alle rechten voorbehouden.
         </p>
-        <p className="text-center text-sm text-muted-foreground md:text-right">
+        <p className="block text-center text-sm text-muted-foreground">
           Gebouwd met ❤️ door{" "}
           <a 
             href="https://www.artifexai.nl" 
@@ -19,7 +19,7 @@ export default function Footer() {
             Artifex AI
           </a>
         </p>
-        <nav className="flex items-center gap-4">
+        <nav className="hidden md:flex md:items-center md:gap-4">
           <Link 
             to="/support" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"

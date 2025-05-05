@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
@@ -30,7 +30,6 @@ import {
   DialogPortal,
 } from "@/components/ui/dialog.tsx";
 import { useToast } from "@/hooks/use-toast.ts";
-import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import TaskAIChat from "@/components/ai/TaskAIChat.tsx";
 import { GradientLoader } from "@/components/ui/loader.tsx";
@@ -45,8 +44,10 @@ export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
   const { getTaskById, deleteTask, isLoading: tasksLoading, updateSubtask, addSubtask, expandTask, deleteSubtask, toggleTaskCompletion, updateTask } = useTask();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [activeMobileView, setActiveMobileView] = useState(location.hash === '#chat' ? 'chat' : 'details');
   const [selectedSubtaskTitle, setSelectedSubtaskTitle] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showAddSubtaskForm, setShowAddSubtaskForm] = useState(false);
@@ -55,6 +56,10 @@ export default function TaskDetail() {
   const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
 
   const task: Task | undefined = getTaskById(id || "");
+
+  useEffect(() => {
+    setActiveMobileView(location.hash === '#chat' ? 'chat' : 'details');
+  }, [location.hash]);
 
   // Bereken subtaak voortgang
   const totalSubtasks = task?.subtasks.length ?? 0;
@@ -191,7 +196,6 @@ export default function TaskDetail() {
       isOverdue = parsedDeadline < now && task.status !== 'done';
       deadlineText = format(parsedDeadline, "PPP", { locale: nl });
       if (isOverdue) {
-        deadlineText += " (Verlopen)";
         deadlineColor = "border-red-500 text-red-500 dark:text-red-400";
       } else if (task.status === 'done') {
         deadlineColor = "border-green-500 text-green-500 dark:text-green-400";
@@ -231,8 +235,11 @@ export default function TaskDetail() {
           <span className="sr-only">Terug</span>
         </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-12rem)]">
-          <Card className="firebase-card flex flex-col relative overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:h-[calc(100vh-12rem)]">
+          <Card className={cn(
+            "firebase-card flex-col relative overflow-hidden",
+            activeMobileView === 'chat' ? 'hidden lg:flex' : 'flex' 
+          )}>
             <CardHeader>
               <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full ${task && priorityColor[task.priority]}`}></div>
@@ -302,7 +309,7 @@ export default function TaskDetail() {
                       <DropdownMenuTrigger asChild>
                         <Button 
                           variant="outline" 
-                          className={cn("border h-7 px-2.5 text-xs", statusColor[task.status])}
+                          className={cn("border h-6 px-2 sm:h-7 sm:px-2.5 text-xs", statusColor[task.status])}
                         >
                           {statusLabel[task.status]}
                         </Button>
@@ -326,9 +333,10 @@ export default function TaskDetail() {
                         <DropdownMenuTrigger asChild>
                           <Button 
                             variant="outline" 
-                            className={cn("border h-7 px-2.5 text-xs", priorityBadgeColor[task.priority])}
+                            className={cn("border h-6 px-2 sm:h-7 sm:px-2.5 text-xs", priorityBadgeColor[task.priority])}
                           >
-                            Prioriteit: {priorityLabel[task.priority]}
+                            <span className="hidden sm:inline">Prioriteit:&nbsp;</span> 
+                            {priorityLabel[task.priority]}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="bg-popover/90 backdrop-blur-lg">
@@ -345,8 +353,13 @@ export default function TaskDetail() {
                       </DropdownMenu>
                     )}
                     {task.deadline && (
-                      <Badge variant="outline" className={cn("border h-7 px-2.5 text-xs", deadlineColor)}>
-                        Deadline: {deadlineText}
+                      <Badge 
+                        variant="outline" 
+                        className={cn("border h-6 px-2 sm:h-7 sm:px-2.5 text-xs", deadlineColor)}
+                      >
+                        <span className="hidden sm:inline">Deadline:&nbsp;</span> 
+                        {deadlineText}
+                        {isOverdue && <span className="hidden sm:inline">&nbsp;(Verlopen)</span>}
                       </Badge>
                     )}
                   </div>
@@ -358,8 +371,8 @@ export default function TaskDetail() {
                     </p>
                   </div>
                   <Separator className="my-4" />
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center gap-3"> 
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
+                    <div className="flex items-center gap-3">
                       <h3 className="font-medium">Subtaken</h3>
                       {totalSubtasks > 0 && (
                         <div className="flex items-center gap-2">
@@ -373,16 +386,6 @@ export default function TaskDetail() {
                         </div>
                        )}
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleGenerateSubtasks}
-                      disabled={isGeneratingSubtasks || isAddingSubtask}
-                      className="text-xs h-7 px-2 text-muted-foreground hover:text-foreground"
-                    >
-                      <Sparkles className={cn("mr-1 h-3 w-3", isGeneratingSubtasks && "animate-spin")} />
-                      {isGeneratingSubtasks ? "Genereren..." : "Genereer AI Subtaken"}
-                    </Button>
                   </div>
                 </div>
 
@@ -449,7 +452,7 @@ export default function TaskDetail() {
                   ) : (
                     <p className="text-muted-foreground text-sm">Geen subtaken</p>
                   )}
-                  <div className="mt-2 px-1">
+                  <div className="mt-4 px-1 flex-shrink-0">
                     {showAddSubtaskForm ? (
                       <form onSubmit={handleAddSubtask} className="flex items-center gap-3">
                         <Input
@@ -468,10 +471,22 @@ export default function TaskDetail() {
                         </Button>
                       </form>
                     ) : (
-                      <Button variant="outline" size="sm" onClick={() => setShowAddSubtaskForm(true)} className="h-8">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Subtaak toevoegen
-                      </Button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setShowAddSubtaskForm(true)} className="h-8">
+                           <PlusCircle className="mr-2 h-4 w-4" />
+                           Subtaak toevoegen
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleGenerateSubtasks}
+                          disabled={isGeneratingSubtasks || isAddingSubtask}
+                          className="text-xs h-8 px-2 text-muted-foreground hover:text-foreground"
+                        >
+                           <Sparkles className={cn("mr-1 h-3 w-3", isGeneratingSubtasks && "animate-spin")} />
+                           Genereer Subtaken
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -479,7 +494,10 @@ export default function TaskDetail() {
             )}
           </Card>
 
-          <Card className="firebase-card overflow-hidden flex flex-col">
+          <Card className={cn(
+            "firebase-card overflow-hidden flex-col flex-grow min-h-0", 
+            activeMobileView === 'details' ? 'hidden lg:flex' : 'flex' 
+          )}>
             {task && (
               <TaskAIChat
                 task={task}

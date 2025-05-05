@@ -143,8 +143,8 @@ export default function Dashboard() {
 
     if (showTitle) {
       columns[targetColumnIndex].push(
-        // Verwijder break-inside-avoid
-        <h2 key={`title-${String(category)}-${targetColumnIndex}`} className="text-lg font-semibold mb-3 pt-0"> 
+        // Pas padding top responsive aan
+        <h2 key={`title-${String(category)}-${targetColumnIndex}`} className="text-lg font-semibold mb-3 pt-3 md:pt-0"> 
           {getCategoryTitle(category)}
         </h2>
       );
@@ -152,8 +152,8 @@ export default function Dashboard() {
     lastCategory = category;
 
     columns[targetColumnIndex].push(
-      // Verwijder break-inside-avoid
-      <div key={task.id} className="mb-6"> 
+      // Kleine margin op mobiel, herstel op md:
+      <div key={task.id} className="mb-2 md:mb-6"> 
         <TaskCard task={task} />
       </div>
     );
@@ -217,10 +217,10 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      {/* Verpak header in een flex container */}
-      <div className="mb-6 flex justify-between items-center">
+      {/* Verpak header in een flex container - maak responsive */}
+      <div className="mb-6 flex flex-col md:flex-row md:justify-between md:items-center">
         {/* Linker gedeelte (Begroeting) */}
-        <div>
+        <div className="mb-4 md:mb-0">
           <h1 className="text-3xl font-bold">
             <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
               Hallo, {user?.name || "Gebruiker"}
@@ -230,21 +230,23 @@ export default function Dashboard() {
             Hier is een overzicht van je taken
           </p>
         </div>
-        {/* Rechter gedeelte (Zoekbalk & Filter) - Conditioneel weergeven */}
+        {/* Rechter gedeelte (Zoekbalk & Filter) - Conditioneel weergeven en maak responsive */}
         {allTasksOrdered.length > 0 && (
-          <div className="flex items-center gap-2"> {/* Container for search and filter */}
+          /* Altijd flex-row, items centreren */
+          <div className="flex items-center gap-2 w-full md:w-auto">
             <SearchInput
               placeholder="Zoek taken..."
-              className="w-64" // Pas breedte aan indien nodig
+              /* Verwijder expliciete breedte, laat flexbox het regelen of pas aan indien nodig */
+              className="flex-grow min-w-0" // Laat zoekveld groeien, voorkom overflow
               onChange={setSearchTerm} // Koppel aan state updater
             />
-            <TaskFilter onFilterChange={handleFilterChange} /> {/* Add TaskFilter */}
+            <TaskFilter onFilterChange={handleFilterChange} /> {/* Filter knop neemt zijn eigen breedte */}
           </div>
         )}
       </div>
 
-      {/* Herstel CSS Grid layout en voeg items-start toe */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+      {/* Geen gap op mobiel */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6 items-start">
         {totalTasks > 0 ? ( // Gebruik totalTasks gebaseerd op gefilterde lijst
           // Render de vooraf gevulde kolom-arrays
           columns.map((columnItems, colIndex) => (
@@ -256,7 +258,8 @@ export default function Dashboard() {
                 React.isValidElement(columnItems[0]) && 
                 columnItems[0].type !== 'h2' && (
                   // Render placeholder met geschatte hoogte van titel + marge
-                  <div className="h-10"></div> // h-10 is 2.5rem
+                  // Verberg op mobiel (default), toon vanaf md: breakpoint
+                  <div className="hidden md:block h-10"></div> 
                 )
               }
               {/* --- Einde Placeholder Logica --- */}
