@@ -30,7 +30,7 @@ export default function AppLayout({
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div id="app-root-wrapper" className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <Navbar openNewTaskModal={() => setIsNewTaskOpen(true)} />
       <main className="flex-1 container mx-auto px-4 pt-8 pb-20 mb-4 md:pb-4">
         {children}
@@ -38,7 +38,7 @@ export default function AppLayout({
       <Footer />
       <BottomNavigation />
 
-      <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen} modal={false}>
+      <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
         <DialogPortal>
           {isNewTaskOpen && (
              <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" aria-hidden="true" />

@@ -164,7 +164,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
 
       {/* Show task details form only if details are visible */}
       {detailsVisible && (
-        <div className="mt-6 space-y-6">
+        <div className="mt-6 space-y-6 max-h-[60vh] overflow-y-auto lg:max-h-none lg:overflow-y-visible px-2 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">
           <div className="space-y-2">
             <Label htmlFor="title">Titel</Label>
             <Input

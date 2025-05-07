@@ -35,7 +35,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
     <div className={`relative ${className} rounded-full`}>
       <Input
         id="searchInput"
-        className="pl-4 pr-20 rounded-full h-10"
+        className="pl-4 pr-20 rounded-full h-10 border border-white/10"
         placeholder={placeholder}
         type="search"
         value={inputValue}

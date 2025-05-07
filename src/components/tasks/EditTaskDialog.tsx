@@ -78,7 +78,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
 
   return (
     <form onSubmit={handleSubmit} className="mt-4">
-      <div className="space-y-6">
+      <div className="space-y-6 max-h-[65vh] overflow-y-auto lg:overflow-y-visible lg:max-h-none px-2 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">
        <div className="space-y-2">
          <Label htmlFor="edit-title">Titel</Label>
          <Input
@@ -182,13 +182,22 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
             </div>
         </div>
 
-      <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
-              Annuleren
-          </Button>
-          <Button type="submit" disabled={isLoading} className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900">
+      <div className="space-y-3 pt-6">
+          <Button 
+            type="submit" 
+            disabled={isLoading} 
+            className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
+          >
             {isLoading ? <GradientLoader size="sm" className="mr-2"/> : null}
             Opslaan
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline"
+            onClick={() => setOpen(false)} 
+            className="w-full h-10"
+          >
+              Annuleren
           </Button>
       </div>
       </div>

@@ -30,6 +30,8 @@ import {
   DialogTitle,
   DialogDescription,
   DialogOverlay,
+  DialogClose,
+  DialogPortal,
 } from "@/components/ui/dialog.tsx";
 import { useToast } from "@/hooks/use-toast.ts";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
@@ -121,6 +123,8 @@ function SubtaskRow({
           {editingSubtaskId === subtask.id ? (
             <Input
               type="text"
+              id={`subtask-edit-${subtask.id}`}
+              aria-label="Bewerk subtaak titel"
               value={editingSubtaskTitle}
               onChange={(e) => setEditingSubtaskTitle(e.target.value)}
               onBlur={handleSaveSubtaskEdit} // Save when focus leaves the input
@@ -130,6 +134,7 @@ function SubtaskRow({
             />
           ) : (
             <label
+              htmlFor={`subtask-${subtask.id}`}
               className={cn(
                 "flex-grow text-sm font-normal leading-snug cursor-pointer hover:text-primary transition-colors",
                 subtask.completed && "line-through text-muted-foreground hover:text-muted-foreground/80"
@@ -179,8 +184,8 @@ function SubtaskRow({
                       <span>Verwijderen</span>
                     </DropdownMenuItem>
                   </AlertDialogTrigger>
-                  <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/80" style={{ backdropFilter: 'blur(4px)' }} />
-                  <AlertDialogContent className="bg-card/90 border border-white/5 z-[90]">
+                  <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm" />
+                  <AlertDialogContent className="border bg-card p-4 shadow-md sm:rounded-lg z-[90]">
                     <AlertDialogHeader>
                       <AlertDialogTitle>Subtaak verwijderen?</AlertDialogTitle>
                       <AlertDialogDescription>
@@ -231,8 +236,8 @@ function SubtaskRow({
                   <span className="sr-only">Verwijder subtaak</span>
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/80" style={{ backdropFilter: 'blur(4px)' }} />
-              <AlertDialogContent className="bg-card/90 border border-white/5 z-[90]">
+              <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm" />
+              <AlertDialogContent className="border bg-card p-4 shadow-md sm:rounded-lg z-[90]">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Subtaak verwijderen?</AlertDialogTitle>
                   <AlertDialogDescription>
@@ -279,6 +284,31 @@ export default function TaskDetail() {
   const [editingSubtaskTitle, setEditingSubtaskTitle] = useState<string>("");
 
   const task: Task | undefined = getTaskById(id || "");
+
+  useEffect(() => {
+    const appRootWrapper = document.getElementById('app-root-wrapper');
+    if (isEditDialogOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      if (appRootWrapper) {
+        appRootWrapper.style.overflow = 'hidden';
+      }
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      if (appRootWrapper) {
+        appRootWrapper.style.overflow = ''; // Of 'auto' of de oorspronkelijke waarde indien bekend
+      }
+    }
+    // Cleanup function
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      if (appRootWrapper) {
+        appRootWrapper.style.overflow = '';
+      }
+    };
+  }, [isEditDialogOpen]);
 
   useEffect(() => {
     setActiveMobileView(location.hash === '#chat' ? 'chat' : 'details');
@@ -556,16 +586,22 @@ export default function TaskDetail() {
                       <span className="sr-only">Bewerk taak</span>
                     </Button>
                   </DialogTrigger>
-                  <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[49]" />
-                  <DialogContent className="sm:max-w-[600px] bg-card/90 backdrop-blur-lg border border-white/10">
-                    <DialogHeader>
-                      <DialogTitle>Taak Bewerken</DialogTitle>
-                      <DialogDescription>
-                        Pas de details van je taak aan.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <EditTaskDialog task={task} setOpen={setIsEditDialogOpen} />
-                  </DialogContent>
+                  <DialogPortal>
+                    <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" />
+                    <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card p-6 shadow-lg sm:rounded-lg z-50 sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl">Taak Bewerken</DialogTitle>
+                        <DialogDescription>
+                          Pas de details van je taak aan.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Sluiten</span>
+                      </DialogClose>
+                      <EditTaskDialog task={task} setOpen={setIsEditDialogOpen} />
+                    </DialogContent>
+                  </DialogPortal>
                 </Dialog>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -574,7 +610,7 @@ export default function TaskDetail() {
                       <span className="sr-only">Verwijder taak</span>
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/80" style={{ backdropFilter: 'blur(4px)' }} />
+                  <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm" />
                   <AlertDialogContent className="bg-card/90 border border-white/5 z-[90]">
                     <AlertDialogHeader>
                       <AlertDialogTitle>Taak verwijderen?</AlertDialogTitle>
@@ -623,7 +659,7 @@ export default function TaskDetail() {
                           <span>Verwijder taak</span>
                         </DropdownMenuItem>
                       </AlertDialogTrigger>
-                      <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/80" style={{ backdropFilter: 'blur(4px)' }} />
+                      <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm" />
                       <AlertDialogContent className="bg-card/90 border border-white/5 z-[90]">
                         <AlertDialogHeader>
                           <AlertDialogTitle>Taak verwijderen?</AlertDialogTitle>
@@ -715,8 +751,7 @@ export default function TaskDetail() {
                           <CalendarClock className="h-4 w-4 mr-1 sm:hidden" /> {/* Mobile icon */}
                           <span className="hidden sm:inline">{lang === 'nl' ? 'Deadline:' : 'Deadline:'}&nbsp;</span> {/* Desktop label */}
                           {deadlineText} {/* Value */}
-                          {isOverdue && <span className="hidden sm:inline">&nbsp;{lang === 'nl' ? '(Verlopen)' : '(Overdue)'}</span>} {/* Desktop overdue text */}
-                          {isOverdue && <span className="sm:hidden">&nbsp;{lang === 'nl' ? '(Verl.)' : '(Ov.)'}</span>} {/* Mobile short overdue text */}
+                          {isOverdue && <span className="hidden sm:inline">&nbsp;{lang === 'nl' ? '(Verlopen)' : '(Overdue)' }</span>} {/* Desktop overdue text */}
                         </Badge>
                       )}
                     </div>
@@ -783,11 +818,13 @@ export default function TaskDetail() {
                   <div className="hidden lg:flex lg:items-center lg:gap-2 lg:px-1 border-t border-border pt-3 mt-auto">
                     {showAddSubtaskForm ? (
                       <form onSubmit={handleAddSubtask} className="flex items-center gap-3 flex-grow">
+                        <label htmlFor="new-subtask-title-desktop" className="sr-only">Nieuwe subtaak titel (desktop)</label>
                         <Input
+                          id="new-subtask-title-desktop"
                           type="text"
                           placeholder="Nieuwe subtaak titel"
                           value={newSubtaskTitle}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubtaskTitle(e.target.value)}
+                          onChange={(e) => setNewSubtaskTitle(e.target.value)}
                           className="h-10 flex-grow"
                           disabled={isAddingSubtask}
                         />
@@ -825,8 +862,8 @@ export default function TaskDetail() {
                            Subtaak toevoegen
                         </Button>
                         {/* Desktop Generate Subtasks Button with Confirmation */}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
+                        <Dialog>
+                          <DialogTrigger asChild>
                             <Button
                               disabled={isGeneratingSubtasks || isAddingSubtask}
                               className="h-10 p-[1px] rounded-md bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 relative transition-colors duration-200"
@@ -838,28 +875,34 @@ export default function TaskDetail() {
                                 </span>
                               </div>
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/80" style={{ backdropFilter: 'blur(4px)' }} />
-                          <AlertDialogContent className="bg-card/90 border border-white/5 z-[90]">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Subtaken Genereren (AI)?</AlertDialogTitle>
-                              <AlertDialogDescription>
+                          </DialogTrigger>
+                          <DialogOverlay className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" />
+                          <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card p-6 shadow-lg sm:rounded-lg z-50 sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle className="text-2xl">Subtaken Genereren (AI)?</DialogTitle>
+                              <DialogDescription>
                                 Wilt u de AI assistent vragen om relevante subtaken voor "{task.title}" voor te stellen op basis van de beschrijving?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-secondary/80 border-white/10">Annuleren</AlertDialogCancel>
-                              <AlertDialogAction
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                              <X className="h-4 w-4" />
+                              <span className="sr-only">Sluiten</span>
+                            </DialogClose>
+                            <div className="pt-4 flex justify-end space-x-2">
+                              <DialogClose asChild>
+                                <Button variant="outline" className="bg-secondary/80 border-white/10">Annuleren</Button>
+                              </DialogClose>
+                              <Button
                                 onClick={handleGenerateSubtasks}
-                                className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
+                                className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
                                 disabled={isGeneratingSubtasks}
                               >
                                 {isGeneratingSubtasks ? <GradientLoader size="sm" className="mr-2" /> : null}
                                 Ja, genereer subtaken
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     )}
                   </div>
@@ -886,9 +929,10 @@ export default function TaskDetail() {
       {showAddSubtaskForm && (
         <div className="lg:hidden fixed bottom-16 left-0 right-0 z-[60] p-4 bg-card border-t border-border shadow-lg">
           <form onSubmit={handleAddSubtask} className="flex items-center gap-3">
-            {/* Container for Input and Close Button */}
             <div className="relative flex-grow">
+              <label htmlFor="new-subtask-title-mobile" className="sr-only">Nieuwe subtaak titel (mobiel)</label>
               <Input
+                id="new-subtask-title-mobile"
                 type="text"
                 placeholder="Nieuwe subtaak titel..."
                 value={newSubtaskTitle}
@@ -931,10 +975,10 @@ export default function TaskDetail() {
           'transition-opacity duration-300 ease-in-out'
       )}>
         {/* Mobile Generate button (Sparkles) with Confirmation & Tooltip */}
-        <AlertDialog>
+        <Dialog>
           <TooltipProvider delayDuration={200}>
             <Tooltip>
-              <AlertDialogTrigger asChild>
+              <DialogTrigger asChild>
                 <Button 
                   variant="default"
                   size="icon" 
@@ -944,33 +988,39 @@ export default function TaskDetail() {
                 >
                   <Sparkles className={cn("h-7 w-7", isGeneratingSubtasks && "animate-spin")} />
                 </Button>
-              </AlertDialogTrigger>
+              </DialogTrigger>
               <TooltipContent side="top" className="bg-popover/50 backdrop-blur-lg">
                 <p>Genereer subtaken (AI)</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/80" style={{ backdropFilter: 'blur(4px)' }} />
-          <AlertDialogContent className="bg-card/90 border border-white/5 z-[90]">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Subtaken Genereren (AI)?</AlertDialogTitle>
-              <AlertDialogDescription>
+          <DialogOverlay className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" />
+          <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card p-6 shadow-lg sm:rounded-lg z-50 sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Subtaken Genereren (AI)?</DialogTitle>
+              <DialogDescription>
                 Wilt u de AI assistent vragen om relevante subtaken voor "{task.title}" voor te stellen op basis van de beschrijving?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="bg-secondary/80 border-white/10">Annuleren</AlertDialogCancel>
-              <AlertDialogAction
+              </DialogDescription>
+            </DialogHeader>
+            <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Sluiten</span>
+            </DialogClose>
+            <div className="pt-4 flex justify-end space-x-2">
+              <DialogClose asChild>
+                <Button variant="outline" className="bg-secondary/80 border-white/10">Annuleren</Button>
+              </DialogClose>
+              <Button
                 onClick={handleGenerateSubtasks}
-                className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
+                className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
                 disabled={isGeneratingSubtasks}
               >
                 {isGeneratingSubtasks ? <GradientLoader size="sm" className="mr-2" /> : null}
                 Ja, genereer subtaken
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Add button (PlusCircle) with Tooltip */}
         <TooltipProvider delayDuration={200}>

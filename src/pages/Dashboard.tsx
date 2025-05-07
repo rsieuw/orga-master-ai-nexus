@@ -1,5 +1,5 @@
 // import React from 'react'; // Verwijderd, niet meer nodig na vervangen Fragment
-import React, { useState } from 'react'; // Add React import for React.isValidElement and useState
+import React, { useState, useEffect, useMemo } from 'react'; // Add React import for React.isValidElement and useState, useEffect, useMemo
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { useAuth } from "@/contexts/AuthContext.tsx";
 import TaskCard from "@/components/task/TaskCard.tsx";
@@ -22,6 +22,13 @@ import {
 } from "@/components/ui/dialog.tsx";
 import NewTaskDialog from "@/components/tasks/NewTaskDialog.tsx";
 import { TypeAnimation } from 'react-type-animation'; // Import the component
+// import { useSearchParams } from 'react-router-dom'; // Niet meer nodig
+
+const LOCAL_STORAGE_KEYS = {
+  SEARCH_TERM: 'dashboardSearchTerm',
+  FILTER_STATUS: 'dashboardFilterStatus',
+  FILTER_PRIORITY: 'dashboardFilterPriority',
+};
 
 const getCategoryTitle = (category: keyof TasksByDate): string => {
   switch (category) {
@@ -51,14 +58,50 @@ const sortTasksByPriority = (a: Task, b: Task): number => {
 export default function Dashboard() {
   const { isLoading, groupTasksByDate } = useTask();
   const { user } = useAuth();
-  const rawTaskGroups = groupTasksByDate(); // Krijg de onbewerkte groepen
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<TaskFilterStatus>('all');
-  const [filterPriority, setFilterPriority] = useState<TaskFilterPriority>('all');
+
+  // Initialize state from Local Storage or defaults
+  const [searchTerm, setSearchTerm] = useState<string>(() => {
+    return localStorage.getItem(LOCAL_STORAGE_KEYS.SEARCH_TERM) || '';
+  });
+  const [filterStatus, setFilterStatus] = useState<TaskFilterStatus>(() => {
+    return (localStorage.getItem(LOCAL_STORAGE_KEYS.FILTER_STATUS) as TaskFilterStatus) || 'all';
+  });
+  const [filterPriority, setFilterPriority] = useState<TaskFilterPriority>(() => {
+    return (localStorage.getItem(LOCAL_STORAGE_KEYS.FILTER_PRIORITY) as TaskFilterPriority) || 'all';
+  });
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
 
-  // --- Filter en sorteer taken binnen elke groep --- 
-  const filteredAndSortedTaskGroups = React.useMemo(() => {
+  // Update Local Storage when local state changes
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.SEARCH_TERM, searchTerm);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.FILTER_STATUS, filterStatus);
+  }, [filterStatus]);
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.FILTER_PRIORITY, filterPriority);
+  }, [filterPriority]);
+
+  // EFFECT AANGEPAST: Handmatig body scroll blokkeren wanneer NewTaskDialog open is
+  useEffect(() => {
+    if (isNewTaskOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto'; // Terug naar auto
+    }
+
+    // Cleanup-functie om de overflow te herstellen wanneer de component unmount
+    // of voordat de effect opnieuw runt als isNewTaskOpen verandert.
+    return () => {
+      document.body.style.overflow = 'auto'; // Terug naar auto
+    };
+  }, [isNewTaskOpen]);
+
+  const rawTaskGroups = groupTasksByDate();
+
+  const filteredAndSortedTaskGroups = useMemo(() => {
     const groups: TasksByDate = {
       overdue: [],
       today: [],
@@ -84,14 +127,22 @@ export default function Dashboard() {
           return matchesSearch && matchesStatus && matchesPriority;
         });
 
-        filtered.sort(sortTasksByPriority); // Sorteer de gefilterde taken
+        filtered.sort(sortTasksByPriority);
         groups[categoryKey] = filtered;
       }
     }
     return groups;
   }, [rawTaskGroups, searchTerm, filterStatus, filterPriority]);
-  // --- Einde filteren en sorteren per groep ---
-  
+
+  const handleSearchChange = (newSearchTerm: string) => {
+    setSearchTerm(newSearchTerm);
+  };
+
+  const handleFilterChange = (status: TaskFilterStatus, priority: TaskFilterPriority) => {
+    setFilterStatus(status);
+    setFilterPriority(priority);
+  };
+
   // --- Creëer een platte lijst van gefilterde en gesorteerde taken voor kolomverdeling --- 
   const tasksForColumnDistribution: { task: Task; category: keyof TasksByDate }[] = [];
   (Object.keys(filteredAndSortedTaskGroups) as Array<keyof TasksByDate>).forEach(category => {
@@ -100,11 +151,6 @@ export default function Dashboard() {
     });
   });
   // --- Einde platte lijst creatie ---
-
-  const handleFilterChange = (status: TaskFilterStatus, priority: TaskFilterPriority) => {
-    setFilterStatus(status);
-    setFilterPriority(priority);
-  };
 
   // --- Herstel logica voor evenwichtige kolomverdeling ---
   const numColumns = 3; 
@@ -182,7 +228,7 @@ export default function Dashboard() {
     emptyStateMessage = (
       <>
         <p className="text-muted-foreground mb-4">Je hebt nog geen taken.</p>
-        <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen} modal={false}>
+        <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
           <DialogTrigger asChild>
             <Button size="lg" className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white">
               <Plus className="mr-2 h-5 w-5" />
@@ -193,7 +239,7 @@ export default function Dashboard() {
             {isNewTaskOpen && (
                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" aria-hidden="true" />
             )}
-            <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card p-6 shadow-lg duration-200 sm:max-w-[600px] sm:rounded-lg z-50">
+            <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card p-6 shadow-lg duration-200 sm:max-w-[600px] sm:rounded-lg z-50 max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-2xl">Nieuwe taak</DialogTitle>
                 <DialogDescription>
@@ -256,19 +302,17 @@ export default function Dashboard() {
             Hier is een overzicht van je taken
           </p>
         </div>
-        {/* Rechter gedeelte (Zoekbalk & Filter) - Conditioneel weergeven en maak responsive */}
-        {hasAnyFilteredTasks && (
-          /* Altijd flex-row, items centreren */
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <SearchInput
-              placeholder="Zoek taken..."
-              /* Verwijder expliciete breedte, laat flexbox het regelen of pas aan indien nodig */
-              className="flex-grow min-w-0" // Removed ineffective h-10
-              onChange={setSearchTerm} // Koppel aan state updater
-            />
-            <TaskFilter onFilterChange={handleFilterChange} /> {/* Filter knop neemt zijn eigen breedte */}
-          </div>
-        )}
+        {/* Rechter gedeelte (Zoekbalk & Filter) - Nu altijd zichtbaar */}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <SearchInput
+            onChange={handleSearchChange}
+            placeholder="Zoek taken..."
+            className="flex-grow min-w-0"
+          />
+          <TaskFilter 
+            onFilterChange={handleFilterChange} 
+          />
+        </div>
       </div>
 
       {/* Geen gap op mobiel */}

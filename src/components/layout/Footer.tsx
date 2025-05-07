@@ -9,12 +9,12 @@ export default function Footer() {
           &copy; {new Date().getFullYear()} OrgaMaster AI. Alle rechten voorbehouden.
         </p>
         <p className="block text-center text-sm text-muted-foreground">
-          Gebouwd met ❤️ door{" "}
+          Gebouwd met <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">❤️</span> door{" "}
           <a 
             href="https://www.artifexai.nl" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="hover:underline bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent font-bold"
+            className="hover:underline bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent"
           >
             Artifex AI
           </a>
@@ -22,21 +22,21 @@ export default function Footer() {
         <nav className="hidden md:flex md:items-center md:gap-4">
           <Link 
             to="/support" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
           >
             <HelpCircle className="h-4 w-4" />
             <span>Support</span>
           </Link>
           <Link 
             to="/documentation" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
           >
             <BookOpen className="h-4 w-4" />
             <span>Documentatie</span>
           </Link>
           <Link 
             to="/contact"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
           >
             <Mail className="h-4 w-4" />
             <span>Contact</span>
