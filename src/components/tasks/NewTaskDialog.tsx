@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client.ts";
 import { cn } from "@/lib/utils.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx";
 import { Calendar } from "@/components/ui/calendar.tsx";
+import { useTranslation } from 'react-i18next';
 
 interface NewTaskDialogProps {
   setOpen: (open: boolean) => void;
@@ -31,6 +32,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
   const { createTask } = useTask();
   // const navigate = useNavigate(); // Removed unused variable
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   // State specifiek voor het *nieuwe* taak formulier
   const [title, setTitle] = useState("");
@@ -49,8 +51,8 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
     if (!initialInput) {
       toast({
         variant: "destructive",
-        title: "Invoer ontbreekt",
-        description: "Vul eerst het 'Beschrijf je taak of idee' veld in.",
+        title: t('newTaskDialog.toast.missingInputTitle'),
+        description: t('newTaskDialog.toast.missingInputDescription'),
       });
       return;
     }
@@ -68,8 +70,8 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
       if (error) {
         toast({
           variant: "destructive",
-          title: "Genereren mislukt",
-          description: error instanceof Error ? error.message : "Er is een fout opgetreden.",
+          title: t('newTaskDialog.toast.generationFailedTitle'),
+          description: error instanceof Error ? error.message : t('newTaskDialog.toast.generationFailedDescriptionDefault'),
         });
       }
 
@@ -77,19 +79,19 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
         setTitle(data.title);
         setDescription(data.description);
         toast({
-          title: "Taakdetails gegenereerd",
-          description: "De titel en beschrijving zijn ingevuld. Je kunt ze nu aanpassen.",
+          title: t('newTaskDialog.toast.detailsGeneratedTitle'),
+          description: t('newTaskDialog.toast.detailsGeneratedDescription'),
         });
         setDetailsVisible(true);
       } else {
-        throw new Error("Onverwachte response van AI service.");
+        throw new Error(t('newTaskDialog.errors.unexpectedAIResponse'));
       }
 
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Er is een fout opgetreden.";
+      const message = error instanceof Error ? error.message : t('newTaskDialog.toast.generationFailedDescriptionDefault');
       toast({
         variant: "destructive",
-        title: "Genereren mislukt",
+        title: t('newTaskDialog.toast.generationFailedTitle'),
         description: message,
       });
     } finally {
@@ -119,15 +121,15 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
 
       await createTask(taskData);
       toast({
-        title: "Taak aangemaakt",
-        description: "De nieuwe taak is succesvol aangemaakt",
+        title: t('newTaskDialog.toast.taskCreatedTitle'),
+        description: t('newTaskDialog.toast.taskCreatedDescription'),
       });
       setOpen(false); // Sluit de dialog na succes
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Fout",
-        description: "De taak kon niet worden aangemaakt",
+        title: t('common.error'),
+        description: t('newTaskDialog.toast.createTaskFailedDescription'),
       });
     } finally {
       setIsLoading(false);
@@ -144,7 +146,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
         id="initial-input"
         value={initialInput}
         onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInitialInput(e.target.value)}
-        placeholder="Beschrijf je taak of idee, bijv: Organiseer een teamlunch voor volgende week vrijdag..."
+        placeholder={t('newTaskDialog.initialInputPlaceholder')}
         rows={4}
         className="animated-border-textarea"
       />
@@ -156,7 +158,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
           className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
         >
           <Sparkles className="mr-2 h-4 w-4" />
-          {isGeneratingTask ? "Genereren..." : "Genereer Taakdetails"}
+          {isGeneratingTask ? t('newTaskDialog.generatingButton') : t('newTaskDialog.generateDetailsButton')}
         </Button>
       </div>
         </>
@@ -166,23 +168,23 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
       {detailsVisible && (
         <div className="mt-6 space-y-6 max-h-[60vh] overflow-y-auto lg:max-h-none lg:overflow-y-visible px-2 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">
           <div className="space-y-2">
-            <Label htmlFor="title">Titel</Label>
+            <Label htmlFor="title">{t('common.title')}</Label>
             <Input
               id="title"
               value={title}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
-              placeholder="Taak titel"
+              placeholder={t('editTaskDialog.titlePlaceholder')}
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Beschrijving</Label>
+            <Label htmlFor="description">{t('common.description')}</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
-              placeholder="Beschrijf de taak..."
+              placeholder={t('editTaskDialog.descriptionPlaceholder')}
               rows={4}
             />
           </div>
@@ -198,52 +200,51 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
               htmlFor="generate-subtasks"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              Genereer ook subtaken (optioneel)
+              {t('newTaskDialog.generateSubtasksLabel')}
             </Label>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="priority">Prioriteit</Label>
+              <Label htmlFor="priority">{t('common.priority')}</Label>
               <Select
                 value={priority}
                 onValueChange={(value: string) => setPriority(value as TaskPriority)}
               >
                 <SelectTrigger id="priority">
-                  <SelectValue placeholder="Selecteer prioriteit" />
+                  <SelectValue placeholder={t('editTaskDialog.selectPriorityPlaceholder')} />
                 </SelectTrigger>
-                <SelectContent onPointerDownOutside={(event: Event) => event.preventDefault()}>
-                  <SelectItem value="high">Hoog</SelectItem>
-                  <SelectItem value="medium">Middel</SelectItem>
-                  <SelectItem value="low">Laag</SelectItem>
+                <SelectContent>
+                  <SelectItem value="high">{t('common.high')}</SelectItem>
+                  <SelectItem value="medium">{t('common.medium')}</SelectItem>
+                  <SelectItem value="low">{t('common.low')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status">{t('common.status')}</Label>
               <Select
                 value={status}
                 onValueChange={(value: string) => setStatus(value as TaskStatus)}
               >
                 <SelectTrigger id="status">
-                  <SelectValue placeholder="Selecteer status" />
+                  <SelectValue placeholder={t('editTaskDialog.selectStatusPlaceholder')} />
                 </SelectTrigger>
-                <SelectContent onPointerDownOutside={(event: Event) => event.preventDefault()}>
-                  <SelectItem value="todo">Te doen</SelectItem>
-                  <SelectItem value="in_progress">In behandeling</SelectItem>
-                  <SelectItem value="done">Voltooid</SelectItem>
+                <SelectContent>
+                  <SelectItem value="todo">{t('common.todo')}</SelectItem>
+                  <SelectItem value="in_progress">{t('common.inProgress')}</SelectItem>
+                  <SelectItem value="done">{t('common.done')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="deadline-button">Deadline (optioneel)</Label>
+            <Label htmlFor="deadline">{t('common.deadline')}</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
-                  id="deadline-button"
                   variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal",
@@ -251,10 +252,10 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {deadline ? format(deadline, 'PPP', { locale: nl }) : <span>Kies een datum</span>}
+                  {deadline ? format(deadline, "PPP", { locale: nl }) : <span>{t('editTaskDialog.chooseDate')}</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-card/70 backdrop-blur-md border border-white/10 z-[100]" align="start" onPointerDownOutside={(event: Event) => event.preventDefault()}>
+              <PopoverContent className="w-auto p-0 bg-card/70 backdrop-blur-md border border-white/10">
                 <Calendar
                   mode="single"
                   selected={deadline}
@@ -275,14 +276,25 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
           <div className="flex justify-end pt-4">
              <Button 
                type="submit" 
-               disabled={isLoading} 
+               disabled={isLoading || isGeneratingTask || (detailsVisible && !title.trim())}
                className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
              >
-               {isLoading ? "Aanmaken..." : "Taak aanmaken"}
+               {isLoading ? <span className="animate-pulse">{t('newTaskDialog.creatingButton')}</span> : t('newTaskDialog.createTaskButton')}
              </Button>
           </div>
         </div>
       )}
+      
+      <div className="mt-6 space-y-3">
+        <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => setOpen(false)} 
+            className="w-full h-10"
+        >
+          {t('common.cancel')}
+        </Button>
+      </div>
     </form>
   );
 } 

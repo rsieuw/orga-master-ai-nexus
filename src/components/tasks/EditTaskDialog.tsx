@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx";
 import { Calendar } from "@/components/ui/calendar.tsx";
 import { GradientLoader } from "@/components/ui/loader.tsx";
+import { useTranslation } from 'react-i18next';
 
 interface EditTaskDialogProps {
   task: Task;
@@ -29,6 +30,7 @@ interface EditTaskDialogProps {
 export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
   const { updateTask } = useTask(); 
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? "");
@@ -61,15 +63,15 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
 
       await updateTask(task.id, taskData);
       toast({
-        title: "Taak bijgewerkt",
-        description: "De wijzigingen zijn opgeslagen.",
+        title: t('editTaskDialog.toast.taskUpdatedTitle'),
+        description: t('editTaskDialog.toast.taskUpdatedDescription'),
       });
       setOpen(false);
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Fout bij bijwerken",
-        description: "De taak kon niet worden bijgewerkt.",
+        title: t('editTaskDialog.toast.updateErrorTitle'),
+        description: t('editTaskDialog.toast.updateErrorDescription'),
       });
     } finally {
       setIsLoading(false);
@@ -80,66 +82,66 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
     <form onSubmit={handleSubmit} className="mt-4">
       <div className="space-y-6 max-h-[65vh] overflow-y-auto lg:overflow-y-visible lg:max-h-none px-2 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">
        <div className="space-y-2">
-         <Label htmlFor="edit-title">Titel</Label>
+         <Label htmlFor="edit-title">{t('common.title')}</Label>
          <Input
            id="edit-title"
            value={title}
            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
-           placeholder="Taak titel"
+           placeholder={t('editTaskDialog.titlePlaceholder')}
            required
          />
        </div>
 
        <div className="space-y-2">
-         <Label htmlFor="edit-description">Beschrijving</Label>
+         <Label htmlFor="edit-description">{t('common.description')}</Label>
          <Textarea
            id="edit-description"
            value={description ?? ""}
            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
-           placeholder="Beschrijf de taak..."
+           placeholder={t('editTaskDialog.descriptionPlaceholder')}
            rows={4}
          />
        </div>
 
        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
          <div className="space-y-2">
-           <Label htmlFor="edit-priority">Prioriteit</Label>
+           <Label htmlFor="edit-priority">{t('common.priority')}</Label>
            <Select
              value={priority}
              onValueChange={(value: string) => setPriority(value as TaskPriority)}
            >
              <SelectTrigger id="edit-priority">
-               <SelectValue placeholder="Selecteer prioriteit" />
+               <SelectValue placeholder={t('editTaskDialog.selectPriorityPlaceholder')} />
              </SelectTrigger>
              <SelectContent>
-               <SelectItem value="high">Hoog</SelectItem>
-               <SelectItem value="medium">Middel</SelectItem>
-               <SelectItem value="low">Laag</SelectItem>
+               <SelectItem value="high">{t('common.high')}</SelectItem>
+               <SelectItem value="medium">{t('common.medium')}</SelectItem>
+               <SelectItem value="low">{t('common.low')}</SelectItem>
              </SelectContent>
            </Select>
          </div>
 
          <div className="space-y-2">
-           <Label htmlFor="edit-status">Status</Label>
+           <Label htmlFor="edit-status">{t('common.status')}</Label>
            <Select
              value={status}
              onValueChange={(value: string) => setStatus(value as TaskStatus)}
            >
              <SelectTrigger id="edit-status">
-               <SelectValue placeholder="Selecteer status" />
+               <SelectValue placeholder={t('editTaskDialog.selectStatusPlaceholder')} />
              </SelectTrigger>
              <SelectContent>
-               <SelectItem value="todo">Te doen</SelectItem>
-               <SelectItem value="in_progress">In behandeling</SelectItem>
-               <SelectItem value="done">Voltooid</SelectItem>
+               <SelectItem value="todo">{t('common.todo')}</SelectItem>
+               <SelectItem value="in_progress">{t('common.inProgress')}</SelectItem>
+               <SelectItem value="done">{t('common.done')}</SelectItem>
              </SelectContent>
            </Select>
          </div>
        </div>
 
         <div className="space-y-2">
-            <Label htmlFor="edit-deadline">Deadline</Label>
-            <div className="flex items-center space-x-2"> 
+            <Label htmlFor="edit-deadline">{t('common.deadline')}</Label>
+            <div className="flex items-center space-x-2">
                 <Popover>
                     <PopoverTrigger asChild>
                         <Button
@@ -150,7 +152,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {deadline ? format(deadline, "PPP", { locale: nl }) : <span>Kies een datum</span>}
+                            {deadline ? format(deadline, "PPP", { locale: nl }) : <span>{t('editTaskDialog.chooseDate')}</span>}
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0 bg-card/70 backdrop-blur-md border border-white/10">
@@ -176,7 +178,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
                         className="h-9 w-9"
                     >
                         <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                        <span className="sr-only">Wis deadline</span>
+                        <span className="sr-only">{t('editTaskDialog.clearDeadlineSR')}</span>
                     </Button>
                 )}
             </div>
@@ -189,7 +191,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
             className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
           >
             {isLoading ? <GradientLoader size="sm" className="mr-2"/> : null}
-            Opslaan
+            {t('common.save')}
           </Button>
           <Button 
             type="button" 
@@ -197,7 +199,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
             onClick={() => setOpen(false)} 
             className="w-full h-10"
           >
-              Annuleren
+              {t('common.cancel')}
           </Button>
       </div>
       </div>

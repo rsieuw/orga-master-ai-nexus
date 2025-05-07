@@ -198,6 +198,10 @@
     }
   },
   "adminUsersPage": {
+    "title": "Gebruikersbeheer",
+    "description": "Bekijk, bewerk en beheer alle gebruikersaccounts.",
+    "searchPlaceholder": "Zoek op naam of e-mail...",
+    "addUserButton": "Gebruiker Toevoegen",
     "errors": {
       "edgeFunctionNotFound": "Edge Functie 'get-all-users' niet gevonden. Deploy de functie eerst.",
       "fetchUsersError": "Kon gebruikers niet ophalen. Controleer RLS policies en netwerk.",
@@ -223,13 +227,29 @@
     "loading": "Gebruikers laden...",
     "errorMessage": "Fout: {{error}}",
     "noUsersFound": "Geen gebruikers gevonden die aan de criteria voldoen.",
-    "tableHeaders": {
+    "table": {
       "name": "Naam",
       "email": "E-mail",
       "role": "Rol",
       "status": "Status",
-      "registeredAt": "Geregistreerd op",
-      "actions": "Acties"
+      "lastLogin": "Laatst Ingelogd",
+      "actions": "Acties",
+      "statusValues": {
+        "active": "Actief",
+        "inactive": "Inactief",
+        "suspended": "Geschorst"
+      },
+      "roleValues": {
+        "admin": "Admin",
+        "editor": "Redacteur",
+        "user": "Gebruiker"
+      },
+      "actionsDropdown": {
+        "edit": "Bewerken",
+        "delete": "Verwijderen",
+        "suspend": "Schorsen",
+        "activate": "Activeren"
+      }
     },
     "status": {
       "active": "Actief",
@@ -259,6 +279,36 @@
       },
       "cancelButton": "Annuleren",
       "saveButton": "Opslaan"
+    },
+    "addUserDialog": {
+      "title": "Nieuwe Gebruiker Toevoegen",
+      "description": "Voer de gegevens in om een nieuwe gebruiker aan te maken.",
+      "nameLabel": "Naam",
+      "emailLabel": "E-mailadres",
+      "passwordLabel": "Wachtwoord",
+      "roleLabel": "Rol",
+      "addButton": "Toevoegen",
+      "cancelButton": "Annuleren",
+      "success": "Gebruiker succesvol toegevoegd.",
+      "error": "Fout bij toevoegen gebruiker"
+    },
+    "editUserDialog": {
+      "title": "Gebruiker Bewerken",
+      "description": "Bewerk de gegevens van {{email}}.",
+      "nameLabel": "Naam",
+      "emailLabel": "E-mailadres",
+      "roleLabel": "Rol",
+      "statusLabel": "Status",
+      "saveButton": "Opslaan",
+      "cancelButton": "Annuleren",
+      "success": "Gebruikersgegevens succesvol bijgewerkt.",
+      "error": "Fout bij bijwerken gebruikersgegevens"
+    },
+    "deleteUserConfirmation": {
+      "title": "Gebruiker verwijderen?",
+      "description": "Weet u zeker dat u gebruiker {{email}} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt en zal de gebruiker en alle bijbehorende gegevens permanent verwijderen.",
+      "success": "Gebruiker {{email}} succesvol verwijderd.",
+      "error": "Fout bij verwijderen gebruiker"
     }
   },
   "adminPermissionsPage": {
@@ -314,7 +364,8 @@
     "authButtons": {
       "login": "Login",
       "register": "Registreren"
-    }
+    },
+    "systemSettingsButton": "Systeeminstellingen"
   },
   "appLayout": {
     "newTaskDialog": {
@@ -410,5 +461,335 @@
       "subtasksCompleted_singular": "{{completed}} van {{total}} subtaak voltooid",
       "subtasksCompleted_plural": "{{completed}} van {{total}} subtaken voltooid"
     }
+  },
+  "taskDetail": {
+    "subtask": {
+      "editTitleAriaLabel": "Bewerk subtaak titel",
+      "options": "Opties",
+      "edit": "Bewerken",
+      "delete": "Verwijderen",
+      "deleteConfirmation": {
+        "title": "Subtaak verwijderen?",
+        "description": "Weet je zeker dat je de subtaak \"{{subtaskTitle}}\" wilt verwijderen? Dit kan niet ongedaan worden gemaakt."
+      },
+      "editSubtaskSR": "Bewerk subtaak",
+      "deleteSubtaskSR": "Verwijder subtaak"
+    },
+    "notFound": {
+      "title": "Taak niet gevonden"
+    },
+    "toast": {
+      "subtaskUpdated": "Subtaak bijgewerkt",
+      "updateFailed": "Update mislukt",
+      "subtaskUpdateFailedDescription": "Kon subtaak niet bijwerken.",
+      "taskDeleted": "Taak verwijderd",
+      "taskDeletedDescription": "Taak \"{{taskTitle}}\" is verwijderd.",
+      "deleteFailed": "Verwijderen mislukt",
+      "taskDeleteFailedDescription": "Kon de taak niet verwijderen.",
+      "subtaskStatusUpdateFailedDescription": "Kon subtaak status niet bijwerken.",
+      "subtaskAdded": "Subtaak toegevoegd",
+      "subtaskAddedDescription": "Subtaak \"{{subtaskTitle}}\" is toegevoegd.",
+      "addFailed": "Toevoegen mislukt",
+      "subtaskAddFailedDescription": "Kon de subtaak niet toevoegen."
+    },
+    "noDeadline": "Geen deadline",
+    "invalidDate": "Ongeldige datum",
+    "editTaskSR": "Bewerk taak",
+    "editTaskDialog": {
+      "title": "Taak Bewerken",
+      "description": "Pas de details van je taak aan."
+    },
+    "deleteTaskSR": "Verwijder taak",
+    "deleteTaskConfirmation": {
+      "title": "Taak verwijderen?",
+      "description": "Weet je zeker dat je deze taak wilt verwijderen? Dit kan niet ongedaan worden gemaakt."
+    },
+    "taskOptionsSR": "Taak opties",
+    "editTask": "Bewerk taak",
+    "deleteTask": "Verwijder taak",
+    "overdueSR": "(Verlopen)",
+    "noDescription": "Geen beschrijving",
+    "noSubtasks": "Geen subtaken",
+    "addSubtask": {
+      "titleDesktopSR": "Nieuwe subtaak titel (desktop)",
+      "placeholder": "Nieuwe subtaak titel",
+      "saveAriaLabel": "Subtaak opslaan",
+      "buttonText": "Subtaak toevoegen",
+      "titleMobileSR": "Nieuwe subtaak titel (mobiel)",
+      "placeholderMobile": "Nieuwe subtaak titel...",
+      "buttonAriaLabel": "Subtaak toevoegen",
+      "tooltip": "Subtaak toevoegen"
+    },
+    "generateSubtasks": {
+      "buttonText": "Genereer Subtaken",
+      "dialogTitle": "Subtaken Genereren (AI)?",
+      "dialogDescription": "Wilt u de AI assistent vragen om relevante subtaken voor \"{{taskTitle}}\" voor te stellen op basis van de beschrijving?",
+      "confirmButton": "Ja, genereer subtaken",
+      "buttonAriaLabel": "Genereer subtaken",
+      "tooltip": "Genereer subtaken (AI)"
+    }
+  },
+  "common": {
+    "cancel": "Annuleren",
+    "delete": "Verwijderen",
+    "settings": "Instellingen",
+    "description": "Beschrijving",
+    "status": "Status",
+    "priority": "Prioriteit",
+    "deadline": "Deadline",
+    "overdue": "Verlopen",
+    "subtasks": "Subtaken",
+    "none": "Geen",
+    "add": "Toevoegen",
+    "save": "Opslaan",
+    "edit": "Bewerken",
+    "generate": "Genereer",
+    "title": "Titel",
+    "close": "Sluiten",
+    "yes": "Ja",
+    "no": "Nee",
+    "confirm": "Bevestigen",
+    "success": "Succes",
+    "error": "Fout",
+    "loading": "Laden...",
+    "actions": "Acties",
+    "all": "Alle",
+    "high": "Hoog",
+    "medium": "Middel",
+    "low": "Laag",
+    "todo": "Te doen",
+    "in_progress": "In behandeling",
+    "done": "Voltooid",
+    "back": "Terug",
+    "backSR": "Ga terug",
+    "closeSR": "Sluiten venster",
+    "cancelAriaLabel": "Annuleren"
+  },
+  "pageTitles": {
+    "home": "Home",
+    "tasks": "Mijn Taken",
+    "calendar": "Kalender",
+    "settings": "Instellingen",
+    "profile": "Profiel",
+    "adminDashboard": "Admin Dashboard",
+    "adminUsers": "Gebruikersbeheer",
+    "adminSettings": "Admin Instellingen",
+    "taskDetail": "Taakdetails"
+  },
+  "sidebar": {
+    "tasks": "Mijn Taken",
+    "calendar": "Kalender",
+    "settings": "Instellingen",
+    "profile": "Profiel",
+    "admin": "Admin",
+    "adminDashboard": "Dashboard",
+    "adminUsers": "Gebruikers",
+    "adminSystem": "Systeem",
+    "logout": "Uitloggen"
+  },
+  "settingsPage": {
+    "title": "Instellingen",
+    "tabs": {
+      "general": "Algemeen",
+      "appearance": "Uiterlijk",
+      "account": "Account",
+      "language": "Taal",
+      "notifications": "Notificaties",
+      "aiConfig": "AI Configuratie"
+    },
+    "general": {
+      "title": "Algemene Instellingen",
+      "description": "Bekijk en update je algemene accountinstellingen."
+    },
+    "appearance": {
+      "title": "Uiterlijk",
+      "description": "Pas het uiterlijk van de applicatie aan.",
+      "theme": "Thema",
+      "light": "Licht",
+      "dark": "Donker",
+      "system": "Systeem"
+    },
+    "account": {
+      "title": "Accountinstellingen",
+      "description": "Beheer je accountgegevens.",
+      "username": "Gebruikersnaam",
+      "email": "E-mailadres",
+      "changePassword": "Wachtwoord Wijzigen",
+      "currentPassword": "Huidig Wachtwoord",
+      "newPassword": "Nieuw Wachtwoord",
+      "confirmNewPassword": "Bevestig Nieuw Wachtwoord",
+      "updatePasswordButton": "Wachtwoord Updaten",
+      "passwordUpdateSuccess": "Wachtwoord succesvol bijgewerkt.",
+      "passwordUpdateError": "Fout bij het bijwerken van het wachtwoord."
+    },
+    "language": {
+      "title": "Taalinstellingen",
+      "description": "Kies de taal voor de gebruikersinterface en AI-interacties.",
+      "uiLanguage": "Taal Gebruikersinterface",
+      "aiLanguage": "Taal AI Interactie",
+      "saveButton": "Instellingen Opslaan",
+      "saveSuccess": "Taalinstellingen succesvol opgeslagen.",
+      "saveError": "Fout bij het opslaan van taalinstellingen."
+    },
+    "notifications": {
+      "title": "Notificatievoorkeuren",
+      "description": "Stel in hoe je notificaties wilt ontvangen.",
+      "enableNotifications": "Notificaties Inschakelen",
+      "emailNotifications": "E-mail Notificaties",
+      "inAppNotifications": "In-App Notificaties"
+    },
+    "aiModelConfig": {
+      "drawerTitle": "AI Model Configuratie",
+      "drawerDescription": "Configureer hier de parameters voor het AI-model.",
+      "modelSelectionTitle": "AI Model Selectie",
+      "selectModel": "Selecteer een AI Model",
+      "temperatureTitle": "Temperatuur",
+      "temperatureDescription": "Bepaalt de willekeur van de output. Hoger = creatiever.",
+      "maxLengthTitle": "Maximale Lengte",
+      "maxLengthDescription": "Maximale aantal tokens in de gegenereerde respons.",
+      "saveConfigButton": "Configuratie Opslaan",
+      "configSaveSuccess": "AI configuratie succesvol opgeslagen.",
+      "configSaveError": "Fout bij opslaan AI configuratie."
+    },
+    "aiInteractionLanguage": {
+      "label": "Standaard AI Interactie Taal",
+      "description": "De taal waarin de AI standaard zal proberen te antwoorden."
+    },
+    "aiMode": {
+      "label": "AI Modus",
+      "description": "Kies de modus voor AI-interacties.",
+      "options": {
+        "balanced": "Gebalanceerd",
+        "creative": "Creatief",
+        "precise": "Precies",
+        "custom": "Aangepast"
+      }
+    }
+  },
+  "profilePage": {
+    "title": "Mijn Profiel",
+    "name": "Naam",
+    "email": "E-mail",
+    "role": "Rol",
+    "lastLogin": "Laatst ingelogd",
+    "memberSince": "Lid sinds",
+    "editProfileButton": "Profiel Bewerken",
+    "updateProfileButton": "Profiel Bijwerken",
+    "avatarAlt": "Profielfoto van {{name}}",
+    "changeAvatar": "Wijzig avatar",
+    "roles": {
+      "user": "Gebruiker",
+      "editor": "Redacteur",
+      "admin": "Administrator"
+    }
+  },
+  "adminDashboardPage": {
+    "title": "Admin Dashboard",
+    "welcome": "Welkom, {{username}}!",
+    "description": "Beheer hier de applicatie.",
+    "quickStats": "Snelle Statistieken",
+    "totalUsers": "Totaal Gebruikers",
+    "activeTasks": "Actieve Taken",
+    "systemHealth": "Systeemgezondheid",
+    "manageUsersButton": "Beheer Gebruikers",
+    "systemSettingsButton": "Systeeminstellingen"
+  },
+  "chatPanel": {
+    "errors": {
+      "userNotLoggedIn": "Gebruiker niet ingelogd"
+    },
+    "toast": {
+      "saveFailedTitle": "Opslaan Mislukt",
+      "saveMessageToDbFailed": "Kon het bericht niet opslaan in de database.",
+      "loadFailedTitle": "Laden Mislukt",
+      "loadMessagesAndNotesFailed": "Kon chatgeschiedenis en notities niet ophalen.",
+      "researchSavedTitle": "Onderzoek Opgeslagen",
+      "researchSavedDescription": "Het onderzoeksresultaat is opgeslagen.",
+      "saveResearchFailedDescriptionDefault": "Kon het onderzoek niet opslaan.",
+      "deepResearchFailedTitle": "Onderzoek Mislukt",
+      "deepResearchFailedDescriptionDefault": "Kon de deep-research functie niet aanroepen.",
+      "researchCancelledTitle": "Onderzoek Geannuleerd",
+      "researchCancelledDescription": "Het ophalen van onderzoeksresultaten is gestopt.",
+      "historyClearedTitle": "Geschiedenis Gewist",
+      "historyClearedDescription": "Chatgeschiedenis voor deze taak is verwijderd.",
+      "clearHistoryFailedTitle": "Wissen Mislukt",
+      "clearHistoryFailedDefault": "Kon chatgeschiedenis niet wissen.",
+      "exportFailedTitle": "Exporteren Mislukt",
+      "exportFailedDescription": "Er zijn geen berichten om te exporteren.",
+      "exportStartedTitle": "Export Gestart",
+      "exportStartedDescription": "Chat wordt gedownload als tekstbestand.",
+      "noteDeletedTitle": "Notitie Verwijderd",
+      "noteDeletedDescription": "De notitie is succesvol verwijderd.",
+      "deleteFailedTitle": "Verwijderen Mislukt",
+      "deleteNoteFailedDefault": "Kon de notitie niet verwijderen.",
+      "researchDeletedTitle": "Onderzoek Verwijderd",
+      "researchDeletedDescription": "Het opgeslagen onderzoek is succesvol verwijderd.",
+      "deleteResearchFailedDescriptionDefault": "Kon het opgeslagen onderzoek niet verwijderen."
+    },
+    "initialAssistantMessage": "Hallo! Ik ben je AI assistent. Wat wil je weten over de taak \"{{taskTitle}}\"?",
+    "subtaskSelectedMessage": "Je hebt subtaak \"{{subtaskTitle}}\" geselecteerd. Wat wil je hierover weten of bespreken?",
+    "closeSR": "Chat sluiten",
+    "researchForSubtaskLabel": "Onderzoek voor subtaak: \"{{subtaskTitle}}\"",
+    "sourcesLabel": "Bronnen:",
+    "copyMessageTitle": "Kopieer bericht",
+    "copyMessageSR": "Kopieer bericht",
+    "saveResearchTitle": "Sla onderzoek op",
+    "saveResearchSR": "Sla onderzoek op",
+    "deleteNoteTitle": "Verwijder notitie",
+    "deleteNoteSR": "Verwijder notitie",
+    "deleteResearchTitle": "Verwijder onderzoek",
+    "deleteResearchSR": "Verwijder onderzoek",
+    "researchingText": "Aan het onderzoeken...",
+    "typingText": "Aan het typen...",
+    "cancelResearchButton": "Annuleer Onderzoek",
+    "notePlaceholder": "Schrijf een notitie...",
+    "messagePlaceholder": "Typ je bericht...",
+    "saveNoteTooltip": "Notitie Opslaan",
+    "sendMessageTooltip": "Verzenden (Ctrl+Enter)",
+    "deepResearchDisabledTooltip": "Deep Research is niet beschikbaar voor uw account type.",
+    "deepResearchTooltip": "Start diepgaand onderzoek",
+    "researchButton": "Onderzoek",
+    "stopNoteButton": "Stop Notitie",
+    "newNoteButton": "Nieuwe Notitie",
+    "selectModelAriaLabel": "Kies AI Model",
+    "chatModesDisabledTooltip": "Chat Modes zijn niet beschikbaar voor uw account type.",
+    "clearHistoryButton": "Wis Geschiedenis",
+    "exportChatButton": "Exporteer Gesprek (.txt)"
+  },
+  "editTaskDialog": {
+    "toast": {
+      "taskUpdatedTitle": "Taak bijgewerkt",
+      "taskUpdatedDescription": "De wijzigingen zijn opgeslagen.",
+      "updateErrorTitle": "Fout bij bijwerken",
+      "updateErrorDescription": "De taak kon niet worden bijgewerkt."
+    },
+    "titlePlaceholder": "Taak titel",
+    "descriptionPlaceholder": "Beschrijf de taak...",
+    "selectPriorityPlaceholder": "Selecteer prioriteit",
+    "selectStatusPlaceholder": "Selecteer status",
+    "chooseDate": "Kies een datum",
+    "clearDeadlineSR": "Wis deadline"
+  },
+  "newTaskDialog": {
+    "toast": {
+      "missingInputTitle": "Invoer ontbreekt",
+      "missingInputDescription": "Vul eerst het 'Beschrijf je taak of idee' veld in.",
+      "generationFailedTitle": "Genereren mislukt",
+      "generationFailedDescriptionDefault": "Er is een fout opgetreden.",
+      "detailsGeneratedTitle": "Taakdetails gegenereerd",
+      "detailsGeneratedDescription": "De titel en beschrijving zijn ingevuld. Je kunt ze nu aanpassen.",
+      "taskCreatedTitle": "Taak aangemaakt",
+      "taskCreatedDescription": "De nieuwe taak is succesvol aangemaakt.",
+      "createTaskFailedDescription": "De taak kon niet worden aangemaakt."
+    },
+    "errors": {
+      "unexpectedAIResponse": "Onverwachte response van AI service."
+    },
+    "initialInputPlaceholder": "Beschrijf je taak of idee, bijv: Organiseer een teamlunch voor volgende week vrijdag...",
+    "generatingButton": "Genereren...",
+    "generateDetailsButton": "Genereer Taakdetails",
+    "generateSubtasksLabel": "Automatisch subtaken genereren (AI)",
+    "createTaskButton": "Taak Aanmaken",
+    "creatingButton": "Aanmaken..."
   }
 } 

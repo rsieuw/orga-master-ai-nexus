@@ -198,6 +198,10 @@
     }
   },
   "adminUsersPage": {
+    "title": "User Management",
+    "description": "View, edit, and manage all user accounts.",
+    "searchPlaceholder": "Search by name or email...",
+    "addUserButton": "Add User",
     "errors": {
       "edgeFunctionNotFound": "Edge Function 'get-all-users' not found. Please deploy the function first.",
       "fetchUsersError": "Could not fetch users. Check RLS policies and network.",
@@ -223,13 +227,29 @@
     "loading": "Loading users...",
     "errorMessage": "Error: {{error}}",
     "noUsersFound": "No users found matching the criteria.",
-    "tableHeaders": {
+    "table": {
       "name": "Name",
       "email": "Email",
       "role": "Role",
       "status": "Status",
-      "registeredAt": "Registered At",
-      "actions": "Actions"
+      "lastLogin": "Last Login",
+      "actions": "Actions",
+      "statusValues": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "suspended": "Suspended"
+      },
+      "roleValues": {
+        "admin": "Admin",
+        "editor": "Editor",
+        "user": "User"
+      },
+      "actionsDropdown": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "suspend": "Suspend",
+        "activate": "Activate"
+      }
     },
     "status": {
       "active": "Active",
@@ -259,6 +279,36 @@
       },
       "cancelButton": "Cancel",
       "saveButton": "Save"
+    },
+    "addUserDialog": {
+      "title": "Add New User",
+      "description": "Enter the details to create a new user.",
+      "nameLabel": "Name",
+      "emailLabel": "Email Address",
+      "passwordLabel": "Password",
+      "roleLabel": "Role",
+      "addButton": "Add",
+      "cancelButton": "Cancel",
+      "success": "User added successfully.",
+      "error": "Error adding user"
+    },
+    "editUserDialog": {
+      "title": "Edit User",
+      "description": "Edit the details for {{email}}.",
+      "nameLabel": "Name",
+      "emailLabel": "Email Address",
+      "roleLabel": "Role",
+      "statusLabel": "Status",
+      "saveButton": "Save",
+      "cancelButton": "Cancel",
+      "success": "User details updated successfully.",
+      "error": "Error updating user details"
+    },
+    "deleteUserConfirmation": {
+      "title": "Delete User?",
+      "description": "Are you sure you want to delete user {{email}}? This action cannot be undone and will permanently delete the user and all associated data.",
+      "success": "User {{email}} successfully deleted.",
+      "error": "Error deleting user"
     }
   },
   "adminPermissionsPage": {
@@ -314,7 +364,8 @@
     "authButtons": {
       "login": "Login",
       "register": "Register"
-    }
+    },
+    "systemSettingsButton": "System Settings"
   },
   "appLayout": {
     "newTaskDialog": {
@@ -410,5 +461,335 @@
       "subtasksCompleted_singular": "{{completed}} of {{total}} subtask completed",
       "subtasksCompleted_plural": "{{completed}} of {{total}} subtasks completed"
     }
+  },
+  "taskDetail": {
+    "subtask": {
+      "editTitleAriaLabel": "Edit subtask title",
+      "options": "Options",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteConfirmation": {
+        "title": "Delete subtask?",
+        "description": "Are you sure you want to delete the subtask \"{{subtaskTitle}}\"? This action cannot be undone."
+      },
+      "editSubtaskSR": "Edit subtask",
+      "deleteSubtaskSR": "Delete subtask"
+    },
+    "notFound": {
+      "title": "Task not found"
+    },
+    "toast": {
+      "subtaskUpdated": "Subtask updated",
+      "updateFailed": "Update failed",
+      "subtaskUpdateFailedDescription": "Could not update subtask.",
+      "taskDeleted": "Task deleted",
+      "taskDeletedDescription": "Task \"{{taskTitle}}\" has been deleted.",
+      "deleteFailed": "Delete failed",
+      "taskDeleteFailedDescription": "Could not delete the task.",
+      "subtaskStatusUpdateFailedDescription": "Could not update subtask status.",
+      "subtaskAdded": "Subtask added",
+      "subtaskAddedDescription": "Subtask \"{{subtaskTitle}}\" has been added.",
+      "addFailed": "Add failed",
+      "subtaskAddFailedDescription": "Could not add the subtask."
+    },
+    "noDeadline": "No deadline",
+    "invalidDate": "Invalid date",
+    "editTaskSR": "Edit task",
+    "editTaskDialog": {
+      "title": "Edit Task",
+      "description": "Adjust the details of your task."
+    },
+    "deleteTaskSR": "Delete task",
+    "deleteTaskConfirmation": {
+      "title": "Delete task?",
+      "description": "Are you sure you want to delete this task? This action cannot be undone."
+    },
+    "taskOptionsSR": "Task options",
+    "editTask": "Edit task",
+    "deleteTask": "Delete task",
+    "overdueSR": "(Overdue)",
+    "noDescription": "No description",
+    "noSubtasks": "No subtasks",
+    "addSubtask": {
+      "titleDesktopSR": "New subtask title (desktop)",
+      "placeholder": "New subtask title",
+      "saveAriaLabel": "Save subtask",
+      "buttonText": "Add subtask",
+      "titleMobileSR": "New subtask title (mobile)",
+      "placeholderMobile": "New subtask title...",
+      "buttonAriaLabel": "Add subtask",
+      "tooltip": "Add subtask"
+    },
+    "generateSubtasks": {
+      "buttonText": "Generate Subtasks",
+      "dialogTitle": "Generate Subtasks (AI)?",
+      "dialogDescription": "Would you like to ask the AI assistant to suggest relevant subtasks for \"{{taskTitle}}\" based on its description?",
+      "confirmButton": "Yes, generate subtasks",
+      "buttonAriaLabel": "Generate subtasks",
+      "tooltip": "Generate subtasks (AI)"
+    }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "settings": "Settings",
+    "description": "Description",
+    "status": "Status",
+    "priority": "Priority",
+    "deadline": "Deadline",
+    "overdue": "Overdue",
+    "subtasks": "Subtasks",
+    "none": "None",
+    "add": "Add",
+    "save": "Save",
+    "edit": "Edit",
+    "generate": "Generate",
+    "title": "Title",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "confirm": "Confirm",
+    "success": "Success",
+    "error": "Error",
+    "loading": "Loading...",
+    "actions": "Actions",
+    "all": "All",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "todo": "To do",
+    "in_progress": "In progress",
+    "done": "Done",
+    "back": "Back",
+    "backSR": "Go back",
+    "closeSR": "Close window",
+    "cancelAriaLabel": "Cancel"
+  },
+  "pageTitles": {
+    "home": "Home",
+    "tasks": "My Tasks",
+    "calendar": "Calendar",
+    "settings": "Settings",
+    "profile": "Profile",
+    "adminDashboard": "Admin Dashboard",
+    "adminUsers": "User Management",
+    "adminSettings": "Admin Settings",
+    "taskDetail": "Task Details"
+  },
+  "sidebar": {
+    "tasks": "My Tasks",
+    "calendar": "Calendar",
+    "settings": "Settings",
+    "profile": "Profile",
+    "admin": "Admin",
+    "adminDashboard": "Dashboard",
+    "adminUsers": "Users",
+    "adminSystem": "System",
+    "logout": "Logout"
+  },
+  "settingsPage": {
+    "title": "Settings",
+    "tabs": {
+      "general": "General",
+      "appearance": "Appearance",
+      "account": "Account",
+      "language": "Language",
+      "notifications": "Notifications",
+      "aiConfig": "AI Configuration"
+    },
+    "general": {
+      "title": "General Settings",
+      "description": "View and update your general account settings."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize the look and feel of the application.",
+      "theme": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "account": {
+      "title": "Account Settings",
+      "description": "Manage your account details.",
+      "username": "Username",
+      "email": "Email Address",
+      "changePassword": "Change Password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmNewPassword": "Confirm New Password",
+      "updatePasswordButton": "Update Password",
+      "passwordUpdateSuccess": "Password updated successfully.",
+      "passwordUpdateError": "Error updating password."
+    },
+    "language": {
+      "title": "Language Settings",
+      "description": "Choose the language for the user interface and AI interactions.",
+      "uiLanguage": "User Interface Language",
+      "aiLanguage": "AI Interaction Language",
+      "saveButton": "Save Settings",
+      "saveSuccess": "Language settings saved successfully.",
+      "saveError": "Error saving language settings."
+    },
+    "notifications": {
+      "title": "Notification Preferences",
+      "description": "Set how you want to receive notifications.",
+      "enableNotifications": "Enable Notifications",
+      "emailNotifications": "Email Notifications",
+      "inAppNotifications": "In-App Notifications"
+    },
+    "aiModelConfig": {
+      "drawerTitle": "AI Model Configuration",
+      "drawerDescription": "Configure the parameters for the AI model here.",
+      "modelSelectionTitle": "AI Model Selection",
+      "selectModel": "Select an AI Model",
+      "temperatureTitle": "Temperature",
+      "temperatureDescription": "Controls randomness of the output. Higher = more creative.",
+      "maxLengthTitle": "Maximum Length",
+      "maxLengthDescription": "Maximum number of tokens in the generated response.",
+      "saveConfigButton": "Save Configuration",
+      "configSaveSuccess": "AI configuration saved successfully.",
+      "configSaveError": "Error saving AI configuration."
+    },
+    "aiInteractionLanguage": {
+      "label": "Default AI Interaction Language",
+      "description": "The language in which the AI will attempt to respond by default."
+    },
+    "aiMode": {
+      "label": "AI Mode",
+      "description": "Choose the mode for AI interactions.",
+      "options": {
+        "balanced": "Balanced",
+        "creative": "Creative",
+        "precise": "Precise",
+        "custom": "Custom"
+      }
+    }
+  },
+  "profilePage": {
+    "title": "My Profile",
+    "name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "lastLogin": "Last login",
+    "memberSince": "Member since",
+    "editProfileButton": "Edit Profile",
+    "updateProfileButton": "Update Profile",
+    "avatarAlt": "Profile picture of {{name}}",
+    "changeAvatar": "Change avatar",
+    "roles": {
+      "user": "User",
+      "editor": "Editor",
+      "admin": "Administrator"
+    }
+  },
+  "adminDashboardPage": {
+    "title": "Admin Dashboard",
+    "welcome": "Welcome, {{username}}!",
+    "description": "Manage the application from here.",
+    "quickStats": "Quick Stats",
+    "totalUsers": "Total Users",
+    "activeTasks": "Active Tasks",
+    "systemHealth": "System Health",
+    "manageUsersButton": "Manage Users",
+    "systemSettingsButton": "System Settings"
+  },
+  "chatPanel": {
+    "errors": {
+      "userNotLoggedIn": "User not logged in"
+    },
+    "toast": {
+      "saveFailedTitle": "Save Failed",
+      "saveMessageToDbFailed": "Could not save the message to the database.",
+      "loadFailedTitle": "Load Failed",
+      "loadMessagesAndNotesFailed": "Could not retrieve chat history and notes.",
+      "researchSavedTitle": "Research Saved",
+      "researchSavedDescription": "The research result has been saved.",
+      "saveResearchFailedDescriptionDefault": "Could not save the research.",
+      "deepResearchFailedTitle": "Research Failed",
+      "deepResearchFailedDescriptionDefault": "Could not invoke the deep-research function.",
+      "researchCancelledTitle": "Research Cancelled",
+      "researchCancelledDescription": "Fetching research results has been stopped.",
+      "historyClearedTitle": "History Cleared",
+      "historyClearedDescription": "Chat history for this task has been deleted.",
+      "clearHistoryFailedTitle": "Clear Failed",
+      "clearHistoryFailedDefault": "Could not clear chat history.",
+      "exportFailedTitle": "Export Failed",
+      "exportFailedDescription": "There are no messages to export.",
+      "exportStartedTitle": "Export Started",
+      "exportStartedDescription": "Chat is being downloaded as a text file.",
+      "noteDeletedTitle": "Note Deleted",
+      "noteDeletedDescription": "The note has been successfully deleted.",
+      "deleteFailedTitle": "Delete Failed",
+      "deleteNoteFailedDefault": "Could not delete the note.",
+      "researchDeletedTitle": "Research Deleted",
+      "researchDeletedDescription": "The saved research has been successfully deleted.",
+      "deleteResearchFailedDescriptionDefault": "Could not delete the saved research."
+    },
+    "initialAssistantMessage": "Hello! I\\'m your AI assistant. What do you want to know about the task \"{{taskTitle}}\"?",
+    "subtaskSelectedMessage": "You\\'ve selected subtask \"{{subtaskTitle}}\". What would you like to know or discuss about it?",
+    "closeSR": "Close chat",
+    "researchForSubtaskLabel": "Research for subtask: \"{{subtaskTitle}}\"",
+    "sourcesLabel": "Sources:",
+    "copyMessageTitle": "Copy message",
+    "copyMessageSR": "Copy message",
+    "saveResearchTitle": "Save research",
+    "saveResearchSR": "Save research",
+    "deleteNoteTitle": "Delete note",
+    "deleteNoteSR": "Delete note",
+    "deleteResearchTitle": "Delete research",
+    "deleteResearchSR": "Delete research",
+    "researchingText": "Researching...",
+    "typingText": "Typing...",
+    "cancelResearchButton": "Cancel Research",
+    "notePlaceholder": "Write a note...",
+    "messagePlaceholder": "Type your message...",
+    "saveNoteTooltip": "Save Note",
+    "sendMessageTooltip": "Send (Ctrl+Enter)",
+    "deepResearchDisabledTooltip": "Deep Research is not available for your account type.",
+    "deepResearchTooltip": "Start deep research",
+    "researchButton": "Research",
+    "stopNoteButton": "Stop Note",
+    "newNoteButton": "New Note",
+    "selectModelAriaLabel": "Choose AI Model",
+    "chatModesDisabledTooltip": "Chat Modes are not available for your account type.",
+    "clearHistoryButton": "Clear History",
+    "exportChatButton": "Export Chat (.txt)"
+  },
+  "editTaskDialog": {
+    "toast": {
+      "taskUpdatedTitle": "Task Updated",
+      "taskUpdatedDescription": "The changes have been saved.",
+      "updateErrorTitle": "Update Error",
+      "updateErrorDescription": "The task could not be updated."
+    },
+    "titlePlaceholder": "Task title",
+    "descriptionPlaceholder": "Describe the task...",
+    "selectPriorityPlaceholder": "Select priority",
+    "selectStatusPlaceholder": "Select status",
+    "chooseDate": "Choose a date",
+    "clearDeadlineSR": "Clear deadline"
+  },
+  "newTaskDialog": {
+    "toast": {
+      "missingInputTitle": "Input missing",
+      "missingInputDescription": "Please fill in the 'Describe your task or idea' field first.",
+      "generationFailedTitle": "Generation failed",
+      "generationFailedDescriptionDefault": "An error occurred.",
+      "detailsGeneratedTitle": "Task details generated",
+      "detailsGeneratedDescription": "The title and description have been filled in. You can now adjust them.",
+      "taskCreatedTitle": "Task Created",
+      "taskCreatedDescription": "The new task has been successfully created.",
+      "createTaskFailedDescription": "The task could not be created."
+    },
+    "errors": {
+      "unexpectedAIResponse": "Unexpected response from AI service."
+    },
+    "initialInputPlaceholder": "Describe your task or idea, e.g., Organize a team lunch for next Friday...",
+    "generatingButton": "Generating...",
+    "generateDetailsButton": "Generate Task Details",
+    "generateSubtasksLabel": "Automatically generate subtasks (AI)",
+    "createTaskButton": "Create Task",
+    "creatingButton": "Creating..."
   }
 } 

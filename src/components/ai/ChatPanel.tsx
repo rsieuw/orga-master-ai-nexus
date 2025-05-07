@@ -19,6 +19,7 @@ import rehypeRaw from 'rehype-raw';
 import { hasPermission } from "@/lib/permissions.ts";
 import { Database } from "@/types/supabase.ts"; // Wijzig .tsx naar .ts
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip.tsx";
+import { useTranslation } from 'react-i18next';
 
 // Definieer een alias voor het specifieke tabelrij type
 type SavedResearchRow = Database['public']['Tables']['saved_research']['Row'];
@@ -51,6 +52,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     deleteAllSubtasks
   } = useTask();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -68,7 +70,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
   const saveMessageToDb = useCallback(async (message: Message) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Gebruiker niet ingelogd");
+      if (!user) throw new Error(t('chatPanel.errors.userNotLoggedIn'));
 
       const { error } = await supabase
         .from('chat_messages')
@@ -86,11 +88,11 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       console.error("Fout bij opslaan bericht:", error);
       toast({
         variant: "destructive",
-        title: "Opslaan mislukt",
-        description: "Kon het bericht niet opslaan in de database.",
+        title: t('chatPanel.toast.saveFailedTitle'),
+        description: t('chatPanel.toast.saveMessageToDbFailed'),
       });
     }
-  }, [task?.id, toast]); // Dependencies for useCallback
+  }, [task?.id, toast, t]); // Dependencies for useCallback
   // --- End saveMessageToDb definition ---
 
   useEffect(() => {
@@ -110,7 +112,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
 
       const initialMessage: Message = {
         role: "assistant",
-        content: `Hallo! Ik ben je AI assistent. Wat wil je weten over de taak "${task.title}"?`,
+        content: t('chatPanel.initialAssistantMessage', { taskTitle: task.title }),
         timestamp: Date.now(),
         messageType: 'system'
        };
@@ -215,8 +217,8 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         console.error("Fout bij laden berichten en notities:", error);
         toast({
           variant: "destructive",
-          title: "Laden mislukt",
-          description: "Kon chatgeschiedenis en notities niet ophalen.",
+          title: t('chatPanel.toast.loadFailedTitle'),
+          description: t('chatPanel.toast.loadMessagesAndNotesFailed'),
         });
         setMessages([initialMessage]); // Fallback to only welcome message
       } finally {
@@ -225,7 +227,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     };
 
     loadMessagesAndNotes();
-  }, [task?.id, task?.title, toast, reloadTrigger]);
+  }, [task?.id, task?.title, toast, reloadTrigger, t]);
 
   // Effect to handle selected subtask
   useEffect(() => {
@@ -233,7 +235,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       const handleSubtaskSelection = async () => {
           const systemMessage: Message = {
             role: "assistant",
-            content: `Je hebt subtaak "${selectedSubtaskTitle}" geselecteerd. Wat wil je hierover weten of bespreken?`,
+            content: t('chatPanel.subtaskSelectedMessage', { subtaskTitle: selectedSubtaskTitle }),
             timestamp: Date.now(),
             messageType: 'system'
           };
@@ -242,7 +244,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       };
       handleSubtaskSelection();
     }
-  }, [selectedSubtaskTitle, task?.id, saveMessageToDb]);
+  }, [selectedSubtaskTitle, task?.id, saveMessageToDb, t]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -634,8 +636,8 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       if (!savedResearchId) {
           console.warn("Did not receive savedResearchId from function, cannot update display message.");
           toast({ 
-            title: "Onderzoek Opgeslagen", 
-            description: data?.message || "Het onderzoeksresultaat is opgeslagen (maar kon niet direct bijgewerkt worden)."
+            title: t('chatPanel.toast.researchSavedTitle'), 
+            description: data?.message || t('chatPanel.toast.researchSavedDescription')
           });
       } else {
           // ---> NIEUW: Zoek en update het bestaande bericht in state <---
@@ -657,21 +659,21 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
           // ---> EINDE NIEUW <---
 
           toast({ 
-            title: "Onderzoek Opgeslagen", 
-            description: data?.message || "Het onderzoeksresultaat is opgeslagen."
+            title: t('chatPanel.toast.researchSavedTitle'), 
+            description: data?.message || t('chatPanel.toast.researchSavedDescription')
           });
       }
       // ---> EINDE NIEUW <---
 
     } catch (error: unknown) {
       console.error('Error calling save-research function:', error);
-      let errorDescription = "Kon het onderzoek niet opslaan.";
+      let errorDescription = t('chatPanel.toast.saveResearchFailedDescriptionDefault');
       if (error instanceof Error) {
         errorDescription = error.message;
       }
       toast({
         variant: "destructive",
-        title: "Opslaan Mislukt",
+        title: t('chatPanel.toast.saveFailedTitle'),
         description: errorDescription,
       });
     } finally {
@@ -783,7 +785,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
 
     } catch (error: unknown) {
       console.error('Error calling deep-research function:', error);
-      let errorDescription = "Kon de deep-research functie niet aanroepen.";
+      let errorDescription = t('chatPanel.toast.deepResearchFailedDescriptionDefault');
       if (error instanceof Error) {
         errorDescription = error.message;
       }
@@ -797,7 +799,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       await saveMessageToDb(errorMessage); // Save error message
       toast({
         variant: "destructive",
-        title: "Onderzoek Mislukt",
+        title: t('chatPanel.toast.deepResearchFailedTitle'),
         description: errorDescription,
       });
     } finally {
@@ -816,7 +818,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     setIsResearching(false); // Stop de laadindicator
     setIsLoading(false); // Stop ook algemene laadindicator
     // Optioneel: Toon een toast
-    toast({ title: "Onderzoek Geannuleerd", description: "Het ophalen van onderzoeksresultaten is gestopt.", variant: "default" });
+    toast({ title: t('chatPanel.toast.researchCancelledTitle'), description: t('chatPanel.toast.researchCancelledDescription'), variant: "default" });
   };
   // ---> EINDE NIEUW <---
 
@@ -844,7 +846,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       // Reset local messages to initial state (or just the welcome message)
       const initialMessage: Message = {
         role: "assistant",
-        content: `Hallo! Ik ben je AI assistent. Wat wil je weten over de taak "${task.title}"?`,
+        content: t('chatPanel.initialAssistantMessage', { taskTitle: task.title }),
         timestamp: Date.now(),
         messageType: 'system'
        };
@@ -855,15 +857,15 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
           ...prevMessages.filter(msg => msg.messageType === 'note_saved' || msg.messageType === 'saved_research_display')
       ]);
 
-      toast({ title: "Geschiedenis gewist", description: "Chatgeschiedenis voor deze taak is verwijderd." });
+      toast({ title: t('chatPanel.toast.historyClearedTitle'), description: t('chatPanel.toast.historyClearedDescription') });
 
     } catch (error: unknown) {
       console.error("Fout bij wissen geschiedenis:", error);
-      let errorMsg = "Kon chatgeschiedenis niet wissen.";
+      let errorMsg = t('chatPanel.toast.clearHistoryFailedDefault');
       if (error instanceof Error) {
         errorMsg = error.message;
       }
-      toast({ variant: "destructive", title: "Wissen Mislukt", description: errorMsg });
+      toast({ variant: "destructive", title: t('chatPanel.toast.clearHistoryFailedTitle'), description: errorMsg });
     } finally {
       setIsLoading(false);
     }
@@ -872,7 +874,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
   // Function to export chat
   const handleExportChat = () => {
     if (messages.length === 0) {
-      toast({ variant: "destructive", title: "Exporteren Mislukt", description: "Er zijn geen berichten om te exporteren." });
+      toast({ variant: "destructive", title: t('chatPanel.toast.exportFailedTitle'), description: t('chatPanel.toast.exportFailedDescription') });
       return;
     }
 
@@ -900,7 +902,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    toast({ title: "Export Gestart", description: "Chat wordt gedownload als tekstbestand." });
+    toast({ title: t('chatPanel.toast.exportStartedTitle'), description: t('chatPanel.toast.exportStartedDescription') });
   };
 
   // ---> NIEUW: Function to delete a note <--- 
@@ -920,21 +922,21 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       if (error) throw error;
 
       toast({ 
-        title: "Notitie Verwijderd", 
-        description: "De notitie is succesvol verwijderd."
+        title: t('chatPanel.toast.noteDeletedTitle'), 
+        description: t('chatPanel.toast.noteDeletedDescription')
       });
 
     } catch (error: unknown) {
       console.error('Error deleting note:', error);
       // Revert optimistic update on error
       setMessages(originalMessages);
-      let errorDescription = "Kon de notitie niet verwijderen.";
+      let errorDescription = t('chatPanel.toast.deleteNoteFailedDefault');
       if (error instanceof Error) {
         errorDescription = error.message;
       }
       toast({
         variant: "destructive",
-        title: "Verwijderen Mislukt",
+        title: t('chatPanel.toast.deleteFailedTitle'),
         description: errorDescription,
       });
     } 
@@ -955,20 +957,20 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       if (error) throw error; // Gooi de fout zodat de catch het oppakt
 
       toast({ 
-        title: "Onderzoek Verwijderd", 
-        description: "Het opgeslagen onderzoek is succesvol verwijderd."
+        title: t('chatPanel.toast.researchDeletedTitle'), 
+        description: t('chatPanel.toast.researchDeletedDescription')
       });
       setReloadTrigger(prev => prev + 1); // <-- TRIGGER HERLADEN NA SUCCES
 
     } catch (error: unknown) {
       console.error('Error deleting saved research:', error);
-      let errorDescription = "Kon het opgeslagen onderzoek niet verwijderen.";
+      let errorDescription = t('chatPanel.toast.deleteResearchFailedDescriptionDefault');
       if (error instanceof Error) {
         errorDescription = error.message;
       }
       toast({
         variant: "destructive",
-        title: "Verwijderen Mislukt",
+        title: t('chatPanel.toast.deleteFailedTitle'),
         description: errorDescription,
       });
     } 
@@ -996,7 +998,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
           onClick={handleCloseChat}
         >
           <X className="h-4 w-4" />
-          <span className="sr-only">Sluiten</span>
+          <span className="sr-only">{t('chatPanel.closeSR')}</span>
         </Button>
 
         {messages.map((message, index) => (
@@ -1033,7 +1035,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
               {/* ---> NIEUW: Toon subtaak referentie indien aanwezig <--- */}
               {message.messageType === 'saved_research_display' && message.subtask_title && (
                 <p className="text-xs text-muted-foreground/80 mb-2 border-b border-white/10 pb-1.5 italic">
-                  Onderzoek voor subtaak: "{message.subtask_title}"
+                  {t('chatPanel.researchForSubtaskLabel', { subtaskTitle: message.subtask_title })}
                 </p>
               )}
               {/* ---> EINDE NIEUW <--- */}
@@ -1085,7 +1087,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
               dus het wordt getoond als message.citations bestaat, ongeacht bericht type. */}
               {message.citations && message.citations.length > 0 && (
                 <div className="mt-4 border-t border-white/10 pt-2">
-                  <h4 className="text-xs font-semibold mb-1 text-muted-foreground">Bronnen:</h4>
+                  <h4 className="text-xs font-semibold mb-1 text-muted-foreground">{t('chatPanel.sourcesLabel')}</h4>
                   <ol className="list-decimal list-inside text-xs space-y-1">
                     {message.citations.map((url, index) => (
                       <li key={index}>
@@ -1116,10 +1118,10 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
                   message.role === 'user' ? 'bottom-1.5 left-1.5' : 'bottom-1.5 right-12'
                 }`} 
                 onClick={() => handleCopy(message.content)}
-                title="Kopieer bericht"
+                title={t('chatPanel.copyMessageTitle')}
               >
                 <Copy className="h-4 w-4" />
-                <span className="sr-only">Kopieer bericht</span>
+                <span className="sr-only">{t('chatPanel.copyMessageSR')}</span>
               </Button>
               {message.messageType === 'research_result' && (
                 <Button
@@ -1129,11 +1131,11 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
                     message.role === 'user' ? 'bottom-1.5 left-8' : 'bottom-1.5 right-[4.5rem]'
                   }`}
                   onClick={() => handleSaveResearch(message)}
-                  title="Sla onderzoek op"
+                  title={t('chatPanel.saveResearchTitle')}
                   disabled={isLoading}
                 >
                   <Save className="h-4 w-4" />
-                  <span className="sr-only">Sla onderzoek op</span>
+                  <span className="sr-only">{t('chatPanel.saveResearchSR')}</span>
                 </Button>
               )}
               {message.messageType === 'note_saved' && message.dbId && (
@@ -1144,11 +1146,11 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
                     'bottom-1.5 left-8' 
                   }`}
                   onClick={() => handleDeleteNote(message.dbId!)}
-                  title="Verwijder notitie"
+                  title={t('chatPanel.deleteNoteTitle')}
                   disabled={isLoading} 
                 >
                   <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">Verwijder notitie</span>
+                  <span className="sr-only">{t('chatPanel.deleteNoteSR')}</span>
                 </Button>
               )}
               {message.messageType === 'saved_research_display' && message.dbId && (
@@ -1159,11 +1161,11 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
                     'bottom-1.5 right-[4.5rem]'
                   }`}
                   onClick={() => handleDeleteResearch(message.dbId!)}
-                  title="Verwijder onderzoek"
+                  title={t('chatPanel.deleteResearchTitle')}
                   disabled={isLoading}
                 >
                   <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">Verwijder onderzoek</span>
+                  <span className="sr-only">{t('chatPanel.deleteResearchSR')}</span>
                 </Button>
               )}
             </div>
@@ -1177,7 +1179,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
             <div className="chat-message chat-message-ai p-3 rounded-lg max-w-[80%]">
               <div className="flex items-center gap-2">
                 <GradientLoader size="sm" />
-                <p>{isResearching ? "Aan het onderzoeken..." : "Aan het typen..."}</p>
+                <p>{isResearching ? t('chatPanel.researchingText') : t('chatPanel.typingText')}</p>
               </div>
             </div>
           </div>
@@ -1186,7 +1188,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         {isResearching && (
            <div className="flex justify-center my-2">
               <Button variant="destructive" size="sm" onClick={handleCancelResearch}>
-                Annuleer Onderzoek
+                {t('chatPanel.cancelResearchButton')}
               </Button>
            </div>
         )}
@@ -1198,7 +1200,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         <div className="relative flex items-end gap-2">
           <Textarea
             className="chat-input flex-grow resize-none pr-10 pt-3 pb-1"
-            placeholder={isNoteMode ? "Schrijf een notitie..." : "Typ je bericht..."}
+            placeholder={isNoteMode ? t('chatPanel.notePlaceholder') : t('chatPanel.messagePlaceholder')}
             value={input}
             onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -1225,7 +1227,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top" align="end" sideOffset={5} className="bg-popover/90 backdrop-blur-lg">
-                <p>{isNoteMode ? "Notitie Opslaan" : "Verzenden (Ctrl+Enter)"}</p>
+                <p>{isNoteMode ? t('chatPanel.saveNoteTooltip') : t('chatPanel.sendMessageTooltip')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -1240,10 +1242,10 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
             className={`gap-1 border-white/10 hover:bg-secondary bg-secondary/50 ${!hasPermission(user, 'deepResearch') ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={handleDeepResearch}
             disabled={isLoading || isNoteMode || !hasPermission(user, 'deepResearch')}
-            title={!hasPermission(user, 'deepResearch') ? "Deep Research is niet beschikbaar voor uw account type." : "Start diepgaand onderzoek"}
+            title={!hasPermission(user, 'deepResearch') ? t('chatPanel.deepResearchDisabledTooltip') : t('chatPanel.deepResearchTooltip')}
           >
             <BrainCircuit className="h-4 w-4" />
-            <span className="hidden sm:inline">Onderzoek</span>
+            <span className="hidden sm:inline">{t('chatPanel.researchButton')}</span>
           </Button>
           <Button 
             variant="outline" 
@@ -1253,7 +1255,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
             disabled={isLoading}
           >
             <PenSquare className="h-4 w-4" />
-            <span className="hidden sm:inline">{isNoteMode ? "Stop Notitie" : "Nieuwe Notitie"}</span>
+            <span className="hidden sm:inline">{isNoteMode ? t('chatPanel.stopNoteButton') : t('chatPanel.newNoteButton')}</span>
           </Button>
         </div>
 
@@ -1261,7 +1263,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
           <Select value={selectedModel} onValueChange={setSelectedModel} disabled={isNoteMode || isLoading}>
             <SelectTrigger 
               className="w-auto h-8 px-2 bg-secondary/50 border-white/10 hover:bg-secondary focus:ring-0 focus:ring-offset-0 disabled:opacity-50"
-              aria-label="Kies AI Model"
+              aria-label={t('chatPanel.selectModelAriaLabel')}
             >
               {React.createElement(aiModels.find((m: AIModel) => m.id === selectedModel)?.icon || Settings, { className: "h-4 w-4" })}
             </SelectTrigger>
@@ -1297,7 +1299,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
                     <Tooltip>
                       <TooltipTrigger asChild>{selectItemContent}</TooltipTrigger>
                       <TooltipContent side="left" align="center" className="bg-popover/90 backdrop-blur-lg">
-                        <p>Chat Modes zijn niet beschikbaar voor uw account type.</p>
+                        <p>{t('chatPanel.chatModesDisabledTooltip')}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -1312,13 +1314,14 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <Settings className="h-4 w-4" />
+                {/* sr-only for settings button if needed */}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="top" align="end" className="glass-effect">
               {/* DEBUG Logs verwijderd */}
               
               <DropdownMenuItem onClick={handleClearHistory} disabled={isLoading}>
-                Wis Geschiedenis
+                {t('chatPanel.clearHistoryButton')}
               </DropdownMenuItem>
               {/* Separator alleen tonen als Export ook getoond wordt */}
               {(user && user.enabled_features && user.enabled_features.includes('exportChat')) && (
@@ -1327,7 +1330,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
               {/* Directe check i.p.v. hasPermission */}
               {(user && user.enabled_features && user.enabled_features.includes('exportChat')) && ( 
                 <DropdownMenuItem onClick={handleExportChat}>
-                  Exporteer Gesprek (.txt)
+                  {t('chatPanel.exportChatButton')}
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>

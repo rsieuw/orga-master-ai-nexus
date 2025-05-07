@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
-import { useAuth } from "@/contexts/AuthContext.tsx";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Button } from "@/components/ui/button.tsx";
@@ -45,8 +44,9 @@ import { GradientProgress } from "@/components/ui/GradientProgress.tsx";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu.tsx";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip.tsx";
 import { useSwipeable } from 'react-swipeable';
+import { useTranslation } from 'react-i18next';
 
-// --- NEW: Subtask Row Component ---
+// --- SubtaskRow Component ---
 interface SubtaskRowProps {
   task: Task;
   subtask: SubTask;
@@ -76,6 +76,7 @@ function SubtaskRow({
   setEditingSubtaskTitle,
   deleteSubtask,
 }: SubtaskRowProps) {
+  const { t } = useTranslation();
 
   // Define swipe handlers for each subtask
   const handlers = useSwipeable({
@@ -92,7 +93,7 @@ function SubtaskRow({
         "group flex items-start justify-between space-x-3 rounded-md pt-2 pb-1.5 pl-2 lg:pl-0 pr-2 hover:bg-muted/50",
         subtask.completed && "opacity-50"
       )}>
-        {/* Container for index, checkbox, and title/input - ADDED onDoubleClick */}
+        {/* Container for index, checkbox, and title/input */}
         <div 
           className="flex items-center space-x-2 flex-grow min-w-0"
           onDoubleClick={() => handleSubtaskLabelClick(subtask.title)}
@@ -124,7 +125,7 @@ function SubtaskRow({
             <Input
               type="text"
               id={`subtask-edit-${subtask.id}`}
-              aria-label="Bewerk subtaak titel"
+              aria-label={t('taskDetail.subtask.editTitleAriaLabel')}
               value={editingSubtaskTitle}
               onChange={(e) => setEditingSubtaskTitle(e.target.value)}
               onBlur={handleSaveSubtaskEdit} // Save when focus leaves the input
@@ -158,7 +159,7 @@ function SubtaskRow({
                   onClick={(e) => e.stopPropagation()} // Prevent other clicks
                 >
                   <MoreVertical className="h-4 w-4" />
-                  <span className="sr-only">Opties</span>
+                  <span className="sr-only">{t('taskDetail.subtask.options')}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-popover/90 backdrop-blur-lg border border-white/10" onClick={(e) => e.stopPropagation()}> 
@@ -171,7 +172,7 @@ function SubtaskRow({
                   className="text-sm"
                 >
                   <Edit className="mr-2 h-4 w-4" />
-                  <span>Bewerken</span>
+                  <span>{t('taskDetail.subtask.edit')}</span>
                 </DropdownMenuItem>
                 
                 <AlertDialog>
@@ -181,24 +182,24 @@ function SubtaskRow({
                       className="text-sm focus:text-destructive focus:bg-destructive/10"
                     >
                       <Trash2 className="mr-2 h-4 w-4 text-destructive" /> 
-                      <span>Verwijderen</span>
+                      <span>{t('taskDetail.subtask.delete')}</span>
                     </DropdownMenuItem>
                   </AlertDialogTrigger>
                   <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm" />
-                  <AlertDialogContent className="border bg-card p-4 shadow-md sm:rounded-lg z-[90]">
+                  <AlertDialogContent className="bg-card p-4 shadow-md sm:rounded-lg z-[90]">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Subtaak verwijderen?</AlertDialogTitle>
+                      <AlertDialogTitle>{t('taskDetail.subtask.deleteConfirmation.title')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Weet je zeker dat je de subtaak "{subtask.title}" wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+                        {t('taskDetail.subtask.deleteConfirmation.description', { subtaskTitle: subtask.title })}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel className="bg-secondary/80 border-white/10">Annuleren</AlertDialogCancel>
+                      <AlertDialogCancel className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => deleteSubtask(task.id, subtask.id)}
                         className="bg-destructive hover:bg-destructive/90"
                       >
-                        Verwijderen
+                        {t('common.delete')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -220,7 +221,7 @@ function SubtaskRow({
                 }}
               >
                 <Edit className="h-4 w-4" />
-                <span className="sr-only">Bewerk subtaak</span>
+                <span className="sr-only">{t('taskDetail.subtask.editSubtaskSR')}</span>
               </Button>
             )}
 
@@ -233,24 +234,24 @@ function SubtaskRow({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">Verwijder subtaak</span>
+                  <span className="sr-only">{t('taskDetail.subtask.deleteSubtaskSR')}</span>
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm" />
               <AlertDialogContent className="border bg-card p-4 shadow-md sm:rounded-lg z-[90]">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Subtaak verwijderen?</AlertDialogTitle>
+                  <AlertDialogTitle>{t('taskDetail.subtask.deleteConfirmation.title')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Weet je zeker dat je de subtaak "{subtask.title}" wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+                    {t('taskDetail.subtask.deleteConfirmation.description', { subtaskTitle: subtask.title })}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel className="bg-secondary/80 border-white/10">Annuleren</AlertDialogCancel>
+                  <AlertDialogCancel className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => deleteSubtask(task.id, subtask.id)}
                     className="bg-destructive hover:bg-destructive/90"
                   >
-                    Verwijderen
+                    {t('common.delete')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -260,12 +261,12 @@ function SubtaskRow({
     </div>
   );
 }
-// --- END: Subtask Row Component ---
+// --- End SubtaskRow Component ---
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
   const { getTaskById, deleteTask, isLoading: tasksLoading, updateSubtask, addSubtask, expandTask, deleteSubtask: deleteSubtaskFromContext, toggleTaskCompletion, updateTask } = useTask();
-  const { user } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -297,7 +298,7 @@ export default function TaskDetail() {
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
       if (appRootWrapper) {
-        appRootWrapper.style.overflow = ''; // Of 'auto' of de oorspronkelijke waarde indien bekend
+        appRootWrapper.style.overflow = ''; // Or 'auto' or its original value if known
       }
     }
     // Cleanup function
@@ -344,9 +345,6 @@ export default function TaskDetail() {
     };
   }, []);
 
-  // Determine language for UI strings
-  const lang = user?.language_preference || 'nl';
-
   // Calculate subtask progress
   const totalSubtasks = task?.subtasks.length ?? 0;
   const completedSubtasks = task?.subtasks.filter(st => st.completed).length ?? 0;
@@ -383,10 +381,10 @@ export default function TaskDetail() {
       try {
         // Use the updateSubtask function from the useTask hook
         await updateSubtask(task.id, editingSubtaskId, { title: editingSubtaskTitle.trim() });
-        toast({ title: "Subtaak bijgewerkt" });
+        toast({ title: t('taskDetail.toast.subtaskUpdated') });
       } catch (error) {
         console.error("Failed to update subtask:", error);
-        toast({ variant: "destructive", title: "Update mislukt", description: "Kon subtaak niet bijwerken." });
+        toast({ variant: "destructive", title: t('taskDetail.toast.updateFailed'), description: t('taskDetail.toast.subtaskUpdateFailedDescription') });
         // Optionally revert the title in the input
         setEditingSubtaskTitle(originalSubtask.title); // Revert to original on error
       }
@@ -412,10 +410,10 @@ export default function TaskDetail() {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center h-64">
-          <h1 className="text-2xl font-bold mb-2">Taak niet gevonden</h1>
+          <h1 className="text-2xl font-bold mb-2">{t('taskDetail.notFound.title')}</h1>
           <Button onClick={() => navigate(-1)} className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Terug
+            {t('common.back')}
           </Button>
         </div>
       </AppLayout>
@@ -427,15 +425,15 @@ export default function TaskDetail() {
     try {
       await deleteTask(task.id);
       toast({
-        title: "Taak verwijderd",
-        description: `"${task.title}" is verwijderd.`,
+        title: t('taskDetail.toast.taskDeleted'),
+        description: t('taskDetail.toast.taskDeletedDescription', { taskTitle: task.title }),
       });
       navigate("/");
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Verwijderen mislukt",
-        description: "Kon de taak niet verwijderen.",
+        title: t('taskDetail.toast.deleteFailed'),
+        description: t('taskDetail.toast.taskDeleteFailedDescription'),
       });
     } finally {
       setIsDeleting(false);
@@ -447,7 +445,7 @@ export default function TaskDetail() {
     try {
       await updateSubtask(task.id, subtaskId, { completed });
     } catch (error) {
-      toast({ variant: "destructive", title: "Fout", description: "Kon subtaak status niet bijwerken." });
+      toast({ variant: "destructive", title: t('common.error'), description: t('taskDetail.toast.subtaskStatusUpdateFailedDescription') });
     }
   };
 
@@ -459,11 +457,11 @@ export default function TaskDetail() {
     try {
       const titleToAdd = newSubtaskTitle.trim();
       await addSubtask(task.id, titleToAdd);
-      toast({ title: "Subtaak toegevoegd", description: `"${titleToAdd}" is toegevoegd.` });
+      toast({ title: t('taskDetail.toast.subtaskAdded'), description: t('taskDetail.toast.subtaskAddedDescription', { subtaskTitle: titleToAdd }) });
       setNewSubtaskTitle("");
       setShowAddSubtaskForm(false);
     } catch (error) {
-      toast({ variant: "destructive", title: "Toevoegen mislukt", description: "Kon de subtaak niet toevoegen." });
+      toast({ variant: "destructive", title: t('taskDetail.toast.addFailed'), description: t('taskDetail.toast.subtaskAddFailedDescription') });
     } finally {
       setIsAddingSubtask(false);
     }
@@ -500,13 +498,6 @@ export default function TaskDetail() {
     updateTask(task.id, { priority: newPriority as TaskPriority });
   };
 
-  const priorityLabel: Record<TaskPriority, string> = {
-    high: "Hoog",
-    medium: "Middel",
-    low: "Laag",
-    none: "Geen",
-  };
-
   const priorityBadgeColor: Record<TaskPriority, string> = {
     high: "border-red-400 text-red-400",
     medium: "border-orange-400 text-orange-400",
@@ -514,7 +505,7 @@ export default function TaskDetail() {
     none: "border-green-400 text-green-400",
   };
 
-  let deadlineText = "Geen deadline";
+  let deadlineText = t('taskDetail.noDeadline');
   let deadlineColor = "border-gray-400 text-gray-400";
   let isOverdue = false;
 
@@ -533,17 +524,10 @@ export default function TaskDetail() {
       }
     } catch (e) {
       console.error("Invalid date format for deadline:", task.deadline);
-      deadlineText = "Ongeldige datum";
+      deadlineText = t('taskDetail.invalidDate');
       deadlineColor = "border-red-400 text-red-400";
     }
   }
-
-  // Herstel statusLabel en statusColor
-  const statusLabel: Record<string, string> = {
-    todo: "Te doen",
-    in_progress: "In behandeling",
-    done: "Voltooid",
-  };
 
   const statusColor: Record<string, string> = {
     todo: "border-red-400 text-red-400",
@@ -561,7 +545,7 @@ export default function TaskDetail() {
           onClick={() => navigate(-1)}
         >
           <ArrowLeft className="h-5 w-5" />
-          <span className="sr-only">Terug</span>
+          <span className="sr-only">{t('common.backSR')}</span>
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:h-[calc(100vh-12rem)] relative z-0">
@@ -583,21 +567,21 @@ export default function TaskDetail() {
                   <DialogTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-7 w-7">
                       <Edit className="h-4 w-4" />
-                      <span className="sr-only">Bewerk taak</span>
+                      <span className="sr-only">{t('taskDetail.editTaskSR')}</span>
                     </Button>
                   </DialogTrigger>
                   <DialogPortal>
                     <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" />
                     <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card p-6 shadow-lg sm:rounded-lg z-50 sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                       <DialogHeader>
-                        <DialogTitle className="text-2xl">Taak Bewerken</DialogTitle>
+                        <DialogTitle className="text-2xl">{t('taskDetail.editTaskDialog.title')}</DialogTitle>
                         <DialogDescription>
-                          Pas de details van je taak aan.
+                          {t('taskDetail.editTaskDialog.description')}
                         </DialogDescription>
                       </DialogHeader>
                       <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
                         <X className="h-4 w-4" />
-                        <span className="sr-only">Sluiten</span>
+                        <span className="sr-only">{t('common.closeSR')}</span>
                       </DialogClose>
                       <EditTaskDialog task={task} setOpen={setIsEditDialogOpen} />
                     </DialogContent>
@@ -607,19 +591,19 @@ export default function TaskDetail() {
                   <AlertDialogTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive/80">
                       <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Verwijder taak</span>
+                      <span className="sr-only">{t('taskDetail.deleteTaskSR')}</span>
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm" />
                   <AlertDialogContent className="bg-card/90 border border-white/5 z-[90]">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Taak verwijderen?</AlertDialogTitle>
+                      <AlertDialogTitle>{t('taskDetail.deleteTaskConfirmation.title')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Weet je zeker dat je deze taak wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+                        {t('taskDetail.deleteTaskConfirmation.description')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel className="bg-secondary/80 border-white/10">Annuleren</AlertDialogCancel>
+                      <AlertDialogCancel className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleDelete}
                         className="bg-destructive hover:bg-destructive/90"
@@ -628,7 +612,7 @@ export default function TaskDetail() {
                         {isDeleting ? (
                           <GradientLoader size="sm" className="mr-2" />
                         ) : null}
-                        Verwijderen
+                        {t('common.delete')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -641,34 +625,34 @@ export default function TaskDetail() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-7 w-7 mt-[14px]">
                       <MoreVertical className="h-4 w-4" />
-                      <span className="sr-only">Taak opties</span>
+                      <span className="sr-only">{t('taskDetail.taskOptionsSR')}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="bg-popover/90 backdrop-blur-lg border border-white/10">
                     <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}>
                       <Edit className="mr-2 h-4 w-4" />
-                      <span>Bewerk taak</span>
+                      <span>{t('taskDetail.editTask')}</span>
                     </DropdownMenuItem>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onSelect={(e) => e.preventDefault()} // Prevent closing dropdown
                           className="text-sm focus:text-destructive focus:bg-destructive/10"
                         >
                           <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                          <span>Verwijder taak</span>
+                          <span>{t('taskDetail.deleteTask')}</span>
                         </DropdownMenuItem>
                       </AlertDialogTrigger>
                       <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm" />
                       <AlertDialogContent className="bg-card/90 border border-white/5 z-[90]">
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Taak verwijderen?</AlertDialogTitle>
+                          <AlertDialogTitle>{t('taskDetail.deleteTaskConfirmation.title')}</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Weet je zeker dat je deze taak wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+                            {t('taskDetail.deleteTaskConfirmation.description')}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel className="bg-secondary/80 border-white/10">Annuleren</AlertDialogCancel>
+                          <AlertDialogCancel className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={handleDelete}
                             className="bg-destructive hover:bg-destructive/90"
@@ -677,7 +661,7 @@ export default function TaskDetail() {
                             {isDeleting ? (
                               <GradientLoader size="sm" className="mr-2" />
                             ) : null}
-                            Verwijderen
+                            {t('common.delete')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -700,19 +684,19 @@ export default function TaskDetail() {
                             className={cn("h-6 px-2 text-xs font-normal rounded-md bg-muted/40", statusColor[task.status])}
                           >
                             <Info className="h-4 w-4 mr-1 sm:hidden" /> {/* Mobile icon changed to Info */}
-                            <span className="hidden sm:inline">{lang === 'nl' ? 'Status:' : 'Status:'}&nbsp;</span> {/* Desktop label */}
-                            {statusLabel[task.status]} {/* Value */}
+                            <span className="hidden sm:inline">{t('common.status')}:&nbsp;</span> {/* Desktop label */}
+                            {t(`common.${task.status}`)} {/* Value using direct translation, assuming task.status matches keys like 'todo', 'in_progress', 'done' */}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="bg-popover/90 backdrop-blur-lg border border-white/10">
                           <DropdownMenuItem onSelect={() => handleStatusChange('todo')}>
-                            Te doen
+                            {t('common.todo')}
                           </DropdownMenuItem>
                           <DropdownMenuItem onSelect={() => handleStatusChange('in_progress')}>
-                            In behandeling
+                            {t('common.inProgress')}
                           </DropdownMenuItem>
                           <DropdownMenuItem onSelect={() => handleStatusChange('done')}>
-                            Voltooid
+                            {t('common.done')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -726,19 +710,19 @@ export default function TaskDetail() {
                               className={cn("h-6 px-2 text-xs font-normal rounded-md bg-muted/40", priorityBadgeColor[task.priority])}
                             >
                               <Flag className="h-4 w-4 mr-1 sm:hidden" /> {/* Mobile icon */}
-                              <span className="hidden sm:inline">{lang === 'nl' ? 'Prioriteit:' : 'Priority:'}&nbsp;</span> {/* Desktop label */}
-                              {priorityLabel[task.priority]} {/* Value */}
+                              <span className="hidden sm:inline">{t('common.priority')}:&nbsp;</span> {/* Desktop label */}
+                              {t(`common.${task.priority.toLowerCase()}`)} {/* Value using direct translation */}
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="start" className="bg-popover/90 backdrop-blur-lg border border-white/10">
                             <DropdownMenuItem onSelect={() => handlePriorityChange('high')}>
-                              Hoog
+                              {t('common.high')}
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => handlePriorityChange('medium')}>
-                              Middel
+                              {t('common.medium')}
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => handlePriorityChange('low')}>
-                              Laag
+                              {t('common.low')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -749,23 +733,23 @@ export default function TaskDetail() {
                           className={cn("h-6 px-2 text-xs font-normal border-none bg-muted/40", deadlineColor)}
                         >
                           <CalendarClock className="h-4 w-4 mr-1 sm:hidden" /> {/* Mobile icon */}
-                          <span className="hidden sm:inline">{lang === 'nl' ? 'Deadline:' : 'Deadline:'}&nbsp;</span> {/* Desktop label */}
+                          <span className="hidden sm:inline">{t('common.deadline')}:&nbsp;</span> {/* Desktop label */}
                           {deadlineText} {/* Value */}
-                          {isOverdue && <span className="hidden sm:inline">&nbsp;{lang === 'nl' ? '(Verlopen)' : '(Overdue)' }</span>} {/* Desktop overdue text */}
+                          {isOverdue && <span className="hidden sm:inline">&nbsp;{t('taskDetail.overdueSR')}</span>} {/* Desktop overdue text */}
                         </Badge>
                       )}
                     </div>
                     <div className="mb-4"></div>
                     <div>
-                      <h3 className="font-medium mb-2">Beschrijving</h3>
+                      <h3 className="font-medium mb-2">{t('common.description')}</h3>
                       <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {task.description || "Geen beschrijving"}
+                        {task.description || t('taskDetail.noDescription')}
                       </p>
                     </div>
                     <Separator className="my-4" />
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
                       <div className="flex items-center gap-3 w-full"> {/* Added w-full here */}
-                        <h3 className="font-medium flex-shrink-0">Subtaken</h3> {/* Added flex-shrink-0 */} 
+                        <h3 className="font-medium flex-shrink-0">{t('common.subtasks')}</h3> {/* Added flex-shrink-0 */} 
                         {totalSubtasks > 0 && (
                           <div className="flex items-center gap-2 flex-grow"> {/* Added flex-grow here */}
                              <span className="text-xs text-muted-foreground flex-shrink-0">
@@ -809,7 +793,7 @@ export default function TaskDetail() {
                       ))}
                     </>
                   ) : (
-                    <p className="text-muted-foreground text-sm px-4 lg:px-0">Geen subtaken</p>
+                    <p className="text-muted-foreground text-sm px-4 lg:px-0">{t('taskDetail.noSubtasks')}</p>
                   )}
                 </div>
 
@@ -818,11 +802,11 @@ export default function TaskDetail() {
                   <div className="hidden lg:flex lg:items-center lg:gap-2 lg:px-1 border-t border-border pt-3 mt-auto">
                     {showAddSubtaskForm ? (
                       <form onSubmit={handleAddSubtask} className="flex items-center gap-3 flex-grow">
-                        <label htmlFor="new-subtask-title-desktop" className="sr-only">Nieuwe subtaak titel (desktop)</label>
+                        <label htmlFor="new-subtask-title-desktop" className="sr-only">{t('taskDetail.addSubtask.titleDesktopSR')}</label>
                         <Input
                           id="new-subtask-title-desktop"
                           type="text"
-                          placeholder="Nieuwe subtaak titel"
+                          placeholder={t('taskDetail.addSubtask.placeholder')}
                           value={newSubtaskTitle}
                           onChange={(e) => setNewSubtaskTitle(e.target.value)}
                           className="h-10 flex-grow"
@@ -834,7 +818,7 @@ export default function TaskDetail() {
                           size="icon"
                           className="h-10 w-10 p-2.5 rounded-full bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
                           disabled={isAddingSubtask || !newSubtaskTitle.trim()}
-                          aria-label="Subtaak opslaan"
+                          aria-label={t('taskDetail.addSubtask.saveAriaLabel')}
                         >
                           {isAddingSubtask ? <GradientLoader size="sm" /> : <Save className="h-5 w-5" />}
                         </Button>
@@ -846,7 +830,7 @@ export default function TaskDetail() {
                           className="h-10 w-10 p-2.5 rounded-full"
                           onClick={() => setShowAddSubtaskForm(false)} 
                           disabled={isAddingSubtask}
-                          aria-label="Annuleren"
+                          aria-label={t('common.cancelAriaLabel')}
                         >
                           <X className="h-5 w-5" />
                         </Button>
@@ -859,7 +843,7 @@ export default function TaskDetail() {
                           className="h-10 px-4 text-muted-foreground hover:text-foreground"
                         >
                            <PlusCircle className="mr-2 h-4 w-4" />
-                           Subtaak toevoegen
+                           {t('taskDetail.addSubtask.buttonText')}
                         </Button>
                         {/* Desktop Generate Subtasks Button with Confirmation */}
                         <Dialog>
@@ -871,7 +855,7 @@ export default function TaskDetail() {
                               <div className="bg-card h-full w-full rounded-[5px] flex items-center justify-center px-4">
                                 <span className="flex items-center bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
                                   <Sparkles className={cn("mr-1 h-4 w-4 text-blue-500", isGeneratingSubtasks && "animate-spin")} />
-                                  Genereer Subtaken
+                                  {t('taskDetail.generateSubtasks.buttonText')}
                                 </span>
                               </div>
                             </Button>
@@ -879,18 +863,18 @@ export default function TaskDetail() {
                           <DialogOverlay className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" />
                           <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card p-6 shadow-lg sm:rounded-lg z-50 sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                             <DialogHeader>
-                              <DialogTitle className="text-2xl">Subtaken Genereren (AI)?</DialogTitle>
+                              <DialogTitle className="text-2xl">{t('taskDetail.generateSubtasks.dialogTitle')}</DialogTitle>
                               <DialogDescription>
-                                Wilt u de AI assistent vragen om relevante subtaken voor "{task.title}" voor te stellen op basis van de beschrijving?
+                                {t('taskDetail.generateSubtasks.dialogDescription', { taskTitle: task.title })}
                               </DialogDescription>
                             </DialogHeader>
                             <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
                               <X className="h-4 w-4" />
-                              <span className="sr-only">Sluiten</span>
+                              <span className="sr-only">{t('common.closeSR')}</span>
                             </DialogClose>
                             <div className="pt-4 flex justify-end space-x-2">
                               <DialogClose asChild>
-                                <Button variant="outline" className="bg-secondary/80 border-white/10">Annuleren</Button>
+                                <Button variant="outline" className="bg-secondary/80 border-white/10">{t('common.cancel')}</Button>
                               </DialogClose>
                               <Button
                                 onClick={handleGenerateSubtasks}
@@ -898,7 +882,7 @@ export default function TaskDetail() {
                                 disabled={isGeneratingSubtasks}
                               >
                                 {isGeneratingSubtasks ? <GradientLoader size="sm" className="mr-2" /> : null}
-                                Ja, genereer subtaken
+                                {t('taskDetail.generateSubtasks.confirmButton')}
                               </Button>
                             </div>
                           </DialogContent>
@@ -930,11 +914,11 @@ export default function TaskDetail() {
         <div className="lg:hidden fixed bottom-16 left-0 right-0 z-[60] p-4 bg-card border-t border-border shadow-lg">
           <form onSubmit={handleAddSubtask} className="flex items-center gap-3">
             <div className="relative flex-grow">
-              <label htmlFor="new-subtask-title-mobile" className="sr-only">Nieuwe subtaak titel (mobiel)</label>
+              <label htmlFor="new-subtask-title-mobile" className="sr-only">{t('taskDetail.addSubtask.titleMobileSR')}</label>
               <Input
                 id="new-subtask-title-mobile"
                 type="text"
-                placeholder="Nieuwe subtaak titel..."
+                placeholder={t('taskDetail.addSubtask.placeholderMobile')}
                 value={newSubtaskTitle}
                 onChange={(e) => setNewSubtaskTitle(e.target.value)}
                 className="h-10 bg-background/50 rounded-md pr-10"
@@ -948,7 +932,7 @@ export default function TaskDetail() {
                 className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full text-muted-foreground"
                 onClick={() => setShowAddSubtaskForm(false)} 
                 disabled={isAddingSubtask}
-                aria-label="Annuleren"
+                aria-label={t('common.cancelAriaLabel')}
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -960,7 +944,7 @@ export default function TaskDetail() {
               size="icon"
               className="h-10 w-10 p-2.5 rounded-full bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 flex-shrink-0"
               disabled={isAddingSubtask || !newSubtaskTitle.trim()}
-              aria-label="Subtaak opslaan"
+              aria-label={t('taskDetail.addSubtask.saveAriaLabel')}
             >
               {isAddingSubtask ? <GradientLoader size="sm" /> : <Save className="h-5 w-5" />} 
             </Button>
@@ -984,31 +968,31 @@ export default function TaskDetail() {
                   size="icon" 
                   className="rounded-full h-14 w-14 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white shadow-lg"
                   disabled={isGeneratingSubtasks || isAddingSubtask}
-                  aria-label="Genereer subtaken"
+                  aria-label={t('taskDetail.generateSubtasks.buttonAriaLabel')}
                 >
                   <Sparkles className={cn("h-7 w-7", isGeneratingSubtasks && "animate-spin")} />
                 </Button>
               </DialogTrigger>
               <TooltipContent side="top" className="bg-popover/50 backdrop-blur-lg">
-                <p>Genereer subtaken (AI)</p>
+                <p>{t('taskDetail.generateSubtasks.tooltip')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
           <DialogOverlay className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" />
           <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card p-6 shadow-lg sm:rounded-lg z-50 sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-2xl">Subtaken Genereren (AI)?</DialogTitle>
+              <DialogTitle className="text-2xl">{t('taskDetail.generateSubtasks.dialogTitle')}</DialogTitle>
               <DialogDescription>
-                Wilt u de AI assistent vragen om relevante subtaken voor "{task.title}" voor te stellen op basis van de beschrijving?
+                {t('taskDetail.generateSubtasks.dialogDescription', { taskTitle: task.title })}
               </DialogDescription>
             </DialogHeader>
             <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
               <X className="h-4 w-4" />
-              <span className="sr-only">Sluiten</span>
+              <span className="sr-only">{t('common.closeSR')}</span>
             </DialogClose>
             <div className="pt-4 flex justify-end space-x-2">
               <DialogClose asChild>
-                <Button variant="outline" className="bg-secondary/80 border-white/10">Annuleren</Button>
+                <Button variant="outline" className="bg-secondary/80 border-white/10">{t('common.cancel')}</Button>
               </DialogClose>
               <Button
                 onClick={handleGenerateSubtasks}
@@ -1016,7 +1000,7 @@ export default function TaskDetail() {
                 disabled={isGeneratingSubtasks}
               >
                 {isGeneratingSubtasks ? <GradientLoader size="sm" className="mr-2" /> : null}
-                Ja, genereer subtaken
+                {t('taskDetail.generateSubtasks.confirmButton')}
               </Button>
             </div>
           </DialogContent>
@@ -1032,13 +1016,13 @@ export default function TaskDetail() {
                 className="rounded-full h-14 w-14 bg-secondary/80 backdrop-blur-sm border-white/10 text-muted-foreground hover:text-foreground hover:bg-secondary shadow-lg"
                 onClick={() => setShowAddSubtaskForm(true)}
                 disabled={isAddingSubtask || isGeneratingSubtasks}
-                aria-label="Subtaak toevoegen"
+                aria-label={t('taskDetail.addSubtask.buttonAriaLabel')}
               >
                 <PlusCircle className="h-7 w-7" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="bg-popover/50 backdrop-blur-lg">
-              <p>Subtaak toevoegen</p>
+              <p>{t('taskDetail.addSubtask.tooltip')}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
