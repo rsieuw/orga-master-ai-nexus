@@ -8,13 +8,15 @@ import { Button } from '@/components/ui/button.tsx';
 import { useToast } from '@/hooks/use-toast.ts';
 import { useAuth } from '@/contexts/AuthContext.tsx';
 import { supabase } from '@/integrations/supabase/client.ts';
-import { Loader2, ArrowLeft } from 'lucide-react'; // Import ArrowLeft
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { Loader2, ArrowLeft } from 'lucide-react'; // Import ArrowLeft icon
+import { useNavigate } from 'react-router-dom'; // Initialize useNavigate hook
+import { useTranslation } from 'react-i18next';
 
 const ContactPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate(); // Add useNavigate hook
+  const navigate = useNavigate(); // Initialize useNavigate hook
+  const { t } = useTranslation();
   const [subject, setSubject] = useState<string>('');
   const [message, setMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -25,18 +27,18 @@ const ContactPage: React.FC = () => {
     if (!user) {
       toast({
         variant: "destructive",
-        title: "Niet ingelogd",
-        description: "Log in om een bericht te sturen.",
+        title: t('contactPage.toast.notLoggedIn.title'),
+        description: t('contactPage.toast.notLoggedIn.description'),
       });
       return;
     }
 
     if (!subject) {
-       toast({ variant: "destructive", title: "Onderwerp vereist", description: "Selecteer een onderwerp." });
+       toast({ variant: "destructive", title: t('contactPage.toast.subjectRequired.title'), description: t('contactPage.toast.subjectRequired.description') });
        return;
     }
     if (!message.trim()) {
-       toast({ variant: "destructive", title: "Bericht vereist", description: "Voer een bericht in." });
+       toast({ variant: "destructive", title: t('contactPage.toast.messageRequired.title'), description: t('contactPage.toast.messageRequired.description') });
        return;
     }
 
@@ -47,7 +49,7 @@ const ContactPage: React.FC = () => {
         .from('feedback')
         .insert({
           user_id: user.id,
-          user_email: user.email, // Sla e-mail op voor context
+          user_email: user.email, // Store email for context
           subject: subject,
           message: message.trim(),
         });
@@ -57,21 +59,21 @@ const ContactPage: React.FC = () => {
       }
 
       toast({
-        title: "Bericht verzonden",
-        description: "Bedankt voor je feedback! We nemen het zo snel mogelijk in behandeling.",
+        title: t('contactPage.toast.messageSent.title'),
+        description: t('contactPage.toast.messageSent.description'),
       });
-      // Reset formulier
+      // Reset form
       setSubject('');
       setMessage('');
 
     } catch (error: unknown) {
       console.error("Error sending feedback:", error);
-      // Type check voor error message
-      const message = error instanceof Error ? error.message : "Kon het bericht niet verzenden. Probeer het later opnieuw.";
+      // Type check for error message
+      const errorMessage = error instanceof Error ? error.message : t('contactPage.toast.sendFailed.defaultError');
       toast({
         variant: "destructive",
-        title: "Verzenden mislukt",
-        description: message,
+        title: t('contactPage.toast.sendFailed.title'),
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
@@ -88,45 +90,45 @@ const ContactPage: React.FC = () => {
            <div className="mb-4">
              <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Terug
+                {t('contactPage.backButton')}
               </Button>
            </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Contacteer Ons</CardTitle>
+              <CardTitle>{t('contactPage.title')}</CardTitle>
               <CardDescription>
-                Heb je een vraag, suggestie, of heb je een bug gevonden? Laat het ons weten!
+                {t('contactPage.description')}
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="subject">Onderwerp</Label>
+                  <Label htmlFor="subject">{t('contactPage.subjectLabel')}</Label>
                    <Select 
                      value={subject} 
                      onValueChange={setSubject}
-                     required // HTML5 validatie
+                     required // HTML5 validation
                    >
                      <SelectTrigger id="subject">
-                       <SelectValue placeholder="Selecteer een onderwerp..." />
+                       <SelectValue placeholder={t('contactPage.subjectPlaceholder')} />
                      </SelectTrigger>
                      <SelectContent>
-                       <SelectItem value="suggestie">Suggestie / Idee</SelectItem>
-                       <SelectItem value="bug">Bug Report</SelectItem>
-                       <SelectItem value="vraag">Algemene Vraag</SelectItem>
-                       <SelectItem value="anders">Anders</SelectItem>
+                       <SelectItem value="suggestie">{t('contactPage.subjectOptions.suggestion')}</SelectItem>
+                       <SelectItem value="bug">{t('contactPage.subjectOptions.bugReport')}</SelectItem>
+                       <SelectItem value="vraag">{t('contactPage.subjectOptions.generalQuestion')}</SelectItem>
+                       <SelectItem value="anders">{t('contactPage.subjectOptions.other')}</SelectItem>
                      </SelectContent>
                    </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="message">Bericht</Label>
+                  <Label htmlFor="message">{t('contactPage.messageLabel')}</Label>
                   <Textarea
                     id="message"
-                    placeholder="Beschrijf je vraag, suggestie of bug zo duidelijk mogelijk..."
+                    placeholder={t('contactPage.messagePlaceholder')}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    required // HTML5 validatie
+                    required // HTML5 validation
                     rows={6}
                   />
                 </div>
@@ -138,7 +140,7 @@ const ContactPage: React.FC = () => {
                   className="w-full bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
                 >
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {isLoading ? 'Bezig met verzenden...' : 'Verzenden'}
+                  {isLoading ? t('contactPage.sendingButton') : t('contactPage.sendButton')}
                 </Button>
               </CardFooter>
             </form>

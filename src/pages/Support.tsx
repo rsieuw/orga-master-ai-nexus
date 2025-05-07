@@ -1,28 +1,30 @@
 import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
+import { useTranslation } from 'react-i18next';
 
 export default function SupportPage() {
+  const { t } = useTranslation();
+
   return (
     <AppLayout>
-      <h1 className="text-2xl font-bold mb-6">Support</h1>
+      <h1 className="text-2xl font-bold mb-6">{t('supportPage.mainTitle')}</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Hulp Nodig?</CardTitle>
+          <CardTitle>{t('supportPage.cardTitle')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p>
-            Heeft u vragen of ondervindt u problemen met OrgaMaster AI? 
-            Neem contact op met ons support team.
+            {t('supportPage.paragraph1')}
           </p>
           <p>
-            U kunt ons bereiken via e-mail op:{" "}
-            <a href="mailto:support@orgamaster.ai" className="text-primary hover:underline">
-              support@orgamaster.ai
+            {t('supportPage.paragraph2a')}{" "}
+            <a href="mailto:info@artifexai.nl" className="text-primary hover:underline">
+              info@artifexai.nl
             </a>
           </p>
           <p>
-            We streven ernaar om uw vragen zo snel mogelijk te beantwoorden.
+            {t('supportPage.paragraph3')}
           </p>
         </CardContent>
       </Card>

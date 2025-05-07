@@ -7,7 +7,7 @@ import { buttonVariants } from "@/components/ui/button.variants.ts";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
-// Aangepaste Chevron component
+// Custom Chevron component
 function CustomChevron(props: ChevronProps) {
   const className = "h-4 w-4 stroke-gray-400 group-hover:stroke-gray-500";
   switch (props.orientation) {
@@ -16,7 +16,7 @@ function CustomChevron(props: ChevronProps) {
     case "right":
       return <ChevronRight className={className} />;
     default:
-      // Fallback: geef een leeg fragment terug om linterfout te voorkomen
+      // Fallback: return an empty fragment to prevent linter error
       return <></>;
   }
 }
@@ -25,11 +25,13 @@ function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  fixedWeeks = true,
   ...props
 }: CalendarProps) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      fixedWeeks={fixedWeeks}
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",

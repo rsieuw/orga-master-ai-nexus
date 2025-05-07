@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu.tsx"; // Ensure .tsx extension
 import { Check, Filter } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 
 // Match TaskStatus with your existing types if possible, or define as needed
 export type TaskFilterStatus = "all" | "completed" | "incomplete";
@@ -22,6 +23,7 @@ interface TaskFilterProps {
 }
 
 const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<TaskFilterStatus>("all");
   const [priority, setPriority] = useState<TaskFilterPriority>("all");
 
@@ -51,14 +53,14 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
         className="w-48 glass-effect" // Use the same glass-effect class as the user menu
       >
         <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-          Status
+          {t('taskFilter.statusTitle')}
         </div>
         <DropdownMenuCheckboxItem
           className="cursor-pointer"
           checked={status === "all"}
           onCheckedChange={() => handleStatusChange("all")}
         >
-          Alles
+          {t('taskFilter.all')}
           {status === "all" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
@@ -66,7 +68,7 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
           checked={status === "completed"}
           onCheckedChange={() => handleStatusChange("completed")}
         >
-          Voltooid
+          {t('taskFilter.completed')}
           {status === "completed" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
@@ -74,21 +76,21 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
           checked={status === "incomplete"}
           onCheckedChange={() => handleStatusChange("incomplete")}
         >
-          Onvoltooid
+          {t('taskFilter.incomplete')}
           {status === "incomplete" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
 
         <DropdownMenuSeparator />
 
         <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-          Prioriteit
+          {t('taskFilter.priorityTitle')}
         </div>
         <DropdownMenuCheckboxItem
           className="cursor-pointer"
           checked={priority === "all"}
           onCheckedChange={() => handlePriorityChange("all")}
         >
-          Alles
+          {t('taskFilter.all')}
           {priority === "all" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
@@ -96,7 +98,7 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
           checked={priority === "high"}
           onCheckedChange={() => handlePriorityChange("high")}
         >
-          Hoog
+          {t('taskFilter.high')}
           {priority === "high" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
@@ -104,7 +106,7 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
           checked={priority === "medium"}
           onCheckedChange={() => handlePriorityChange("medium")}
         >
-          Medium
+          {t('taskFilter.medium')}
           {priority === "medium" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
@@ -112,7 +114,7 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
           checked={priority === "low"}
           onCheckedChange={() => handlePriorityChange("low")}
         >
-          Laag
+          {t('taskFilter.low')}
           {priority === "low" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
       </DropdownMenuContent>

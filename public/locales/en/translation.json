@@ -1,0 +1,414 @@
+{
+  "taskFilter": {
+    "statusTitle": "Status",
+    "all": "All",
+    "completed": "Completed",
+    "incomplete": "Incomplete",
+    "priorityTitle": "Priority",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "settings": {
+    "title": "Settings",
+    "tabs": {
+      "appearance": "Appearance",
+      "account": "Account",
+      "language": "Language",
+      "notifications": "Notifications",
+      "ai": "AI"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize the look and feel of the application."
+    },
+    "theme": {
+      "label": "Theme mode",
+      "description": "Select light or dark theme.",
+      "toggleAriaLabel": "Toggle theme"
+    },
+    "account": {
+      "title": "Account",
+      "description": "Manage your account details.",
+      "nameLabel": "Name",
+      "namePlaceholder": "Your name",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "your@email.com",
+      "saveButton": "Save Account"
+    },
+    "languageSettings": {
+      "title": "Language Settings",
+      "description": "Choose your preferred languages."
+    },
+    "uiLanguage": {
+      "label": "Interface Language",
+      "placeholder": "Select interface language",
+      "description": "Choose the language for the application interface."
+    },
+    "aiLanguage": {
+      "label": "AI Interaction Language",
+      "placeholder": "Select language for AI",
+      "description": "Choose the language for interacting with the AI assistant."
+    },
+    "language": {
+      "dutch": "Dutch",
+      "english": "English"
+    },
+    "notifications": {
+      "title": "Notification Settings",
+      "description": "Manage your notification preferences.",
+      "emailNotificationsLabel": "Email Notifications",
+      "emailNotificationsDescription": "Receive emails for approaching deadlines."
+    },
+    "aiSettings": {
+      "title": "AI Settings",
+      "description": "Configure AI functionality."
+    },
+    "aiMode": {
+      "label": "Default AI Mode",
+      "description": "Choose the default behavior for AI interactions.",
+      "freeUserLimitation": "('Creative' and 'Precise' for paid users only)",
+      "placeholder": "Select mode",
+      "options": {
+        "gpt4oBalanced": "GPT-4o (Balanced)",
+        "creativeMode": "Creative Mode",
+        "preciseMode": "Precise Mode"
+      }
+    },
+    "researchModel": {
+      "label": "Research Model",
+      "description": "Choose the AI model for the 'Deep Research' feature.",
+      "freeUserLimitation": "(Available for paid users)",
+      "placeholder": "Select model",
+      "perplexitySonar": "Perplexity Sonar",
+      "gpt4oMini": "GPT-4o Mini"
+    },
+    "aiModelConfig": {
+      "button": "AI Model Configuration",
+      "drawerTitle": "AI Model Configuration",
+      "drawerDescription": "Adjust settings for the AI models.",
+      "defaultModelLabel": "AI Model (Default)",
+      "defaultModelPlaceholder": "Select model",
+      "defaultModelDescription": "Select the default AI model for general use. Paid users can choose more advanced options via Developer Mode.",
+      "systemPromptLabel": "System Prompt",
+      "systemPromptPlaceholder": "You are an AI assistant that helps with tasks...",
+      "systemPromptDefaultValue": "You are a helpful AI assistant that helps users manage and understand their tasks.",
+      "saveButton": "Save",
+      "cancelButton": "Cancel"
+    },
+    "toast": {
+      "aiLanguageChanged": {
+        "title": "AI Language Changed",
+        "toDutch": "AI language has been changed to Dutch",
+        "toEnglish": "AI language has been changed to English"
+      },
+      "errorSavingAiLanguage": {
+        "title": "Error Saving AI Language",
+        "description": "Could not save AI language preference."
+      },
+      "uiLanguageChanged": {
+        "title": "Interface Language Changed",
+        "description": "Interface language has been set to {language}."
+      },
+      "accountUpdated": {
+        "title": "Account Updated",
+        "description": "Your account details have been successfully saved."
+      },
+      "errorUpdatingAccount": {
+        "title": "Error Updating Account",
+        "description": "Could not save account details."
+      },
+      "notificationsSaved": {
+        "title": "Notification Preference Saved",
+        "descriptionEnabled": "Email notifications have been enabled.",
+        "descriptionDisabled": "Email notifications have been disabled."
+      },
+      "errorSavingNotifications": {
+        "title": "Error Saving Notifications",
+        "description": "Could not save notification preferences."
+      },
+      "aiModeSaved": {
+        "title": "AI Mode Saved",
+        "description": "Default AI mode set to: {modeLabel}."
+      },
+      "errorSavingAiMode": {
+        "title": "Error Saving AI Mode",
+        "description": "Could not save AI mode preference."
+      },
+      "researchModelSaved": {
+        "title": "Research Model Saved",
+        "description": "Default research model set to: {modeLabel}."
+      },
+      "errorSavingResearchModel": {
+        "title": "Error Saving Research Model",
+        "description": "Could not save research model preference."
+      }
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "userInfo": {
+      "title": "User Information",
+      "nameLabel": "Name",
+      "emailLabel": "Email",
+      "accountTypeLabel": "Account Type",
+      "upgradeButton": "Upgrade to Premium",
+      "upgradeDescription": "Get access to all premium features."
+    },
+    "role": {
+      "administrator": "Administrator",
+      "premiumUser": "Premium User",
+      "freeUser": "Free User"
+    },
+    "stats": {
+      "title": "User Statistics",
+      "totalTasks": "Total Tasks",
+      "completed": "Completed",
+      "todo": "To do",
+      "inProgress": "In Progress"
+    }
+  },
+  "adminDashboard": {
+    "title": "Admin Dashboard",
+    "tabs": {
+      "users": "Users",
+      "permissions": "Permissions"
+    },
+    "users": {
+      "title": "User Management",
+      "description": "View and manage all registered users.",
+      "searchPlaceholder": "Search...",
+      "filterRolePlaceholder": "Filter Role",
+      "roles": {
+        "all": "All Roles",
+        "admin": "Admin",
+        "paid": "Paid",
+        "free": "Free"
+      },
+      "filterStatusPlaceholder": "Filter Status",
+      "statuses": {
+        "all": "All Statuses",
+        "active": "Active",
+        "inactive": "Inactive"
+      }
+    },
+    "permissions": {
+      "title": "Manage Role Permissions",
+      "description": "Enable or disable features per user role."
+    }
+  },
+  "adminUsersPage": {
+    "errors": {
+      "edgeFunctionNotFound": "Edge Function 'get-all-users' not found. Please deploy the function first.",
+      "fetchUsersError": "Could not fetch users. Check RLS policies and network.",
+      "unknownFetchError": "An unknown error occurred while fetching users.",
+      "roleUpdateError": "Could not update role.",
+      "deactivateError": "Could not deactivate user.",
+      "activateError": "Could not activate user."
+    },
+    "toastTitles": {
+      "fetchError": "Error Fetching Users",
+      "roleChangeSuccess": "Role Changed Successfully",
+      "roleChangeError": "Error Changing Role",
+      "deactivateSuccess": "User Deactivated",
+      "deactivateError": "Error Deactivating User",
+      "activateSuccess": "User Activated",
+      "activateError": "Error Activating User"
+    },
+    "toastMessages": {
+      "roleChangeSuccess": "User {{userName}} is now a {{newRole}}.",
+      "deactivateSuccess": "User {{userName}} has been successfully deactivated.",
+      "activateSuccess": "User {{userName}} has been successfully activated."
+    },
+    "loading": "Loading users...",
+    "errorMessage": "Error: {{error}}",
+    "noUsersFound": "No users found matching the criteria.",
+    "tableHeaders": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "registeredAt": "Registered At",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "openMenu": "Open menu",
+      "changeRole": "Change Role",
+      "deactivate": "Deactivate",
+      "activate": "Activate"
+    },
+    "dialogs": {
+      "changeRole": {
+        "title": "Change role for {{userName}}",
+        "description": "Select the new role:",
+        "selectPlaceholder": "Select a role"
+      },
+      "deactivateUser": {
+        "title": "Are you sure you want to deactivate {{userName}}?",
+        "description": "This action can be undone by reactivating the user.",
+        "confirmButton": "Deactivate"
+      },
+      "activateUser": {
+        "title": "Are you sure you want to activate {{userName}}?",
+        "description": "The user will be able to log in again.",
+        "confirmButton": "Activate"
+      },
+      "cancelButton": "Cancel",
+      "saveButton": "Save"
+    }
+  },
+  "adminPermissionsPage": {
+    "features": {
+      "deepResearch": "Deep Research",
+      "exportChat": "Export Chat",
+      "adminPanel": "Admin Panel",
+      "chooseResearchModel": "Choose Research Model",
+      "chatModes": "Chat Modes"
+    },
+    "toastTitles": {
+      "saveSuccess": "Saved",
+      "saveFailed": "Save Failed",
+      "loadFailed": "Load Failed"
+    },
+    "toastMessages": {
+      "saveSuccess": "Permissions updated successfully."
+    },
+    "errors": {
+      "saveError": "Could not save permissions: {{message}}",
+      "loadError": "Could not load permissions: {{message}}"
+    },
+    "loading": "Loading permissions...",
+    "tableHeaders": {
+      "role": "Role",
+      "feature": "Feature"
+    },
+    "roles": {
+      "admin": "Admin",
+      "paid": "Paid User",
+      "free": "Free User"
+    },
+    "ariaLabels": {
+      "switchPermission": "Permission {{featureName}} for role {{roleName}}"
+    },
+    "buttons": {
+      "saveChanges": "Save Changes"
+    }
+  },
+  "navbar": {
+    "newTaskButton": {
+      "ariaLabel": "Create new task",
+      "text": "New Task"
+    },
+    "userMenu": {
+      "defaultUserName": "User",
+      "profile": "Profile",
+      "settings": "Settings",
+      "adminDashboard": "Admin Dashboard",
+      "upgradeToPremium": "Upgrade to Premium",
+      "logout": "Logout"
+    },
+    "authButtons": {
+      "login": "Login",
+      "register": "Register"
+    }
+  },
+  "appLayout": {
+    "newTaskDialog": {
+      "title": "New Task",
+      "description": "Describe what you want to do, and let AI fill in the details."
+    }
+  },
+  "footer": {
+    "rightsReserved": "All rights reserved.",
+    "builtWith": "Built with",
+    "by": "by",
+    "links": {
+      "support": "Support",
+      "documentation": "Documentation",
+      "contact": "Contact"
+    }
+  },
+  "contactPage": {
+    "title": "Contact Us",
+    "description": "Have a question, suggestion, or found a bug? Let us know!",
+    "backButton": "Back",
+    "subjectLabel": "Subject",
+    "subjectPlaceholder": "Select a subject...",
+    "subjectOptions": {
+      "suggestion": "Suggestion / Idea",
+      "bugReport": "Bug Report",
+      "generalQuestion": "General Question",
+      "other": "Other"
+    },
+    "messageLabel": "Message",
+    "messagePlaceholder": "Describe your question, suggestion, or bug as clearly as possible...",
+    "sendButton": "Send",
+    "sendingButton": "Sending...",
+    "toast": {
+      "notLoggedIn": {
+        "title": "Not logged in",
+        "description": "Please log in to send a message."
+      },
+      "subjectRequired": {
+        "title": "Subject required",
+        "description": "Please select a subject."
+      },
+      "messageRequired": {
+        "title": "Message required",
+        "description": "Please enter a message."
+      },
+      "messageSent": {
+        "title": "Message Sent",
+        "description": "Thanks for your feedback! We will look into it as soon as possible."
+      },
+      "sendFailed": {
+        "title": "Send Failed",
+        "defaultError": "Could not send the message. Please try again later."
+      }
+    }
+  },
+  "supportPage": {
+    "mainTitle": "Support",
+    "cardTitle": "Need Help?",
+    "paragraph1": "Do you have questions or are you experiencing problems with OrgaMaster AI? Contact our support team.",
+    "paragraph2a": "You can reach us via email at:",
+    "paragraph3": "We strive to answer your questions as quickly as possible."
+  },
+  "documentationPage": {
+    "mainTitle": "Documentation",
+    "cardTitle": "OrgaMaster AI Documentation",
+    "paragraph1": "Welcome to the documentation for OrgaMaster AI.",
+    "paragraph2": "Currently, we are working hard on comprehensive documentation to help you get the most out of the application.",
+    "paragraph3": "Check back soon for guides, tutorials, and API references."
+  },
+  "dashboard": {
+    "greeting": "Hello, {{name}}",
+    "defaultUser": "User",
+    "tasksOverview": "Here is an overview of your tasks",
+    "searchPlaceholder": "Search tasks...",
+    "categories": {
+      "overdue": "Overdue",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "dayAfterTomorrow": "Day After Tomorrow",
+      "nextWeek": "Next Week",
+      "later": "Later"
+    },
+    "emptyState": {
+      "noTasksAfterFilter": "No tasks found matching the filters.",
+      "noTasksAtAll": "You don't have any tasks yet.",
+      "addNewTaskButton": "Add New Task"
+    }
+  },
+  "taskCard": {
+    "invalidDate": "Invalid date",
+    "tooltip": {
+      "subtasksCompleted_singular": "{{completed}} of {{total}} subtask completed",
+      "subtasksCompleted_plural": "{{completed}} of {{total}} subtasks completed"
+    }
+  }
+} 

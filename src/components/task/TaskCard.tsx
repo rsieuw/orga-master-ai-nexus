@@ -5,13 +5,15 @@ import { GradientProgress } from "@/components/ui/GradientProgress.tsx";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip.tsx";
 import { CheckSquare, Hourglass } from "lucide-react";
 import { format, parseISO } from "date-fns";
-import { nl } from "date-fns/locale";
+import { nl, enUS } from "date-fns/locale";
+import { useTranslation } from 'react-i18next';
 
 interface TaskCardProps {
   task: Task;
 }
 
 export default function TaskCard({ task }: TaskCardProps) {
+  const { i18n, t } = useTranslation();
   const priorityClass = `priority-${task.priority}`;
   const completedSubtasks = task.subtasks.filter((st: SubTask) => st.completed).length;
   const totalSubtasks = task.subtasks.length;
@@ -29,10 +31,11 @@ export default function TaskCard({ task }: TaskCardProps) {
   let deadlineText: string | null = null;
   if (task.deadline) {
     try {
-      deadlineText = format(parseISO(task.deadline), "PPP", { locale: nl });
+      const locale = i18n.language === 'nl' ? nl : enUS;
+      deadlineText = format(parseISO(task.deadline), "PPP", { locale });
     } catch (e) {
       console.error("Invalid date format for deadline in TaskCard:", task.deadline);
-      deadlineText = "Ongeldige datum";
+      deadlineText = t('taskCard.invalidDate');
     }
   }
 
@@ -72,7 +75,7 @@ export default function TaskCard({ task }: TaskCardProps) {
                       </div>
                     </TooltipTrigger>
                     <TooltipContent className="bg-popover/90 backdrop-blur-lg">
-                      <p>{completedSubtasks} van {totalSubtasks} {totalSubtasks === 1 ? 'subtaak' : 'subtaken'} voltooid</p>
+                      <p>{t('taskCard.tooltip.subtasksCompleted', { completed: completedSubtasks, total: totalSubtasks, context: totalSubtasks === 1 ? 'singular' : 'plural' })}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

@@ -13,6 +13,7 @@ import {
   DialogPortal,
 } from "@/components/ui/dialog.tsx";
 import NewTaskDialog from "@/components/tasks/NewTaskDialog.tsx";
+import { useTranslation } from 'react-i18next';
 
 interface AppLayoutProps extends PropsWithChildren {
   requireAuth?: boolean;
@@ -24,6 +25,7 @@ export default function AppLayout({
 }: AppLayoutProps) {
   const { isAuthenticated } = useAuth();
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
+  const { t } = useTranslation();
 
   if (requireAuth && !isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -45,9 +47,9 @@ export default function AppLayout({
           )}
           <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card p-6 shadow-lg duration-200 sm:max-w-[600px] sm:rounded-lg z-50">
             <DialogHeader>
-              <DialogTitle className="text-2xl">Nieuwe taak</DialogTitle>
+              <DialogTitle className="text-2xl">{t('appLayout.newTaskDialog.title')}</DialogTitle>
               <DialogDescription>
-                Beschrijf wat je wilt doen, en laat AI de details invullen.
+                {t('appLayout.newTaskDialog.description')}
               </DialogDescription>
             </DialogHeader>
             <NewTaskDialog setOpen={setIsNewTaskOpen} /> 

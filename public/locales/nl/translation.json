@@ -1,0 +1,414 @@
+{
+  "taskFilter": {
+    "statusTitle": "Status",
+    "all": "Alles",
+    "completed": "Voltooid",
+    "incomplete": "Onvoltooid",
+    "priorityTitle": "Prioriteit",
+    "high": "Hoog",
+    "medium": "Medium",
+    "low": "Laag"
+  },
+  "settings": {
+    "title": "Instellingen",
+    "tabs": {
+      "appearance": "Uiterlijk",
+      "account": "Account",
+      "language": "Taal",
+      "notifications": "Notificaties",
+      "ai": "AI"
+    },
+    "appearance": {
+      "title": "Uiterlijk",
+      "description": "Pas het uiterlijk van de applicatie aan."
+    },
+    "theme": {
+      "label": "Thema modus",
+      "description": "Selecteer licht of donker thema.",
+      "toggleAriaLabel": "Thema wisselen"
+    },
+    "account": {
+      "title": "Account",
+      "description": "Beheer je accountgegevens.",
+      "nameLabel": "Naam",
+      "namePlaceholder": "Je naam",
+      "emailLabel": "E-mailadres",
+      "emailPlaceholder": "jouw@email.com",
+      "saveButton": "Account Opslaan"
+    },
+    "languageSettings": {
+      "title": "Taalinstellingen",
+      "description": "Kies je voorkeurstalen."
+    },
+    "uiLanguage": {
+      "label": "Interface Taal",
+      "placeholder": "Selecteer interface taal",
+      "description": "Kies de taal voor de applicatie interface."
+    },
+    "aiLanguage": {
+      "label": "AI Interactie Taal",
+      "placeholder": "Selecteer taal voor AI",
+      "description": "Kies de taal voor interactie met de AI assistent."
+    },
+    "language": {
+      "dutch": "Nederlands",
+      "english": "English"
+    },
+    "notifications": {
+      "title": "Notificatie Instellingen",
+      "description": "Beheer je notificatievoorkeuren.",
+      "emailNotificationsLabel": "E-mail Notificaties",
+      "emailNotificationsDescription": "Ontvang e-mails voor naderende deadlines."
+    },
+    "aiSettings": {
+      "title": "AI Instellingen",
+      "description": "Configureer AI-functionaliteit."
+    },
+    "aiMode": {
+      "label": "Standaard AI Modus",
+      "description": "Kies het standaard gedrag voor AI interacties.",
+      "freeUserLimitation": "('Creative' en 'Precise' alleen voor betaalde gebruikers)",
+      "placeholder": "Selecteer modus",
+      "options": {
+        "gpt4oBalanced": "GPT-4o (Gebalanceerd)",
+        "creativeMode": "Creatieve Modus",
+        "preciseMode": "Precieze Modus"
+      }
+    },
+    "researchModel": {
+      "label": "Onderzoeksmodel",
+      "description": "Kies het AI model voor de 'Deep Research' functie.",
+      "freeUserLimitation": "(Beschikbaar voor betaalde gebruikers)",
+      "placeholder": "Selecteer model",
+      "perplexitySonar": "Perplexity Sonar",
+      "gpt4oMini": "GPT-4o Mini"
+    },
+    "aiModelConfig": {
+      "button": "AI Model Configuratie",
+      "drawerTitle": "AI Model Configuratie",
+      "drawerDescription": "Pas instellingen aan voor de AI modellen.",
+      "defaultModelLabel": "AI Model (Standaard)",
+      "defaultModelPlaceholder": "Selecteer model",
+      "defaultModelDescription": "Selecteer het standaard AI model voor algemeen gebruik. Betaalde gebruikers kunnen geavanceerdere opties kiezen via Developer Mode.",
+      "systemPromptLabel": "System Prompt",
+      "systemPromptPlaceholder": "Je bent een AI assistent die helpt met taken...",
+      "systemPromptDefaultValue": "Je bent een behulpzame AI assistent die gebruikers helpt bij het beheren en begrijpen van hun taken.",
+      "saveButton": "Opslaan",
+      "cancelButton": "Annuleren"
+    },
+    "toast": {
+      "aiLanguageChanged": {
+        "title": "AI Taal Gewijzigd",
+        "toDutch": "AI taal is gewijzigd naar Nederlands",
+        "toEnglish": "AI language has been changed to English"
+      },
+      "errorSavingAiLanguage": {
+        "title": "Fout bij Opslaan AI Taal",
+        "description": "Kon AI taalvoorkeur niet opslaan."
+      },
+      "uiLanguageChanged": {
+        "title": "Interface Taal Gewijzigd",
+        "description": "Interface taal is ingesteld op {language}."
+      },
+      "accountUpdated": {
+        "title": "Account Bijgewerkt",
+        "description": "Je accountgegevens zijn succesvol opgeslagen."
+      },
+      "errorUpdatingAccount": {
+        "title": "Fout bij Bijwerken Account",
+        "description": "Kon accountgegevens niet opslaan."
+      },
+      "notificationsSaved": {
+        "title": "Notificatievoorkeur Opgeslagen",
+        "descriptionEnabled": "E-mailnotificaties zijn ingeschakeld.",
+        "descriptionDisabled": "E-mailnotificaties zijn uitgeschakeld."
+      },
+      "errorSavingNotifications": {
+        "title": "Fout bij Opslaan Notificaties",
+        "description": "Kon notificatievoorkeuren niet opslaan."
+      },
+      "aiModeSaved": {
+        "title": "AI Modus Opgeslagen",
+        "description": "Standaard AI modus ingesteld op: {modeLabel}."
+      },
+      "errorSavingAiMode": {
+        "title": "Fout bij Opslaan AI Modus",
+        "description": "Kon voorkeur voor AI modus niet opslaan."
+      },
+      "researchModelSaved": {
+        "title": "Onderzoeksmodel Opgeslagen",
+        "description": "Standaard onderzoeksmodel ingesteld op: {modeLabel}."
+      },
+      "errorSavingResearchModel": {
+        "title": "Fout bij Opslaan Onderzoeksmodel",
+        "description": "Kon voorkeur voor onderzoeksmodel niet opslaan."
+      }
+    }
+  },
+  "profile": {
+    "title": "Profiel",
+    "userInfo": {
+      "title": "Gebruiker Informatie",
+      "nameLabel": "Naam",
+      "emailLabel": "E-mail",
+      "accountTypeLabel": "Account Type",
+      "upgradeButton": "Upgrade naar Premium",
+      "upgradeDescription": "Krijg toegang tot alle premium functies."
+    },
+    "role": {
+      "administrator": "Administrator",
+      "premiumUser": "Premium Gebruiker",
+      "freeUser": "Gratis Gebruiker"
+    },
+    "stats": {
+      "title": "Gebruikers Statistieken",
+      "totalTasks": "Totaal Taken",
+      "completed": "Voltooid",
+      "todo": "Te doen",
+      "inProgress": "In Behandeling"
+    }
+  },
+  "adminDashboard": {
+    "title": "Admin Dashboard",
+    "tabs": {
+      "users": "Gebruikers",
+      "permissions": "Permissies"
+    },
+    "users": {
+      "title": "Gebruikersbeheer",
+      "description": "Bekijk en beheer alle geregistreerde gebruikers.",
+      "searchPlaceholder": "Zoek...",
+      "filterRolePlaceholder": "Filter Rol",
+      "roles": {
+        "all": "Alle Rollen",
+        "admin": "Admin",
+        "paid": "Betaald",
+        "free": "Gratis"
+      },
+      "filterStatusPlaceholder": "Filter Status",
+      "statuses": {
+        "all": "Alle Statussen",
+        "active": "Actief",
+        "inactive": "Inactief"
+      }
+    },
+    "permissions": {
+      "title": "Rol Permissies Beheren",
+      "description": "Schakel features in of uit per gebruikersrol."
+    }
+  },
+  "adminUsersPage": {
+    "errors": {
+      "edgeFunctionNotFound": "Edge Functie 'get-all-users' niet gevonden. Deploy de functie eerst.",
+      "fetchUsersError": "Kon gebruikers niet ophalen. Controleer RLS policies en netwerk.",
+      "unknownFetchError": "Er is een onbekende fout opgetreden bij het ophalen van gebruikers.",
+      "roleUpdateError": "Kon rol niet bijwerken.",
+      "deactivateError": "Kon gebruiker niet deactiveren.",
+      "activateError": "Kon gebruiker niet activeren."
+    },
+    "toastTitles": {
+      "fetchError": "Fout bij ophalen gebruikers",
+      "roleChangeSuccess": "Rol succesvol gewijzigd",
+      "roleChangeError": "Fout bij rol wijzigen",
+      "deactivateSuccess": "Gebruiker gedeactiveerd",
+      "deactivateError": "Fout bij deactiveren",
+      "activateSuccess": "Gebruiker geactiveerd",
+      "activateError": "Fout bij activeren"
+    },
+    "toastMessages": {
+      "roleChangeSuccess": "Gebruiker {{userName}} is nu een {{newRole}}.",
+      "deactivateSuccess": "Gebruiker {{userName}} is succesvol gedeactiveerd.",
+      "activateSuccess": "Gebruiker {{userName}} is succesvol geactiveerd."
+    },
+    "loading": "Gebruikers laden...",
+    "errorMessage": "Fout: {{error}}",
+    "noUsersFound": "Geen gebruikers gevonden die aan de criteria voldoen.",
+    "tableHeaders": {
+      "name": "Naam",
+      "email": "E-mail",
+      "role": "Rol",
+      "status": "Status",
+      "registeredAt": "Geregistreerd op",
+      "actions": "Acties"
+    },
+    "status": {
+      "active": "Actief",
+      "inactive": "Inactief"
+    },
+    "actions": {
+      "openMenu": "Open menu",
+      "changeRole": "Rol wijzigen",
+      "deactivate": "Deactiveren",
+      "activate": "Activeren"
+    },
+    "dialogs": {
+      "changeRole": {
+        "title": "Wijzig rol voor {{userName}}",
+        "description": "Selecteer de nieuwe rol:",
+        "selectPlaceholder": "Selecteer een rol"
+      },
+      "deactivateUser": {
+        "title": "Weet je zeker dat je {{userName}} wilt deactiveren?",
+        "description": "Deze actie kan ongedaan gemaakt worden door de gebruiker opnieuw te activeren.",
+        "confirmButton": "Deactiveren"
+      },
+      "activateUser": {
+        "title": "Weet je zeker dat je {{userName}} wilt activeren?",
+        "description": "De gebruiker zal opnieuw kunnen inloggen.",
+        "confirmButton": "Activeren"
+      },
+      "cancelButton": "Annuleren",
+      "saveButton": "Opslaan"
+    }
+  },
+  "adminPermissionsPage": {
+    "features": {
+      "deepResearch": "Diep Onderzoek",
+      "exportChat": "Chat Exporteren",
+      "adminPanel": "Admin Paneel",
+      "chooseResearchModel": "Onderzoeksmodel Kiezen",
+      "chatModes": "Chat Modi"
+    },
+    "toastTitles": {
+      "saveSuccess": "Opgeslagen",
+      "saveFailed": "Opslaan Mislukt",
+      "loadFailed": "Laden Mislukt"
+    },
+    "toastMessages": {
+      "saveSuccess": "Permissies succesvol bijgewerkt."
+    },
+    "errors": {
+      "saveError": "Kon permissies niet opslaan: {{message}}",
+      "loadError": "Kon permissies niet laden: {{message}}"
+    },
+    "loading": "Permissies laden...",
+    "tableHeaders": {
+      "role": "Rol",
+      "feature": "Feature"
+    },
+    "roles": {
+      "admin": "Admin",
+      "paid": "Betaalde Gebruiker",
+      "free": "Gratis Gebruiker"
+    },
+    "ariaLabels": {
+      "switchPermission": "Permissie {{featureName}} voor rol {{roleName}}"
+    },
+    "buttons": {
+      "saveChanges": "Wijzigingen Opslaan"
+    }
+  },
+  "navbar": {
+    "newTaskButton": {
+      "ariaLabel": "Nieuwe taak aanmaken",
+      "text": "Nieuwe Taak"
+    },
+    "userMenu": {
+      "defaultUserName": "Gebruiker",
+      "profile": "Profiel",
+      "settings": "Instellingen",
+      "adminDashboard": "Admin Dashboard",
+      "upgradeToPremium": "Upgrade naar Premium",
+      "logout": "Uitloggen"
+    },
+    "authButtons": {
+      "login": "Login",
+      "register": "Registreren"
+    }
+  },
+  "appLayout": {
+    "newTaskDialog": {
+      "title": "Nieuwe taak",
+      "description": "Beschrijf wat je wilt doen, en laat AI de details invullen."
+    }
+  },
+  "footer": {
+    "rightsReserved": "Alle rechten voorbehouden.",
+    "builtWith": "Gebouwd met",
+    "by": "door",
+    "links": {
+      "support": "Support",
+      "documentation": "Documentatie",
+      "contact": "Contact"
+    }
+  },
+  "contactPage": {
+    "title": "Contacteer Ons",
+    "description": "Heb je een vraag, suggestie, of heb je een bug gevonden? Laat het ons weten!",
+    "backButton": "Terug",
+    "subjectLabel": "Onderwerp",
+    "subjectPlaceholder": "Selecteer een onderwerp...",
+    "subjectOptions": {
+      "suggestion": "Suggestie / Idee",
+      "bugReport": "Bug Report",
+      "generalQuestion": "Algemene Vraag",
+      "other": "Anders"
+    },
+    "messageLabel": "Bericht",
+    "messagePlaceholder": "Beschrijf je vraag, suggestie of bug zo duidelijk mogelijk...",
+    "sendButton": "Verzenden",
+    "sendingButton": "Bezig met verzenden...",
+    "toast": {
+      "notLoggedIn": {
+        "title": "Niet ingelogd",
+        "description": "Log in om een bericht te sturen."
+      },
+      "subjectRequired": {
+        "title": "Onderwerp vereist",
+        "description": "Selecteer een onderwerp."
+      },
+      "messageRequired": {
+        "title": "Bericht vereist",
+        "description": "Voer een bericht in."
+      },
+      "messageSent": {
+        "title": "Bericht verzonden",
+        "description": "Bedankt voor je feedback! We nemen het zo snel mogelijk in behandeling."
+      },
+      "sendFailed": {
+        "title": "Verzenden mislukt",
+        "defaultError": "Kon het bericht niet verzenden. Probeer het later opnieuw."
+      }
+    }
+  },
+  "supportPage": {
+    "mainTitle": "Support",
+    "cardTitle": "Hulp Nodig?",
+    "paragraph1": "Heeft u vragen of ondervindt u problemen met OrgaMaster AI? Neem contact op met ons support team.",
+    "paragraph2a": "U kunt ons bereiken via e-mail op:",
+    "paragraph3": "We streven ernaar om uw vragen zo snel mogelijk te beantwoorden."
+  },
+  "documentationPage": {
+    "mainTitle": "Documentatie",
+    "cardTitle": "OrgaMaster AI Documentatie",
+    "paragraph1": "Welkom bij de documentatie voor OrgaMaster AI.",
+    "paragraph2": "Momenteel wordt er hard gewerkt aan uitgebreide documentatie om u te helpen het maximale uit de applicatie te halen.",
+    "paragraph3": "Kom binnenkort terug voor handleidingen, tutorials en API-referenties."
+  },
+  "dashboard": {
+    "greeting": "Hallo, {{name}}",
+    "defaultUser": "Gebruiker",
+    "tasksOverview": "Hier is een overzicht van je taken",
+    "searchPlaceholder": "Zoek taken...",
+    "categories": {
+      "overdue": "Verlopen",
+      "today": "Vandaag",
+      "tomorrow": "Morgen",
+      "dayAfterTomorrow": "Overmorgen",
+      "nextWeek": "Volgende week",
+      "later": "Binnenkort"
+    },
+    "emptyState": {
+      "noTasksAfterFilter": "Geen taken gevonden die voldoen aan de filters.",
+      "noTasksAtAll": "Je hebt nog geen taken.",
+      "addNewTaskButton": "Nieuwe Taak Toevoegen"
+    }
+  },
+  "taskCard": {
+    "invalidDate": "Ongeldige datum",
+    "tooltip": {
+      "subtasksCompleted_singular": "{{completed}} van {{total}} subtaak voltooid",
+      "subtasksCompleted_plural": "{{completed}} van {{total}} subtaken voltooid"
+    }
+  }
+} 

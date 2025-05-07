@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast.ts";
 import { UserRole } from '@/contexts/AuthContext.tsx'; // Import UserRole if needed
 import { GradientLoader } from '@/components/ui/loader.tsx'; // Import loader
+import { useTranslation } from 'react-i18next'; // Import useTranslation
 
 // Define the structure of the data we fetch and manage
 interface RolePermission {
@@ -18,24 +19,19 @@ interface RolePermission {
 // Ideally, this comes from a single source of truth later
 const ALL_FEATURES: Feature[] = ['deepResearch', 'exportChat', 'adminPanel', 'choose_research_model', 'chatModes'];
 
-// --- NIEUW: Mapping voor weergavenamen ---
+// --- NEW: Mapping for display names ---
 const FEATURE_DISPLAY_NAMES: Record<Feature, string> = {
-  deepResearch: "Diep Onderzoek",
-  exportChat: "Chat Exporteren",
-  adminPanel: "Admin Paneel",
-  choose_research_model: "Onderzoeksmodel Kiezen",
-  chatModes: "Chat Modi" // Creative/Precise is impliciet
+  deepResearch: "adminPermissionsPage.features.deepResearch", // Placeholder for i18n key
+  exportChat: "adminPermissionsPage.features.exportChat", // Placeholder for i18n key
+  adminPanel: "adminPermissionsPage.features.adminPanel", // Placeholder for i18n key
+  choose_research_model: "adminPermissionsPage.features.chooseResearchModel", // Placeholder for i18n key
+  chatModes: "adminPermissionsPage.features.chatModes" // Creative/Precise is implicit // Placeholder for i18n key
 };
-// --- EINDE NIEUW ---
+// --- END NEW ---
 
-// --- NIEUW: Sorteer features op weergavenaam voor logische kolomvolgorde ---
-const sortedFeatures = ALL_FEATURES.sort((a, b) => 
-  (FEATURE_DISPLAY_NAMES[a] || a).localeCompare(FEATURE_DISPLAY_NAMES[b] || b)
-);
-// --- EINDE NIEUW ---
-
-// De component die de tabel en logica bevat
+// The component containing the table and logic
 export const PermissionsManagementTable: React.FC = () => {
+  const { t } = useTranslation(); // Initialize t function
   const { toast } = useToast();
   const [permissions, setPermissions] = useState<RolePermission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +40,7 @@ export const PermissionsManagementTable: React.FC = () => {
   // Fetch current permissions on load
   useEffect(() => {
     const fetchPermissions = async () => {
-      // Geen admin check hier, dat gebeurt in de parent (AdminDashboardPage)
+      // No admin check here, this is handled in the parent (AdminDashboardPage)
       setIsLoading(true);
       setError(null);
       try {
@@ -62,16 +58,16 @@ export const PermissionsManagementTable: React.FC = () => {
       } catch (err: unknown) {
         console.error("Error fetching permissions:", err);
         const message = err instanceof Error ? err.message : String(err);
-        setError("Kon permissies niet laden: " + message);
-        toast({ variant: "destructive", title: "Laden Mislukt", description: message });
+        setError(t("adminPermissionsPage.errors.loadError", { message })); // Use t()
+        toast({ variant: "destructive", title: t("adminPermissionsPage.toastTitles.loadFailed"), description: message }); // Use t()
       } finally {
         setIsLoading(false);
       }
     };
     fetchPermissions();
-  }, [toast]); // Dependency alleen op toast nu
+  }, [toast, t]); // Dependency on toast and t now
 
-  // Handle switch change (type toegevoegd aan checked)
+  // Handle switch change (type added to checked)
   const handlePermissionChange = (role: UserRole, feature: Feature, checked: boolean) => {
     setPermissions(currentPermissions =>
       currentPermissions.map(p => {
@@ -88,7 +84,7 @@ export const PermissionsManagementTable: React.FC = () => {
 
   // Save changes to the database
   const handleSaveChanges = async () => {
-     // Geen admin check hier nodig, parent component regelt toegang
+     // No admin check needed here, parent component handles access
      setIsLoading(true); 
      try {
         for (const perm of permissions) {
@@ -98,12 +94,12 @@ export const PermissionsManagementTable: React.FC = () => {
                 .eq('role', perm.role);
             if (updateError) throw updateError;
         }
-        toast({ title: "Opgeslagen", description: "Permissies succesvol bijgewerkt." });
+        toast({ title: t("adminPermissionsPage.toastTitles.saveSuccess"), description: t("adminPermissionsPage.toastMessages.saveSuccess") });
      } catch (err: unknown) {
         console.error("Error saving permissions:", err);
         const message = err instanceof Error ? err.message : String(err);
-        setError("Kon permissies niet opslaan: " + message); // Zet error state
-        toast({ variant: "destructive", title: "Opslaan Mislukt", description: message });
+        setError(t("adminPermissionsPage.errors.saveError", { message })); // Set error state (already using t())
+        toast({ variant: "destructive", title: t("adminPermissionsPage.toastTitles.saveFailed"), description: message });
      } finally {
         setIsLoading(false);
      }
@@ -115,26 +111,31 @@ export const PermissionsManagementTable: React.FC = () => {
     return (order[a.role] || 99) - (order[b.role] || 99);
   });
 
-  // Render de tabel en knop, zonder AppLayout en H1
+  // Render the table and button, without AppLayout and H1
   if (isLoading) {
-    return <div className="flex justify-center items-center py-10"><GradientLoader /></div>;
+    return <div className="flex justify-center items-center py-10"><GradientLoader /> <span className='ml-2'>{t("adminPermissionsPage.loading")}</span></div>;
   }
 
   if (error) {
-    // Toon error binnen de tab content
+    // Show error within the tab content
     return <p className="text-destructive">{error}</p>; 
   }
 
+  // Sort features based on translated display names
+  const translatedSortedFeatures = [...ALL_FEATURES].sort((a, b) => 
+    (t(FEATURE_DISPLAY_NAMES[a]) || a).localeCompare(t(FEATURE_DISPLAY_NAMES[b]) || b)
+  );
+
   return (
-    <div> {/* Veranderd van p-6 naar een simpele div */}
+    <div> {/* Changed from p-6 to a simple div */}
       {/* Desktop Table (hidden on small screens (xs), visible md and up) */}
       <Table className="hidden md:table w-full">
         <TableHeader>
           <TableRow>
-            <TableHead>Rol</TableHead>
-            {sortedFeatures.map(feature => (
+            <TableHead>{t("adminPermissionsPage.tableHeaders.role")}</TableHead>
+            {translatedSortedFeatures.map(feature => (
               <TableHead key={feature} className="text-center">
-                {FEATURE_DISPLAY_NAMES[feature] || feature} 
+                {t(FEATURE_DISPLAY_NAMES[feature]) || feature} 
               </TableHead>
             ))}
           </TableRow>
@@ -142,14 +143,14 @@ export const PermissionsManagementTable: React.FC = () => {
         <TableBody>
           {sortedRoles.map(({ role, enabled_features }) => (
             <TableRow key={role}>
-              <TableCell className="font-medium capitalize">{role}</TableCell>
-              {sortedFeatures.map(feature => (
+              <TableCell className="font-medium capitalize">{t(`adminPermissionsPage.roles.${role}`)}</TableCell>
+              {translatedSortedFeatures.map(feature => (
                 <TableCell key={`${role}-${feature}-desktop-cell`} className="text-center">
                   <Switch
                     checked={enabled_features.includes(feature)}
                     onCheckedChange={(checked: boolean) => handlePermissionChange(role, feature, checked)}
                     id={`${role}-${feature}-desktop`}
-                    aria-label={`Permissie ${FEATURE_DISPLAY_NAMES[feature] || feature} voor rol ${role}`}
+                    aria-label={t("adminPermissionsPage.ariaLabels.switchPermission", { featureName: t(FEATURE_DISPLAY_NAMES[feature]) || feature, roleName: t(`adminPermissionsPage.roles.${role}`) })}
                   />
                 </TableCell>
               ))}
@@ -162,17 +163,17 @@ export const PermissionsManagementTable: React.FC = () => {
       <Table className="table md:hidden w-full">
         <TableHeader>
           <TableRow>
-            <TableHead className="pr-2">Feature</TableHead>
+            <TableHead className="pr-2">{t("adminPermissionsPage.tableHeaders.feature")}</TableHead>
             {sortedRoles.map(({ role }) => (
-              <TableHead key={`${role}-mobile-header`} className="text-center capitalize">{role}</TableHead>
+              <TableHead key={`${role}-mobile-header`} className="text-center capitalize">{t(`adminPermissionsPage.roles.${role}`)}</TableHead>
             ))}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedFeatures.map(feature => (
+          {translatedSortedFeatures.map(feature => (
             <TableRow key={`${feature}-mobile-row`}>
               <TableCell className="font-medium whitespace-nowrap pr-2">
-                {FEATURE_DISPLAY_NAMES[feature] || feature}
+                {t(FEATURE_DISPLAY_NAMES[feature]) || feature}
               </TableCell>
               {sortedRoles.map(({ role }) => {
                 const permissionForRole = permissions.find(p => p.role === role);
@@ -183,7 +184,7 @@ export const PermissionsManagementTable: React.FC = () => {
                       checked={isChecked}
                       onCheckedChange={(checked: boolean) => handlePermissionChange(role, feature, checked)}
                       id={`${role}-${feature}-mobile`}
-                      aria-label={`Permissie ${FEATURE_DISPLAY_NAMES[feature] || feature} voor rol ${role}`}
+                      aria-label={t("adminPermissionsPage.ariaLabels.switchPermission", { featureName: t(FEATURE_DISPLAY_NAMES[feature]) || feature, roleName: t(`adminPermissionsPage.roles.${role}`) })}
                     />
                   </TableCell>
                 );
@@ -193,21 +194,22 @@ export const PermissionsManagementTable: React.FC = () => {
         </TableBody>
       </Table>
 
-      {/* Wrapper div om knop te centreren */}
+      {/* Wrapper div to center the button */}
       <div className="flex justify-center mt-6">
         <Button 
+          variant="outline"
           onClick={handleSaveChanges} 
           disabled={isLoading} 
-          className="w-full md:w-auto bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
+          className="w-full"
         >
-          Wijzigingen Opslaan
+          {t("adminPermissionsPage.buttons.saveChanges")}
         </Button>
       </div>
     </div>
   );
 };
 
-// De pagina component exporteert nu alleen de tabel component
+// The page component now only exports the table component
 const AdminPermissionsPage: React.FC = () => {
   return <PermissionsManagementTable />;
 };

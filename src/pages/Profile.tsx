@@ -8,8 +8,10 @@ import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Task } from "@/types/task.ts";
 import { Button } from "@/components/ui/button.tsx";
 import { Link } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 
 export default function Profile() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { tasks, isLoading: isLoadingTasks } = useTask();
 
@@ -33,35 +35,35 @@ export default function Profile() {
     user.role === "paid" ? "outline" : "secondary";
 
   const roleName = {
-    admin: "Administrator",
-    paid: "Premium Gebruiker",
-    free: "Gratis Gebruiker"
+    admin: 'profile.role.administrator',
+    paid: 'profile.role.premiumUser',
+    free: 'profile.role.freeUser'
   };
 
   return (
     <AppLayout>
-      <h1 className="text-2xl font-bold mb-6">Profiel</h1>
+      <h1 className="text-2xl font-bold mb-6">{t('profile.title')}</h1>
 
       <div className="max-w-3xl mx-auto space-y-6">
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Gebruiker Informatie</CardTitle>
+            <CardTitle>{t('profile.userInfo.title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-col space-y-1">
-              <span className="text-sm text-muted-foreground">Naam</span>
+              <span className="text-sm text-muted-foreground">{t('profile.userInfo.nameLabel')}</span>
               <span className="font-medium">{user.name}</span>
             </div>
             
             <div className="flex flex-col space-y-1">
-              <span className="text-sm text-muted-foreground">E-mail</span>
+              <span className="text-sm text-muted-foreground">{t('profile.userInfo.emailLabel')}</span>
               <span className="font-medium">{user.email}</span>
             </div>
             
             <div className="flex flex-col space-y-1">
-              <span className="text-sm text-muted-foreground">Account Type</span>
+              <span className="text-sm text-muted-foreground">{t('profile.userInfo.accountTypeLabel')}</span>
               <Badge variant={roleBadgeVariant} className="w-fit">
-                {roleName[user.role]}
+                {t(roleName[user.role])}
               </Badge>
             </div>
             
@@ -71,11 +73,11 @@ export default function Profile() {
                    <Button 
                      className="w-full bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
                    >
-                     Upgrade naar Premium
+                     {t('profile.userInfo.upgradeButton')}
                    </Button>
                  </Link>
                  <p className="text-xs text-muted-foreground mt-2 text-center">
-                   Krijg toegang tot alle premium functies.
+                   {t('profile.userInfo.upgradeDescription')}
                  </p>
               </div>
             )}
@@ -84,7 +86,7 @@ export default function Profile() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Gebruikers Statistieken</CardTitle>
+            <CardTitle>{t('profile.stats.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoadingTasks ? (
@@ -97,19 +99,19 @@ export default function Profile() {
             ) : (
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-accent/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Totaal Taken</p>
+                  <p className="text-sm text-muted-foreground">{t('profile.stats.totalTasks')}</p>
                   <p className="text-2xl font-bold">{statistics.total}</p>
                 </div>
                 <div className="p-4 bg-accent/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Voltooid</p>
+                  <p className="text-sm text-muted-foreground">{t('profile.stats.completed')}</p>
                   <p className="text-2xl font-bold">{statistics.completed}</p>
                 </div>
                 <div className="p-4 bg-accent/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Te doen</p>
+                  <p className="text-sm text-muted-foreground">{t('profile.stats.todo')}</p>
                   <p className="text-2xl font-bold">{statistics.todo}</p>
                 </div>
                 <div className="p-4 bg-accent/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">In Behandeling</p>
+                  <p className="text-sm text-muted-foreground">{t('profile.stats.inProgress')}</p>
                   <p className="text-2xl font-bold">{statistics.inProgress}</p>
                 </div>
               </div>

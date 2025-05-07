@@ -1,4 +1,3 @@
-// import React from 'react'; // Verwijderd, niet meer nodig na vervangen Fragment
 import React, { useState, useEffect, useMemo } from 'react'; // Add React import for React.isValidElement and useState, useEffect, useMemo
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { useAuth } from "@/contexts/AuthContext.tsx";
@@ -7,7 +6,6 @@ import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Task, TasksByDate, TaskPriority } from "@/types/task.ts";
 import { Button } from "@/components/ui/button.tsx";
-// import { Link } from "react-router-dom"; // Removed unused import
 import { Plus } from 'lucide-react'; // Import Plus icon
 import SearchInput from '@/components/ui/SearchInput.tsx'; // Import SearchInput
 import TaskFilter, { TaskFilterStatus, TaskFilterPriority } from '@/components/ui/TaskFilter.tsx'; // Import TaskFilter and types
@@ -22,7 +20,7 @@ import {
 } from "@/components/ui/dialog.tsx";
 import NewTaskDialog from "@/components/tasks/NewTaskDialog.tsx";
 import { TypeAnimation } from 'react-type-animation'; // Import the component
-// import { useSearchParams } from 'react-router-dom'; // Niet meer nodig
+import { useTranslation } from 'react-i18next';
 
 const LOCAL_STORAGE_KEYS = {
   SEARCH_TERM: 'dashboardSearchTerm',
@@ -30,19 +28,19 @@ const LOCAL_STORAGE_KEYS = {
   FILTER_PRIORITY: 'dashboardFilterPriority',
 };
 
-const getCategoryTitle = (category: keyof TasksByDate): string => {
-  switch (category) {
-    case 'overdue': return 'Verlopen';
-    case 'today': return 'Vandaag';
-    case 'tomorrow': return 'Morgen';
-    case 'dayAfterTomorrow': return 'Overmorgen';
-    case 'nextWeek': return 'Volgende week';
-    case 'later': return 'Binnenkort';
-    default: return '';
-  }
-};
+// const getCategoryTitle = (category: keyof TasksByDate): string => {
+//   switch (category) {
+//     case 'overdue': return 'Verlopen';
+//     case 'today': return 'Vandaag';
+//     case 'tomorrow': return 'Morgen';
+//     case 'dayAfterTomorrow': return 'Overmorgen';
+//     case 'nextWeek': return 'Volgende week';
+//     case 'later': return 'Binnenkort';
+//     default: return '';
+//   }
+// };
 
-// Prioriteitsmapping voor sorteren
+// Priority mapping for sorting
 const priorityOrder: Record<TaskPriority, number> = {
   high: 3,
   medium: 2,
@@ -50,7 +48,7 @@ const priorityOrder: Record<TaskPriority, number> = {
   none: 0,
 };
 
-// Sorteerfunctie voor taken op prioriteit (aflopend)
+// Sort function for tasks by priority (descending)
 const sortTasksByPriority = (a: Task, b: Task): number => {
   return priorityOrder[b.priority] - priorityOrder[a.priority];
 };
@@ -58,6 +56,19 @@ const sortTasksByPriority = (a: Task, b: Task): number => {
 export default function Dashboard() {
   const { isLoading, groupTasksByDate } = useTask();
   const { user } = useAuth();
+  const { t } = useTranslation();
+
+  const getCategoryTitle = (category: keyof TasksByDate): string => {
+    switch (category) {
+      case 'overdue': return t('dashboard.categories.overdue');
+      case 'today': return t('dashboard.categories.today');
+      case 'tomorrow': return t('dashboard.categories.tomorrow');
+      case 'dayAfterTomorrow': return t('dashboard.categories.dayAfterTomorrow');
+      case 'nextWeek': return t('dashboard.categories.nextWeek');
+      case 'later': return t('dashboard.categories.later');
+      default: return '';
+    }
+  };
 
   // Initialize state from Local Storage or defaults
   const [searchTerm, setSearchTerm] = useState<string>(() => {
@@ -84,18 +95,18 @@ export default function Dashboard() {
     localStorage.setItem(LOCAL_STORAGE_KEYS.FILTER_PRIORITY, filterPriority);
   }, [filterPriority]);
 
-  // EFFECT AANGEPAST: Handmatig body scroll blokkeren wanneer NewTaskDialog open is
+  // EFFECT MODIFIED: Manually block body scroll when NewTaskDialog is open
   useEffect(() => {
     if (isNewTaskOpen) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'auto'; // Terug naar auto
+      document.body.style.overflow = 'auto'; // Back to auto
     }
 
-    // Cleanup-functie om de overflow te herstellen wanneer de component unmount
-    // of voordat de effect opnieuw runt als isNewTaskOpen verandert.
+    // Cleanup function to restore overflow when the component unmounts
+    // or before the effect runs again if isNewTaskOpen changes.
     return () => {
-      document.body.style.overflow = 'auto'; // Terug naar auto
+      document.body.style.overflow = 'auto'; // Back to auto
     };
   }, [isNewTaskOpen]);
 
@@ -143,59 +154,59 @@ export default function Dashboard() {
     setFilterPriority(priority);
   };
 
-  // --- Creëer een platte lijst van gefilterde en gesorteerde taken voor kolomverdeling --- 
+  // --- Create a flat list of filtered and sorted tasks for column distribution --- 
   const tasksForColumnDistribution: { task: Task; category: keyof TasksByDate }[] = [];
   (Object.keys(filteredAndSortedTaskGroups) as Array<keyof TasksByDate>).forEach(category => {
     filteredAndSortedTaskGroups[category].forEach(task => {
       tasksForColumnDistribution.push({ task, category });
     });
   });
-  // --- Einde platte lijst creatie ---
+  // --- End flat list creation ---
 
-  // --- Herstel logica voor evenwichtige kolomverdeling ---
+  // --- Restore logic for balanced column distribution ---
   const numColumns = 3; 
   const columns: React.ReactNode[][] = Array.from({ length: numColumns }, () => []);
   let lastCategory: keyof TasksByDate | null = null;
-  // Gebruik tasksForColumnDistribution voor het berekenen van totalTasks en verdeling
+  // Use tasksForColumnDistribution to calculate totalTasks and distribution
   const totalTasks = tasksForColumnDistribution.length; 
 
-  // Bereken basis aantal taken per kolom en de rest
+  // Calculate base number of tasks per column and the remainder
   const baseTasks = Math.floor(totalTasks / numColumns);
   const remainder = totalTasks % numColumns;
 
-  // Bepaal kolomgroottes voor evenwichtige verdeling
+  // Determine column sizes for balanced distribution
   const col0Size = baseTasks;
   let col1Size = baseTasks;
   let col2Size = baseTasks;
 
-  // Verdeel de rest (bijv. bij 10 taken -> 3, 4, 3; bij 11 taken -> 3, 4, 4)
+  // Distribute the remainder (e.g., for 10 tasks -> 3, 4, 3; for 11 tasks -> 3, 4, 4)
   if (remainder === 1) {
-    col1Size += 1; // Geef extra taak aan de middelste kolom
+    col1Size += 1; // Assign extra task to the middle column
   } else if (remainder === 2) {
-    col1Size += 1; // Geef extra taak aan middelste kolom
-    col2Size += 1; // Geef extra taak aan laatste kolom
+    col1Size += 1; // Assign extra task to middle column
+    col2Size += 1; // Assign extra task to last column
   }
 
-  // Definieer de breekpunten voor kolomverdeling
+  // Define breakpoints for column distribution
   const columnBreak1 = col0Size;
   const columnBreak2 = col0Size + col1Size;
 
-  // Gebruik tasksForColumnDistribution om kolommen te vullen
+  // Use tasksForColumnDistribution to fill columns
   tasksForColumnDistribution.forEach(({ task, category }, taskIndex) => { 
     const showTitle = category !== lastCategory;
     
-    // Bepaal doelkolom op basis van index en breekpunten
+    // Determine target column based on index and breakpoints
     let targetColumnIndex;
     if (taskIndex < columnBreak1) {
-        targetColumnIndex = 0; // Eerste kolom
+        targetColumnIndex = 0; // First column
     } else if (taskIndex < columnBreak2) {
-        targetColumnIndex = 1; // Tweede kolom
+        targetColumnIndex = 1; // Second column
     } else {
-        targetColumnIndex = 2; // Derde kolom
+        targetColumnIndex = 2; // Third column
     }
 
     if (showTitle) {
-      const count = filteredAndSortedTaskGroups[category].length; // Haal het aantal taken voor deze categorie op
+      const count = filteredAndSortedTaskGroups[category].length; // Get the number of tasks for this category
       columns[targetColumnIndex].push(
         <h2 key={`title-${String(category)}-${targetColumnIndex}`} className="text-lg font-semibold mb-3 pt-3 md:pt-0">
           {getCategoryTitle(category)}{' '}
@@ -206,33 +217,33 @@ export default function Dashboard() {
     lastCategory = category;
 
     columns[targetColumnIndex].push(
-      // Kleine margin op mobiel, herstel op md:
+      // Small margin on mobile, restore on md:
       <div key={task.id} className="mb-2 md:mb-6"> 
         <TaskCard task={task} />
       </div>
     );
   });
-  // --- Einde logica voor evenwichtige verdeling ---
+  // --- End logic for balanced distribution ---
 
   // Construct the greeting text dynamically
-  const greetingText = `Hallo, ${user?.name || "Gebruiker"}`;
+  const greetingText = t('dashboard.greeting', { name: user?.name || t('dashboard.defaultUser') });
 
-  // --- Bepaal bericht voor lege staat ---
+  // --- Determine message for empty state ---
   let emptyStateMessage: React.ReactNode = null;
-  // Controleer of er *na filtering* nog taken zijn in *enige* categorie
+  // Check if there are *any* tasks *after filtering* in *any* category
   const hasAnyFilteredTasks = (Object.values(filteredAndSortedTaskGroups) as Task[][]).some(group => group.length > 0);
 
   if (!hasAnyFilteredTasks && (searchTerm !== '' || filterStatus !== 'all' || filterPriority !== 'all')) {
-    emptyStateMessage = <p className="text-muted-foreground mb-4">Geen taken gevonden die voldoen aan de filters.</p>;
-  } else if (!hasAnyFilteredTasks) { // Als er überhaupt geen taken zijn (ook niet voor filtering)
+    emptyStateMessage = <p className="text-muted-foreground mb-4">{t('dashboard.emptyState.noTasksAfterFilter')}</p>;
+  } else if (!hasAnyFilteredTasks) { // If there are no tasks at all (even before filtering)
     emptyStateMessage = (
       <>
-        <p className="text-muted-foreground mb-4">Je hebt nog geen taken.</p>
+        <p className="text-muted-foreground mb-4">{t('dashboard.emptyState.noTasksAtAll')}</p>
         <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
           <DialogTrigger asChild>
             <Button size="lg" className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white">
               <Plus className="mr-2 h-5 w-5" />
-              Nieuwe Taak Toevoegen
+              {t('dashboard.emptyState.addNewTaskButton')}
             </Button>
           </DialogTrigger>
           <DialogPortal>
@@ -241,9 +252,9 @@ export default function Dashboard() {
             )}
             <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card p-6 shadow-lg duration-200 sm:max-w-[600px] sm:rounded-lg z-50 max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-2xl">Nieuwe taak</DialogTitle>
+                <DialogTitle className="text-2xl">{t('appLayout.newTaskDialog.title')}</DialogTitle>
                 <DialogDescription>
-                  Beschrijf wat je wilt doen, en laat AI de details invullen.
+                  {t('appLayout.newTaskDialog.description')}
                 </DialogDescription>
               </DialogHeader>
               <NewTaskDialog setOpen={setIsNewTaskOpen} />
@@ -253,7 +264,7 @@ export default function Dashboard() {
       </>
     );
   }
-  // --- Einde bericht lege staat ---
+  // --- End message for empty state ---
 
   if (isLoading) {
     return (
@@ -277,36 +288,33 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      {/* Verpak header in een flex container - maak responsive */}
+      {/* Header section: responsive flex container */}
       <div className="mb-6 flex flex-col md:flex-row md:justify-between md:items-center">
-        {/* Linker gedeelte (Begroeting) */}
+        {/* Left side: Greeting */}
         <div className="mb-6 md:mb-0">
-          <h1 className="text-3xl font-bold h-10"> {/* Or min-h-10 */}
-            {/* Use TypeAnimation here */}
-            {/* Added check to only render animation when user data is potentially available */}
+          <h1 className="text-3xl font-bold h-10">
             {user !== undefined && (
               <TypeAnimation
                 sequence={[
-                  100, // Start after a short delay
+                  100, 
                   greetingText,
                 ]}
                 wrapper="span"
                 speed={50}
                 className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent"
                 cursor
-                // repeat={0} // Default is 0 (no repeat)
               />
             )}
           </h1>
           <p className="text-muted-foreground">
-            Hier is een overzicht van je taken
+            {t('dashboard.tasksOverview')}
           </p>
         </div>
-        {/* Rechter gedeelte (Zoekbalk & Filter) - Nu altijd zichtbaar */}
+        {/* Right side: Search & Filter */}
         <div className="flex items-center gap-2 w-full md:w-auto">
           <SearchInput
             onChange={handleSearchChange}
-            placeholder="Zoek taken..."
+            placeholder={t('dashboard.searchPlaceholder')}
             className="flex-grow min-w-0"
           />
           <TaskFilter 
@@ -315,33 +323,31 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Geen gap op mobiel */}
+      {/* Task grid: No gap on mobile, gap on medium screens and up */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6 items-start">
-        {/* Gebruik hasAnyFilteredTasks voor de conditie */}
         {hasAnyFilteredTasks ? (
           columns.map((columnItems, colIndex) => (
             <div key={colIndex} className="flex flex-col gap-0"> 
-              {/* --- Placeholder Logica --- */}
+              {/* --- Placeholder Logic for column alignment --- */}
               {
-                // Controleer of het eerste item bestaat en GEEN h2 is
+                // Check if the first item exists and is NOT an h2 (category title)
                 columnItems.length > 0 && 
                 React.isValidElement(columnItems[0]) && 
                 columnItems[0].type !== 'h2' && (
-                  // Render placeholder met geschatte hoogte van titel + marge
-                  // Verberg op mobiel (default), toon vanaf md: breakpoint
+                  // Render a placeholder with the estimated height of a title + margin
+                  // Hidden on mobile (default), shown from md: breakpoint upwards
                   <div className="hidden md:block h-10"></div> 
                 )
               }
-              {/* --- Einde Placeholder Logica --- */}
+              {/* --- End Placeholder Logic --- */}
               {columnItems.map((item) => {
-                // Item is al een ReactNode (h2 of div)
                 return item;
               })}
             </div>
           ))
         ) : (
           <div className="text-center col-span-1 md:col-span-3 mt-8">
-            {emptyStateMessage} {/* Render the determined message */}
+            {emptyStateMessage}
           </div>
         )}
       </div>

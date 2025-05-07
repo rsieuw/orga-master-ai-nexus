@@ -9,12 +9,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu.tsx";
+import { useTranslation } from 'react-i18next';
 
 interface NavbarProps {
   openNewTaskModal: () => void;
 }
 
 export default function Navbar({ openNewTaskModal }: NavbarProps) {
+  const { t } = useTranslation();
   const { isAuthenticated, logout, user } = useAuth();
 
   return (
@@ -48,12 +50,12 @@ export default function Navbar({ openNewTaskModal }: NavbarProps) {
           {isAuthenticated ? (
             <>
               <Button 
-                className="rounded-full h-9 w-9 flex items-center justify-center p-0 sm:h-auto sm:w-auto sm:px-4 sm:py-2 sm:gap-1 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
+                className="rounded-full h-9 w-9 flex items-center justify-center p-0 sm:h-auto sm:w-auto sm:px-3 sm:py-2 sm:gap-1 md:px-6 md:gap-2 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
                 onClick={openNewTaskModal}
-                aria-label="Nieuwe Taak"
+                aria-label={t('navbar.newTaskButton.ariaLabel')}
               >
                 <PlusCircle className="h-5 w-5" />
-                <span className="hidden sm:inline">Nieuwe Taak</span>
+                <span className="hidden sm:inline">{t('navbar.newTaskButton.text')}</span>
               </Button>
 
               <DropdownMenu>
@@ -65,26 +67,26 @@ export default function Navbar({ openNewTaskModal }: NavbarProps) {
                 <DropdownMenuContent align="end" className="glass-effect z-[80]">
                   <DropdownMenuItem>
                     <span className="text-sm font-medium">
-                      {user?.name || "Gebruiker"}
+                      {user?.name || t('navbar.userMenu.defaultUserName')}
                     </span>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <Link to="/profile" className="flex w-full items-center">
                       <CircleUserRound className="mr-2 h-4 w-4" />
-                      Profiel
+                      {t('navbar.userMenu.profile')}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <Link to="/settings" className="flex w-full items-center">
                       <Settings className="mr-2 h-4 w-4" />
-                      Instellingen
+                      {t('navbar.userMenu.settings')}
                     </Link>
                   </DropdownMenuItem>
                   {user?.role === 'admin' && (
                     <DropdownMenuItem>
                       <Link to="/admin" className="flex w-full items-center">
                         <Shield className="mr-2 h-4 w-4" />
-                        Admin Dashboard
+                        {t('navbar.userMenu.adminDashboard')}
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -92,14 +94,14 @@ export default function Navbar({ openNewTaskModal }: NavbarProps) {
                     <DropdownMenuItem>
                       <Link to="/pricing" className="flex w-full items-center text-yellow-500 hover:text-yellow-400">
                          <Star className="mr-2 h-4 w-4" />
-                         Upgrade naar Premium
+                         {t('navbar.userMenu.upgradeToPremium')}
                       </Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => logout()}>
                     <LogOut className="mr-2 h-4 w-4" />
-                    Uitloggen
+                    {t('navbar.userMenu.logout')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -108,11 +110,11 @@ export default function Navbar({ openNewTaskModal }: NavbarProps) {
             <>
               <Link to="/login">
                 <Button variant="outline" size="sm" className="border-white/10 bg-secondary/50 hover:bg-secondary">
-                  Login
+                  {t('navbar.authButtons.login')}
                 </Button>
               </Link>
               <Link to="/register">
-                <Button size="sm" className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900">Register</Button>
+                <Button size="sm" className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900">{t('navbar.authButtons.register')}</Button>
               </Link>
             </>
           )}

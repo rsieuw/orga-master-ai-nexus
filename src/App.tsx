@@ -24,7 +24,7 @@ import PricingPage from "./pages/Pricing.tsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.tsx";
 import UpdatePasswordPage from "./pages/UpdatePasswordPage.tsx";
 
-// Importeer de nieuwe admin componenten
+// Import the new admin components
 import AdminRouteGuard from "./components/auth/AdminRouteGuard.tsx";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage.tsx";
 

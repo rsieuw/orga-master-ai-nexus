@@ -1,24 +1,27 @@
 import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
+import { useTranslation } from 'react-i18next';
 
 export default function DocumentationPage() {
+  const { t } = useTranslation();
+
   return (
     <AppLayout>
-      <h1 className="text-2xl font-bold mb-6">Documentatie</h1>
+      <h1 className="text-2xl font-bold mb-6">{t('documentationPage.mainTitle')}</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>OrgaMaster AI Documentatie</CardTitle>
+          <CardTitle>{t('documentationPage.cardTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <p>
-            Welkom bij de documentatie voor OrgaMaster AI.
+            {t('documentationPage.paragraph1')}
           </p>
           <p className="mt-4">
-            Momenteel wordt er hard gewerkt aan uitgebreide documentatie om u te helpen het maximale uit de applicatie te halen.
+            {t('documentationPage.paragraph2')}
           </p>
           <p className="mt-2">
-            Kom binnenkort terug voor handleidingen, tutorials en API-referenties.
+            {t('documentationPage.paragraph3')}
           </p>
         </CardContent>
       </Card>
