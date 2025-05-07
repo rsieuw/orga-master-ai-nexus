@@ -105,8 +105,9 @@
   - Laat AI taken genereren uit ongestructureerde tekst (bv. notities, e-mails).
 - ❌ **[AI] Tijd Estimatie Suggesties:**
   - Laat AI een schatting geven van de benodigde tijd voor een taak.
-- ❌ **[INTEGRATION] Kalender Integratie:**
+- ❌ **[INTEGRATION] Kalender Integratie & Weergave:**
   - Synchroniseer taken/deadlines met externe kalenders (Google Calendar, Outlook).
+  - Voeg een kalenderweergave toe voor taken met deadlines.
 - ❌ **[AI] Spraak naar Tekst / Tekst naar Spraak:**
   - Integreer spraakherkenning voor taakinvoer en tekst-naar-spraak voor taakvoorlezing.
 - ✅ **[FEATURE] Gesprek Export:** (Geïmplementeerd in ChatPanel)
@@ -114,8 +115,6 @@
 - ✅ **[AI] Verbeterde AI Redenering & Web Search:** (Perplexity onderzoek geïntegreerd)
 - ❌ **[FEATURE] Daily Knowledge Bot:**
   - ❌ **[NIEUW]** Integreer een bot die dagelijks kennis/tips deelt van Perplexity.
-- ❌ **[FEATURE] Kalenderweergave:**
-  - Voeg een kalenderweergave toe voor taken met deadlines.
 - ❌ **[FEATURE] Bijlagen aan Taken:**
   - Sta toe dat bestanden aan taken worden gekoppeld.
 - ❌ **[FEATURE] Beloningsysteem:**

@@ -1,0 +1,42 @@
+import React from 'react';
+import { cn } from '@/lib/utils.ts';
+
+interface GradientProgressProps extends React.HTMLAttributes<HTMLDivElement> {
+  value?: number;
+}
+
+const GradientProgress = React.forwardRef<HTMLDivElement, GradientProgressProps>(
+  ({ className, value, ...props }, ref) => {
+    const progress = Math.max(0, Math.min(100, value || 0)); // Clamp value between 0 and 100
+    
+    // Calculate end hue based on progress (0=red, 60=yellow, 120=green)
+    const endHue = progress * 1.2;
+    // Calculate start hue, slightly earlier, clamping at red (0)
+    const startHue = Math.max(0, endHue - 20); 
+
+    // Create dynamic gradient string
+    const gradientStyle = `linear-gradient(to right, hsl(${startHue}, 90%, 50%), hsl(${endHue}, 90%, 50%))`;
+
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          'relative h-1.5 w-full overflow-hidden rounded-full bg-muted', // Track styles
+          className
+        )}
+        {...props}
+      >
+        <div
+          className="h-full w-full flex-1 transition-all duration-300 ease-out" // Removed fixed gradient class
+          style={{
+            width: `${progress}%`, // Dynamic width
+            backgroundImage: gradientStyle // Apply dynamic gradient
+          }}
+        />
+      </div>
+    );
+  }
+);
+GradientProgress.displayName = 'GradientProgress';
+
+export { GradientProgress }; 

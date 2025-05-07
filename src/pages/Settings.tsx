@@ -253,9 +253,9 @@ export default function SettingsPage() {
                 <Label htmlFor="email">E-mail</Label>
                 <Input id="email" type="email" placeholder="Je e-mail" className="bg-gray-700" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
-              <div className="flex justify-end pt-4"> 
+              <div className="flex justify-center pt-4"> 
                 <Button 
-                  className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white" 
+                  className="w-full md:w-auto bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white" 
                   onClick={handleSaveAccount}
                 >
                   Opslaan
@@ -297,16 +297,16 @@ export default function SettingsPage() {
               <CardTitle>AI Instellingen</CardTitle>
               <CardDescription>Configureer AI-functionaliteit</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
+            <CardContent className="space-y-6">
+              <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between">
+                <div className="flex-grow">
                   <Label htmlFor="language" className="text-base">Taal</Label>
                   <p className="text-sm text-muted-foreground">
                     Kies de taal voor AI interacties
                   </p>
                 </div>
                 <Select value={language} onValueChange={handleLanguageChange}>
-                  <SelectTrigger id="language" className="w-40">
+                  <SelectTrigger id="language" className="w-full md:w-48 mt-1 md:mt-0">
                     <SelectValue placeholder="Selecteer taal" />
                   </SelectTrigger>
                   <SelectContent>
@@ -316,8 +316,8 @@ export default function SettingsPage() {
                 </Select>
               </div>
               
-              <div className="flex items-center justify-between pt-4 border-t border-border/10">
-                <div>
+              <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between pt-4 border-t border-border/10 md:pt-0 md:border-t-0">
+                <div className="flex-grow">
                   <Label htmlFor="ai-mode" className="text-base">Standaard AI Modus</Label>
                   <p className="text-sm text-muted-foreground">
                     Kies het standaard gedrag voor AI interacties.
@@ -326,13 +326,13 @@ export default function SettingsPage() {
                     )}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mt-1 md:mt-0">
                   <Select 
                     value={selectedAiMode} 
                     onValueChange={handleAiModeChange}
-                    disabled={isSavingAiMode || user?.role === 'free'} // Disable if saving OR user is free
+                    disabled={isSavingAiMode || user?.role === 'free'}
                   >
-                    <SelectTrigger id="ai-mode" className="w-48">
+                    <SelectTrigger id="ai-mode" className="w-full md:w-48">
                       <SelectValue placeholder="Selecteer modus" />
                     </SelectTrigger>
                     <SelectContent>
@@ -348,9 +348,8 @@ export default function SettingsPage() {
                 </div>
               </div>
               
-              {/* --- Research Model Selection --- */}
-              <div className="flex items-center justify-between pt-4 border-t border-border/10">
-                <div>
+              <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between pt-4 border-t border-border/10 md:pt-0 md:border-t-0">
+                <div className="flex-grow">
                   <Label htmlFor="research-model" className="text-base">Onderzoeksmodel</Label>
                   <p className="text-sm text-muted-foreground">
                     Kies het AI model voor de 'Deep Research' functie
@@ -359,13 +358,13 @@ export default function SettingsPage() {
                     )}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mt-1 md:mt-0">
                   <Select 
                     value={researchModelPreference} 
                     onValueChange={handleResearchModelChange}
-                    disabled={isSavingResearchModel || user?.role === 'free'} // Disable if saving OR user is free
+                    disabled={isSavingResearchModel || user?.role === 'free'}
                   >
-                    <SelectTrigger id="research-model" className="w-48">
+                    <SelectTrigger id="research-model" className="w-full md:w-48">
                       <SelectValue placeholder="Selecteer model" />
                     </SelectTrigger>
                     <SelectContent>
@@ -376,7 +375,6 @@ export default function SettingsPage() {
                   {isSavingResearchModel && <Loader size="sm" />} 
                 </div>
               </div>
-              {/* --- End Research Model Selection --- */}
 
               <div className="pt-4 border-t border-border/10">
                 <Drawer>

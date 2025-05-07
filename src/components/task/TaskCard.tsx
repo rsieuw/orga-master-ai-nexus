@@ -1,7 +1,7 @@
 import { Task, SubTask } from "@/types/task.ts";
 import { Card } from "@/components/ui/card.tsx";
 import { Link } from "react-router-dom";
-import { Progress } from "@/components/ui/progress.tsx";
+import { GradientProgress } from "@/components/ui/GradientProgress.tsx";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip.tsx";
 import { CheckSquare, Hourglass } from "lucide-react";
 import { format, parseISO } from "date-fns";
@@ -65,7 +65,7 @@ export default function TaskCard({ task }: TaskCardProps) {
                         <span className="text-xs text-muted-foreground">
                           {completedSubtasks}/{totalSubtasks}
                         </span>
-                        <Progress value={progressValue} className="h-1 w-20 lg:w-32 ml-2" />
+                        <GradientProgress value={progressValue} className="h-1 w-16 lg:w-32 ml-2" />
                         <span className="text-xs text-muted-foreground/90 ml-2">
                           ({Math.round(progressValue)}%)
                         </span>

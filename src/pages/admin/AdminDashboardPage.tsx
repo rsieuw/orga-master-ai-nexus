@@ -26,39 +26,39 @@ const AdminDashboardPage: React.FC = () => {
         <TabsContent value="users" className="mt-4">
           {/* Card wrapper voor consistentie */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 mb-4"> {/* Maak header flexibel */}
-              <div> {/* Container voor titel en beschrijving */}
+            <CardHeader className="flex flex-col space-y-2 pb-2 mb-4 md:flex-row md:items-center md:justify-between md:space-y-0 md:space-x-2">
+              <div className="mb-2 md:mb-0">
                 <CardTitle>Gebruikersbeheer</CardTitle>
                 <CardDescription>Bekijk en beheer alle geregistreerde gebruikers.</CardDescription>
               </div>
-              <div className="flex items-center space-x-2"> {/* Container voor filters/zoek */}
-                  <Input
-                      placeholder="Zoek..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="h-8 w-[150px] lg:w-[250px]"
-                  />
-                  <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as UserRole | 'all')}>
-                      <SelectTrigger className="h-8 w-[120px]">
-                          <SelectValue placeholder="Filter Rol" />
-                      </SelectTrigger>
-                      <SelectContent>
-                          <SelectItem value="all">Alle Rollen</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="paid">Betaald</SelectItem>
-                          <SelectItem value="free">Gratis</SelectItem>
-                      </SelectContent>
-                  </Select>
-                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                      <SelectTrigger className="h-8 w-[120px]">
-                          <SelectValue placeholder="Filter Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                          <SelectItem value="all">Alle Statussen</SelectItem>
-                          <SelectItem value="active">Actief</SelectItem>
-                          <SelectItem value="inactive">Inactief</SelectItem>
-                      </SelectContent>
-                  </Select>
+              <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2 w-full md:w-auto">
+                <Input
+                  placeholder="Zoek..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                />
+                <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as UserRole | 'all')}>
+                  <SelectTrigger className="h-8 w-full md:w-[120px]">
+                    <SelectValue placeholder="Filter Rol" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Rollen</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="paid">Betaald</SelectItem>
+                    <SelectItem value="free">Gratis</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className="h-8 w-full md:w-[120px]">
+                    <SelectValue placeholder="Filter Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Statussen</SelectItem>
+                    <SelectItem value="active">Actief</SelectItem>
+                    <SelectItem value="inactive">Inactief</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardHeader>
             <CardContent>

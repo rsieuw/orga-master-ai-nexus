@@ -109,6 +109,12 @@ export const PermissionsManagementTable: React.FC = () => {
      }
   };
 
+  // Sorted roles for consistent ordering in both tables
+  const sortedRoles = [...permissions].sort((a, b) => {
+    const order: Record<UserRole, number> = { admin: 1, paid: 2, free: 3 };
+    return (order[a.role] || 99) - (order[b.role] || 99);
+  });
+
   // Render de tabel en knop, zonder AppLayout en H1
   if (isLoading) {
     return <div className="flex justify-center items-center py-10"><GradientLoader /></div>;
@@ -121,7 +127,8 @@ export const PermissionsManagementTable: React.FC = () => {
 
   return (
     <div> {/* Veranderd van p-6 naar een simpele div */}
-      <Table>
+      {/* Desktop Table (hidden on small screens (xs), visible md and up) */}
+      <Table className="hidden md:table w-full">
         <TableHeader>
           <TableRow>
             <TableHead>Rol</TableHead>
@@ -133,20 +140,15 @@ export const PermissionsManagementTable: React.FC = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {permissions
-            .sort((a, b) => {
-                const order = { admin: 1, paid: 2, free: 3 };
-                return (order[a.role] || 99) - (order[b.role] || 99);
-            })
-            .map(({ role, enabled_features }) => (
+          {sortedRoles.map(({ role, enabled_features }) => (
             <TableRow key={role}>
               <TableCell className="font-medium capitalize">{role}</TableCell>
               {sortedFeatures.map(feature => (
-                <TableCell key={`${role}-${feature}`} className="text-center">
+                <TableCell key={`${role}-${feature}-desktop-cell`} className="text-center">
                   <Switch
                     checked={enabled_features.includes(feature)}
                     onCheckedChange={(checked: boolean) => handlePermissionChange(role, feature, checked)}
-                    id={`${role}-${feature}`}
+                    id={`${role}-${feature}-desktop`}
                     aria-label={`Permissie ${FEATURE_DISPLAY_NAMES[feature] || feature} voor rol ${role}`}
                   />
                 </TableCell>
@@ -155,12 +157,48 @@ export const PermissionsManagementTable: React.FC = () => {
           ))}
         </TableBody>
       </Table>
-      {/* Wrapper div om knop naar rechts uit te lijnen */}
-      <div className="flex justify-end mt-6">
+
+      {/* Mobile Table (visible on small screens (xs), hidden md and up) */}
+      <Table className="table md:hidden w-full">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="pr-2">Feature</TableHead>
+            {sortedRoles.map(({ role }) => (
+              <TableHead key={`${role}-mobile-header`} className="text-center capitalize">{role}</TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedFeatures.map(feature => (
+            <TableRow key={`${feature}-mobile-row`}>
+              <TableCell className="font-medium whitespace-nowrap pr-2">
+                {FEATURE_DISPLAY_NAMES[feature] || feature}
+              </TableCell>
+              {sortedRoles.map(({ role }) => {
+                const permissionForRole = permissions.find(p => p.role === role);
+                const isChecked = permissionForRole ? permissionForRole.enabled_features.includes(feature) : false;
+                return (
+                  <TableCell key={`${role}-${feature}-mobile-cell`} className="text-center">
+                    <Switch
+                      checked={isChecked}
+                      onCheckedChange={(checked: boolean) => handlePermissionChange(role, feature, checked)}
+                      id={`${role}-${feature}-mobile`}
+                      aria-label={`Permissie ${FEATURE_DISPLAY_NAMES[feature] || feature} voor rol ${role}`}
+                    />
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      {/* Wrapper div om knop te centreren */}
+      <div className="flex justify-center mt-6">
         <Button 
           onClick={handleSaveChanges} 
           disabled={isLoading} 
-          className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
+          className="w-full md:w-auto bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
         >
           Wijzigingen Opslaan
         </Button>

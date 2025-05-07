@@ -18,7 +18,7 @@ export default function Navbar({ openNewTaskModal }: NavbarProps) {
   const { isAuthenticated, logout, user } = useAuth();
 
   return (
-    <nav className="sticky top-0 z-[70] bg-card border-b border-border">
+    <nav className="sticky top-0 z-30 bg-card border-b border-border">
       <div className="container flex h-16 items-center px-4 justify-between">
         <div className="flex items-center">
           <Link to="/" className="flex items-center gap-2 text-xl font-medium text-foreground">

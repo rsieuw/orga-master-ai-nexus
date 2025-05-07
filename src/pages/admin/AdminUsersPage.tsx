@@ -289,7 +289,8 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
 
   return (
     <div className="rounded-md border">
-      <Table>
+      {/* Desktop Table (hidden on small screens, visible md and up) */}
+      <Table className="hidden md:table min-w-full">
         <TableHeader>
           <TableRow>
             {/* Maak koppen klikbaar en zet tekst/icoon naast elkaar */}
@@ -321,20 +322,24 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
             <TableHead className="text-right">Acties</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className="hidden md:table-row-group">
           {filteredUsers.length > 0 ? filteredUsers.map((user) => (
             <TableRow key={user.id}>
-              <TableCell>{user.name || '-'}</TableCell>
-              <TableCell>{user.email || '-'}</TableCell>
-              <TableCell>
+              <TableCell className="font-medium">
+                {user.name || '-'}
+              </TableCell>
+              <TableCell className="font-medium">
+                {user.email || '-'}
+              </TableCell>
+              <TableCell className="font-medium">
                 <Badge variant={getRoleBadgeVariant(user.role)}>{user.role}</Badge>
               </TableCell>
-              <TableCell>
+              <TableCell className="font-medium">
                 <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
                   {user.status || 'active'}
                 </Badge>
               </TableCell>
-              <TableCell>
+              <TableCell className="font-medium">
                 {user.created_at ? new Date(user.created_at).toLocaleDateString('nl-NL') : '-'}
               </TableCell>
               <TableCell className="text-right">
@@ -395,16 +400,89 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
             </TableRow>
           )) : (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground">
-                {searchTerm || selectedRole !== 'all' || selectedStatus !== 'all' 
-                  ? "Geen gebruikers gevonden die voldoen aan de filters."
-                  : "Geen gebruikers gevonden."
-                } 
+              <TableCell colSpan={6} className="text-center h-24">
+                Geen gebruikers gevonden die aan de criteria voldoen.
               </TableCell>
             </TableRow>
           )}
         </TableBody>
       </Table>
+
+      {/* Mobile Card View (visible on small screens, hidden md and up) */}
+      <div className="md:hidden space-y-4 p-4">
+        {filteredUsers.length > 0 ? filteredUsers.map((user) => (
+          <div key={`${user.id}-mobile`} className="border rounded-lg p-4 shadow space-y-3 bg-card">
+            <div className="flex justify-between items-start">
+              <h3 className="font-semibold text-lg capitalize">{user.name || 'N/A'}</h3>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'admin')}>Promoveer tot Admin</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'paid')}>Maak Betaalde Gebruiker</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'free')}>Maak Gratis Gebruiker</DropdownMenuItem>
+                  
+                  {user.status === 'active' ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                          onSelect={(e: Event) => e.preventDefault()} // Voorkom sluiten menu bij selectie
+                        >
+                          Deactiveer Gebruiker
+                        </DropdownMenuItem>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Weet je het zeker?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Deze actie zal gebruiker {user.name || user.email} deactiveren. Ze zullen niet meer kunnen inloggen.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeactivateUser(user.id)} className="bg-destructive hover:bg-destructive/90">Deactiveren</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : (
+                    <DropdownMenuItem onClick={() => handleActivateUser(user.id)}>Activeer Gebruiker</DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            
+            <div>
+              <p className="text-sm text-muted-foreground">Email</p>
+              <p className="font-medium">{user.email}</p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Rol</p>
+                <Badge variant={getRoleBadgeVariant(user.role)} className="capitalize">{user.role}</Badge>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Status</p>
+                <Badge variant={user.status === 'active' ? 'default' : 'destructive'} className="capitalize">{user.status}</Badge>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm text-muted-foreground">Geregistreerd op</p>
+              <p className="font-medium">{new Date(user.created_at).toLocaleDateString()}</p>
+            </div>
+          </div>
+        )) : (
+          <div className="text-center py-10">
+            <p>Geen gebruikers gevonden die aan de criteria voldoen.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

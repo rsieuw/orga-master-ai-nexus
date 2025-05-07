@@ -36,7 +36,7 @@ export default function AppLayout({
         {children}
       </main>
       <Footer />
-      <BottomNavigation openNewTaskModal={() => setIsNewTaskOpen(true)} />
+      <BottomNavigation />
 
       <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen} modal={false}>
         <DialogPortal>

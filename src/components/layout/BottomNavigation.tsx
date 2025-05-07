@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { List, PlusCircle, Settings, Info, MessageSquare } from 'lucide-react';
+import { List, Settings, Info, MessageSquare, User } from 'lucide-react';
 import { cn } from '@/lib/utils.ts';
 import { useAuth } from '@/contexts/AuthContext.tsx'; // Import useAuth to check authentication
 
@@ -13,12 +13,10 @@ interface NavItem {
   label: string;
 }
 
-// Definieer props
-interface BottomNavigationProps {
-  openNewTaskModal: () => void;
-}
+// Verwijder BottomNavigationProps interface, want die is niet meer nodig
+// interface BottomNavigationProps {} 
 
-const BottomNavigation: React.FC<BottomNavigationProps> = ({ openNewTaskModal }) => {
+const BottomNavigation: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth(); // Check if user is authenticated
@@ -41,10 +39,11 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ openNewTaskModal })
       { hash: '#chat', icon: MessageSquare, label: 'Chat' },
     ];
   } else {
-    // Gebruik de action prop voor de "Nieuw" knop en pas label aan
+    // Standaard navigatie voor dashboard en andere hoofdpagina's
     navItems = [
       { path: '/', icon: List, label: 'Taken' },
-      { action: openNewTaskModal, icon: PlusCircle, label: 'Nieuw taak' }, // Wijzig label
+      // Vervang 'Nieuw taak' door 'Profiel'
+      { path: '/profile', icon: User, label: 'Profiel' }, 
       { path: '/settings', icon: Settings, label: 'Instellingen' },
     ];
   }
@@ -54,7 +53,9 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ openNewTaskModal })
       navigate(item.path);
     } else if (item.hash) {
       // Scroll naar boven en verander alleen de hash
-      window.scrollTo(0, 0);
+      if (typeof globalThis !== 'undefined' && 'scrollTo' in globalThis && typeof globalThis.scrollTo === 'function') {
+        (globalThis as unknown as Window).scrollTo(0, 0);
+      }
       navigate(`${location.pathname}${item.hash}`);
     } else if (item.action) {
       item.action();
@@ -69,6 +70,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ openNewTaskModal })
         return (
           <button
             key={item.label}
+            type="button"
             onClick={() => handleNavClick(item)}
             className={cn(
               'flex flex-col items-center justify-center text-xs px-2 py-1 rounded-md transition-colors w-1/3',

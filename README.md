@@ -20,7 +20,7 @@ There are several ways of editing your application.
 
 ### Use your preferred IDE
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and push changes.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -58,9 +58,21 @@ npm run dev
 
 This project is built with:
 
-* Vite
-* TypeScript
-* React
-* shadcn-ui
-* Tailwind CSS
-* Supabase (Auth, Database, Edge Functions)
+* **Vite**: For fast frontend bundling and development server.
+* **TypeScript**: For static typing and improved code quality.
+* **React**: For building the user interface.
+* **Tailwind CSS**: For utility-first CSS styling.
+* **shadcn/ui**: For a collection of beautifully designed and accessible UI components built on Radix UI.
+* **Radix UI**: Provides the underlying unstyled, accessible UI primitives for shadcn/ui.
+* **Lucide Icons**: For a comprehensive set of SVG icons.
+* **TanStack Query (React Query)**: For server-state management, data fetching, caching, and synchronization.
+* **Zod**: For schema declaration and validation.
+* **React Hook Form**: For performant and flexible form state management and validation (often used with Zod).
+* **Supabase**: For backend services including:
+  * Authentication
+  * Database (PostgreSQL)
+  * Edge Functions (likely using Deno)
+* **Deno**: Used for backend logic, potentially for Supabase Edge Functions and other scripts (indicated by `deno.jsonc` and `deno.lock`).
+* **Node.js**: For the development environment, running Vite, and managing npm packages.
+* **Sonner**: Installed as a dependency for toast notifications, though the primary toast functionality in `TaskDetail.tsx` currently uses a custom hook (`@/hooks/use-toast.ts`).
+* **Other notable libraries**: `class-variance-authority`, `clsx`, `tailwind-merge` (for styling utilities with shadcn/ui), `date-fns` (for date manipulation), `react-router-dom` (for routing), `vitest` (for testing).

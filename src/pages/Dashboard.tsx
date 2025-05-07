@@ -51,62 +51,67 @@ const sortTasksByPriority = (a: Task, b: Task): number => {
 export default function Dashboard() {
   const { isLoading, groupTasksByDate } = useTask();
   const { user } = useAuth();
-  const taskGroups = groupTasksByDate();
-  const [searchTerm, setSearchTerm] = useState(''); // Add state for search term
-  const [filterStatus, setFilterStatus] = useState<TaskFilterStatus>('all'); // Add state for filter status
-  const [filterPriority, setFilterPriority] = useState<TaskFilterPriority>('all'); // Add state for filter priority
-  const [isNewTaskOpen, setIsNewTaskOpen] = useState(false); // State voor nieuwe taak dialog
+  const rawTaskGroups = groupTasksByDate(); // Krijg de onbewerkte groepen
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<TaskFilterStatus>('all');
+  const [filterPriority, setFilterPriority] = useState<TaskFilterPriority>('all');
+  const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
 
-  // --- Sorteer taken binnen elke groep op prioriteit ---
-  for (const key in taskGroups) {
-    if (Object.prototype.hasOwnProperty.call(taskGroups, key)) {
-      // Type assertion nodig omdat TS niet weet dat elke property een Task[] is
-      (taskGroups[key as keyof TasksByDate] as Task[]).sort(sortTasksByPriority);
+  // --- Filter en sorteer taken binnen elke groep --- 
+  const filteredAndSortedTaskGroups = React.useMemo(() => {
+    const groups: TasksByDate = {
+      overdue: [],
+      today: [],
+      tomorrow: [],
+      dayAfterTomorrow: [],
+      nextWeek: [],
+      later: [],
+    };
+
+    for (const key in rawTaskGroups) {
+      if (Object.prototype.hasOwnProperty.call(rawTaskGroups, key)) {
+        const categoryKey = key as keyof TasksByDate;
+        const tasksInCategory = rawTaskGroups[categoryKey] as Task[];
+
+        const filtered = tasksInCategory.filter(task => {
+          const matchesSearch = searchTerm === '' ||
+            task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
+          const matchesStatus = filterStatus === 'all' ||
+            (filterStatus === 'completed' && task.status === 'done') ||
+            (filterStatus === 'incomplete' && task.status !== 'done');
+          const matchesPriority = filterPriority === 'all' || task.priority === filterPriority;
+          return matchesSearch && matchesStatus && matchesPriority;
+        });
+
+        filtered.sort(sortTasksByPriority); // Sorteer de gefilterde taken
+        groups[categoryKey] = filtered;
+      }
     }
-  }
-  // --- Einde sorteren ---
-
-  // allTasksOrdered wordt nu gemaakt met de gesorteerde groepen
-  const allTasksOrdered: { task: Task; category: keyof TasksByDate }[] = [
-    ...taskGroups.overdue.map((task: Task) => ({ task, category: 'overdue' as const })),
-    ...taskGroups.today.map((task: Task) => ({ task, category: 'today' as const })),
-    ...taskGroups.tomorrow.map((task: Task) => ({ task, category: 'tomorrow' as const })),
-    ...taskGroups.dayAfterTomorrow.map((task: Task) => ({ task, category: 'dayAfterTomorrow' as const })),
-    ...taskGroups.nextWeek.map((task: Task) => ({ task, category: 'nextWeek' as const })),
-    ...taskGroups.later.map((task: Task) => ({ task, category: 'later' as const })),
-  ];
-
-  // --- Filter taken op basis van zoekterm en filters ---
-  const filteredTasks = allTasksOrdered.filter(({ task }) => {
-    // Zoekterm filter (titel of beschrijving)
-    const matchesSearch = searchTerm === '' ||
-      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    // Status filter
-    const matchesStatus = filterStatus === 'all' ||
-      (filterStatus === 'completed' && task.status === 'done') ||
-      (filterStatus === 'incomplete' && task.status !== 'done');
-
-    // Prioriteit filter
-    const matchesPriority = filterPriority === 'all' || task.priority === filterPriority;
-
-    return matchesSearch && matchesStatus && matchesPriority;
+    return groups;
+  }, [rawTaskGroups, searchTerm, filterStatus, filterPriority]);
+  // --- Einde filteren en sorteren per groep ---
+  
+  // --- Creëer een platte lijst van gefilterde en gesorteerde taken voor kolomverdeling --- 
+  const tasksForColumnDistribution: { task: Task; category: keyof TasksByDate }[] = [];
+  (Object.keys(filteredAndSortedTaskGroups) as Array<keyof TasksByDate>).forEach(category => {
+    filteredAndSortedTaskGroups[category].forEach(task => {
+      tasksForColumnDistribution.push({ task, category });
+    });
   });
-  // --- Einde filteren ---
+  // --- Einde platte lijst creatie ---
 
-  // --- Callback voor filter wijzigingen ---
   const handleFilterChange = (status: TaskFilterStatus, priority: TaskFilterPriority) => {
     setFilterStatus(status);
     setFilterPriority(priority);
   };
-  // --- Einde callback ---
 
   // --- Herstel logica voor evenwichtige kolomverdeling ---
   const numColumns = 3; 
   const columns: React.ReactNode[][] = Array.from({ length: numColumns }, () => []);
   let lastCategory: keyof TasksByDate | null = null;
-  const totalTasks = filteredTasks.length; 
+  // Gebruik tasksForColumnDistribution voor het berekenen van totalTasks en verdeling
+  const totalTasks = tasksForColumnDistribution.length; 
 
   // Bereken basis aantal taken per kolom en de rest
   const baseTasks = Math.floor(totalTasks / numColumns);
@@ -129,7 +134,8 @@ export default function Dashboard() {
   const columnBreak1 = col0Size;
   const columnBreak2 = col0Size + col1Size;
 
-  filteredTasks.forEach(({ task, category }, taskIndex) => { 
+  // Gebruik tasksForColumnDistribution om kolommen te vullen
+  tasksForColumnDistribution.forEach(({ task, category }, taskIndex) => { 
     const showTitle = category !== lastCategory;
     
     // Bepaal doelkolom op basis van index en breekpunten
@@ -143,10 +149,11 @@ export default function Dashboard() {
     }
 
     if (showTitle) {
+      const count = filteredAndSortedTaskGroups[category].length; // Haal het aantal taken voor deze categorie op
       columns[targetColumnIndex].push(
-        // Pas padding top responsive aan
-        <h2 key={`title-${String(category)}-${targetColumnIndex}`} className="text-lg font-semibold mb-3 pt-3 md:pt-0"> 
-          {getCategoryTitle(category)}
+        <h2 key={`title-${String(category)}-${targetColumnIndex}`} className="text-lg font-semibold mb-3 pt-3 md:pt-0">
+          {getCategoryTitle(category)}{' '}
+          <span className="text-sm font-normal text-muted-foreground">({count})</span>
         </h2>
       );
     }
@@ -166,9 +173,12 @@ export default function Dashboard() {
 
   // --- Bepaal bericht voor lege staat ---
   let emptyStateMessage: React.ReactNode = null;
-  if (filteredTasks.length === 0 && (searchTerm !== '' || filterStatus !== 'all' || filterPriority !== 'all')) {
+  // Controleer of er *na filtering* nog taken zijn in *enige* categorie
+  const hasAnyFilteredTasks = (Object.values(filteredAndSortedTaskGroups) as Task[][]).some(group => group.length > 0);
+
+  if (!hasAnyFilteredTasks && (searchTerm !== '' || filterStatus !== 'all' || filterPriority !== 'all')) {
     emptyStateMessage = <p className="text-muted-foreground mb-4">Geen taken gevonden die voldoen aan de filters.</p>;
-  } else if (allTasksOrdered.length === 0) {
+  } else if (!hasAnyFilteredTasks) { // Als er überhaupt geen taken zijn (ook niet voor filtering)
     emptyStateMessage = (
       <>
         <p className="text-muted-foreground mb-4">Je hebt nog geen taken.</p>
@@ -247,7 +257,7 @@ export default function Dashboard() {
           </p>
         </div>
         {/* Rechter gedeelte (Zoekbalk & Filter) - Conditioneel weergeven en maak responsive */}
-        {allTasksOrdered.length > 0 && (
+        {hasAnyFilteredTasks && (
           /* Altijd flex-row, items centreren */
           <div className="flex items-center gap-2 w-full md:w-auto">
             <SearchInput
@@ -263,8 +273,8 @@ export default function Dashboard() {
 
       {/* Geen gap op mobiel */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6 items-start">
-        {totalTasks > 0 ? ( // Gebruik totalTasks gebaseerd op gefilterde lijst
-          // Render de vooraf gevulde kolom-arrays
+        {/* Gebruik hasAnyFilteredTasks voor de conditie */}
+        {hasAnyFilteredTasks ? (
           columns.map((columnItems, colIndex) => (
             <div key={colIndex} className="flex flex-col gap-0"> 
               {/* --- Placeholder Logica --- */}
