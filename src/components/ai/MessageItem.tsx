@@ -1,5 +1,5 @@
 import { Message } from "./types.ts";
-import { Bot, Copy, Sparkles, Trash2 } from "lucide-react";
+import { Bot, Copy, Sparkles, Trash2, Pin } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -14,6 +14,7 @@ interface MessageItemProps {
   onCopy: (text: string) => void;
   onDeleteNote?: (noteId: string) => void;
   onDeleteResearch?: (researchId: string) => void;
+  onTogglePin?: (messageId: string, currentIsPinned: boolean) => void;
   isLoading: boolean;
 }
 
@@ -23,6 +24,7 @@ export function MessageItem({
   onCopy, 
   onDeleteNote, 
   onDeleteResearch,
+  onTogglePin,
   isLoading 
 }: MessageItemProps) {
   const { t } = useTranslation();
@@ -58,7 +60,7 @@ export function MessageItem({
         <div className="mt-1 flex-shrink-0">
           <Bot className="h-5 w-5 text-muted-foreground" />
         </div>
-        <div className="chat-message relative p-3 rounded-lg max-w-[80%] group chat-message-ai">
+        <div className="chat-message relative px-2 py-1 rounded-lg max-w-[80%] group chat-message-ai">
           <div className="flex items-center text-sm text-muted-foreground">
             <GradientLoader size="sm" className="mr-2" /> 
             <span>{message.content}</span>
@@ -78,11 +80,11 @@ export function MessageItem({
       )}
       {message.messageType === 'saved_research_display' && (
         <div className="mt-1 flex-shrink-0">
-          <Sparkles className="h-5 w-5 text-primary" /> 
+          <Sparkles className="h-5 w-5 text-primary" />
         </div>
       )}
       <div
-        className={`chat-message relative p-3 rounded-lg max-w-[80%] group ${ 
+        className={`chat-message relative px-2 py-1 rounded-lg max-w-[80%] group ${ 
           message.messageType === 'note_saved' 
             ? "chat-message-note-saved"
             : message.messageType === 'saved_research_display'
@@ -129,9 +131,9 @@ export function MessageItem({
           <p className="whitespace-pre-wrap text-sm">{message.content}</p>
         )}
 
-        {/* Wrapper voor actieknoppen en tijdstempel onderaan */}      
+        {/* Wrapper for action buttons and timestamp at the bottom */}      
         <div className="flex items-center justify-end mt-1 space-x-1 relative">
-          {/* Actieknoppen container */} 
+          {/* Action buttons container */} 
           <div className={`flex items-center gap-0.5 opacity-0 group-hover:opacity-75 transition-opacity duration-200 order-1`}>
             {message.messageType === 'note_saved' && message.dbId && onDeleteNote && (
               <Button
@@ -159,6 +161,23 @@ export function MessageItem({
                 <span className="sr-only">{t('chatPanel.deleteResearchSR')}</span>
               </Button>
             )}
+            {message.role === 'assistant' && 
+              (message.messageType === 'standard' || message.messageType === 'action_confirm') && 
+              onTogglePin && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5 text-current hover:bg-transparent hover:text-foreground"
+                onClick={() => onTogglePin(message.id, !!message.isPinned)}
+                title={message.isPinned ? t('chatPanel.unpinMessageTitle') : t('chatPanel.pinMessageTitle')}
+              >
+                {message.isPinned ? 
+                  <Pin className="h-3.5 w-3.5 text-primary" /> : 
+                  <Pin className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
+                }
+                <span className="sr-only">{message.isPinned ? t('chatPanel.unpinMessageSR') : t('chatPanel.pinMessageSR')}</span>
+              </Button>
+            )}
             <Button 
               variant="ghost"
               size="icon"
@@ -171,7 +190,7 @@ export function MessageItem({
             </Button>
           </div>
 
-          {/* Tijdstempel container */} 
+          {/* Timestamp container */} 
           {message.timestamp && (
             <div className={`text-xs opacity-60 order-2`}>
               {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

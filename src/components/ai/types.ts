@@ -31,6 +31,7 @@ export interface Message {
   isError?: boolean; // Toegevoegd
   savedResearchId?: string; // Toegevoegd
   canBeSaved?: boolean; // Toegevoegd
+  isPinned?: boolean; // Nieuw veld voor pinnen
 }
 
 export interface AIModel {

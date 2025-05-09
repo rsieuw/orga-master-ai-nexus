@@ -159,12 +159,12 @@ Respond in ${languagePreference === 'nl' ? 'Dutch' : 'English'}.`;
     );
   } catch (error) {
     console.error("Error in deep-research function:", error);
-    // Determine the error message based on languagePreference, ensuring it's defined
-    const errorMessage = error instanceof Error ? error.message : (languagePreference === 'nl' ? "Er is een onbekende fout opgetreden." : "An unknown error occurred.");
-    // If the error is an instance of Error, pass its message directly.
-    // Otherwise, use a generic key based on languagePreference.
-    const errorKey = error instanceof Error ? undefined : "deepResearch.error.unknownError";
-    const errorBody = errorKey ? { errorKey } : { error: errorMessage };
+    // Determine the error message key or use the specific error message
+    const errorKey = !(error instanceof Error) ? "deepResearch.error.unknownError" : undefined;
+    const errorMessage = error instanceof Error ? error.message : undefined; // Only use message if it's an Error instance
+
+    // Construct body: prefer errorKey, fallback to specific message if no key
+    const errorBody = errorKey ? { errorKey } : { error: errorMessage || "An unknown error occurred." }; // Added a final fallback just in case
 
     return new Response(
       JSON.stringify(errorBody),

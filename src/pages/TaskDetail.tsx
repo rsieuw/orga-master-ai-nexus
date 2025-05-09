@@ -47,6 +47,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useSwipeable } from 'react-swipeable';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MAX_AI_SUBTASK_GENERATIONS } from '@/constants/taskConstants.ts';
 
 // --- SubtaskRow Component ---
 interface SubtaskRowProps {
@@ -81,6 +82,7 @@ function SubtaskRow({
   onSubtaskLongPress,
 }: SubtaskRowProps) {
   const { t } = useTranslation();
+  const [isDescriptionVisible, setIsDescriptionVisible] = useState(false);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pressThreshold = 500;
 
@@ -115,7 +117,7 @@ function SubtaskRow({
       transition={{ duration: 0.3, ease: "easeInOut" }}
       {...handlers}
       className={cn(
-        "group flex items-start justify-between space-x-3 rounded-md pt-2 pb-1.5 pl-2 lg:pl-0 pr-2 hover:bg-muted/50 overflow-hidden",
+        "group flex items-start justify-between space-x-3 rounded-md py-2 pl-2 lg:pl-0 pr-2 hover:bg-muted/50 overflow-hidden",
         subtask.completed && "opacity-50"
       )}
       onTouchStart={handlePressStart}
@@ -130,14 +132,9 @@ function SubtaskRow({
       onMouseLeave={handlePressEnd} 
     >
       <div 
-        className="flex items-center space-x-2 flex-grow min-w-0"
-        onClick={() => {
-            if (!editingSubtaskId) {
-                 handleSubtaskLabelClick(subtask.title);
-            }
-        }}
+        className="flex items-start space-x-2 flex-grow min-w-0"
       >
-        <div className="relative h-7 w-7 lg:h-5 lg:w-5 flex-shrink-0 ml-[9px]">
+        <div className="relative h-7 w-7 lg:h-5 lg:w-5 flex-shrink-0 ml-[9px] mt-[2px]">
           <Checkbox
             id={`subtask-${subtask.id}`}
             checked={subtask.completed}
@@ -155,28 +152,51 @@ function SubtaskRow({
             {index + 1}
           </span>
         </div>
-        {editingSubtaskId === subtask.id ? (
-          <Input
-            type="text"
-            id={`subtask-edit-${subtask.id}`}
-            aria-label={t('taskDetail.subtask.editTitleAriaLabel')}
-            value={editingSubtaskTitle}
-            onChange={(e) => setEditingSubtaskTitle(e.target.value)}
-            onBlur={handleSaveSubtaskEdit}
-            onKeyDown={handleSubtaskEditKeyDown}
-            className="h-7 text-sm flex-grow mr-2"
-            autoFocus
-          />
-        ) : (
-          <label
-            className={cn(
-              "flex-grow text-sm font-normal leading-snug cursor-pointer hover:text-primary transition-colors",
-              subtask.completed && "line-through text-muted-foreground hover:text-muted-foreground/80"
-            )}
-          >
-            {subtask.title}
-          </label>
-        )}
+        <div className="flex-grow">
+          {editingSubtaskId === subtask.id ? (
+            <Input
+              type="text"
+              id={`subtask-edit-${subtask.id}`}
+              aria-label={t('taskDetail.subtask.editTitleAriaLabel')}
+              value={editingSubtaskTitle}
+              onChange={(e) => setEditingSubtaskTitle(e.target.value)}
+              onBlur={handleSaveSubtaskEdit}
+              onKeyDown={handleSubtaskEditKeyDown}
+              className="h-7 text-sm flex-grow mr-2"
+              autoFocus
+            />
+          ) : (
+            <>
+              <label
+                className={cn(
+                  "flex-grow text-sm font-normal leading-snug cursor-pointer hover:text-primary transition-colors relative -top-px",
+                  subtask.completed && "line-through text-muted-foreground hover:text-muted-foreground/80"
+                )}
+                onClick={() => {
+                  if (!editingSubtaskId) {
+                    handleSubtaskLabelClick(subtask.title);
+                    setIsDescriptionVisible(!isDescriptionVisible);
+                  }
+                }}
+              >
+                {subtask.title}
+              </label>
+              <AnimatePresence>
+                {isDescriptionVisible && subtask.description && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: 'auto', marginTop: '0.25rem' }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                    className="text-xs text-muted-foreground pl-1 pr-2 whitespace-pre-wrap pb-2"
+                  >
+                    {subtask.description}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          )}
+        </div>
       </div>
       <div className="hidden lg:flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity space-x-1"> 
         {editingSubtaskId !== subtask.id && !subtask.completed && ( 
@@ -234,7 +254,7 @@ function SubtaskRow({
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
-  const { getTaskById, deleteTask, isLoading: tasksLoading, updateSubtask, addSubtask, expandTask, deleteSubtask: deleteSubtaskFromContext, toggleTaskCompletion, updateTask } = useTask();
+  const { getTaskById, deleteTask, isLoading: tasksLoading, updateSubtask, addSubtask, expandTask, deleteSubtask: deleteSubtaskFromContext, toggleTaskCompletion, updateTask, isGeneratingSubtasksForTask } = useTask();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -246,7 +266,6 @@ export default function TaskDetail() {
   const [showAddSubtaskForm, setShowAddSubtaskForm] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
-  const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
   const [isGenerateSubtasksDialogOpen, setIsGenerateSubtasksDialogOpen] = useState(false);
   const [isMobileGenerateDialogOpen, setIsMobileGenerateDialogOpen] = useState(false);
   const [showMobileActions, setShowMobileActions] = useState(true);
@@ -257,6 +276,8 @@ export default function TaskDetail() {
   const [contextMenuPosition, setContextMenuPosition] = useState<{ top: number, left: number } | null>(null);
 
   const task: Task | undefined = getTaskById(id || "");
+  const currentAiGenerationCount = task?.aiSubtaskGenerationCount || 0;
+  const isAiGenerationLimitReached = currentAiGenerationCount >= MAX_AI_SUBTASK_GENERATIONS;
 
   useEffect(() => {
     if (!location.hash) {
@@ -445,10 +466,7 @@ export default function TaskDetail() {
 
   const handleGenerateSubtasks = async () => {
     if (task) {
-      setIsGeneratingSubtasks(true);
       await expandTask(task.id);
-      setIsGeneratingSubtasks(false);
-      // Close both dialogs
       setIsGenerateSubtasksDialogOpen(false);
       setIsMobileGenerateDialogOpen(false);
     }
@@ -731,9 +749,9 @@ export default function TaskDetail() {
                   </div>
                 </div>
                 <div className="flex-grow overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded pb-2 space-y-1 lg:space-y-1.5 divide-y divide-border/60 lg:divide-y-0">
-                  <AnimatePresence>
+                  <AnimatePresence mode='wait'>
                     {task.subtasks.length > 0 ? (
-                      <>
+                      <motion.div key="subtask-list" layout>
                         {task.subtasks.map((subtaskItem: SubTask, index: number) => (
                           <div key={`subtask-wrapper-${subtaskItem.id}`} className="relative">
                             <SubtaskRow 
@@ -827,9 +845,17 @@ export default function TaskDetail() {
                             )}
                           </div>
                         ))}
-                      </>
+                      </motion.div>
                     ) : (
-                      <p className="text-muted-foreground text-sm px-4 lg:px-0">{t('taskDetail.noSubtasks')}</p>
+                      <motion.p 
+                        key="no-subtasks" 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        exit={{ opacity: 0 }}
+                        className="text-muted-foreground text-sm px-4 lg:px-0"
+                      >
+                        {t('taskDetail.noSubtasks')}
+                      </motion.p>
                     )}
                   </AnimatePresence>
                 </div>
@@ -879,47 +905,32 @@ export default function TaskDetail() {
                              <PlusCircle className="mr-2 h-4 w-4" />
                              {t('taskDetail.addSubtask.buttonText')}
                           </Button>
-                          <DialogTrigger asChild>
-                            <Button
-                              disabled={isGeneratingSubtasks || isAddingSubtask}
-                              className="h-10 p-[1px] rounded-md bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 relative transition-colors duration-200"
-                            >
-                              <div className="bg-card h-full w-full rounded-[5px] flex items-center justify-center px-4">
-                                <span className="flex items-center bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-                                  <Sparkles className="mr-1 h-4 w-4 text-blue-500" />
-                                  {t('taskDetail.generateSubtasks.buttonText')}
-                                </span>
-                              </div>
-                            </Button>
-                          </DialogTrigger>
-                          <DialogPortal>
-                            <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[85]" />
-                            <DialogContent className="sm:max-w-xl z-[90] border bg-card p-6 shadow-lg sm:rounded-lg">
-                              <DialogHeader>
-                                <DialogTitle className="text-2xl">{t('common.generateSubtasksDialogTitle')}</DialogTitle>
-                                <DialogDescription className="text-muted-foreground">
-                                  {t('common.generateSubtasksDialogDescription', { taskTitle: task?.title })}
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="mt-4">
+                          <TooltipProvider delayDuration={100}>
+                            <Tooltip>
+                              <DialogTrigger asChild>
                                 <Button
-                                  disabled={isGeneratingSubtasks}
-                                  variant="default"
-                                  className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
-                                  onClick={handleGenerateSubtasks}
+                                  disabled={isGeneratingSubtasksForTask(task.id) || isAddingSubtask || isAiGenerationLimitReached}
+                                  className="h-10 p-[1px] rounded-md bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 relative transition-colors duration-200"
                                 >
-                                  {isGeneratingSubtasks ? (
-                                    <div className="flex items-center gap-2 justify-center">
-                                      <Loader2 className="animate-spin h-4 w-4" />
-                                      {t('common.generatingText')}
-                                    </div>
-                                  ) : (
-                                    t('taskDetail.generateSubtasks.confirmButton')
-                                  )}
+                                  <div className="bg-card h-full w-full rounded-[5px] flex items-center justify-center px-4">
+                                    <span className="flex items-center bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+                                      {isGeneratingSubtasksForTask(task.id) ? (
+                                        <Loader2 className="animate-spin h-4 w-4 mr-2 text-blue-500" />
+                                      ) : (
+                                        <Sparkles className="mr-1 h-4 w-4 text-blue-500" />
+                                      )}
+                                      {t('taskDetail.generateSubtasks.buttonText')}
+                                    </span>
+                                  </div>
                                 </Button>
-                              </div>
-                            </DialogContent>
-                          </DialogPortal>
+                              </DialogTrigger>
+                              {isAiGenerationLimitReached && (
+                                <TooltipContent side="top">
+                                  <p>{t('taskDetail.generateSubtasks.limitReachedTooltip', { count: currentAiGenerationCount, limit: MAX_AI_SUBTASK_GENERATIONS })}</p>
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                       </Dialog>
                     )}
@@ -997,14 +1008,22 @@ export default function TaskDetail() {
                 variant="default"
                 size="icon" 
                 className="aspect-square rounded-full h-14 w-14 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white shadow-lg"
-                disabled={isGeneratingSubtasks}
-                onClick={() => setIsGenerateSubtasksDialogOpen(true)}
+                disabled={isGeneratingSubtasksForTask(task.id) || isAiGenerationLimitReached}
+                onClick={() => setIsMobileGenerateDialogOpen(true)}
               >
-                <Sparkles className="h-6 w-6" />
+                {isGeneratingSubtasksForTask(task.id) ? (
+                  <Loader2 className="animate-spin h-6 w-6" />
+                ) : (
+                  <Sparkles className="h-6 w-6" />
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              <p>{t('taskDetail.generateSubtasks.tooltip')}</p>
+              {isAiGenerationLimitReached ? (
+                <p>{t('taskDetail.generateSubtasks.limitReachedTooltip', { count: currentAiGenerationCount, limit: MAX_AI_SUBTASK_GENERATIONS })}</p>
+              ) : (
+                <p>{t('taskDetail.generateSubtasks.tooltip')}</p>
+              )}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -1017,7 +1036,7 @@ export default function TaskDetail() {
                 size="icon" 
                 className="aspect-square rounded-full h-14 w-14 bg-secondary/80 backdrop-blur-sm border-white/10 text-muted-foreground hover:text-foreground hover:bg-secondary shadow-lg"
                 onClick={() => setShowAddSubtaskForm(true)}
-                disabled={isAddingSubtask || isGeneratingSubtasks}
+                disabled={isAddingSubtask || isGeneratingSubtasksForTask(task.id) || isAiGenerationLimitReached}
                 aria-label={t('taskDetail.addSubtask.buttonAriaLabel')}
               >
                 <PlusCircle className="h-7 w-7" />
@@ -1044,12 +1063,12 @@ export default function TaskDetail() {
             </AlertDialogHeader>
             <div className="mt-4">
               <Button
-                disabled={isGeneratingSubtasks}
+                disabled={isGeneratingSubtasksForTask(task.id) || isAiGenerationLimitReached}
                 variant="default"
                 className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
                 onClick={handleGenerateSubtasks}
               >
-                {isGeneratingSubtasks ? (
+                {isGeneratingSubtasksForTask(task.id) ? (
                   <div className="flex items-center gap-2 justify-center">
                     <Loader2 className="animate-spin h-4 w-4" />
                     {t('common.generatingText')}

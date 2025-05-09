@@ -526,7 +526,8 @@
     "generateSubtasks": {
       "buttonText": "Generate Subtasks",
       "confirmButton": "Yes, generate subtasks",
-      "tooltip": "Generate subtasks (AI)"
+      "tooltip": "Generate subtasks (AI)",
+      "limitReachedTooltip": "AI generation limit reached ({{count}}/{{limit}})"
     }
   },
   "common": {
@@ -566,7 +567,9 @@
     "cancelAriaLabel": "Cancel",
     "generateSubtasksDialogTitle": "Generate Subtasks (AI)?",
     "generateSubtasksDialogDescription": "Would you like to ask the AI assistant to suggest relevant subtasks for \"{{taskTitle}}\" based on its description?",
-    "generatingText": "Generating..."
+    "generatingText": "Generating...",
+    "information": "Information",
+    "notAuthenticated": "You must be logged in to perform this action."
   },
   "pageTitles": {
     "home": "Home",
@@ -711,8 +714,13 @@
     "selectModelAriaLabel": "Select AI research model",
     "research": {
       "startingDeepResearchOn": "Starting deep research on: {{topic}}",
-      "contextSubtaskForMain": "(Subtask: {{subtaskTitle}})",
-      "researchCompleted": "Research completed."
+      "contextPrompt": "with custom context: \\\"{{prompt}}\\\"",
+      "contextSubtaskForMain": "for subtask \\\"{{subtaskTitle}}\\\" (of main task \\\"{{mainTaskTitle}}\\\")",
+      "contextMainTask": "for main task \\\"{{mainTaskTitle}}\\\"",
+      "researchLoadingText": "Researching... please wait.",
+      "researchCompleted": "Research completed.",
+      "researchForPromptLabel": "Research for prompt: {{prompt}}",
+      "researchForSubtaskLabel": "Research for subtask: {{subtaskTitle}}"
     },
     "startConversationPrompt": "Start a conversation by typing a message.",
     "initialAssistantMessage": "Hello {{username}}! I'm ready to help you with your task: {{taskTitle}}. What can I do for you?",
@@ -733,17 +741,63 @@
     "errors": {
       "taskIdMissing": "Task ID is missing, cannot perform action.",
       "userNotLoggedIn": "User is not logged in.",
-      "taskIdOrUserMissing": "Task ID or user not available. Cannot save research."
+      "taskIdOrUserMissing": "Task ID or user not available. Cannot save research.",
+      "cannotTogglePinStatus": "Task ID or user is missing, cannot toggle pin status.",
+      "messageNotFoundInState": "Message not found in local state.",
+      "couldNotFetchSavedResearchAfterClear": "Could not fetch saved research after clearing history: {{error}}",
+      "saveMessageToDbGeneric": "Error saving message to DB:",
+      "invokeSaveResearchFunctionGeneric": "Error invoking save-research function:",
+      "clientSideSaveResearchGeneric": "Client-side error saving research via function:",
+      "fetchPinnedMessagesGeneric": "Error fetching pinned messages:",
+      "couldNotFetchSavedResearch": "Could not fetch saved research:",
+      "loadMessagesAndNotesGeneric": "Error loading messages and notes:",
+      "clearHistoryGeneric": "Error clearing history and reloading items:",
+      "deleteNoteGeneric": "Error deleting note:",
+      "deleteResearchGeneric": "Error deleting saved research:",
+      "togglePinStatusGeneric": "Error toggling pin status:",
+      "cannotSaveResearch": "Cannot save research: taskId or user is not available.",
+      "request": {
+        "missingTaskId": "Task ID is missing or invalid in the request.",
+        "missingOpenAiKey": "OpenAI API key is not configured.",
+        "missingSupabaseUrl": "Supabase URL is not configured.",
+        "missingSupabaseAnonKey": "Supabase anonymous key is not configured."
+      },
+      "task": {
+        "notFound": "Main task not found.",
+        "fetchFailed": "Failed to fetch main task details."
+      },
+      "chat": {
+        "fetchFailed": "Could not fetch chat messages."
+      },
+      "notes": {
+        "fetchFailed": "Could not fetch notes."
+      },
+      "research": {
+        "fetchFailed": "Could not fetch research results."
+      },
+      "ai": {
+        "requestFailed": "OpenAI API request failed.",
+        "invalidStructure": "Invalid response structure from OpenAI.",
+        "jsonParseFailed": "Failed to parse OpenAI JSON response.",
+        "noContent": "No content received from OpenAI.",
+        "subtasks": {
+          "invalidArray": "AI response object does not contain a valid 'subtasks' array.",
+          "invalidArrayStructure": "AI response 'subtasks' array items must have 'title' and 'description' strings.",
+          "extractionFailed": "Failed to parse AI content or extract subtasks array."
+        }
+      },
+      "functionExecError": "Error executing function."
     },
     "toast": {
       "saveFailedTitle": "Save Failed",
-      "researchLoadingText": "Researching... please wait.",
       "deepResearchSuccessTitle": "Deep Research Completed",
       "loadMessagesAndNotesFailed": "Failed to load messages and notes",
       "saveMessageToDbFailed": "Failed to save message to database.",
       "saveResearchToDbFailed": "Failed to save research: {{error}}",
       "historyClearedTitle": "History Cleared",
       "historyClearedDescription": "Chat history has been successfully cleared.",
+      "historyClearedWithPinnedDescription": "History cleared, {{count}} pinned messages kept.",
+      "historyClearedWithKeptItemsDescription": "History cleared. Kept: {{items}}.",
       "clearHistoryFailed": "Failed to clear history",
       "noteDeletedTitle": "Note Deleted",
       "noteDeletedDescription": "The note has been successfully deleted.",
@@ -753,8 +807,24 @@
       "researchDeletedDescription": "The saved research has been successfully deleted.",
       "deleteResearchFailedDescriptionDefault": "Failed to delete the research. Please try again.",
       "researchSavedTitle": "Research Saved",
-      "researchSavedDescription": "The research has been successfully saved."
-    }
+      "researchSavedDescription": "The research has been successfully saved.",
+      "messagePinnedTitle": "Message Pinned",
+      "messagePinnedDescription": "The message has been pinned and will be kept when clearing history.",
+      "togglePinFailedDescription": "Could not update message pin status in database.",
+      "pinnedItemsKept": "{{count}} pinned messages",
+      "notesItemsKept": "{{count}} notes",
+      "researchItemsKept": "{{count}} research items",
+      "cannotChangePinStatusDescription": "Could not change pin status."
+    },
+    "notePlaceholder": "Type your note here...",
+    "stopNoteButton": "Stop Note Mode",
+    "saveNoteTooltip": "Save note",
+    "pinMessageTitle": "Pin message",
+    "unpinMessageTitle": "Unpin message",
+    "pinMessageSR": "Pin this message",
+    "unpinMessageSR": "Unpin this message",
+    "pinnedMessages": "Pinned messages",
+    "noteSavedTitle": "Note Saved"
   },
   "chatInput": {
     "placeholder": "Type your message or / for commands...",
@@ -837,6 +907,7 @@
       "noContent": "No content found in AI response.",
       "subtasks": {
         "invalidArray": "AI response does not contain a valid 'subtasks' array.",
+        "invalidArrayStructure": "AI response 'subtasks' array items must have 'title' and 'description' strings.",
         "extractionFailed": "Could not extract a valid subtasks array from AI response."
       }
     },
@@ -875,7 +946,19 @@
       "noSubtasksGeneratedDescription": "The AI could not suggest any subtasks.",
       "generationFailedTitle": "Generation Failed",
       "generationFailedDescription": "Could not generate AI subtasks.",
-      "taskNotFound": "Task not found"
-    }
+      "taskNotFound": "Task with ID '{{taskId}}' not found.",
+      "aiSubtaskGenerationLimitReached": "AI subtask generation limit reached for this task ({{count}}/{{limit}}).",
+      "aiSubtaskGenerationFailed": "Failed to generate AI subtasks.",
+      "aiSubtasksGeneratedSuccessfully": "AI subtasks generated successfully.",
+      "errorUpdatingTaskGenerationCount": "Failed to update AI generation count for the task.",
+      "addSubtasksFailed": "Failed to save new AI subtasks to the database.",
+      "aiNoNewSubtasksGenerated": "AI did not generate any new unique subtasks.",
+      "fetchError": "Error fetching tasks.",
+      "notAuthenticated": "You must be logged in to perform this action."
+    },
+    "aiSubtaskGenerationLimitReached": "AI subtask generation limit reached for this task ({{count}}/{{limit}}).",
+    "aiSubtaskGenerationFailed": "Failed to generate AI subtasks.",
+    "aiSubtasksGeneratedSuccessfully": "AI subtasks generated successfully.",
+    "errorUpdatingTaskGenerationCount": "Failed to update AI generation count for the task."
   }
 }

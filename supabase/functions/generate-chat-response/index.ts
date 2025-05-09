@@ -1,19 +1,19 @@
 /// <reference lib="deno.ns" />
-/// <reference types="jsr:@supabase/functions-js/edge-runtime" />
+/// <reference types="jsr:@supabase/functions-js/edge-runtime.d.ts" />
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Import Supabase client
-import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
-import { OpenAI } from "https://deno.land/x/openai@v4.52.7/mod.ts";
+// import { supabaseAdmin } from "../_shared/supabaseAdmin.ts"; // Commented out as it's not directly used in this function and causes load/lint issues
+// import { OpenAI } from "https://deno.land/x/openai@v4.52.7/mod.ts"; // OpenAI class not used, direct fetch is used
 
 // Interface for Subtask (adjust if your structure is different)
-interface SubTask {
-  id: string;
-  title: string;
-  completed: boolean;
-  // Add other fields if necessary
-}
+// interface SubTask {
+//   id: string;
+//   title: string;
+//   completed: boolean;
+//   // Add other fields if necessary
+// }
 
 // --- Define expected AI Response structure ---
 interface AIResponse {
@@ -22,6 +22,61 @@ interface AIResponse {
   payload?: Record<string, unknown>; // Use Record<string, unknown> instead of any
 }
 // --- End AI Response structure definition ---
+
+// Expected structure from OpenAI API after JSON.parse(rawData)
+interface OpenAIChatCompletion {
+  id?: string;
+  object?: string;
+  created?: number;
+  model?: string;
+  choices?: {
+    index?: number;
+    message?: {
+      role?: string;
+      content?: string;
+    };
+    finish_reason?: string;
+  }[];
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
+  system_fingerprint?: string;
+}
+
+const errorMessages = {
+  en: {
+    queryRequired: "Query is required",
+    modeRequired: "Mode is required",
+    taskIdRequired: "taskId is required",
+    openAIApiKeyMissing: "OPENAI_API_KEY environment variable not set",
+    supabaseUrlMissing: "SUPABASE_URL environment variable not set",
+    supabaseAnonKeyMissing: "SUPABASE_ANON_KEY environment variable not set",
+    errorFetchingSubtasks: "Error fetching task subtasks:",
+    exceptionFetchingSubtasks: "Exception fetching subtasks:",
+    openAIRequestFailed: "OpenAI API request failed:",
+    nonJsonResponseFromAI: "Received non-JSON response from AI.",
+    structureMismatchOrChoicesMissing: "Parsed data does not match expected OpenAIChatCompletion structure or choices are missing.",
+    payloadNotValidObject: "Payload from AI is not a valid object, ignoring for finalPayload.",
+    functionExecError: "Function execution error"
+  },
+  nl: {
+    queryRequired: "Query is vereist",
+    modeRequired: "Modus is vereist",
+    taskIdRequired: "taskId is vereist",
+    openAIApiKeyMissing: "OPENAI_API_KEY omgevingsvariabele niet ingesteld",
+    supabaseUrlMissing: "SUPABASE_URL omgevingsvariabele niet ingesteld",
+    supabaseAnonKeyMissing: "SUPABASE_ANON_KEY omgevingsvariabele niet ingesteld",
+    errorFetchingSubtasks: "Fout bij ophalen subtasks:",
+    exceptionFetchingSubtasks: "Exceptie bij ophalen subtasks:",
+    openAIRequestFailed: "OpenAI API request mislukt:",
+    nonJsonResponseFromAI: "Geen JSON-respons ontvangen van AI.",
+    structureMismatchOrChoicesMissing: "Geparste data komt niet overeen met de verwachte OpenAIChatCompletion structuur of keuzes ontbreken.",
+    payloadNotValidObject: "Payload van AI is geen geldig object, wordt genegeerd voor finalPayload.",
+    functionExecError: "Fout bij uitvoeren functie"
+  }
+};
 
 // console.log("generate-chat-response function started V2");
 
@@ -34,10 +89,12 @@ serve(async (req) => {
   try {
     // 1. Extract data from request
     const { query, mode, taskId, chatHistory, languagePreference = 'en' } = await req.json();
+    const langKey = languagePreference === 'nl' ? 'nl' : 'en';
+    const messages = errorMessages[langKey];
     // console.log(`V2: Received query: ${query}, mode: ${mode}, taskId: ${taskId}, lang: ${languagePreference}, history length: ${chatHistory?.length || 0}`);
-    if (!query) throw new Error("Query is required");
-    if (!mode) throw new Error("Mode is required");
-    if (!taskId) throw new Error("taskId is required"); // Need taskId to fetch subtasks
+    if (!query) throw new Error(messages.queryRequired);
+    if (!mode) throw new Error(messages.modeRequired);
+    if (!taskId) throw new Error(messages.taskIdRequired); // Need taskId to fetch subtasks
     const preferredLanguage = languagePreference === 'en' ? 'English' : 'Dutch';
 
     // 2. Load API Keys and Supabase Config
@@ -45,9 +102,9 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
 
-    if (!openAIApiKey) throw new Error("OPENAI_API_KEY environment variable not set");
-    if (!supabaseUrl) throw new Error("SUPABASE_URL environment variable not set");
-    if (!supabaseAnonKey) throw new Error("SUPABASE_ANON_KEY environment variable not set");
+    if (!openAIApiKey) throw new Error(messages.openAIApiKeyMissing);
+    if (!supabaseUrl) throw new Error(messages.supabaseUrlMissing);
+    if (!supabaseAnonKey) throw new Error(messages.supabaseAnonKeyMissing);
 
     // 3. Initialize Supabase Client
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -64,14 +121,14 @@ serve(async (req) => {
             .single();
 
         if (taskError) {
-            console.error("Error fetching task subtasks:", taskError);
+            console.error(messages.errorFetchingSubtasks, taskError);
             // Don't throw, proceed without subtask context if fetching fails
         } else if (taskData && Array.isArray(taskData.subtasks)) {
             currentSubtasks = taskData.subtasks;
             // console.log(`V2: Fetched ${currentSubtasks.length} subtasks for context.`);
         }
     } catch (e) {
-        console.error("Exception fetching subtasks:", e);
+        console.error(messages.exceptionFetchingSubtasks, e);
     }
 
     // 5. Prepare Prompt and Parameters for OpenAI
@@ -158,35 +215,36 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
     if (!completion.ok) {
       const errorBody = await completion.json().catch(()=>({ message: "Failed to parse error body" }));
       console.error("V2: OpenAI API Error Response:", errorBody);
-      throw new Error(`OpenAI API request failed: ${completion.statusText} - ${errorBody?.error?.message || JSON.stringify(errorBody)}`);
+      throw new Error(`${messages.openAIRequestFailed} ${completion.statusText} - ${errorBody?.error?.message || JSON.stringify(errorBody)}`);
     }
 
     // --- Response Parsing ---
     const rawData = await completion.text(); 
     // console.log("V2: Raw OpenAI Response:", rawData);
 
-    let structuredData: any; // Keep as any for parsing flexibility
+    let structuredData: unknown;
     try {
       structuredData = JSON.parse(rawData);
     } catch (parseError) {
-       // ... (handling for non-JSON or partially extracted JSON remains the same)
-       throw new Error("Received non-JSON response from AI."); // Or handle fallback
+       throw new Error(messages.nonJsonResponseFromAI); 
     }
 
-    // ---> HERZIENE LOGICA <---
-    // Extract the main content part from the AI response first
     let aiContentString: string | null = null;
-    try {
-      aiContentString = structuredData?.choices?.[0]?.message?.content?.trim() ?? null;
-    } catch (error) {
-      // console.error("V2: Error accessing OpenAI response content:", error); // Optional
-      // Handle cases where the structure might be different or null
+    // Type guard for structuredData
+    if (typeof structuredData === 'object' && structuredData !== null && 'choices' in structuredData) {
+      const openAIResponse = structuredData as OpenAIChatCompletion;
+      if (openAIResponse.choices && openAIResponse.choices.length > 0 && openAIResponse.choices[0].message) {
+        aiContentString = openAIResponse.choices[0].message.content?.trim() ?? null;
+      }
+    } else {
+      // Handle cases where structuredData is not the expected OpenAI object or choices are missing
+      console.warn(messages.structureMismatchOrChoicesMissing);
     }
 
     // Initialize finalResponseObject with defaults
     let finalAction: string | null = null;
-    let finalPayload: unknown = null;
-    let finalResponse: string = "Sorry, ik kon geen antwoord genereren."; // Default text
+    let finalPayload: Record<string, unknown> | null = null; // Ensure finalPayload matches expected type or is null
+    let finalResponse: string = preferredLanguage === 'Dutch' ? "Sorry, ik kon geen antwoord genereren." : "Sorry, I couldn't generate a response.";
 
     if (aiContentString) {
         // Try to parse the content string itself as JSON (in case AI wrapped the whole action object)
@@ -196,23 +254,29 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
             if (typeof aiResponseParsed === 'object' && aiResponseParsed !== null) {
                 // Type check for properties
                 const action = (aiResponseParsed as { action?: unknown }).action;
-                const payload = (aiResponseParsed as { payload?: unknown }).payload;
+                const payloadFromAI = (aiResponseParsed as { payload?: unknown }).payload; // Keep as unknown initially
                 const response = (aiResponseParsed as { response?: unknown }).response;
 
                 if (typeof action === 'string') {
                     finalAction = action;
                     // console.log("V2: Parsed 'action' from aiContentString:", finalAction);
                 }
-                // Keep payload as unknown, specific handling should occur where it's used
-                finalPayload = payload;
-                // console.log("V2: Parsed 'payload' from aiContentString.");
+                // Assign to finalPayload only if it's a Record<string, unknown>
+                if (typeof payloadFromAI === 'object' && payloadFromAI !== null && !Array.isArray(payloadFromAI)) {
+                    finalPayload = payloadFromAI as Record<string, unknown>;
+                } else if (payloadFromAI !== undefined) {
+                    // If payload exists but not an object (e.g. string, number), it doesn't fit Record<string, unknown>
+                    // Decide how to handle: log a warning, or try to wrap it if applicable, or ignore.
+                    // For now, we ignore if it's not a valid Record structure for the payload field.
+                    console.warn(messages.payloadNotValidObject);
+                }
 
                 if (typeof response === 'string') {
                     finalResponse = response;
                     // console.log("V2: Parsed 'response' text from aiContentString.");
                 } else if (finalAction) {
                     // If we found an action but no explicit response text, use a default
-                    finalResponse = "Oké, ik voer de actie uit."; 
+                    finalResponse = preferredLanguage === 'Dutch' ? "Oké, ik voer de actie uit." : "Okay, I'll perform the action.";
                 } else {
                    // If it's JSON but not our action structure, treat contentJson as the response text?
                    // Or stick to default error. Let's stick to default for now.
@@ -240,7 +304,7 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
     if (finalAction) {
         finalResponseObject.action = finalAction;
     }
-    if (finalPayload !== undefined) {
+    if (finalPayload !== null) {
         finalResponseObject.payload = finalPayload;
     }
     // ---> EINDE HERZIENE LOGICA <---
@@ -248,16 +312,25 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
     // 6. Return the structured response
     // console.log(`V2: Final structured response being sent:`, finalResponseObject);
     return new Response(JSON.stringify(finalResponseObject), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
     });
 
-  } catch (error) {
-    console.error("V2: Error in generate-chat-response:", error);
-    // Type check the error before accessing message
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return new Response(JSON.stringify({ error: errorMessage }), {
+  } catch (e) {
+    const langKeyForError = req.headers.get('accept-language')?.includes('nl') ? 'nl' : 'en'; // Basic language detection for error
+    const errorResponseMessage = errorMessages[langKeyForError].functionExecError;
+    console.error("Error in generate-chat-response:", e); // Log the full error object
+    
+    let details = "Unknown error"; // Default error detail
+    if (e instanceof Error) {
+      details = e.message;
+    } else if (typeof e === 'string') {
+      details = e;
+    }
+
+    return new Response(JSON.stringify({ error: errorResponseMessage, details: details }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 }); 

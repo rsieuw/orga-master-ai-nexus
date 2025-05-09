@@ -1,748 +1,426 @@
-import { useState, useEffect } from "react";
-import { Task, TaskPriority, TaskStatus, TasksByDate, SubTask } from "../types/task.ts";
-import { useAuth } from "./AuthContext.tsx";
-import { supabase } from "@/integrations/supabase/client.ts";
-import { useToast } from "@/hooks/use-toast.ts";
+import React, { useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { Task, SubTask, TaskStatus, TaskPriority, TasksByDate } from '@/types/task.ts';
+import { supabase } from '../integrations/supabase/client.ts';
+import { Json } from '@/types/supabase.ts';
+import { useToast } from '@/hooks/use-toast.ts';
 import { useTranslation } from 'react-i18next';
-// Import the context and props type from the hooks file
-import { TaskContext, type TaskContextProps } from "./TaskContext.hooks.ts";
+import { MAX_AI_SUBTASK_GENERATIONS } from '@/constants/taskConstants.ts';
+import { 
+  isToday, 
+  isTomorrow, 
+  isPast, 
+  parseISO, 
+  startOfDay, 
+  differenceInCalendarDays
+} from 'date-fns';
+import { TaskContext } from './TaskContext.context.ts';
 
-// Define the structure of the raw data fetched from Supabase
-interface FetchedTaskData {
+interface DbTask {
   id: string;
-  title: string;
-  description?: string | null;
-  priority?: string | null;
-  status?: string | null;
-  deadline?: string | null;
   user_id: string;
+  title: string;
+  description: string | null;
+  priority: string | null;
+  status: string | null;
+  deadline: string | null;
   created_at: string;
-  subtasks?: unknown | null; // Keep as unknown for initial fetch, cast later
+  updated_at: string | null;
+  subtasks: Json;
+  ai_subtask_generation_count: number | null;
 }
 
-// Define a type for the fields that can be updated in the database
-// Use database column names (e.g., user_id)
-// Ensure subtasks are handled correctly if they are stored as JSONB or similar
-type TaskDatabaseUpdatePayload = {
+interface DbTaskUpdate {
   title?: string;
   description?: string;
-  priority?: TaskPriority;
-  status?: TaskStatus;
+  priority?: string;
+  status?: string;
   deadline?: string | null;
-  subtasks?: SubTask[];
-};
+  subtasks?: Json;
+  updated_at?: string;
+  ai_subtask_generation_count?: number;
+}
 
 export function TaskProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation(); 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isGeneratingAISubtasksMap, setIsGeneratingAISubtasksMap] = useState<Record<string, boolean>>({});
+
+  const setIsGeneratingAISubtasks = (taskId: string) => {
+    setIsGeneratingAISubtasksMap(prev => ({ ...prev, [taskId]: true }));
+  };
+
+  const clearIsGeneratingAISubtasks = (taskId: string) => {
+    setIsGeneratingAISubtasksMap(prev => ({ ...prev, [taskId]: false }));
+  };
+
+  const isGeneratingSubtasksForTask = (taskId: string): boolean => {
+    return !!isGeneratingAISubtasksMap[taskId];
+  };
+
+  const mapDbTaskToTask = (dbTask: DbTask): Task => {
+    let parsedSubtasks: SubTask[] = [];
+    
+    try {
+      if (Array.isArray(dbTask.subtasks)) {
+        parsedSubtasks = dbTask.subtasks as unknown as SubTask[];
+      } else if (dbTask.subtasks) {
+        if (typeof dbTask.subtasks === 'string') {
+          parsedSubtasks = JSON.parse(dbTask.subtasks) as SubTask[];
+        } else {
+          // Het kan ook een JSON object zijn dat al geparsed is
+          parsedSubtasks = dbTask.subtasks as unknown as SubTask[];
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing subtasks:", error, dbTask.subtasks);
+      parsedSubtasks = [];
+    }
+    
+    return {
+      id: dbTask.id,
+      userId: dbTask.user_id,
+      title: dbTask.title,
+      description: dbTask.description || '',
+      priority: (dbTask.priority || 'medium') as TaskPriority,
+      status: (dbTask.status || 'todo') as TaskStatus,
+      deadline: dbTask.deadline ? new Date(dbTask.deadline).toISOString() : null,
+      createdAt: new Date(dbTask.created_at).toISOString(),
+      updatedAt: dbTask.updated_at ? new Date(dbTask.updated_at).toISOString() : new Date(dbTask.created_at).toISOString(),
+      subtasks: parsedSubtasks,
+      aiSubtaskGenerationCount: dbTask.ai_subtask_generation_count || 0,
+    };
+  };
+
+  const fetchTasks = useCallback(async () => {
+    setIsLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      setTasks([]);
+      setIsLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching tasks:', error);
+      toast({ variant: "destructive", title: t('taskContext.toast.fetchError') });
+      setTasks([]);
+    } else {
+      const dbTasks = data as DbTask[] | null;
+      const transformedTasks: Task[] = (dbTasks || []).map((dbTask) => mapDbTaskToTask(dbTask));
+      setTasks(transformedTasks);
+    }
+    setIsLoading(false);
+  }, [toast, t]);
 
   useEffect(() => {
-    const loadTasks = async () => {
-      setIsLoading(true);
-      setTasks([]);
+    fetchTasks();
+    const subscription = supabase
+      .channel('public:tasks')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tasks' },
+        () => fetchTasks()
+      )
+      .subscribe();
 
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const { data: fetchedTasks, error } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error("Failed to load tasks from Supabase:", error);
-          toast({
-            variant: "destructive",
-            title: "Laden van taken mislukt",
-            description: error.message || "Kon geen verbinding maken met de database.",
-          });
-        } else if (fetchedTasks) {
-          const mappedTasks = fetchedTasks.map((task: FetchedTaskData) => ({
-            id: task.id,
-            title: task.title,
-            description: task.description || '',
-            priority: task.priority as TaskPriority || 'medium',
-            status: task.status as TaskStatus || 'todo',
-            deadline: task.deadline ? task.deadline : '',
-            userId: task.user_id,
-            createdAt: task.created_at,
-            subtasks: (task.subtasks as unknown as SubTask[] | null) || [],
-          } as Task));
-          setTasks(mappedTasks);
-        }
-      } catch (error: unknown) {
-        console.error("Tasks: Unexpected error loading tasks:", error);
-        toast({
-          variant: "destructive",
-          title: "Laden van taken mislukt",
-          description: "Er is een onverwachte fout opgetreden.",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+    return () => {
+      supabase.removeChannel(subscription);
     };
-
-    loadTasks();
-  }, [user, toast]);
-
-  const createTask = async (
-    taskData: Omit<Task, "id" | "userId" | "createdAt" | "subtasks">
-  ): Promise<Task> => {
-    if (!user) {
-      toast({
-        variant: "destructive",
-        title: "Authenticatie vereist",
-        description: "Je moet ingelogd zijn om taken aan te maken.",
-      });
-      throw new Error("User must be authenticated to create tasks");
-    }
-
-    try {
-      const taskToInsert = {
-        ...taskData,
-        user_id: user.id,
-        subtasks: [],
-        deadline: taskData.deadline ? new Date(taskData.deadline).toISOString() : null
-      };
-
-      const { data: newTask, error } = await supabase
-        .from('tasks')
-        .insert(taskToInsert)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Failed to create task in Supabase:", error);
-        toast({
-          variant: "destructive",
-          title: "Aanmaken mislukt",
-          description: error.message || "Kon de taak niet opslaan in de database.",
-        });
-        throw error;
-      }
-
-      if (newTask) {
-        const taskWithValidSubtasks = {
-          id: newTask.id,
-          title: newTask.title,
-          description: newTask.description || '',
-          priority: newTask.priority as TaskPriority || 'medium',
-          status: newTask.status as TaskStatus || 'todo',
-          deadline: newTask.deadline ? newTask.deadline : '',
-          userId: newTask.user_id,
-          createdAt: newTask.created_at,
-          subtasks: (newTask.subtasks as unknown as SubTask[] | null) || [],
-        } as Task;
-
-        setTasks((prevTasks) => [taskWithValidSubtasks, ...prevTasks]);
-
-        return taskWithValidSubtasks;
-      } else {
-        throw new Error("Task creation succeeded but no data returned.");
-      }
-
-    } catch (error) {
-      console.error("Unexpected error creating task:", error);
-      if (!(error instanceof Error && error.message.includes("Kon de taak niet opslaan"))) {
-        toast({
-          variant: "destructive",
-          title: "Aanmaken mislukt",
-          description: "Er is een onverwachte fout opgetreden bij het aanmaken van de taak.",
-        });
-      }
-      throw error;
-    }
-  };
-
-  const updateTask = async (id: string, taskData: Partial<Omit<Task, 'id' | 'userId' | 'createdAt'>>): Promise<Task> => {
-    if (!user) {
-      toast({
-        variant: "destructive",
-        title: "Authenticatie vereist",
-        description: "Je moet ingelogd zijn om taken bij te werken.",
-      });
-      throw new Error("User must be authenticated to update tasks");
-    }
-
-    try {
-      const taskToUpdate: TaskDatabaseUpdatePayload = {};
-      if (taskData.title !== undefined) taskToUpdate.title = taskData.title;
-      if (taskData.description !== undefined) taskToUpdate.description = taskData.description;
-      if (taskData.priority !== undefined) taskToUpdate.priority = taskData.priority;
-      if (taskData.status !== undefined) taskToUpdate.status = taskData.status;
-      if (taskData.deadline !== undefined) {
-        taskToUpdate.deadline = taskData.deadline ? new Date(taskData.deadline).toISOString() : '';
-      }
-      if (taskData.subtasks !== undefined) {
-         taskToUpdate.subtasks = taskData.subtasks;
-      }
-
-      if (Object.keys(taskToUpdate).length === 0) {
-        // console.log("No changes detected for update."); // Verwijderd
-        const currentTask = tasks.find((t: Task) => t.id === id);
-        if (!currentTask) throw new Error("Task not found for no-op update");
-        return currentTask;
-      }
-
-      const payloadForSupabase: TaskDatabaseUpdatePayload = { ...taskToUpdate };
-      if (payloadForSupabase.deadline === '') {
-         payloadForSupabase.deadline = null;
-      }
-
-      const { data: updatedTaskData, error } = await supabase
-        .from('tasks')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update(payloadForSupabase as any) // Cast hele payload naar any
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Failed to update task in Supabase:", error);
-        toast({
-          variant: "destructive",
-          title: "Bijwerken mislukt",
-          description: error.message || "Kon de taak niet bijwerken in de database.",
-        });
-        throw error;
-      }
-
-      if (updatedTaskData) {
-        const taskWithValidSubtasks = {
-          id: updatedTaskData.id,
-          title: updatedTaskData.title,
-          description: updatedTaskData.description || '',
-          priority: updatedTaskData.priority as TaskPriority || 'medium',
-          status: updatedTaskData.status as TaskStatus || 'todo',
-          deadline: updatedTaskData.deadline ? updatedTaskData.deadline : '',
-          userId: updatedTaskData.user_id,
-          createdAt: updatedTaskData.created_at,
-          subtasks: (updatedTaskData.subtasks as unknown as SubTask[] | null) || [],
-        } as Task;
-
-        setTasks((prevTasks) =>
-          prevTasks.map((task: Task) =>
-            task.id === id ? taskWithValidSubtasks : task
-          )
-        );
-
-        // --- NIEUWE LOGICA: Pas prioriteit aan bij voltooien ---
-        // Als de status expliciet naar 'done' wordt gezet in deze update,
-        // forceer dan de prioriteit naar 'none'.
-        if (updatedTaskData.status === 'done') {
-          updatedTaskData.priority = 'none'; // Gewijzigd van 'low' naar 'none'
-        }
-        // --- EINDE NIEUWE LOGICA ---
-
-        return taskWithValidSubtasks;
-      } else {
-        throw new Error("Task update succeeded but no data returned.");
-      }
-
-    } catch (error) {
-      console.error("Unexpected error updating task:", error);
-      if (!(error instanceof Error && error.message.includes("Kon de taak niet bijwerken"))) {
-         toast({
-           variant: "destructive",
-           title: "Bijwerken mislukt",
-           description: "Er is een onverwachte fout opgetreden bij het bijwerken.",
-         });
-      }
-      throw error;
-    }
-  };
-
-  const deleteTask = async (id: string): Promise<void> => {
-    if (!user) {
-       toast({
-         variant: "destructive",
-         title: "Authenticatie vereist",
-         description: "Je moet ingelogd zijn om taken te verwijderen.",
-       });
-      throw new Error("User must be authenticated to delete tasks");
-    }
-
-    const originalTasks = [...tasks];
-    setTasks((prevTasks) => prevTasks.filter(t => t.id !== id));
-
-    try {
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error("Failed to delete task from Supabase:", error);
-        toast({
-          variant: "destructive",
-          title: "Verwijderen mislukt",
-          description: error.message || "Kon de taak niet verwijderen uit de database.",
-        });
-        setTasks(originalTasks);
-        throw error;
-      }
-
-      toast({
-          title: "Taak verwijderd",
-          description: "De taak is succesvol verwijderd.",
-      });
-
-    } catch (error) {
-       console.error("Unexpected error deleting task:", error);
-      if (!(error instanceof Error && error.message.includes("Kon de taak niet verwijderen"))) {
-          toast({
-            variant: "destructive",
-            title: "Verwijderen mislukt",
-            description: "Er is een onverwachte fout opgetreden bij het verwijderen.",
-          });
-      }
-      if (tasks !== originalTasks) {
-          setTasks(originalTasks);
-      }
-      throw error;
-    }
-  };
+  }, [fetchTasks]);
 
   const getTaskById = (id: string): Task | undefined => {
-    return tasks.find((t: Task) => t.id === id);
+    return tasks.find((task: Task) => task.id === id);
   };
 
-  const groupTasksByDate = (): TasksByDate => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const addTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'subtasks' | 'userId' | 'aiSubtaskGenerationCount'>) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) throw new Error(t('taskContext.toast.notAuthenticated'));
     
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const dayAfterTomorrow = new Date(today);
-    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
-    
-    const nextWeekStart = new Date(today);
-    nextWeekStart.setDate(nextWeekStart.getDate() + 3);
-    
-    const nextWeekEnd = new Date(today);
-    nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
-
-    return {
-      overdue: tasks.filter(task => {
-        if (!task.deadline) return false;
-        const taskDate = new Date(task.deadline);
-        taskDate.setHours(0, 0, 0, 0);
-        return taskDate.getTime() < today.getTime();
-      }),
-      today: tasks.filter(task => {
-        if (!task.deadline) return false;
-        const taskDate = new Date(task.deadline);
-        taskDate.setHours(0, 0, 0, 0);
-        return taskDate.getTime() === today.getTime();
-      }),
-      tomorrow: tasks.filter(task => {
-        if (!task.deadline) return false;
-        const taskDate = new Date(task.deadline);
-        taskDate.setHours(0, 0, 0, 0);
-        return taskDate.getTime() === tomorrow.getTime();
-      }),
-      dayAfterTomorrow: tasks.filter(task => {
-        if (!task.deadline) return false;
-        const taskDate = new Date(task.deadline);
-        taskDate.setHours(0, 0, 0, 0);
-        return taskDate.getTime() === dayAfterTomorrow.getTime();
-      }),
-      nextWeek: tasks.filter(task => {
-        if (!task.deadline) return false;
-        const taskDate = new Date(task.deadline);
-        taskDate.setHours(0, 0, 0, 0);
-        return (
-          taskDate.getTime() >= nextWeekStart.getTime() && 
-          taskDate.getTime() <= nextWeekEnd.getTime()
-        );
-      }),
-      later: tasks.filter(task => {
-        if (!task.deadline) return true;
-        const taskDate = new Date(task.deadline);
-        taskDate.setHours(0, 0, 0, 0);
-        return taskDate.getTime() > nextWeekEnd.getTime();
-      })
+    const dbTask = {
+      title: task.title,
+      description: task.description || null,
+      priority: task.priority || 'medium',
+      status: task.status || 'todo',
+      deadline: task.deadline || null,
+      user_id: session.user.id,
+      subtasks: JSON.stringify([]),
+      ai_subtask_generation_count: 0
     };
+    
+    const { data, error } = await supabase.from('tasks').insert([dbTask]).select().single();
+    if (error) throw error;
+    if (data) setTasks(prevTasks => [ ...prevTasks, mapDbTaskToTask(data as DbTask) ]);
   };
 
-  const suggestPriority = async (title: string, description: string): Promise<TaskPriority> => {
-    console.warn(`suggestPriority is a placeholder for: ${title} / ${description}`);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const priorities: TaskPriority[] = ['high', 'medium', 'low'];
-    return priorities[Math.floor(Math.random() * priorities.length)];
-  };
-
-  const generateSubtasksAI = async (taskId: string): Promise<SubTask[]> => {
-    const task = tasks.find((t: Task) => t.id === taskId);
-    if (!task) {
-      console.error("Task not found for AI generation");
-      toast({ variant: "destructive", title: "Fout", description: "Taak niet gevonden om subtaken te genereren." });
-      return [];
-    }
-
-    // console.log(`Calling generate-subtasks function for task: ${task.id}`); // Verwijderd
-
-    try {
-      // TODO: Voeg eventueel chat context toe (zie Edge Function)
-      // }; // Verwijder de oude taskDetails samenstelling
-
-      // Aanroepen van de Edge Function
-      const { data, error } = await supabase.functions.invoke('generate-subtasks', {
-        body: { taskId: task.id }, // Stuur alleen de taskId mee
-      });
-
-      if (error) {
-        throw error; // Wordt opgevangen door de catch hieronder
-      }
-
-      // Verwerken van de response
-      if (data?.error) { // Check voor functionele errors vanuit de Edge Function
-        throw new Error(data.error);
-      }
-
-      if (!data?.subtasks || !Array.isArray(data.subtasks)) {
-        console.error("Ongeldige response van generate-subtasks function:", data);
-        throw new Error("Ongeldig antwoord ontvangen van de AI-subtaak generator.");
-      }
-
-      // Map de suggesties naar het SubTask formaat
-      const generatedSubtasks: SubTask[] = data.subtasks.map((suggestion: { title: string }) => ({
-        id: uuidv4(),
-        taskId: taskId,
-        title: suggestion.title,
-        completed: false,
-      }));
-
-      // console.log(`Successfully generated ${generatedSubtasks.length} subtasks via AI.`); // Verwijderd
-      return generatedSubtasks;
-
-    } catch (error: unknown) {
-      console.error("Error calling generate-subtasks function:", error);
-      const errorMessage = error instanceof Error ? error.message : "Onbekende fout bij genereren subtaken";
-      toast({
-        variant: "destructive",
-        title: "Genereren Mislukt",
-        description: errorMessage,
-      });
-      return []; // Return lege array bij fout
-    }
-  };
-
-  const addSubtask = async (taskId: string, title: string): Promise<void> => {
-    const taskIndex = tasks.findIndex((t: Task) => t.id === taskId);
-    if (taskIndex === -1) {
-      toast({ variant: "destructive", title: "Taak niet gevonden" });
-      return;
-    }
-
-    const newSubtask: SubTask = {
-      id: uuidv4(),
-      taskId: taskId,
-      title,
-      completed: false,
-    };
-
-    const updatedTasks = [...tasks];
-    const currentSubtasks = updatedTasks[taskIndex].subtasks || [];
-    const updatedSubtasks = [...currentSubtasks, newSubtask];
-    updatedTasks[taskIndex] = { ...updatedTasks[taskIndex], subtasks: updatedSubtasks };
-
-    setTasks(updatedTasks);
-
-    try {
-      await updateTask(taskId, { subtasks: updatedSubtasks });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Subtaak opslaan mislukt",
-        description: "Kon de subtaak niet synchroniseren met de database.",
-      });
-      setTasks(tasks);
-    }
-  };
-
-  const updateSubtask = async (taskId: string, subtaskId: string, updates: Partial<Omit<SubTask, 'id' | 'taskId'>>): Promise<void> => {
-    const taskIndex = tasks.findIndex((t: Task) => t.id === taskId);
-    if (taskIndex === -1) {
-      toast({ variant: "destructive", title: "Taak niet gevonden" });
-      return;
-    }
-
-    const originalTask = tasks[taskIndex];
-    const originalSubtasks = originalTask.subtasks || [];
-    const subtaskIndex = originalSubtasks.findIndex((st: SubTask) => st.id === subtaskId);
-
-    if (subtaskIndex === -1) {
-      toast({ variant: "destructive", title: "Subtaak niet gevonden" });
-      return;
-    }
-
-    // Maak kopieën voor lokale update
-    const updatedTasks = [...tasks];
-    const updatedSubtasks = [...originalSubtasks];
-    updatedSubtasks[subtaskIndex] = { ...updatedSubtasks[subtaskIndex], ...updates };
-
-    let newParentTaskStatus: TaskStatus = originalTask.status;
-    let newParentTaskPriority: TaskPriority = originalTask.priority;
-
-    // --- NIEUWE LOGICA: Terugzetten van status/prioriteit bij uitvinken --- 
-    if (updates.completed === false && originalTask.status === 'done') {
-        newParentTaskStatus = 'in_progress';
-        newParentTaskPriority = 'medium'; // Zet terug naar standaard prioriteit
-    } 
-    // --- OF: Controleren op voltooien bij aanvinken --- 
-    else if (updates.completed === true) { 
-        const allSubtasksCompleted = updatedSubtasks.length > 0 && updatedSubtasks.every(st => st.completed);
-        if (allSubtasksCompleted) {
-            newParentTaskStatus = 'done';
-            newParentTaskPriority = 'none';
+  const mapTaskToDbUpdate = (taskUpdates: Partial<Task>): DbTaskUpdate => {
+    const dbRecord: DbTaskUpdate = {};
+    if (taskUpdates.title !== undefined) dbRecord.title = taskUpdates.title;
+    if (taskUpdates.description !== undefined) dbRecord.description = taskUpdates.description;
+    if (taskUpdates.priority !== undefined) dbRecord.priority = taskUpdates.priority;
+    if (taskUpdates.status !== undefined) dbRecord.status = taskUpdates.status;
+    if (taskUpdates.deadline !== undefined) dbRecord.deadline = taskUpdates.deadline;
+    if (taskUpdates.subtasks !== undefined) {
+        try {
+            if (typeof taskUpdates.subtasks === 'string') {
+                JSON.parse(taskUpdates.subtasks);
+                dbRecord.subtasks = taskUpdates.subtasks as unknown as Json;
+            } else {
+                dbRecord.subtasks = JSON.stringify(taskUpdates.subtasks) as unknown as Json;
+            }
+        } catch (error) {
+            console.error("Error converting subtasks to JSON:", error);
+            dbRecord.subtasks = JSON.stringify([]) as unknown as Json;
         }
     }
-    // Anders blijven status en prioriteit ongewijzigd
-
-    // Update de taak in de lokale state (optimistisch)
-    updatedTasks[taskIndex] = {
-      ...originalTask,
-      subtasks: updatedSubtasks,
-      status: newParentTaskStatus,
-      priority: newParentTaskPriority, // Update ook de prioriteit hier
-    };
-
-    setTasks(updatedTasks);
-
-    // Bereid de data voor om naar de database te sturen
-    const updatesToPersist: { subtasks: SubTask[]; status?: TaskStatus; priority?: TaskPriority } = {
-      subtasks: updatedSubtasks,
-    };
-
-    // Voeg status/prioriteit toe aan payload indien gewijzigd
-    if (newParentTaskStatus !== originalTask.status) {
-      updatesToPersist.status = newParentTaskStatus;
-    }
-    if (newParentTaskPriority !== originalTask.priority) {
-        updatesToPersist.priority = newParentTaskPriority;
-    }
-
-    // Probeer de wijzigingen op te slaan in de database
-    // Alleen opslaan als er daadwerkelijk iets gewijzigd is (subtaken of status/prio)
-    if (Object.keys(updatesToPersist).length > 1) { // Meer dan alleen 'subtasks'
-      try {
-        await updateTask(taskId, updatesToPersist);
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Subtaak bijwerken mislukt",
-          description: "Kon de wijzigingen niet synchroniseren met de database.",
-        });
-        // Zet de state terug naar de originele staat bij een fout
-        setTasks(tasks);
-      }
-    } else {
-        // Alleen subtaak update (geen status/prio wijziging), toch proberen op te slaan
-        // Dit pad zou minder vaak moeten voorkomen met de nieuwe logica
-         try {
-             await updateTask(taskId, { subtasks: updatedSubtasks });
-         } catch (error) {
-             toast({
-                 variant: "destructive",
-                 title: "Subtaak bijwerken mislukt",
-                 description: "Kon de subtaak wijziging niet synchroniseren.",
-             });
-             setTasks(tasks);
-         }
-    }
+    if (taskUpdates.aiSubtaskGenerationCount !== undefined) dbRecord.ai_subtask_generation_count = taskUpdates.aiSubtaskGenerationCount;
+    return dbRecord;
   };
 
-  const deleteSubtask = async (taskId: string, subtaskId: string): Promise<void> => {
-    const taskIndex = tasks.findIndex((t: Task) => t.id === taskId);
+  const updateTask = async (id: string, updates: Partial<Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId'>>) => {
+    const taskIndex = tasks.findIndex(t => t.id === id);
     if (taskIndex === -1) {
-      toast({ variant: "destructive", title: "Taak niet gevonden" });
-      return;
+      toast({ variant: "destructive", title: t('common.error'), description: t('taskContext.toast.taskNotFound', { taskId: id }) });
+      throw new Error(t('taskContext.toast.taskNotFound', { taskId: id }));
     }
-
     const originalTask = tasks[taskIndex];
-    const originalSubtasks = originalTask.subtasks || [];
-    const updatedSubtasks = originalSubtasks.filter((st: SubTask) => st.id !== subtaskId);
+    const now = new Date().toISOString();
+    const updatedTaskForUI: Task = { ...originalTask, ...updates, updatedAt: now };
 
-    if (updatedSubtasks.length === originalSubtasks.length) {
-         toast({ variant: "destructive", title: "Subtaak niet gevonden" });
-         return;
-    }
-
-    const updatedTasks = [...tasks];
-    updatedTasks[taskIndex] = { ...originalTask, subtasks: updatedSubtasks };
-
-    setTasks(updatedTasks);
+    setTasks(prevTasks => prevTasks.map(t => t.id === id ? updatedTaskForUI : t));
 
     try {
-      await updateTask(taskId, { subtasks: updatedSubtasks });
-      toast({ title: "Subtaak verwijderd" });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Subtaak verwijderen mislukt",
-        description: "Kon de subtaak niet verwijderen uit de database.",
-      });
-      setTasks(tasks);
-    }
-  };
-
-  const deleteAllSubtasks = async (taskId: string): Promise<void> => {
-    const taskIndex = tasks.findIndex((t: Task) => t.id === taskId);
-    if (taskIndex === -1) {
-      toast({ variant: "destructive", title: "Taak niet gevonden" });
-      return;
-    }
-
-    const originalTask = tasks[taskIndex];
-    if (!originalTask.subtasks || originalTask.subtasks.length === 0) {
-      toast({ title: "Geen subtaken", description: "Er zijn geen subtaken om te verwijderen." });
-      return; // No subtasks to delete
-    }
-
-    const updatedTasks = [...tasks];
-    updatedTasks[taskIndex] = { ...originalTask, subtasks: [] }; // Clear subtasks locally
-
-    setTasks(updatedTasks); // Optimistic update
-
-    try {
-      await updateTask(taskId, { subtasks: [] }); // Update in database
-      toast({ title: "Alle subtaken verwijderd" });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Verwijderen mislukt",
-        description: "Kon de subtaken niet verwijderen uit de database.",
-      });
-      // Revert optimistic update on error
-      setTasks(tasks.map(t => t.id === taskId ? originalTask : t));
-    }
-  };
-
-  const expandTask = async (taskId: string): Promise<void> => {
-    const taskIndex = tasks.findIndex((t: Task) => t.id === taskId);
-    if (taskIndex === -1) {
-      toast({ variant: "destructive", title: t('taskContext.toast.taskNotFound') });
-      throw new Error("Task not found for expansion");
-    }
-    
-    const originalTask = tasks[taskIndex];
-    
-    try {
-      const generatedSubtasks = await generateSubtasksAI(taskId);
+      const dbUpdates = mapTaskToDbUpdate(updates);
+      console.log("Updating task with data:", JSON.stringify(dbUpdates));
       
-      if (generatedSubtasks.length === 0) {
-        toast({ title: t('taskContext.toast.noSubtasksGeneratedTitle'), description: t('taskContext.toast.noSubtasksGeneratedDescription') });
+      const { error } = await supabase
+        .from('tasks')
+        .update(dbUpdates)
+        .eq('id', id)
+        .select('*');
+
+      if (error) {
+        console.error("Error updating task:", error, "Updates:", dbUpdates);
+        toast({ variant: "destructive", title: t('common.error'), description: t('taskContext.toast.updateTaskFailed') });
+        throw error;
+      }
+    } catch (exception) {
+      console.error("Exception updating task:", exception);
+      toast({ variant: "destructive", title: t('common.error'), description: t('taskContext.toast.updateTaskFailed') });
+      throw exception;
+    }
+  };
+
+  const deleteTask = async (id: string) => {
+    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    if (error) throw error;
+    setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
+  };
+
+  const addSubtask = async (taskId: string, subtaskTitle: string, subtaskDescription?: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) throw new Error('Task not found to add subtask');
+    
+    const newSubtask: SubTask = {
+      id: uuidv4(),
+      title: subtaskTitle,
+      description: subtaskDescription || '',
+      completed: false,
+      taskId: taskId,
+      createdAt: new Date().toISOString(),
+    };
+    
+    const updatedSubtasks = [...(task.subtasks || []), newSubtask];
+    await updateTask(taskId, { subtasks: updatedSubtasks });
+  };
+
+  const updateSubtask = async (taskId: string, subtaskId: string, updates: Partial<Omit<SubTask, 'id' | 'taskId' | 'createdAt'>>) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) throw new Error('Task not found to update subtask');
+    
+    const updatedSubtasks = (task.subtasks || []).map(st =>
+      st.id === subtaskId ? { ...st, ...updates } : st
+    );
+    
+    await updateTask(taskId, { subtasks: updatedSubtasks });
+  };
+
+  const deleteSubtask = async (taskId: string, subtaskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) throw new Error('Task not found to delete subtask');
+    
+    const updatedSubtasks = (task.subtasks || []).filter(st => st.id !== subtaskId);
+    await updateTask(taskId, { subtasks: updatedSubtasks });
+  };
+
+  const deleteAllSubtasks = async (taskId: string) => {
+    await updateTask(taskId, { subtasks: [] });
+  };
+  
+  const toggleTaskCompletion = async (taskId: string, completed: boolean) => {
+    const newStatus = completed ? 'done' as TaskStatus : 'in_progress' as TaskStatus;
+    await updateTask(taskId, { status: newStatus });
+  };
+
+  const expandTask = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) {
+      console.error(`Task with id ${taskId} not found.`);
+      toast({
+        title: t('common.error'),
+        description: t('taskContext.taskNotFound', { taskId }), 
+      });
+      return;
+    }
+    const currentGenerationCount = task.aiSubtaskGenerationCount || 0;
+    if (currentGenerationCount >= MAX_AI_SUBTASK_GENERATIONS) {
+      toast({
+        variant: "destructive",
+        title: t('common.error'),
+        description: t('taskContext.aiSubtaskGenerationLimitReached', { count: currentGenerationCount, limit: MAX_AI_SUBTASK_GENERATIONS }),
+      });
+      return;
+    }
+    setIsGeneratingAISubtasks(taskId);
+    try {
+      const existingSubtaskTitles = task.subtasks.map(st => st.title);
+      const languagePreference = i18n.language.startsWith('nl') ? 'nl' : 'en';
+      const { data, error: functionError } = await supabase.functions.invoke('generate-subtasks', {
+        body: {
+          taskTitle: task.title,
+          taskDescription: task.description,
+          taskPriority: task.priority,
+          taskDeadline: task.deadline,
+          languagePreference: languagePreference,
+          existingSubtaskTitles: existingSubtaskTitles,
+        },
+      });
+      if (functionError) throw new Error(functionError.message);
+      if (data && data.subtasks && Array.isArray(data.subtasks)) {
+        const newSubtasks = data.subtasks.filter(
+          (newSubtask: Partial<SubTask>) =>
+            newSubtask.title && !existingSubtaskTitles.includes(newSubtask.title)
+        );
+        if (newSubtasks.length > 0) {
+          const subtasksToAdd: SubTask[] = newSubtasks.map((sub: Partial<SubTask>) => ({
+            id: uuidv4(),
+            title: sub.title!,
+            description: sub.description || '',
+            completed: false,
+            taskId: task.id,
+            createdAt: new Date().toISOString(),
+          }));
+          
+          const allSubtasks = [...task.subtasks, ...subtasksToAdd];
+          await updateTask(taskId, { 
+            subtasks: allSubtasks,
+            aiSubtaskGenerationCount: currentGenerationCount + 1 
+          });
+          
+          if (newSubtasks.length > 0) {
+            toast({
+                title: t('common.success'),
+                description: t('taskContext.aiSubtasksGeneratedSuccessfully'),
+            });
+          } else {
+            toast({
+                title: t('common.information'),
+                description: t('taskContext.aiNoNewSubtasksGenerated'),
+            });
+          }
+        }
+      } else {
+        const errorMessage = data?.error || 'No subtasks data returned or invalid format from AI.';
+        throw new Error(errorMessage);
+      }
+    } catch (error) {
+      console.error('Failed to expand task with AI:', error);
+      const err = error as Error;
+      toast({
+        variant: 'destructive',
+        title: t('common.error'),
+        description: err.message || t('taskContext.aiSubtaskGenerationFailed'),
+      });
+    } finally {
+      clearIsGeneratingAISubtasks(taskId);
+    }
+  };
+
+  const groupTasksByDate = useCallback((): TasksByDate => {
+    const today = startOfDay(new Date());
+
+    const grouped: TasksByDate = {
+      overdue: [],
+      today: [],
+      tomorrow: [],
+      dayAfterTomorrow: [],
+      nextWeek: [],
+      later: [],
+    };
+
+    tasks.forEach(task => {
+      if (!task.deadline) {
+        grouped.later.push(task);
         return;
       }
-      
-      const currentSubtasks = originalTask.subtasks || [];
-      const combinedSubtasks = [...currentSubtasks, ...generatedSubtasks];
-      
-      const updatedTasks = [...tasks];
-      updatedTasks[taskIndex] = { ...originalTask, subtasks: combinedSubtasks };
-      setTasks(updatedTasks);
-      
-      await updateTask(taskId, { subtasks: combinedSubtasks });
-      
-      toast({ title: t('taskContext.toast.subtasksGeneratedTitle'), description: t('taskContext.toast.subtasksGeneratedDescription', { count: generatedSubtasks.length }) });
-      
-    } catch (error) {
-      console.error("Error expanding task with AI:", error);
-      toast({ variant: "destructive", title: t('taskContext.toast.generationFailedTitle'), description: t('taskContext.toast.generationFailedDescription') });
-      // Zet de state terug naar de originele staat bij een fout
-      setTasks(prevTasks => prevTasks.map((t: Task) => t.id === taskId ? originalTask : t));
-      throw error;
-    }
-  };
 
-  // --- NIEUW: Functie om hoofdtaak voltooiing te toggelen --- 
-  const toggleTaskCompletion = async (taskId: string, isDone: boolean): Promise<void> => {
-    const taskIndex = tasks.findIndex((t: Task) => t.id === taskId);
-    if (taskIndex === -1) {
-      toast({ variant: "destructive", title: "Taak niet gevonden" });
-      return;
-    }
+      try {
+        const deadlineDate = startOfDay(parseISO(task.deadline));
 
-    const originalTask = tasks[taskIndex];
-    const originalSubtasks = originalTask.subtasks || [];
+        if (isPast(deadlineDate) && !isToday(deadlineDate)) {
+          grouped.overdue.push(task);
+        } else if (isToday(deadlineDate)) {
+          grouped.today.push(task);
+        } else if (isTomorrow(deadlineDate)) {
+          grouped.tomorrow.push(task);
+        } else {
+          const diffDays = differenceInCalendarDays(deadlineDate, today);
+          if (diffDays === 2) {
+            grouped.dayAfterTomorrow.push(task);
+          } else if (diffDays > 2 && diffDays <= 7) {
+            grouped.nextWeek.push(task);
+          } else if (diffDays > 7) {
+            grouped.later.push(task);
+          } else {
+            grouped.later.push(task);
+          }
+        }
+      } catch (e) {
+        console.error(`Invalid date format for task deadline: ${task.deadline}`, e);
+        grouped.later.push(task);
+      }
+    });
+    return grouped;
+  }, [tasks]);
 
-    let newStatus: TaskStatus;
-    let newPriority: TaskPriority;
-    let newSubtasks: SubTask[];
-
-    if (isDone) {
-      // Markeer als voltooid
-      newStatus = 'done';
-      newPriority = 'none';
-      newSubtasks = originalSubtasks.map(subtask => ({ ...subtask, completed: true }));
-    } else {
-      // Markeer als actief (niet voltooid)
-      newStatus = 'in_progress'; // Zet terug naar 'in_progress'
-      newPriority = 'medium'; // Zet terug naar standaard prioriteit
-      newSubtasks = originalSubtasks.map(subtask => ({ ...subtask, completed: false }));
-    }
-
-    // Bereid de updates voor
-    const updatesToPersist: Partial<Omit<Task, 'id' | 'userId' | 'createdAt'>> = {
-      status: newStatus,
-      priority: newPriority,
-      subtasks: newSubtasks,
-    };
-
-    // Optimistische update van de lokale state
-    const updatedTasks = [...tasks];
-    updatedTasks[taskIndex] = {
-        ...originalTask,
-        status: newStatus,
-        priority: newPriority,
-        subtasks: newSubtasks,
-    };
-    setTasks(updatedTasks);
-
-    // Probeer de wijzigingen op te slaan via updateTask
-    try {
-        await updateTask(taskId, updatesToPersist);
-        // Toon eventueel een success toast hier?
-    } catch (error) {
-        toast({
-            variant: "destructive",
-            title: "Status bijwerken mislukt",
-            description: "Kon de taakstatus niet synchroniseren met de database.",
-        });
-        // Zet de state terug naar de originele staat bij een fout
-        setTasks(tasks);
-    }
-  };
-  // --- EINDE NIEUWE FUNCTIE ---
-
-  const contextValue: TaskContextProps = {
+  const contextValue = {
     tasks,
     isLoading,
-    createTask,
+    getTaskById,
+    addTask,
     updateTask,
     deleteTask,
-    getTaskById,
-    groupTasksByDate,
-    suggestPriority,
     addSubtask,
     updateSubtask,
     deleteSubtask,
-    expandTask,
     deleteAllSubtasks,
     toggleTaskCompletion,
+    isGeneratingSubtasksForTask,
+    expandTask,
+    groupTasksByDate,
   };
 
-  return <TaskContext.Provider value={contextValue}>{children}</TaskContext.Provider>;
+  return (
+    <TaskContext.Provider value={contextValue}>
+      {children}
+    </TaskContext.Provider>
+  );
 }

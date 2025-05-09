@@ -1,8 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Stripe from 'https://esm.sh/stripe@11.1.0?target=deno&no-check'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from 'shared/cors.ts' // Nieuwe import met alias
-import { Database } from '@/types/supabase.ts' // Gebruik ook @/ alias hier
+import { corsHeaders } from '../_shared/cors.ts' // Using alias defined in deno.jsonc
+import { Database } from '@/types/supabase.ts' // Using alias defined in deno.jsonc
 
 // Type alias
 // type Customer = Database['public']['Tables']['customers']['Row'] // Verwijderd want ongebruikt
@@ -126,12 +126,37 @@ serve(async (req) => {
         status: 200,
       }
     )
-  } catch (error: unknown) { // Explicieter type voor error
+  } catch (error: unknown) { 
     console.error('Checkout session creation failed:', error)
-    // Probeer een specifiekere foutmelding te geven indien mogelijk
-    const message = error instanceof Error ? error.message : 'An unknown error occurred';
+    
+    let errorKey = 'checkout.error.unknown'; // Default error key
+    if (error instanceof Error) {
+        // Map known error messages to specific keys
+        switch (error.message) {
+            case 'Missing Authorization header':
+                errorKey = 'checkout.error.missingAuth';
+                break;
+            case 'Failed to retrieve user':
+                errorKey = 'checkout.error.userRetrievalFailed';
+                break;
+            case 'Missing priceId in request body':
+                errorKey = 'checkout.error.missingPriceId';
+                break;
+            case 'Failed to fetch customer data':
+                errorKey = 'checkout.error.customerFetchFailed';
+                break;
+            case 'Failed to create checkout session URL':
+                errorKey = 'checkout.error.sessionCreationFailed';
+                break;
+            // Add more specific error message mappings here if needed
+            default:
+                 // Keep the default 'checkout.error.unknown' or log the specific message
+                 console.error('Unknown but specific error:', error.message); 
+        }
+    }
+
     return new Response(
-      JSON.stringify({ error: message }), // Gebruik message
+      JSON.stringify({ errorKey }), // Return the error key
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

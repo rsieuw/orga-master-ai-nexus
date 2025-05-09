@@ -16,6 +16,7 @@ import { ChatControls } from "./ChatControls.tsx";
 // import { ChatSettingsDialog } from "./ChatSettingsDialog.tsx";
 // import { DeepResearchDialog } from "./DeepResearchDialog.tsx";
 import { useMessages } from "./hooks/useMessages.ts";
+import { PinnedMessagesSection } from "./PinnedMessagesSection.tsx";
 
 interface ChatPanelProps {
   task: Task | null;
@@ -24,7 +25,7 @@ interface ChatPanelProps {
 
 export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps) {
   const { updateTask, addSubtask, deleteSubtask, deleteAllSubtasks, updateSubtask } = useTask();
-  const { messages, addMessage, updateMessage, isLoading: isLoadingMessages, error: historyError, clearHistory, deleteNote, deleteResearch } = useMessages(task?.id ?? null, task?.title ?? '', selectedSubtaskTitle ?? null);
+  const { messages, addMessage, updateMessage, isLoading: isLoadingMessages, error: historyError, clearHistory, deleteNote, deleteResearch, togglePinMessage } = useMessages(task?.id ?? null, task?.title ?? '', selectedSubtaskTitle ?? null);
   const { user } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -193,7 +194,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     }), true); 
     const loaderMessage = ensureMessageHasId({
       role: "assistant",
-      content: t('chatPanel.toast.researchLoadingText'),
+      content: t('chatPanel.research.researchLoadingText'),
       messageType: 'research_loader'
     });
     addMessage(loaderMessage, false);
@@ -376,10 +377,17 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       </div>
 
       <div className="flex-grow min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded relative" ref={scrollAreaRef}>
+        <PinnedMessagesSection 
+          messages={messages} 
+          onTogglePin={togglePinMessage} 
+          onCopy={handleCopy}
+          isLoading={isLoadingMessages}
+        />
         <MessageList 
             messages={messages} 
             onDeleteNote={handleDeleteNote} 
             onDeleteResearch={handleDeleteResearch} 
+            onTogglePin={togglePinMessage}
             onCopy={handleCopy} 
             isLoading={isLoadingMessages}
             isAiResponding={isAiResponding}

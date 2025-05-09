@@ -30,7 +30,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
       return; // Do not save research results/loaders in chat_messages
     }
     if (!taskId) {
-      console.warn("Attempted to save message without a valid taskId.");
+      console.warn(t('chatPanel.errors.taskIdMissing'));
       setError(t('chatPanel.errors.taskIdMissing'));
       return;
     }
@@ -49,14 +49,14 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
         });
       if (dbError) throw dbError;
     } catch (err) {
-      console.error("Error saving message to DB:", err);
+      console.error(t('chatPanel.errors.saveMessageToDbGeneric'), err);
       setError(t('chatPanel.toast.saveMessageToDbFailed'));
     }
   }, [taskId, t, user]);
 
   const saveResearchToDb = useCallback(async (researchData: Pick<Message, 'content' | 'citations' | 'subtask_title' | 'prompt'>) => {
     if (!taskId || !user) {
-      console.error("Cannot save research: taskId or user is not available.");
+      console.error(t('chatPanel.errors.cannotSaveResearch'));
       toast({
         variant: "destructive",
         title: t('chatPanel.toast.saveFailedTitle'),
@@ -90,7 +90,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
             }
         }
         
-        console.error("Error invoking save-research function:", functionError);
+        console.error(t('chatPanel.errors.invokeSaveResearchFunctionGeneric'), functionError);
         toast({
           variant: "destructive",
           title: t('chatPanel.toast.saveFailedTitle'),
@@ -115,7 +115,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
       return data; // Edge function returns { messageKey, savedResearchId }
 
     } catch (err) {
-      console.error("Client-side error saving research via function:", err);
+      console.error(t('chatPanel.errors.clientSideSaveResearchGeneric'), err);
       const errorMessage = err instanceof Error ? err.message : String(err);
       toast({
         variant: "destructive",
@@ -196,11 +196,21 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
 
         const { data: dbMessages, error: chatError } = await supabase
           .from('chat_messages')
-          .select('id, role, content, created_at, message_type') // Select ID
+          .select('id, role, content, created_at, message_type, is_pinned')
           .eq('task_id', taskId)
           .eq('user_id', user.id)
           .order('created_at', { ascending: true });
         if (chatError) throw chatError;
+
+        // Haal specifiek alle vastgepinde berichten op, zelfs als ze niet in de standaard query zitten
+        const { data: pinnedMessages, error: pinnedError } = await supabase
+          .from('chat_messages')
+          .select('id, role, content, created_at, message_type, is_pinned')
+          .eq('task_id', taskId)
+          .eq('user_id', user.id)
+          .eq('is_pinned', true)
+          .order('created_at', { ascending: true });
+        if (pinnedError) console.warn(t('chatPanel.errors.fetchPinnedMessagesGeneric'), pinnedError);
 
         const { data: dbNotes, error: notesError } = await supabase
           .from('task_notes')
@@ -216,17 +226,30 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
           .eq('task_id', taskId)
           .eq('user_id', user.id)
           .order('created_at', { ascending: true });
-        if (researchError) console.warn("Could not fetch saved research:", researchError.message);
+        if (researchError) console.warn(t('chatPanel.errors.couldNotFetchSavedResearch'));
 
         const loadedChatMessages: Message[] = (dbMessages || []).map((msg) => ensureMessageHasId({
-          dbId: msg.id, // Store DB ID separately
-          id: msg.id, // Client-side ID is the same as DB ID for loaded messages
+          dbId: msg.id,
+          id: msg.id,
           role: msg.role as 'user' | 'assistant',
           content: msg.content,
           timestamp: new Date(msg.created_at).getTime(),
           createdAt: msg.created_at,
-          messageType: isValidMessageType(msg.message_type) ? msg.message_type : 'standard' // Fallback
+          messageType: isValidMessageType(msg.message_type) ? msg.message_type : 'standard',
+          isPinned: msg.is_pinned ?? false
         }));
+
+        // Verwerk specifiek vastgepinde berichten (deze hebben voorrang)
+        const pinnedMessageIds = new Set((pinnedMessages || []).map(msg => msg.id));
+        
+        // Update bestaande berichten als ze vastgepind zijn
+        const updatedChatMessages = loadedChatMessages.map(msg => {
+          // Als dit bericht in de pinnedMessages lijst staat, maar niet als vastgepind is gemarkeerd
+          if (pinnedMessageIds.has(msg.id) && !msg.isPinned) {
+            return { ...msg, isPinned: true };
+          }
+          return msg;
+        });
 
         const loadedNotes: Message[] = (dbNotes || []).map((note) => ensureMessageHasId({
           dbId: note.id,
@@ -258,12 +281,12 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
           });
         });
 
-        const combinedMessages = [...loadedChatMessages, ...loadedNotes, ...loadedResearch].sort(
+        const combinedMessages = [...updatedChatMessages, ...loadedNotes, ...loadedResearch].sort(
           (a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0)
         );
         setMessages([initialWelcomeMessage, ...combinedMessages]);
       } catch (err: unknown) {
-        console.error("Error loading messages and notes:", err);
+        console.error(t('chatPanel.errors.loadMessagesAndNotesGeneric'), err);
         const errorMessage = err instanceof Error ? err.message : String(err);
         setError(t('chatPanel.toast.loadMessagesAndNotesFailed') + (errorMessage ? `: ${errorMessage}`: ''));
         setMessages([initialWelcomeMessage]);
@@ -288,22 +311,139 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
   // Function to clear chat history
   const clearHistory = async () => {
     if (!taskId || !user) {
-        console.warn("Task ID or user is missing, cannot clear history.");
+        console.warn(t('chatPanel.errors.taskIdOrUserMissing'));
         return;
     }
     setIsLoading(true);
     try {
-      const { error: deleteError } = await supabase.from('chat_messages').delete().eq('task_id', taskId).eq('user_id', user.id);
+      // Delete only non-pinned chat messages
+      const { error: deleteError } = await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('task_id', taskId)
+        .eq('user_id', user.id)
+        .eq('is_pinned', false);
+          
       if (deleteError) throw deleteError;
-      const { error: deleteNotesError } = await supabase.from('task_notes').delete().eq('task_id', taskId).eq('user_id', user.id);
-      if (deleteNotesError) console.warn("Could not delete associated notes:", deleteNotesError.message); // Not fatal
-      const { error: deleteResearchError } = await supabase.from('saved_research').delete().eq('task_id', taskId).eq('user_id', user.id);
-      if (deleteResearchError) console.warn("Could not delete associated research:", deleteResearchError.message); // Not fatal
-      setMessages([]); // Clear local state
-      setReloadTrigger(prev => prev + 1); // Trigger reload to show welcome message
-      toast({ title: t('chatPanel.toast.historyClearedTitle'), description: t('chatPanel.toast.historyClearedDescription') });
+      
+      // Reload the pinned chat messages
+      const { data: pinnedChatMessages, error: fetchPinnedError } = await supabase
+        .from('chat_messages')
+        .select('id, role, content, created_at, message_type, is_pinned')
+        .eq('task_id', taskId)
+        .eq('user_id', user.id)
+        .eq('is_pinned', true);
+        
+      if (fetchPinnedError) throw fetchPinnedError;
+      
+      const pinnedMessagesFormatted = (pinnedChatMessages || []).map((msg) => {
+        const messageType = msg.message_type as 'standard' | 'system' | 'error' | 'note_saved' | 'action_confirm' | 'saved_research_display' | 'research_loader' | 'research_result';
+        return ensureMessageHasId({
+          dbId: msg.id,
+          id: msg.id,
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+          createdAt: msg.created_at,
+          messageType: messageType,
+          isPinned: true
+        });
+      });
+
+      // Reload notes
+      const { data: dbNotes, error: notesError } = await supabase
+        .from('task_notes')
+        .select('id, content, created_at')
+        .eq('task_id', taskId)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+      if (notesError) throw notesError;
+
+      const loadedNotes: Message[] = (dbNotes || []).map((note) => ensureMessageHasId({
+        dbId: note.id,
+        id: note.id, 
+        role: 'user', // Notes are considered 'user' role in the Message interface
+        content: note.content,
+        timestamp: new Date(note.created_at).getTime(),
+        createdAt: note.created_at,
+        messageType: 'note_saved',
+      }));
+
+      // Reload saved research
+      const { data: dbResearch, error: researchError } = await supabase
+        .from('saved_research')
+        .select('id, research_content, created_at, citations, subtask_title, prompt, task_id, user_id')
+        .eq('task_id', taskId)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+      if (researchError) console.warn(t('chatPanel.errors.couldNotFetchSavedResearchAfterClear', { error: researchError.message }));
+      
+      const loadedResearch: Message[] = (dbResearch || []).map((research: OriginalSavedResearchRow) => {
+        let mappedCitations: string[] | undefined = undefined;
+        if (Array.isArray(research.citations)) {
+          if (research.citations.every((item): item is string => typeof item === 'string')) mappedCitations = research.citations;
+          else if (research.citations.length === 0) mappedCitations = [];
+        }
+        return ensureMessageHasId({
+          dbId: research.id,
+          id: research.id, 
+          role: 'assistant',
+          content: research.research_content ?? '', 
+          timestamp: new Date(research.created_at).getTime(),
+          createdAt: research.created_at,
+          messageType: 'saved_research_display',
+          citations: mappedCitations, 
+          subtask_title: research.subtask_title, 
+          prompt: research.prompt ?? null 
+        });
+      });
+      
+      // Add welcome message
+      const username = user?.name || t('chatPanel.defaultUsername');
+      const welcomeMessage = ensureMessageHasId({
+        role: "assistant",
+        content: t('chatPanel.initialAssistantMessage', { 
+          taskTitle: taskTitle ?? t('chatPanel.defaultTaskTitle'), 
+          username: username 
+        }),
+        timestamp: Date.now() -1, // Ensure it's slightly before other messages if timestamps are too close
+        createdAt: new Date(Date.now() -1).toISOString(),
+        messageType: 'system'
+      });
+      
+      // Combine all messages: pinned chat messages, notes, and research
+      const combinedMessages = [
+        ...pinnedMessagesFormatted, 
+        ...loadedNotes, 
+        ...loadedResearch
+      ].sort(
+        (a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0)
+      );
+      
+      // Add the welcome message before the sorted messages
+      setMessages([welcomeMessage, ...combinedMessages]);
+      
+      // Show a confirmation
+      const pinnedCount = pinnedMessagesFormatted.length;
+      const notesCount = loadedNotes.length;
+      const researchCount = loadedResearch.length;
+      
+      let message = t('chatPanel.toast.historyClearedDescription');
+      const keptItems: string[] = [];
+      if (pinnedCount > 0) keptItems.push(t('chatPanel.toast.pinnedItemsKept', { count: pinnedCount }));
+      if (notesCount > 0) keptItems.push(t('chatPanel.toast.notesItemsKept', { count: notesCount }));
+      if (researchCount > 0) keptItems.push(t('chatPanel.toast.researchItemsKept', { count: researchCount }));
+
+      if (keptItems.length > 0) {
+        message = t('chatPanel.toast.historyClearedWithKeptItemsDescription', { items: keptItems.join(', ') });
+      }
+        
+      toast({ 
+        title: t('chatPanel.toast.historyClearedTitle'), 
+        description: message
+      });
     } catch (err: unknown) {
-      console.error("Error clearing history:", err);
+      console.error(t('chatPanel.errors.clearHistoryGeneric'), err);
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(t('chatPanel.toast.clearHistoryFailed') + (errorMessage ? `: ${errorMessage}`: ''));
     } finally {
@@ -332,7 +472,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
       });
 
     } catch (error: unknown) {
-      console.error('Error deleting note:', error);
+      console.error(t('chatPanel.errors.deleteNoteGeneric'), error);
       setMessages(originalMessages);
       let errorDescription = t('chatPanel.toast.deleteNoteFailedDefault');
       if (error instanceof Error) {
@@ -364,7 +504,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
       setReloadTrigger(prev => prev + 1);
 
     } catch (error: unknown) {
-      console.error('Error deleting saved research:', error);
+      console.error(t('chatPanel.errors.deleteResearchGeneric'), error);
       let errorDescription = t('chatPanel.toast.deleteResearchFailedDescriptionDefault');
       if (error instanceof Error) {
         errorDescription = error.message;
@@ -396,6 +536,73 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
   };
   // --- END New added placeholder functions ---
 
+  // Functie om een bericht te pinnen/los te maken
+  const togglePinMessage = useCallback(async (messageId: string, currentIsPinned: boolean) => {
+    if (!taskId || !user) {
+      console.warn(t('chatPanel.errors.cannotTogglePinStatus'));
+      toast({ variant: "destructive", title: t('common.error'), description: t('chatPanel.toast.cannotChangePinStatusDescription') });
+      return;
+    }
+
+    const newPinnedStatus = !currentIsPinned;
+
+    // Update locally for immediate UI feedback
+    setMessages(prevMessages =>
+      prevMessages.map(msg =>
+        msg.id === messageId ? { ...msg, isPinned: newPinnedStatus } : msg
+      )
+    );
+
+    try {
+      const message = messages.find(msg => msg.id === messageId);
+      if (!message) {
+        throw new Error(t('chatPanel.errors.messageNotFoundInState'));
+      }
+
+      if (newPinnedStatus) {
+        // Use the pin_message function
+        const { error: rpcError } = await supabase.rpc('pin_message', {
+          p_message_id: messageId,
+          p_task_id: taskId,
+          p_user_id: user.id,
+          p_role: message.role,
+          p_content: message.content,
+          p_message_type: message.messageType === undefined ? null : message.messageType,
+          p_created_at: message.createdAt || new Date().toISOString()
+        });
+
+        if (rpcError) throw rpcError;
+
+        toast({ 
+          title: t('chatPanel.toast.messagePinnedTitle', 'Bericht pinned'),
+          description: t('chatPanel.toast.messagePinnedDescription', 'The message is pinned and remains in the history.')
+        });
+      } else {
+        // Use the unpin_message function
+        const { error: rpcError } = await supabase.rpc('unpin_message', {
+          p_message_id: messageId,
+          p_task_id: taskId,
+          p_user_id: user.id
+        });
+
+        if (rpcError) throw rpcError;
+      }
+    } catch (err) {
+      console.error(t('chatPanel.errors.togglePinStatusGeneric'), err);
+      // Revert local state on error
+      setMessages(prevMessages =>
+        prevMessages.map(msg =>
+          msg.id === messageId ? { ...msg, isPinned: currentIsPinned } : msg
+        )
+      );
+      toast({ 
+        variant: "destructive", 
+        title: t('common.error'), 
+        description: t('chatPanel.toast.togglePinFailedDescription', 'Could not update message pin status in database.') 
+      });
+    }
+  }, [taskId, user, t, toast, setMessages, messages]);
+
   // Make sure the names match what ChatPanel imports
   return {
     messages,
@@ -413,6 +620,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
     saveNoteToChat, // Export this function
     displaySavedResearchInChat, // Export this function
     reloadTrigger,
-    error
+    error,
+    togglePinMessage
   };
 } 

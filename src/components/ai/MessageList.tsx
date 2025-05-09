@@ -8,8 +8,9 @@ interface MessageListProps {
   isLoading: boolean;
   isAiResponding: boolean;
   onCopy: (text: string) => void;
-  onDeleteNote: (noteId: string) => void;
-  onDeleteResearch: (researchId: string) => void;
+  onDeleteNote?: (noteId: string) => void;
+  onDeleteResearch?: (researchId: string) => void;
+  onTogglePin?: (messageId: string, currentIsPinned: boolean) => void;
 }
 
 export function MessageList({ 
@@ -18,7 +19,8 @@ export function MessageList({
   isAiResponding, 
   onCopy, 
   onDeleteNote, 
-  onDeleteResearch 
+  onDeleteResearch, 
+  onTogglePin
 }: MessageListProps) {
   const { t } = useTranslation();
 
@@ -32,12 +34,13 @@ export function MessageList({
       
       {messages.map((message, index) => (
         <MessageItem
-          key={index}
+          key={message.id || index}
           message={message}
           index={index}
           onCopy={onCopy}
           onDeleteNote={onDeleteNote}
           onDeleteResearch={onDeleteResearch}
+          onTogglePin={onTogglePin}
           isLoading={isLoading}
         />
       ))}

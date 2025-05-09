@@ -1,0 +1,1 @@
+export const MAX_AI_SUBTASK_GENERATIONS = 3; 

@@ -170,7 +170,7 @@
       "totalTasks": "Totaal Taken",
       "completed": "Voltooid",
       "todo": "Te doen",
-      "inProgress": "In Behandeling"
+      "in_progress": "In behandeling"
     }
   },
   "adminDashboard": {
@@ -528,7 +528,8 @@
     "generateSubtasks": {
       "buttonText": "Genereer Subtaken",
       "confirmButton": "Ja, genereer subtaken",
-      "tooltip": "Genereer subtaken (AI)"
+      "tooltip": "Genereer subtaken (AI)",
+      "limitReachedTooltip": "AI generatielimiet bereikt ({{count}}/{{limit}})"
     }
   },
   "common": {
@@ -560,7 +561,7 @@
     "medium": "Medium",
     "low": "Laag",
     "todo": "Te doen",
-    "inProgress": "In behandeling",
+    "in_progress": "In behandeling",
     "done": "Klaar",
     "back": "Terug",
     "backSR": "Ga terug",
@@ -568,7 +569,9 @@
     "cancelAriaLabel": "Annuleren",
     "generateSubtasksDialogTitle": "Subtaken Genereren (AI)?",
     "generateSubtasksDialogDescription": "Wilt u de AI assistent vragen om relevante subtaken voor \"{{taskTitle}}\" voor te stellen op basis van de beschrijving?",
-    "generatingText": "Genereren..."
+    "generatingText": "Genereren...",
+    "information": "Informatie",
+    "notAuthenticated": "You must be logged in to perform this action."
   },
   "pageTitles": {
     "home": "Home",
@@ -713,14 +716,17 @@
     "selectModelAriaLabel": "Selecteer AI onderzoeksmodel",
     "research": {
       "startingDeepResearchOn": "Start diepgaand onderzoek naar: {{topic}}",
-      "contextSubtaskForMain": "(Deeltaak: {{subtaskTitle}})",
-      "researchCompleted": "Onderzoek voltooid."
+      "contextPrompt": "met aangepaste context: \\\"{{prompt}}\\\"",
+      "contextSubtaskForMain": "voor subtaak \\\"{{subtaskTitle}}\\\" (van hoofdtaak \\\"{{mainTaskTitle}}\\\")",
+      "contextMainTask": "voor hoofdtaak \\\"{{mainTaskTitle}}\\\"",
+      "researchLoadingText": "Onderzoeken... een ogenblik geduld.",
+      "researchCompleted": "Onderzoek voltooid.",
+      "researchForPromptLabel": "Onderzoek voor prompt: {{prompt}}",
+      "researchForSubtaskLabel": "Onderzoek voor subtaak: {{subtaskTitle}}"
     },
     "startConversationPrompt": "Begin een gesprek door een bericht te typen.",
     "initialAssistantMessage": "Hallo {{username}}! Ik sta klaar om je te helpen met je taak: {{taskTitle}}. Wat kan ik voor je doen?",
     "subtaskSelectedMessage": "Oké, we focussen ons nu op deeltaak: {{subtaskTitle}}.",
-    "researchForPromptLabel": "Onderzoek voor prompt: \"{{prompt}}\"",
-    "researchForSubtaskLabel": "Onderzoek voor deeltaak: {{subtaskTitle}}",
     "closeSR": "Chat sluiten",
     "copyMessageTitle": "Bericht kopiëren",
     "copyMessageSR": "Bericht naar klembord kopiëren",
@@ -730,22 +736,65 @@
     "deleteNoteSR": "Deze notitie verwijderen",
     "deleteResearchTitle": "Opgeslagen onderzoek verwijderen",
     "deleteResearchSR": "Dit opgeslagen onderzoek verwijderen",
-    "defaultUsername": "daar",
-    "defaultTaskTitle": "de huidige taak",
+    "defaultUsername": "Gebruiker",
+    "defaultTaskTitle": "Deze Taak",
     "errors": {
-      "taskIdMissing": "Taak-ID ontbreekt, actie kan niet worden uitgevoerd.",
-      "userNotLoggedIn": "Gebruiker is niet ingelogd.",
-      "taskIdOrUserMissing": "Taak-ID of gebruiker niet beschikbaar. Kan onderzoek niet opslaan."
+      "userNotLoggedIn": "Gebruiker niet ingelogd.",
+      "taskIdMissing": "Taak ID ontbreekt.",
+      "fetchHistoryError": "Fout bij ophalen chatgeschiedenis.",
+      "noResearchContent": "No content found for the research.",
+      "deepResearch": "Error during deep research",
+      "taskIdOrUserMissing": "Taak-ID of gebruiker niet beschikbaar. Kan onderzoek niet opslaan.",
+      "cannotTogglePinStatus": "Taak-ID of gebruiker ontbreekt, kan pin-status niet wijzigen.",
+      "messageNotFoundInState": "Bericht niet gevonden in lokale state.",
+      "couldNotFetchSavedResearchAfterClear": "Kon opgeslagen onderzoek niet ophalen na wissen geschiedenis: {{error}}",
+      "saveMessageToDbGeneric": "Fout bij opslaan bericht naar DB:",
+      "invokeSaveResearchFunctionGeneric": "Fout bij aanroepen save-research functie:",
+      "clientSideSaveResearchGeneric": "Client-side fout bij opslaan onderzoek via functie:",
+      "fetchPinnedMessagesGeneric": "Fout bij ophalen vastgepinde berichten:",
+      "couldNotFetchSavedResearch": "Kon opgeslagen onderzoek niet ophalen:",
+      "request": {
+        "missingTaskId": "Taak-ID ontbreekt of is ongeldig in het verzoek.",
+        "missingOpenAiKey": "OpenAI API-sleutel is niet geconfigureerd.",
+        "missingSupabaseUrl": "Supabase URL is niet geconfigureerd.",
+        "missingSupabaseAnonKey": "Supabase anonieme sleutel is niet geconfigureerd."
+      },
+      "task": {
+        "notFound": "Hoofdtaak niet gevonden.",
+        "fetchFailed": "Details hoofdtaak ophalen mislukt."
+      },
+      "chat": {
+        "fetchFailed": "Chatberichten ophalen mislukt."
+      },
+      "notes": {
+        "fetchFailed": "Notities ophalen mislukt."
+      },
+      "research": {
+        "fetchFailed": "Onderzoeksresultaten ophalen mislukt."
+      },
+      "ai": {
+        "requestFailed": "OpenAI API-verzoek mislukt.",
+        "invalidStructure": "Ongeldige responsstructuur van OpenAI.",
+        "jsonParseFailed": "OpenAI JSON-respons parsen mislukt.",
+        "noContent": "Geen inhoud ontvangen van OpenAI.",
+        "subtasks": {
+          "invalidArray": "AI-responsobject bevat geen geldige 'subtasks'-array.",
+          "invalidArrayStructure": "Items in AI-respons 'subtasks'-array moeten 'title' en 'description' strings bevatten.",
+          "extractionFailed": "AI-inhoud parsen of subtasks-array extraheren mislukt."
+        }
+      },
+      "functionExecError": "Fout bij uitvoeren functie."
     },
     "toast": {
       "saveFailedTitle": "Opslaan Mislukt",
-      "researchLoadingText": "Onderzoeken... een ogenblik geduld.",
       "deepResearchSuccessTitle": "Diepgaand Onderzoek Voltooid",
       "loadMessagesAndNotesFailed": "Laden van berichten en notities mislukt",
       "saveMessageToDbFailed": "Bericht opslaan in database mislukt.",
       "saveResearchToDbFailed": "Onderzoek opslaan mislukt: {{error}}",
       "historyClearedTitle": "Geschiedenis Gewist",
       "historyClearedDescription": "Chatgeschiedenis is succesvol gewist.",
+      "historyClearedWithPinnedDescription": "Geschiedenis gewist, {{count}} vastgepinde berichten behouden.",
+      "historyClearedWithKeptItemsDescription": "Geschiedenis gewist. Behouden: {{items}}.",
       "clearHistoryFailed": "Geschiedenis wissen mislukt",
       "noteDeletedTitle": "Notitie Verwijderd",
       "noteDeletedDescription": "De notitie is succesvol verwijderd.",
@@ -755,8 +804,24 @@
       "researchDeletedDescription": "Het opgeslagen onderzoek is succesvol verwijderd.",
       "deleteResearchFailedDescriptionDefault": "Het onderzoek kon niet worden verwijderd. Probeer het opnieuw.",
       "researchSavedTitle": "Onderzoek Opgeslagen",
-      "researchSavedDescription": "Het onderzoek is succesvol opgeslagen."
-    }
+      "researchSavedDescription": "Het onderzoek is succesvol opgeslagen.",
+      "noteSavedTitle": "Notitie Opgeslagen",
+      "messagePinnedTitle": "Bericht Vastgepind",
+      "messagePinnedDescription": "Het bericht is vastgepind en blijft behouden bij het wissen van de geschiedenis.",
+      "togglePinFailedDescription": "Kon bericht pin status niet updaten in database.",
+      "pinnedItemsKept": "{{count}} vastgepinde berichten",
+      "notesItemsKept": "{{count}} notities",
+      "researchItemsKept": "{{count}} onderzoeken",
+      "cannotChangePinStatusDescription": "Kon pin-status niet wijzigen."
+    },
+    "notePlaceholder": "Typ je notitie hier...",
+    "stopNoteButton": "Stop Notitie Modus",
+    "saveNoteTooltip": "Notitie opslaan",
+    "pinMessageTitle": "Bericht vastpinnen",
+    "unpinMessageTitle": "Bericht losmaken",
+    "pinMessageSR": "Pin dit bericht",
+    "unpinMessageSR": "Maak dit bericht los",
+    "pinnedMessages": "Vastgepinde berichten"
   },
   "chatInput": {
     "placeholder": "Typ je bericht of / voor commando's...",
@@ -840,7 +905,22 @@
       "noSubtasksGeneratedDescription": "De AI kon geen subtaken voorstellen.",
       "generationFailedTitle": "Genereren Mislukt",
       "generationFailedDescription": "Kon geen AI subtaken genereren.",
-      "taskNotFound": "Taak niet gevonden"
-    }
+      "taskNotFound": "Taak met ID '{{taskId}}' niet gevonden.",
+      "aiSubtaskGenerationLimitReached": "Limiet voor AI-subtaakgeneratie bereikt voor deze taak ({{count}}/{{limit}}).",
+      "aiSubtaskGenerationFailed": "Genereren van AI-subtaken mislukt.",
+      "aiSubtasksGeneratedSuccessfully": "AI-subtaken succesvol gegenereerd.",
+      "errorUpdatingTaskGenerationCount": "Bijwerken van AI-generatietelling voor de taak mislukt.",
+      "addSubtasksFailed": "Opslaan van nieuwe AI-subtaken in de database mislukt.",
+      "aiNoNewSubtasksGenerated": "AI heeft geen nieuwe unieke subtaken gegenereerd.",
+      "fetchError": "Fout bij ophalen taken.",
+      "updateTaskFailed": "Het bijwerken van de taak is mislukt.",
+      "notAuthenticated": "You must be logged in to perform this action."
+    },
+    "aiSubtaskGenerationLimitReached": "Limiet voor AI-subtaakgeneratie bereikt voor deze taak ({{count}}/{{limit}}).",
+    "aiSubtaskGenerationFailed": "Genereren van AI-subtaken mislukt.",
+    "aiSubtasksGeneratedSuccessfully": "AI-subtaken succesvol gegenereerd.",
+    "errorUpdatingTaskGenerationCount": "Bijwerken van AI-generatietelling voor de taak mislukt.",
+    "addSubtasksFailed": "Opslaan van nieuwe AI-subtaken in de database mislukt.",
+    "aiNoNewSubtasksGenerated": "AI heeft geen nieuwe unieke subtaken gegenereerd."
   }
 } 

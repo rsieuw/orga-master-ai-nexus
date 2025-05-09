@@ -13,4 +13,10 @@
 */
 
 /* Verwijder de oude regel indien aanwezig */
-/* .chat-window h1:first-of-type { margin-top: 0; } */ 
+/* .chat-window h1:first-of-type { margin-top: 0; } */
+
+.chat-message {
+    /* Verwijder of commentarieer de volgende regel: */
+    /* padding: 0.35rem 0.75rem; */
+    /* Andere .chat-message stijlen kunnen hier blijven staan */
+} 

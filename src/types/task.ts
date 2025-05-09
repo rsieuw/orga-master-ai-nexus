@@ -4,8 +4,10 @@ export type TaskStatus = "todo" | "in_progress" | "done";
 export interface SubTask {
   id: string;
   title: string;
+  description?: string;
   completed: boolean;
-  taskId: string;
+  taskId?: string;
+  createdAt?: string;
 }
 
 export interface Task {
@@ -14,10 +16,12 @@ export interface Task {
   description: string;
   priority: TaskPriority;
   status: TaskStatus;
-  deadline: string; // ISO date string
+  deadline: string | null; // ISO date string - Aangepast om null toe te staan
   userId: string;
   createdAt: string;
+  updatedAt: string; // ISO string
   subtasks: SubTask[];
+  aiSubtaskGenerationCount?: number; // Nieuw veld
 }
 
 export interface AIResearchResult {
