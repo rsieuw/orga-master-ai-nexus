@@ -1,9 +1,9 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Stripe from 'https://esm.sh/stripe@11.1.0?target=deno&no-check'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { Database } from '../../../src/types/supabase.ts' // Pas dit pad eventueel aan naar jouw type generatie locatie
+import { Database } from '../../../src/types/supabase.ts' // Adjust this path to your type generation location if necessary
 
-// Type alias voor het gemak
+// Type alias for convenience
 type Subscription = Database['public']['Tables']['subscriptions']['Row']
 type Customer = Database['public']['Tables']['customers']['Row']
 type Price = Database['public']['Tables']['prices']['Row']
@@ -11,7 +11,7 @@ type Price = Database['public']['Tables']['prices']['Row']
 // Initialize Stripe client
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
   httpClient: Stripe.createFetchHttpClient(),
-  apiVersion: '2023-10-16', // Gebruik een specifieke API versie
+  apiVersion: '2023-10-16', // Use a specific API version
 })
 
 // Initialize Supabase Admin client
@@ -26,7 +26,7 @@ const upsertSubscriptionRecord = async (subscription: Stripe.Subscription) => {
   console.log(`Upserting subscription [${subscription.id}] for user [${subscription.customer}]`)
   const subscriptionData: Partial<Subscription> = {
     id: subscription.id,
-    user_id: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id, // Stripe kan customer ID als string of object sturen
+    user_id: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id, // Stripe can send customer ID as a string or an object
     metadata: subscription.metadata,
     status: subscription.status,
     price_id: subscription.items.data[0].price.id,
@@ -53,7 +53,7 @@ const upsertSubscriptionRecord = async (subscription: Stripe.Subscription) => {
   console.log(`Subscription [${subscription.id}] upserted successfully.`)
 
   // Update user role based on subscription status (optional, but often useful)
-  // Alleen updaten als status actief of trial is, anders terug naar 'free'
+  // Only update if status is active or trial, otherwise revert to 'free'
   const userId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
   const newRole = (subscription.status === 'active' || subscription.status === 'trialing') ? 'paid' : 'free'; // Pas 'paid' aan indien nodig
 
@@ -64,7 +64,7 @@ const upsertSubscriptionRecord = async (subscription: Stripe.Subscription) => {
 
    if (profileError) {
      console.error(`Error updating profile role for user [${userId}]:`, profileError)
-     // Gooi hier geen error, want de subscription update was wel succesvol
+     // Do not throw an error here, as the subscription update was successful
    } else {
      console.log(`Profile role for user [${userId}] updated to '${newRole}'.`)
    }
@@ -86,7 +86,7 @@ const manageSubscriptionStatusChange = async (
 
 const relevantEvents = new Set([
   'checkout.session.completed',
-  'customer.subscription.created', // Extra event voor direct aangemaakte subs
+  'customer.subscription.created', // Extra event for directly created subs
   'customer.subscription.updated',
   'customer.subscription.deleted',
   'invoice.paid',
@@ -110,7 +110,7 @@ serve(async (req) => {
       signature,
       webhookSecret,
       undefined,
-      Stripe.createSubtleCryptoProvider() // Gebruik Deno's SubtleCrypto
+      Stripe.createSubtleCryptoProvider() // Use Deno's SubtleCrypto
     )
     console.log(`Webhook event received: ${event.type} [${event.id}]`)
   } catch (err) {
@@ -125,9 +125,9 @@ serve(async (req) => {
         case 'checkout.session.completed': {
           const session = event.data.object as Stripe.Checkout.Session;
           if (session.mode === 'subscription' && session.subscription) {
-             // Haal subscription ID en customer ID uit de sessie
+             // Get subscription ID and customer ID from the session
              const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
-             const customerId = typeof session.customer === 'string' ? session.customer : (session.customer?.id ?? null); // Weer checken of het string of object is
+             const customerId = typeof session.customer === 'string' ? session.customer : (session.customer?.id ?? null); // Check again if it's a string or an object
 
              if (!customerId) {
                console.error('Customer ID missing in checkout session.');
@@ -157,7 +157,7 @@ serve(async (req) => {
         case 'customer.subscription.updated':
         case 'customer.subscription.deleted': {
           const subscription = event.data.object as Stripe.Subscription;
-          await upsertSubscriptionRecord(subscription); // `upsert` handelt zowel create, update als delete (via status) af
+          await upsertSubscriptionRecord(subscription); // `upsert` handles create, update, and delete (via status)
           break;
         }
         default:

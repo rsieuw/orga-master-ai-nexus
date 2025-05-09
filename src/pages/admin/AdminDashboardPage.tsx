@@ -22,8 +22,8 @@ const AdminDashboardPage: React.FC = () => {
       
       <Tabs defaultValue="users" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="users">{t('adminDashboard.tabs.users')}</TabsTrigger>
-          <TabsTrigger value="permissions">{t('adminDashboard.tabs.permissions')}</TabsTrigger>
+          <TabsTrigger value="users" className="px-4 py-2 text-base">{t('adminDashboard.tabs.users')}</TabsTrigger>
+          <TabsTrigger value="permissions" className="px-4 py-2 text-base">{t('adminDashboard.tabs.permissions')}</TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-4">
           {/* Card wrapper for consistency */}
@@ -38,10 +38,10 @@ const AdminDashboardPage: React.FC = () => {
                   placeholder={t('adminDashboard.users.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                  className="h-12 md:h-8 w-full md:w-[150px] lg:w-[250px]"
                 />
                 <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as UserRole | 'all')}>
-                  <SelectTrigger className="h-8 w-full md:w-[120px]">
+                  <SelectTrigger className="h-12 md:h-8 w-full md:w-[120px]">
                     <SelectValue placeholder={t('adminDashboard.users.filterRolePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -52,7 +52,7 @@ const AdminDashboardPage: React.FC = () => {
                   </SelectContent>
                 </Select>
                 <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="h-8 w-full md:w-[120px]">
+                  <SelectTrigger className="h-12 md:h-8 w-full md:w-[120px]">
                     <SelectValue placeholder={t('adminDashboard.users.filterStatusPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>

@@ -37,7 +37,7 @@ const AppContent = () => {
   if (isLoading) {
     // Show loader while AuthProvider is initializing
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
         <GradientLoader size="lg" />
       </div>
     );

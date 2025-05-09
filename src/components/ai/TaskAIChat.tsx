@@ -18,11 +18,11 @@ export default function TaskAIChat({ task, selectedSubtaskTitle /*, onSubtaskHan
   // Removed deepResearch state, assuming it's managed within ResearchPanel now
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full flex-grow min-h-0">
       {/* Removed the original header div with Tabs */}
       
       {/* Render active panel directly */}
-      <div className="flex-grow flex flex-col">
+      <div className="flex-grow flex flex-col min-h-0">
         {activeTab === "chat" && (
           <ChatPanel 
             task={task} 

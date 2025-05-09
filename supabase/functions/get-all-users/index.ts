@@ -9,7 +9,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
-// Belangrijk: Gebruik de service_role key hier veilig
+// Important: Use the service_role key securely here
 const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -27,15 +27,15 @@ serve(async (req) => {
     // 1. Fetch profiles
     const { data: profiles, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("id, name, role, avatar_url, language_preference, created_at, updated_at, status, email_notifications_enabled, ai_mode_preference"); // Selecteer alle benodigde velden
+      .select("id, name, role, avatar_url, language_preference, created_at, updated_at, status, email_notifications_enabled, ai_mode_preference"); // Select all necessary fields
 
     if (profileError) throw profileError;
-    if (!profiles) throw new Error("Geen profielen gevonden.");
+    if (!profiles) throw new Error("errors.profiles.notFound");
 
     // 2. Fetch all auth users (admin operation)
-    // Pagineren indien nodig voor grote hoeveelheden gebruikers
+    // Paginate if necessary for large numbers of users
     const { data: authUsersData, error: authError } = await supabaseAdmin.auth.admin.listUsers({
-        perPage: 1000, // Pas aan indien > 1000 gebruikers
+        perPage: 1000, // Adjust if > 1000 users
     });
 
     if (authError) throw authError;
@@ -51,7 +51,7 @@ serve(async (req) => {
     // 4. Combine profile data with email
     const usersWithEmail = profiles.map(profile => ({
       ...profile,
-      email: emailMap.get(profile.id) || null, // Voeg email toe
+      email: emailMap.get(profile.id) || null, // Add email
     }));
 
     // Return combined data
@@ -62,21 +62,17 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in get-all-users function:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    let errorKey = "errors.internalServerError"; // Default key
+    if (error instanceof Error) {
+      // Check if the message is already a key
+      if (error.message === "errors.profiles.notFound") {
+        errorKey = error.message;
+      }
+      // Voeg hier meer 'else if' blokken toe voor andere specifieke error keys uit deze functie
+    }
+    return new Response(JSON.stringify({ errorKey: errorKey }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
   }
 });
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/get-all-users' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
-
-*/

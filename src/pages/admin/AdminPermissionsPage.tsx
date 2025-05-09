@@ -165,7 +165,7 @@ export const PermissionsManagementTable: React.FC = () => {
           <TableRow>
             <TableHead className="pr-2">{t("adminPermissionsPage.tableHeaders.feature")}</TableHead>
             {sortedRoles.map(({ role }) => (
-              <TableHead key={`${role}-mobile-header`} className="text-center capitalize">{t(`adminPermissionsPage.roles.${role}`)}</TableHead>
+              <TableHead key={`${role}-mobile-header`} className="text-center capitalize text-xs px-0">{t(`adminPermissionsPage.roles.${role}`)}</TableHead>
             ))}
           </TableRow>
         </TableHeader>
@@ -200,7 +200,7 @@ export const PermissionsManagementTable: React.FC = () => {
           variant="outline"
           onClick={handleSaveChanges} 
           disabled={isLoading} 
-          className="w-full"
+          className="w-full h-12"
         >
           {t("adminPermissionsPage.buttons.saveChanges")}
         </Button>

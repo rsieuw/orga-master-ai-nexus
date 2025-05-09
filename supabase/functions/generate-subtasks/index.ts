@@ -2,17 +2,15 @@
 /// <reference types="jsr:@supabase/functions-js/edge-runtime" />
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Importeer de Supabase client
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Import the Supabase client
 import { corsHeaders } from "../_shared/cors.ts";
-import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
-import { OpenAI } from "https://deno.land/x/openai@v4.52.7/mod.ts";
 
 // --- CORS Headers ---
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*', // Pas aan voor productie
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-// --- Einde CORS Headers ---
+// const corsHeaders = {
+//   'Access-Control-Allow-Origin': '*', // Adjust for production
+//   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// };
+// --- End CORS Headers ---
 
 // --- Interfaces ---
 interface SubtaskSuggestion {
@@ -24,141 +22,142 @@ interface FunctionResponse {
   error?: string;
 }
 
-// --- Nieuwe Interfaces voor Data Ophalen ---
+// --- New Interfaces for Data Fetching ---
 // interface ChatMessage { ... }
 // interface Note { ... }
 // interface ResearchResult { ... }
 
-// --- Einde Nieuwe Interfaces ---
+// --- End New Interfaces ---
 
 // console.log("generate-subtasks function started - v2 (with context)");
 
 serve(async (req) => {
+  console.log("generate-subtasks function invoked at: ", new Date().toISOString()); // Added for debugging
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    // 1. Extract data from request - Nu verwachten we taskId
+    // 1. Extract data from request - Now expecting taskId
     const { taskId } = await req.json();
     // console.log("Received taskId:", taskId);
 
-    if (!taskId || typeof taskId !== 'string') { // Check of het een string is, pas type aan indien nodig (bv number)
-      throw new Error("Valid taskId is required in the request body");
+    if (!taskId || typeof taskId !== 'string') { // Check if it's a string, adjust type if necessary (e.g., number)
+      throw new Error("errors.request.missingTaskId");
     }
 
     // 2. Load Environment Variables
     const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY"); // Service Role Key is veiliger hier, maar Anon voor nu
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY"); // Service Role Key is safer here, but Anon for now
 
-    if (!openAIApiKey) throw new Error("OPENAI_API_KEY environment variable not set");
-    if (!supabaseUrl) throw new Error("SUPABASE_URL environment variable not set");
-    if (!supabaseAnonKey) throw new Error("SUPABASE_ANON_KEY environment variable not set");
+    if (!openAIApiKey) throw new Error("errors.env.openaiKeyMissing");
+    if (!supabaseUrl) throw new Error("errors.env.supabaseUrlMissing");
+    if (!supabaseAnonKey) throw new Error("errors.env.supabaseAnonKeyMissing");
 
-    // 3. Initialiseer Supabase Client
+    // 3. Initialize Supabase Client
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-       global: { headers: { Authorization: req.headers.get('Authorization')! } } // Gebruik user's auth token
+       global: { headers: { Authorization: req.headers.get('Authorization')! } } // Use user's auth token
     });
 
-    // 4. Haal data op uit Supabase
+    // 4. Fetch data from Supabase
     // console.log(`Fetching data for taskId: ${taskId}`);
 
-    // Haal hoofdtaak details op
+    // Fetch main task details
     const { data: taskData, error: taskError } = await supabase
-      .from('tasks') // VERVANG 'tasks' met je daadwerkelijke tabelnaam
+      .from('tasks') // REPLACE 'tasks' with your actual table name
       .select('title, description, priority, deadline')
       .eq('id', taskId)
       .single();
 
-    if (taskError) throw new Error(`Error fetching task: ${taskError.message}`);
-    if (!taskData) throw new Error(`Task with ID ${taskId} not found.`);
+    if (taskError) throw new Error("errors.task.fetchFailed"); // Details in server log, generic to client
+    if (!taskData) throw new Error("errors.task.notFound"); // taskId can be added by client if needed
 
-    // Haal chatberichten op (Aanname: tabel 'chat_messages' met 'task_id')
-    // Pas tabelnaam, kolommen en sortering aan indien nodig
+    // Fetch chat messages (Assumption: table 'chat_messages' with 'task_id')
+    // Adjust table name, columns, and sorting if necessary
     const { data: chatMessages, error: chatError } = await supabase
-      .from('chat_messages') // Tabelnaam is correct
-      .select('role, content, created_at, message_type') // Kolomnamen aangepast: sender->role, message->content
-      .eq('task_id', taskId) // Filter op task_id
-      .order('created_at', { ascending: true }); // Sorteer op tijd
+      .from('chat_messages') // Table name is correct
+      .select('role, content, created_at, message_type') // Column names adjusted: sender->role, message->content
+      .eq('task_id', taskId) // Filter by task_id
+      .order('created_at', { ascending: true }); // Sort by time
 
-    if (chatError) console.warn(`Could not fetch chat messages: ${chatError.message}`); // Ga door, maar log de waarschuwing
+    if (chatError) console.warn(`Could not fetch chat messages: ${chatError.message}`); // Continue, but log the warning
 
-    // Haal notities op (Aanname: tabel 'notes' met 'task_id')
-    // Pas aan indien nodig
+    // Fetch notes (Assumption: table 'notes' with 'task_id')
+    // Adjust if necessary
     const { data: notes, error: notesError } = await supabase
-      .from('task_notes') // Tabelnaam aangepast: notes -> task_notes
-      .select('content, created_at') // Selecteer relevante kolommen
-      .eq('task_id', taskId) // Filter op task_id
+      .from('task_notes') // Table name adjusted: notes -> task_notes
+      .select('content, created_at') // Select relevant columns
+      .eq('task_id', taskId) // Filter by task_id
       .order('created_at', { ascending: true });
 
     if (notesError) console.warn(`Could not fetch notes: ${notesError.message}`);
 
-    // Haal onderzoeksresultaten op (Aanname: tabel 'research_results' met 'task_id')
-    // Pas aan indien nodig
+    // Fetch research results (Assumption: table 'research_results' with 'task_id')
+    // Adjust if necessary
     const { data: researchResults, error: researchError } = await supabase
-      .from('saved_research') // Tabelnaam aangepast: research_results -> saved_research
-      .select('research_content, created_at') // Kolomnamen aangepast: query/result_markdown -> research_content
-      .eq('task_id', taskId) // Filter op task_id
+      .from('saved_research') // Table name adjusted: research_results -> saved_research
+      .select('research_content, created_at') // Column names adjusted: query/result_markdown -> research_content
+      .eq('task_id', taskId) // Filter by task_id
       .order('created_at', { ascending: true });
 
     if (researchError) console.warn(`Could not fetch research results: ${researchError.message}`);
 
-    // --- Werkelijke AI Logica ---
-    // Construeer de prompt met de extra context
+    // --- Actual AI Logic ---
+    // Construct the prompt with the extra context
     const systemPrompt = `You are an AI assistant specialized in breaking down tasks into actionable subtasks.
 
-Gebruik de hoofdtaak, de bijbehorende chatgeschiedenis, notities en onderzoeksresultaten om een lijst van logische, actiegerichte subtaken te genereren. 
-Let specifiek ook op berichten in de chatgeschiedenis die gemarkeerd zijn als onderzoeksresultaten (ook als ze niet apart als 'Onderzoeksresultaten' zijn aangeleverd); deze bevatten mogelijk waardevolle context.
-Deze subtaken moeten de gebruiker helpen de hoofdtaak succesvol te voltooien. Zorg dat elke stap klein, duidelijk en zelfstandig uitvoerbaar is, indien mogelijk in een logische volgorde. Houd rekening met prioriteiten en deadlines als die vermeld zijn.
+Use the main task, the associated chat history, notes, and research results to generate a list of logical, actionable subtasks.
+Pay specific attention to messages in the chat history marked as research results (even if not separately provided as 'Research Results'); these may contain valuable context.
+These subtasks should help the user successfully complete the main task. Ensure each step is small, clear, and independently executable, in a logical order if possible. Consider priorities and deadlines if mentioned.
 
-Formatteer de output als een JSON-object met een enkele sleutel "subtasks" die een array van objecten bevat, elk met een "title" sleutel. Bijvoorbeeld:
-{ "subtasks": [{ "title": "Subtaak 1" }, { "title": "Subtaak 2" }] }
+Format the output as a JSON object with a single key "subtasks" containing an array of objects, each with a "title" key. For example:
+{ "subtasks": [{ "title": "Subtask 1" }, { "title": "Subtask 2" }] }
 
-Geef uitsluitend dit JSON-object terug — geen toelichting of extra tekst.
-`; // System prompt licht aangepast voor JSON object output
+Return only this JSON object — no explanation or extra text.
+`; // System prompt slightly adjusted for JSON object output
 
-    // Bouw de user prompt dynamisch op met de opgehaalde data
-    let userPromptContent = `**Hoofdtaak:**\nTitel: ${taskData.title}\n`;
-    if (taskData.description) userPromptContent += `Beschrijving: ${taskData.description}\n`;
-    if (taskData.priority) userPromptContent += `Prioriteit: ${taskData.priority}\n`;
+    // Build the user prompt dynamically with the fetched data
+    let userPromptContent = `**Main Task:**\nTitle: ${taskData.title}\n`;
+    if (taskData.description) userPromptContent += `Description: ${taskData.description}\n`;
+    if (taskData.priority) userPromptContent += `Priority: ${taskData.priority}\n`;
     if (taskData.deadline) {
       try {
-        userPromptContent += `Deadline: ${new Date(taskData.deadline).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric'})}\n`;
-      } catch (dateError) { console.warn("Kon deadline niet parsen:", taskData.deadline); }
+        userPromptContent += `Deadline: ${new Date(taskData.deadline).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric'})}\n`;
+      } catch (dateError) { console.warn("Could not parse deadline:", taskData.deadline); }
     }
 
     if (chatMessages && chatMessages.length > 0) {
-      userPromptContent += `\n**Chatgeschiedenis (laatste berichten eerst):**\n`;
-      // Beperk eventueel de lengte, of neem alleen relevante berichten? Voor nu: alles (of laatste paar)
-      const recentMessages = chatMessages.slice(-10); // Neem max laatste 10 berichten
+      userPromptContent += `\n**Chat History (latest messages first):**\n`;
+      // Optionally limit length, or only include relevant messages? For now: all (or last few)
+      const recentMessages = chatMessages.slice(-10); // Take max last 10 messages
       recentMessages.forEach(msg => {
-        // Voeg markering toe voor research result
-        const prefix = msg.message_type === 'research_result' ? '[ONDERZOEKSRESULTAAT] ' : '';
-        // Gebruik msg.role en msg.content ipv msg.sender en msg.message
-        userPromptContent += `- ${msg.role === 'user' ? 'Gebruiker' : 'AI'} (${new Date(msg.created_at).toLocaleString('nl-NL')}): ${prefix}${msg.content}\n`;
+        // Add marker for research result
+        const prefix = msg.message_type === 'research_result' ? '[RESEARCH RESULT] ' : '';
+        // Use msg.role and msg.content instead of msg.sender and msg.message
+        userPromptContent += `- ${msg.role === 'user' ? 'User' : 'AI'} (${new Date(msg.created_at).toLocaleString('en-US')}): ${prefix}${msg.content}\n`;
       });
     }
 
     if (notes && notes.length > 0) {
-      userPromptContent += `\n**Notities:**\n`;
+      userPromptContent += `\n**Notes:**\n`;
       notes.forEach(note => {
-        userPromptContent += `- ${note.content} (${new Date(note.created_at).toLocaleString('nl-NL')})\n`;
+        userPromptContent += `- ${note.content} (${new Date(note.created_at).toLocaleString('en-US')})\n`;
       });
     }
 
     if (researchResults && researchResults.length > 0) {
-      userPromptContent += `\n**Onderzoeksresultaten:**\n`;
+      userPromptContent += `\n**Research Results:**\n`;
       researchResults.forEach(res => {
-        // Gebruik res.research_content en verwijder res.query
-        userPromptContent += `Resultaat (samenvatting):\n${res.research_content.substring(0, 500)}...\n---\n`; // Neem eerste 500 chars
+        // Use res.research_content and remove res.query
+        userPromptContent += `Result (summary):\n${res.research_content.substring(0, 500)}...\n---\n`; // Take first 500 chars
       });
     }
 
-    userPromptContent += `\nGenereer nu de subtaken voor de bovenstaande hoofdtaak, gebruikmakend van alle verstrekte context.`;
+    userPromptContent += `\nNow generate the subtasks for the main task above, using all provided context.`;
 
-    // Roep OpenAI aan
+    // Call OpenAI
     // console.log("Calling OpenAI to generate subtasks...");
     const completion = await fetch("https://api.openai.com/v1/chat/completions", {
       method: 'POST',
@@ -180,14 +179,15 @@ Geef uitsluitend dit JSON-object terug — geen toelichting of extra tekst.
     if (!completion.ok) {
       const errorBody = await completion.json().catch(()=>({ message: "Failed to parse error body" }));
       console.error("OpenAI API Error Response:", errorBody);
-      throw new Error(`OpenAI API request failed: ${completion.statusText} - ${errorBody?.error?.message || JSON.stringify(errorBody)}`);
+      // Stuur een generieke key; details zijn gelogd server-side
+      throw new Error("errors.openai.requestFailed"); 
     }
 
-    // Parse de response
+    // Parse the response
     const rawData = await completion.text(); 
     // console.log("Raw OpenAI Response for subtasks:", rawData);
 
-    // Definieer een type voor de verwachte OpenAI response structuur
+    // Define a type for the expected OpenAI response structure
     type OpenAIResponse = {
       choices: {
         message: {
@@ -199,43 +199,42 @@ Geef uitsluitend dit JSON-object terug — geen toelichting of extra tekst.
     let structuredData: OpenAIResponse;
     try {
       structuredData = JSON.parse(rawData) as OpenAIResponse;
-      // Basisvalidatie
+      // Basic validation
       if (!structuredData?.choices?.[0]?.message?.content) {
-        throw new Error("Ongeldige structuur ontvangen van OpenAI API");
+        throw new Error("errors.ai.invalidStructure");
       }
     } catch (parseError) {
        console.error("Failed to parse OpenAI JSON response:", parseError, rawData);
-       throw new Error("Kon het JSON antwoord van de AI niet parsen.");
+       throw new Error("errors.ai.jsonParseFailed");
     }
 
     const aiContent = structuredData?.choices?.[0]?.message?.content?.trim();
     if (!aiContent) {
-       throw new Error("Geen content gevonden in AI antwoord.");
+       throw new Error("errors.ai.noContent");
     }
 
     let generatedSubtasks: SubtaskSuggestion[];
     try {
-      // Parse het *gehele* object dat de AI teruggeeft
+      // Parse the *entire* object returned by the AI
       const parsedObject = JSON.parse(aiContent);
 
-      // Haal de 'subtasks' array uit het object
+      // Get the 'subtasks' array from the object
       const subtasksArray = parsedObject.subtasks;
 
-      // Valideer of de 'subtasks' property een geldige array is
+      // Validate if the 'subtasks' property is a valid array
       if (!Array.isArray(subtasksArray) || !subtasksArray.every(item => typeof item === 'object' && item !== null && 'title' in item && typeof item.title === 'string')) {
          console.error("AI response object does not contain a valid 'subtasks' array:", subtasksArray);
-         throw new Error("AI antwoord bevat geen geldige 'subtasks' array.");
+         throw new Error("errors.ai.subtasks.invalidArray");
       }
       generatedSubtasks = subtasksArray as SubtaskSuggestion[];
 
     } catch (parseError) {
        console.error("Failed to parse AI content or extract subtasks array:", parseError, aiContent);
-       // Verwijder de fallback logic, die is nu minder relevant door de expliciete JSON object structuur vraag.
-       throw new Error("Kon geen valide subtaken array extraheren uit AI antwoord: " + aiContent);
+       throw new Error("errors.ai.subtasks.extractionFailed"); // Client kan AI content loggen indien nodig
     }
 
     // console.log(`Generated ${generatedSubtasks.length} subtasks.`);
-    // --- Einde Werkelijke AI Logica ---
+    // --- End Actual AI Logic ---
 
     const responsePayload: FunctionResponse = { subtasks: generatedSubtasks };
 
@@ -246,12 +245,31 @@ Geef uitsluitend dit JSON-object terug — geen toelichting of extra tekst.
 
   } catch (error) {
     console.error("Error in generate-subtasks:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    const responsePayload: FunctionResponse = { error: errorMessage };
-    // Correct return statement inside catch block
+    let errorKey = "errors.internalServerError"; // Default fallback key
+
+    if (error instanceof Error) {
+      const knownKeys = [
+        "errors.request.missingTaskId",
+        "errors.env.openaiKeyMissing",
+        "errors.env.supabaseUrlMissing",
+        "errors.env.supabaseAnonKeyMissing",
+        "errors.task.fetchFailed",
+        "errors.task.notFound",
+        "errors.openai.requestFailed",
+        "errors.ai.invalidStructure",
+        "errors.ai.jsonParseFailed",
+        "errors.ai.noContent",
+        "errors.ai.subtasks.invalidArray",
+        "errors.ai.subtasks.extractionFailed"
+      ];
+      if (knownKeys.includes(error.message)) {
+        errorKey = error.message;
+      }
+    }
+    const responsePayload: FunctionResponse = { error: errorKey }; // Stuur de key
     return new Response(JSON.stringify(responsePayload), {
-      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500, // Blijf 500 voor server errors, client kan specifieke melding tonen
     });
   }
 }); 

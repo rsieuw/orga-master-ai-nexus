@@ -16,13 +16,14 @@ import {
 import { Sparkles, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast.ts";
 import { format } from "date-fns";
-import { nl } from "date-fns/locale";
+import { nl, enUS } from "date-fns/locale";
 import { TaskPriority, TaskStatus, Task } from "@/types/task.ts";
 import { supabase } from "@/integrations/supabase/client.ts";
 import { cn } from "@/lib/utils.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx";
 import { Calendar } from "@/components/ui/calendar.tsx";
 import { useTranslation } from 'react-i18next';
+import { useAuth } from "@/contexts/AuthContext.tsx";
 
 interface NewTaskDialogProps {
   setOpen: (open: boolean) => void;
@@ -32,9 +33,13 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
   const { createTask } = useTask();
   // const navigate = useNavigate(); // Removed unused variable
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { user } = useAuth(); // Add auth context to get user language preference
+  
+  // Date-fns locales mapping
+  const dateLocale = i18n.language === 'nl' ? nl : enUS;
 
-  // State specifiek voor het *nieuwe* taak formulier
+  // State specific to the new task form
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("medium");
@@ -46,7 +51,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
   const [detailsVisible, setDetailsVisible] = useState(false);
   const [generateSubtasks, setGenerateSubtasks] = useState(false);
 
-  // Functie voor AI generatie - roept nu de Edge Function aan
+  // AI generation function - now calls the Edge Function
   const handleGenerateTaskDetails = async () => {
     if (!initialInput) {
       toast({
@@ -63,7 +68,10 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
       const { data, error } = await supabase.functions.invoke(
         'generate-task-details',
         {
-          body: { input: initialInput },
+          body: { 
+            input: initialInput,
+            languagePreference: user?.language_preference || 'en' // Pass user language preference
+          },
         }
       );
 
@@ -99,7 +107,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
     }
   };
 
-  // Aangepaste submit handler voor *alleen* aanmaken
+  // Custom submit handler for creation only
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -108,7 +116,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
       // Prepare the data specifically for the createTask function
       // It expects Omit<Task, 'id' | 'userId' | 'createdAt' | 'subtasks'>
       // where deadline should be string | null (or match the DB type after generation)
-      const deadlineISO = deadline ? deadline.toISOString() : null;
+      const deadlineISO = deadline ? deadline.toISOString() : undefined;
       
       // Type assertion to ensure compatibility with createTask expectation
       const taskData: Omit<Task, 'id' | 'userId' | 'createdAt' | 'subtasks'> = {
@@ -116,7 +124,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
         description,
         priority,
         status,
-        deadline: deadlineISO as string, // Assert as string, Supabase handles null ok
+        deadline: deadlineISO as string, // Assert as string, Supabase handles undefined ok
       };
 
       await createTask(taskData);
@@ -124,7 +132,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
         title: t('newTaskDialog.toast.taskCreatedTitle'),
         description: t('newTaskDialog.toast.taskCreatedDescription'),
       });
-      setOpen(false); // Sluit de dialog na succes
+      setOpen(false); // Close the dialog after success
     } catch (error) {
       toast({
         variant: "destructive",
@@ -136,37 +144,37 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
     }
   };
 
-  // JSX van het formulier (zonder Card, CardHeader etc.)
+  // Form JSX (without Card, CardHeader etc.)
   return (
     <form onSubmit={handleSubmit} id="new-task-form">
       {/* Show initial input only if details are not visible */}
       {!detailsVisible && (
         <>
-      <Textarea
-        id="initial-input"
-        value={initialInput}
-        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInitialInput(e.target.value)}
-        placeholder={t('newTaskDialog.initialInputPlaceholder')}
-        rows={4}
-        className="animated-border-textarea"
-      />
-      <div className="mt-4">
-        <Button 
-          type="button"
-          onClick={handleGenerateTaskDetails}
-          disabled={isGeneratingTask || !initialInput}
-          className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
-        >
-          <Sparkles className="mr-2 h-4 w-4" />
-          {isGeneratingTask ? t('newTaskDialog.generatingButton') : t('newTaskDialog.generateDetailsButton')}
-        </Button>
-      </div>
+          <Textarea
+            id="initial-input"
+            value={initialInput}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInitialInput(e.target.value)}
+            placeholder={t('newTaskDialog.initialInputPlaceholder')}
+            rows={6}
+            className="animated-border-textarea mb-6"
+          />
+          <div>
+            <Button 
+              type="button"
+              onClick={handleGenerateTaskDetails}
+              disabled={isGeneratingTask || !initialInput}
+              className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              {isGeneratingTask ? t('newTaskDialog.generatingButton') : t('newTaskDialog.generateDetailsButton')}
+            </Button>
+          </div>
         </>
       )}
 
       {/* Show task details form only if details are visible */}
       {detailsVisible && (
-        <div className="mt-6 space-y-6 max-h-[60vh] overflow-y-auto lg:max-h-none lg:overflow-y-visible px-2 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">
+        <div className="mt-6 space-y-4 max-h-[60vh] overflow-y-auto lg:max-h-none lg:overflow-y-visible px-2 md:px-0 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">
           <div className="space-y-2">
             <Label htmlFor="title">{t('common.title')}</Label>
             <Input
@@ -233,7 +241,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todo">{t('common.todo')}</SelectItem>
-                  <SelectItem value="in_progress">{t('common.inProgress')}</SelectItem>
+                  <SelectItem value="in_progress">{t('common.in_progress')}</SelectItem>
                   <SelectItem value="done">{t('common.done')}</SelectItem>
                 </SelectContent>
               </Select>
@@ -252,7 +260,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {deadline ? format(deadline, "PPP", { locale: nl }) : <span>{t('editTaskDialog.chooseDate')}</span>}
+                  {deadline ? format(deadline, "PPP", { locale: dateLocale }) : <span>{t('editTaskDialog.chooseDate')}</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 bg-card/70 backdrop-blur-md border border-white/10">
@@ -266,13 +274,13 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
                     today: 'bg-primary text-primary-foreground rounded-md font-bold',
                     outside: 'text-muted-foreground opacity-50',
                   }}
-                  locale={nl}
+                  locale={dateLocale}
                 />
               </PopoverContent>
             </Popover>
           </div>
           
-          {/* Footer knop hier binnen het formulier */}
+          {/* Footer button here inside the form */}
           <div className="flex justify-end pt-4">
              <Button 
                type="submit" 
@@ -285,12 +293,12 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
         </div>
       )}
       
-      <div className="mt-6 space-y-3">
+      <div className="mt-4 space-y-3">
         <Button 
             type="button" 
             variant="outline" 
             onClick={() => setOpen(false)} 
-            className="w-full h-10"
+            className="w-full h-12"
         >
           {t('common.cancel')}
         </Button>

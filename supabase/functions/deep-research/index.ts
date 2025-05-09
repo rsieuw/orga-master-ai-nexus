@@ -7,27 +7,26 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
 // Import standard libraries if needed (e.g., for CORS)
 import { corsHeaders } from "../_shared/cors.ts"
-import { Perplexity } from "https://deno.land/x/perplexity_ai@0.1.0/mod.ts"; // Replaced $VERSION with 0.1.0
-// import { supabaseAdmin } from "../_shared/supabaseAdmin.ts"; // Removed unused import
 
-// console.log(`Function 'deep-research' up and running!`); // Verwijderd
-
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  let languagePreference = 'nl'; // Declare with default here
+
   try {
     // Parse the request body to get the query, description, contextQuery, and language preference
-    const { query, description, contextQuery, languagePreference = 'nl', taskId } = await req.json();
-    // const authHeader = req.headers.get("Authorization")!; // Removed unused variable
-
-    // console.log(`Received research query: ${query}`); // Verwijderd
+    // Assign to the higher-scoped languagePreference
+    const { query, description, contextQuery, languagePreference: reqLanguagePreference, taskId } = await req.json();
+    if (reqLanguagePreference) {
+      languagePreference = reqLanguagePreference;
+    }
 
     if (!query || !taskId) {
       return new Response(
-        JSON.stringify({ error: "Missing 'query' or 'taskId' in request body" }),
+        JSON.stringify({ errorKey: "deepResearch.error.missingQueryOrTaskId" }),
         { 
           headers: { ...corsHeaders, "Content-Type": "application/json" }, 
           status: 400 
@@ -39,7 +38,7 @@ Deno.serve(async (req) => {
     const perplexityApiKey = Deno.env.get("PERPLEXITY_API_KEY");
     if (!perplexityApiKey) {
       return new Response(
-        JSON.stringify({ error: "Perplexity API key not set in Supabase secrets." }),
+        JSON.stringify({ errorKey: "deepResearch.error.perplexityApiKeyNotSet" }),
         { 
           headers: { ...corsHeaders, "Content-Type": "application/json" }, 
           status: 500 
@@ -48,83 +47,105 @@ Deno.serve(async (req) => {
     }
 
     // [PLACEHOLDER] Check user payment status
-    // console.log("[PLACEHOLDER] Checking user payment status (currently always true)..."); // Verwijderd
     const isPaidUser = true; // Assume true for now
 
     if (!isPaidUser) { 
-      // Dit blok wordt nu overgeslagen.
-      // console.warn("Access denied: Deep research is a paid feature."); // Verwijderd
       return new Response(
-        JSON.stringify({ error: "Toegang geweigerd: Deze functie vereist een actief abonnement." }),
+        JSON.stringify({ errorKey: "deepResearch.error.paidFeature" }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 403, // Forbidden
+          status: 403 // Forbidden
         }
       );
     }
-    // ---> EINDE Placeholder Check <---
+    
+    // ---> MODIFICATION: Rebuild systemContent string step-by-step <---
+    let systemContent = `You are an expert research assistant.
+The user wants a thorough investigation.
 
-    const perplexity = new Perplexity(perplexityApiKey);
+**Research Topic:** ${query}
+`;
 
-    const researchResult = await perplexity.search(query, {
-      model: "sonar-pro", // Or another suitable model like sonar-medium-online
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert research assistant helping a user understand and execute a task or subtask in their project management workflow.
-
-${contextQuery
-  ? `The main task context is: "${contextQuery}". The specific subtask to research is: "${query}".`
-  : `The task to research is: "${query}".`}
-
-${description ? `Additional description provided: "${description}".` : ''}
-
-Your goal is to provide a concise yet comprehensive research summary covering:
-1.  **Key Concept Summary:** Explain the core ideas or background needed.
-2.  **Potential Challenges or Considerations:** Highlight potential difficulties or important factors.
-3.  **Actionable First Steps:** Suggest concrete initial actions the user can take.
-4.  **(Optional) Relevant Resources:** Include links to high-quality articles, tools, or documentation if applicable and genuinely helpful.
-
-Format your response clearly using Markdown.
-
-**Respond in the following language: ${languagePreference}.**`
-        },
-        // Voeg een user message toe als laatste item, zoals vereist door Perplexity
-        { role: "user", content: `Provide research based on the ${contextQuery ? `subtask: "${query}" (related to main task: "${contextQuery}")` : `task: "${query}"`}` }
-      ],
-      max_tokens: 1500
-    });
-
-    if (!researchResult.ok) {
-      const errorBody = await researchResult.text();
-      throw new Error(`Perplexity API error: ${researchResult.status} ${researchResult.statusText} - ${errorBody}`);
+    if (contextQuery) {
+      systemContent += `**Main Task Context:** ${contextQuery}
+`;
+    }
+    if (description) {
+      systemContent += `**Additional Description:** ${description}
+`;
     }
 
-    const result = await researchResult.json();
-    
-    // Declare a variable to hold the extracted content
-    let finalContent: string = "Kon geen onderzoeksresultaten vinden."; 
+    systemContent += `
+**Instructions for the research output:**
+Please provide a comprehensive overview addressing the following points. Adapt the level of detail for a general user, focusing on practically applicable information.
+1. Optimal approach and methodology for this specific task.
+2. Necessary tools, resources, or techniques.
+3. Step-by-step instructions for effective execution.
+4. Time-saving strategies and best practices.
+5. Common challenges and solutions.
+6. Relevant experts or sources for further exploration.
 
-    // Extract the content from the first assistant choice
-    if (result.choices && result.choices.length > 0 && result.choices[0].message && result.choices[0].message.content) {
-      // Assign to the new variable instead of the constant
+Respond in ${languagePreference === 'nl' ? 'Dutch' : 'English'}.`;
+    // ---> END MODIFICATION <---
+
+    const messages = [
+        {
+          role: "system",
+        content: systemContent // Use the rebuilt string
+      },
+      {
+        role: "user",
+        content: query, 
+      },
+    ];
+
+    // ---> MODIFICATION: Use fetch to call Perplexity API directly <---
+    const perplexityApiResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'content-type': 'application/json',
+        'Authorization': `Bearer ${perplexityApiKey}`
+      },
+      body: JSON.stringify({
+        model: "sonar-pro", 
+        messages: messages,
+        // max_tokens: 1500 // Optional: Add if needed, based on API docs
+      })
+    });
+
+    if (!perplexityApiResponse.ok) {
+      const errorBody = await perplexityApiResponse.text();
+      console.error(`Perplexity API error: ${perplexityApiResponse.status} ${perplexityApiResponse.statusText} - ${errorBody}`);
+      // Return a structured error that the client can use with a key
+      throw new Error("deepResearch.error.perplexityApiError"); 
+    }
+
+    const result = await perplexityApiResponse.json();
+    // ---> END MODIFICATION <---
+
+    let finalContent = "";
+    if (result && result.choices && result.choices.length > 0 && result.choices[0].message && result.choices[0].message.content) {
       finalContent = result.choices[0].message.content;
     } else {
-      // console.warn("Unexpected response structure from Perplexity (content):", result); // Verwijderd
-      // finalContent behoudt de default waarde
+      // If no content, use the messageKey for "could not find results"
+      return new Response(
+        JSON.stringify({ messageKey: "deepResearch.message.couldNotFindResults" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500, // Internal Server Error or appropriate error for failed API call
+        }
+      );
     }
 
     // Extract citations if available
     let citations: string[] | undefined = undefined;
-    if (result.citations && Array.isArray(result.citations)) {
+    if (result && result.citations && Array.isArray(result.citations)) {
       citations = result.citations.filter((c: unknown): c is string => typeof c === 'string');
-      // console.log(`Extracted ${citations.length} citations.`); // Verwijderd
-    } else {
-      // console.log("No citations array found in Perplexity response."); // Verwijderd
     }
 
     const data = {
-      // Use the new variable here
+      // Use the new variable here. It will be either the string content or the object with messageKey
       researchResult: finalContent,
       citations: citations
     };
@@ -137,27 +158,20 @@ Format your response clearly using Markdown.
       }
     );
   } catch (error) {
-    // console.error("Error processing request:", error); // Verwijderd
-    // Check if error is an instance of Error before accessing .message
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+    console.error("Error in deep-research function:", error);
+    // Determine the error message based on languagePreference, ensuring it's defined
+    const errorMessage = error instanceof Error ? error.message : (languagePreference === 'nl' ? "Er is een onbekende fout opgetreden." : "An unknown error occurred.");
+    // If the error is an instance of Error, pass its message directly.
+    // Otherwise, use a generic key based on languagePreference.
+    const errorKey = error instanceof Error ? undefined : "deepResearch.error.unknownError";
+    const errorBody = errorKey ? { errorKey } : { error: errorMessage };
+
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify(errorBody),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" }, 
-        status: 500 
+        status: 500,
       }
     );
   }
 });
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/deep-research' \
-    --header 'Authorization: Bearer YOUR_SUPABASE_ANON_KEY' \
-    --header 'Content-Type: application/json' \
-    --data '{"query":"Your research topic here", "description":"Optional description", "languagePreference":"en"}'
-
-*/

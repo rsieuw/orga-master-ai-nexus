@@ -20,7 +20,7 @@
     },
     "appearance": {
       "title": "Appearance",
-      "description": "Customize the look and feel of the application."
+      "description": "Customize the appearance of the application."
     },
     "theme": {
       "label": "Theme mode",
@@ -142,7 +142,10 @@
       "errorSavingResearchModel": {
         "title": "Error Saving Research Model",
         "description": "Could not save research model preference."
-      }
+      },
+      "copiedToClipboard": "Copied to clipboard!",
+      "genericErrorTitle": "Error",
+      "genericErrorDescription": "Something went wrong. Please try again later."
     }
   },
   "profile": {
@@ -232,7 +235,7 @@
       "email": "Email",
       "role": "Role",
       "status": "Status",
-      "lastLogin": "Last Login",
+      "created_at": "Registered At",
       "actions": "Actions",
       "statusValues": {
         "active": "Active",
@@ -290,7 +293,7 @@
       "addButton": "Add",
       "cancelButton": "Cancel",
       "success": "User added successfully.",
-      "error": "Error adding user"
+      "error": "Error adding user."
     },
     "editUserDialog": {
       "title": "Edit User",
@@ -302,13 +305,13 @@
       "saveButton": "Save",
       "cancelButton": "Cancel",
       "success": "User details updated successfully.",
-      "error": "Error updating user details"
+      "error": "Error updating user details."
     },
     "deleteUserConfirmation": {
       "title": "Delete User?",
       "description": "Are you sure you want to delete user {{email}}? This action cannot be undone and will permanently delete the user and all associated data.",
       "success": "User {{email}} successfully deleted.",
-      "error": "Error deleting user"
+      "error": "Error deleting user."
     }
   },
   "adminPermissionsPage": {
@@ -522,10 +525,7 @@
     },
     "generateSubtasks": {
       "buttonText": "Generate Subtasks",
-      "dialogTitle": "Generate Subtasks (AI)?",
-      "dialogDescription": "Would you like to ask the AI assistant to suggest relevant subtasks for \"{{taskTitle}}\" based on its description?",
       "confirmButton": "Yes, generate subtasks",
-      "buttonAriaLabel": "Generate subtasks",
       "tooltip": "Generate subtasks (AI)"
     }
   },
@@ -558,12 +558,15 @@
     "medium": "Medium",
     "low": "Low",
     "todo": "To do",
-    "in_progress": "In progress",
+    "in_progress": "In Progress",
     "done": "Done",
     "back": "Back",
     "backSR": "Go back",
     "closeSR": "Close window",
-    "cancelAriaLabel": "Cancel"
+    "cancelAriaLabel": "Cancel",
+    "generateSubtasksDialogTitle": "Generate Subtasks (AI)?",
+    "generateSubtasksDialogDescription": "Would you like to ask the AI assistant to suggest relevant subtasks for \"{{taskTitle}}\" based on its description?",
+    "generatingText": "Generating..."
   },
   "pageTitles": {
     "home": "Home",
@@ -695,66 +698,70 @@
     "systemSettingsButton": "System Settings"
   },
   "chatPanel": {
-    "errors": {
-      "userNotLoggedIn": "User not logged in"
+    "titleWithTask": "Chat: {{taskTitle}}",
+    "messagePlaceholder": "Type your message...",
+    "clearHistoryButton": "Clear History",
+    "exportChatButton": "Export Chat",
+    "researchButton": "Research",
+    "newNoteButton": "New Note",
+    "deepResearchTooltip": "Perform Deep Research",
+    "settingsTooltip": "Chat Settings",
+    "loadingHistory": "Loading history...",
+    "sendMessageTooltip": "Send message",
+    "selectModelAriaLabel": "Select AI research model",
+    "research": {
+      "startingDeepResearchOn": "Starting deep research on: {{topic}}",
+      "contextSubtaskForMain": "(Subtask: {{subtaskTitle}})",
+      "researchCompleted": "Research completed."
     },
-    "toast": {
-      "saveFailedTitle": "Save Failed",
-      "saveMessageToDbFailed": "Could not save the message to the database.",
-      "loadFailedTitle": "Load Failed",
-      "loadMessagesAndNotesFailed": "Could not retrieve chat history and notes.",
-      "researchSavedTitle": "Research Saved",
-      "researchSavedDescription": "The research result has been saved.",
-      "saveResearchFailedDescriptionDefault": "Could not save the research.",
-      "deepResearchFailedTitle": "Research Failed",
-      "deepResearchFailedDescriptionDefault": "Could not invoke the deep-research function.",
-      "researchCancelledTitle": "Research Cancelled",
-      "researchCancelledDescription": "Fetching research results has been stopped.",
-      "historyClearedTitle": "History Cleared",
-      "historyClearedDescription": "Chat history for this task has been deleted.",
-      "clearHistoryFailedTitle": "Clear Failed",
-      "clearHistoryFailedDefault": "Could not clear chat history.",
-      "exportFailedTitle": "Export Failed",
-      "exportFailedDescription": "There are no messages to export.",
-      "exportStartedTitle": "Export Started",
-      "exportStartedDescription": "Chat is being downloaded as a text file.",
-      "noteDeletedTitle": "Note Deleted",
-      "noteDeletedDescription": "The note has been successfully deleted.",
-      "deleteFailedTitle": "Delete Failed",
-      "deleteNoteFailedDefault": "Could not delete the note.",
-      "researchDeletedTitle": "Research Deleted",
-      "researchDeletedDescription": "The saved research has been successfully deleted.",
-      "deleteResearchFailedDescriptionDefault": "Could not delete the saved research."
-    },
-    "initialAssistantMessage": "Hello! I\\'m your AI assistant. What do you want to know about the task \"{{taskTitle}}\"?",
-    "subtaskSelectedMessage": "You\\'ve selected subtask \"{{subtaskTitle}}\". What would you like to know or discuss about it?",
+    "startConversationPrompt": "Start a conversation by typing a message.",
+    "initialAssistantMessage": "Hello {{username}}! I'm ready to help you with your task: {{taskTitle}}. What can I do for you?",
+    "subtaskSelectedMessage": "Okay, we are now focusing on the subtask: {{subtaskTitle}}.",
+    "researchForPromptLabel": "Research for prompt: \"{{prompt}}\"",
+    "researchForSubtaskLabel": "Research for subtask: {{subtaskTitle}}",
     "closeSR": "Close chat",
-    "researchForSubtaskLabel": "Research for subtask: \"{{subtaskTitle}}\"",
-    "sourcesLabel": "Sources:",
     "copyMessageTitle": "Copy message",
-    "copyMessageSR": "Copy message",
+    "copyMessageSR": "Copy message to clipboard",
     "saveResearchTitle": "Save research",
     "saveResearchSR": "Save research",
     "deleteNoteTitle": "Delete note",
-    "deleteNoteSR": "Delete note",
-    "deleteResearchTitle": "Delete research",
-    "deleteResearchSR": "Delete research",
-    "researchingText": "Researching...",
-    "typingText": "Typing...",
-    "cancelResearchButton": "Cancel Research",
-    "notePlaceholder": "Write a note...",
-    "messagePlaceholder": "Type your message...",
-    "saveNoteTooltip": "Save Note",
-    "sendMessageTooltip": "Send (Ctrl+Enter)",
-    "deepResearchDisabledTooltip": "Deep Research is not available for your account type.",
-    "deepResearchTooltip": "Start deep research",
-    "researchButton": "Research",
-    "stopNoteButton": "Stop Note",
-    "newNoteButton": "New Note",
-    "selectModelAriaLabel": "Choose AI Model",
-    "chatModesDisabledTooltip": "Chat Modes are not available for your account type.",
-    "clearHistoryButton": "Clear History",
-    "exportChatButton": "Export Chat (.txt)"
+    "deleteNoteSR": "Delete this note",
+    "deleteResearchTitle": "Delete saved research",
+    "deleteResearchSR": "Delete this saved research",
+    "defaultUsername": "there",
+    "defaultTaskTitle": "the current task",
+    "errors": {
+      "taskIdMissing": "Task ID is missing, cannot perform action.",
+      "userNotLoggedIn": "User is not logged in.",
+      "taskIdOrUserMissing": "Task ID or user not available. Cannot save research."
+    },
+    "toast": {
+      "saveFailedTitle": "Save Failed",
+      "researchLoadingText": "Researching... please wait.",
+      "deepResearchSuccessTitle": "Deep Research Completed",
+      "loadMessagesAndNotesFailed": "Failed to load messages and notes",
+      "saveMessageToDbFailed": "Failed to save message to database.",
+      "saveResearchToDbFailed": "Failed to save research: {{error}}",
+      "historyClearedTitle": "History Cleared",
+      "historyClearedDescription": "Chat history has been successfully cleared.",
+      "clearHistoryFailed": "Failed to clear history",
+      "noteDeletedTitle": "Note Deleted",
+      "noteDeletedDescription": "The note has been successfully deleted.",
+      "deleteFailedTitle": "Deletion Failed",
+      "deleteNoteFailedDefault": "Failed to delete the note. Please try again.",
+      "researchDeletedTitle": "Research Deleted",
+      "researchDeletedDescription": "The saved research has been successfully deleted.",
+      "deleteResearchFailedDescriptionDefault": "Failed to delete the research. Please try again.",
+      "researchSavedTitle": "Research Saved",
+      "researchSavedDescription": "The research has been successfully saved."
+    }
+  },
+  "chatInput": {
+    "placeholder": "Type your message or / for commands...",
+    "placeholderNote": "Type your note...",
+    "sendButton": "Send",
+    "noteModeButton": "Save as Note",
+    "chatModeButton": "Back to Chat"
   },
   "editTaskDialog": {
     "toast": {
@@ -791,5 +798,84 @@
     "generateSubtasksLabel": "Automatically generate subtasks (AI)",
     "createTaskButton": "Create Task",
     "creatingButton": "Creating..."
+  },
+  "errors": {
+    "unauthorized": "Not authorized.",
+    "internalServerError": "An internal server error occurred.",
+    "research": {
+      "idRetrievalFailed": "Could not retrieve the ID of the saved research."
+    },
+    "profiles": {
+      "notFound": "No profiles found."
+    },
+    "api": {
+      "configMissing": "Internal server error: API configuration missing."
+    },
+    "request": {
+      "invalidInput": "Invalid or missing 'input' in request body.",
+      "invalidBody": "Invalid request body.",
+      "missingTaskId": "Valid taskId is required in the request body."
+    },
+    "env": {
+      "openaiKeyMissing": "OPENAI_API_KEY environment variable not set.",
+      "supabaseUrlMissing": "SUPABASE_URL environment variable not set.",
+      "supabaseAnonKeyMissing": "SUPABASE_ANON_KEY environment variable not set."
+    },
+    "task": {
+      "fetchFailed": "Error fetching task.",
+      "notFound": "Task not found."
+    },
+    "openai": {
+      "requestFailed": "OpenAI API request failed."
+    },
+    "ai": {
+      "noUsableAnswer": "AI service did not provide a usable answer.",
+      "invalidJson": "Invalid JSON format from AI.",
+      "processingFailed": "Could not process the AI service's response.",
+      "invalidStructure": "Invalid structure received from OpenAI API.",
+      "jsonParseFailed": "Could not parse the JSON response from the AI.",
+      "noContent": "No content found in AI response.",
+      "subtasks": {
+        "invalidArray": "AI response does not contain a valid 'subtasks' array.",
+        "extractionFailed": "Could not extract a valid subtasks array from AI response."
+      }
+    },
+    "internal": {
+      "generateTaskDetails": "Internal server error while generating task details."
+    },
+    "taskIdMissing": "Task ID is missing, cannot perform action."
+  },
+  "success": {
+    "researchSaved": "Research saved successfully!"
+  },
+  "chat": {
+    "placeholder": "Type your message or command here (e.g., /generate subtasks)..."
+  },
+  "deepResearch": {
+    "title": "Deep Research",
+    "description": "Perform in-depth research on a topic using AI.",
+    "message": {
+      "noResults": "Could not find relevant information for your query.",
+      "success": "Deep research completed successfully.",
+      "couldNotFindResults": "Could not find specific results for your query based on the provided context."
+    },
+    "errors": {
+      "general": "An unexpected error occurred during deep research. Please try again.",
+      "perplexityError": "Error communicating with Perplexity API.",
+      "missingQuery": "Research query is missing.",
+      "apiError": "The AI research service returned an error.",
+      "unknown": "An unknown error occurred."
+    }
+  },
+  "taskContext": {
+    "toast": {
+      "subtasksGeneratedTitle": "Subtasks Generated",
+      "subtasksGeneratedDescription": "{{count}} new subtasks added.",
+      "noSubtasksGeneratedTitle": "No Subtasks Generated",
+      "noSubtasksGeneratedDescription": "The AI could not suggest any subtasks.",
+      "generationFailedTitle": "Generation Failed",
+      "generationFailedDescription": "Could not generate AI subtasks.",
+      "taskNotFound": "Task not found"
+    }
   }
-} 
+}

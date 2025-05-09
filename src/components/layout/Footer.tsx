@@ -6,7 +6,7 @@ export default function Footer() {
   const { t } = useTranslation();
 
   return (
-    <footer className="hidden md:block border-t border-white/10 py-6 bg-gradient-to-b from-transparent to-gray-900/50 backdrop-blur-sm z-30">
+    <footer className="hidden md:block border-t border-white/10 py-[18px] bg-gradient-to-b from-transparent to-gray-900/50 backdrop-blur-sm z-30">
       <div className="container flex flex-col items-center gap-2 md:flex-row md:justify-between">
         <p className="hidden md:block text-sm leading-loose text-muted-foreground">
           &copy; {new Date().getFullYear()} OrgaMaster AI. {t('footer.rightsReserved')}

@@ -17,6 +17,7 @@ import {
   DialogDescription,
   DialogTrigger,
   DialogPortal,
+  DialogOverlay,
 } from "@/components/ui/dialog.tsx";
 import NewTaskDialog from "@/components/tasks/NewTaskDialog.tsx";
 import { TypeAnimation } from 'react-type-animation'; // Import the component
@@ -248,17 +249,19 @@ export default function Dashboard() {
           </DialogTrigger>
           <DialogPortal>
             {isNewTaskOpen && (
-               <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" aria-hidden="true" />
+              <>
+                <DialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" /> 
+                <DialogContent className="fixed left-[50%] top-[50%] z-[90] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg md:w-full">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl">{t('appLayout.newTaskDialog.title')}</DialogTitle>
+                    <DialogDescription>
+                      {t('appLayout.newTaskDialog.description')}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <NewTaskDialog setOpen={setIsNewTaskOpen} />
+                </DialogContent>
+              </>
             )}
-            <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card p-6 shadow-lg duration-200 sm:max-w-[600px] sm:rounded-lg z-50 max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-2xl">{t('appLayout.newTaskDialog.title')}</DialogTitle>
-                <DialogDescription>
-                  {t('appLayout.newTaskDialog.description')}
-                </DialogDescription>
-              </DialogHeader>
-              <NewTaskDialog setOpen={setIsNewTaskOpen} />
-            </DialogContent>
           </DialogPortal>
         </Dialog>
       </>

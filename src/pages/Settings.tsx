@@ -93,9 +93,10 @@ export default function SettingsPage() {
 
   const handleUiLanguageChange = (newLang: string) => {
     i18n.changeLanguage(newLang);
+    const languageName = newLang === 'nl' ? t('settings.language.dutch') : t('settings.language.english');
     toast({
         title: t('settings.toast.uiLanguageChanged.title'),
-        description: t('settings.toast.uiLanguageChanged.description', { language: newLang === 'nl' ? t('settings.language.dutch') : t('settings.language.english') }),
+        description: t('settings.toast.uiLanguageChanged.description', { language: languageName }),
       });
   };
 
@@ -396,7 +397,7 @@ export default function SettingsPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {isSavingAiMode && <Loader size="sm" />}
+                  {isSavingAiMode && <Loader size="sm" />} 
                 </div>
               </div>
               

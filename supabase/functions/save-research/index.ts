@@ -3,7 +3,6 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { corsHeaders } from "../_shared/cors.ts";
 
-// console.log(`Function 'save-research' up and running!`); // Verwijderd
 
 // Define CORS headers directly for simplicity
 // const corsHeaders = {
@@ -30,17 +29,22 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
       console.error("User authentication error:", userError);
-      return new Response(JSON.stringify({ error: 'Niet geautoriseerd' }), {
+      return new Response(JSON.stringify({ errorKey: 'errors.unauthorized' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
       });
     }
 
     // 3. Parse request body
-    const { taskId, researchContent, citations, subtaskTitle } = await req.json();
+    const { taskId, researchContent, citations, subtaskTitle, prompt } = await req.json();
+    
     if (!taskId || typeof taskId !== 'string') {
       return new Response(JSON.stringify({ error: "Missing or invalid 'taskId'" }), { status: 400, headers: corsHeaders });
     }
+    if (typeof researchContent !== 'string') { 
+        return new Response(JSON.stringify({ error: "Missing or invalid 'researchContent'" }), { status: 400, headers: corsHeaders });
+    }
+    // Optional: Add more validation for other fields like citations, subtaskTitle, prompt if needed
 
     // 4. Insert data into the saved_research table
     const { data: savedData, error: insertError } = await supabaseClient
@@ -49,28 +53,26 @@ Deno.serve(async (req) => {
         task_id: taskId,
         user_id: user.id,
         research_content: researchContent,
-        citations: citations,
-        subtask_title: subtaskTitle || null
+        citations: citations, // Ensure this matches your DB schema (e.g., jsonb or text[])
+        subtask_title: subtaskTitle || null,
+        prompt: prompt || null // Added prompt to insert
       })
-      .select('id') // Selecteer de ID van de nieuwe rij
-      .single(); // Verwacht één resultaat
+      .select('id') // Select the ID of the new row
+      .single(); // Expect a single result
 
     if (insertError) {
       console.error("Error inserting saved research:", insertError);
       throw insertError; // Let the generic error handler catch it
     }
 
-    // ---> NIEUW: Controleer of we data (en dus ID) hebben <--- 
     if (!savedData || !savedData.id) {
       console.error("Failed to retrieve ID after inserting saved research");
-      throw new Error("Kon de ID van het opgeslagen onderzoek niet ophalen.");
+      throw new Error("errors.research.idRetrievalFailed");
     }
 
-    // 5. Return success response, inclusief de nieuwe ID
-    // console.log(`Research saved successfully (ID: ${savedData.id}) for task ${taskId} by user ${user.id}`); // Verwijderd
+    // 5. Return success response, including the new ID
     return new Response(
-      // ---> NIEUW: Stuur ID mee in de response <--- 
-      JSON.stringify({ message: "Onderzoek succesvol opgeslagen!", savedResearchId: savedData.id }),
+      JSON.stringify({ messageKey: "success.researchSaved", savedResearchId: savedData.id }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200 
@@ -78,13 +80,20 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    // console.error("Error saving research:", error); // Optioneel: log de fout server-side
-    let errorMessage = "Internal Server Error";
+    let errorKey = "errors.internalServerError"; 
     if (error instanceof Error) {
-      errorMessage = error.message;
+      if (error.message === "errors.research.idRetrievalFailed") {
+        errorKey = error.message;
+      } else if (error.name === 'AuthApiError') { // Example for specific Supabase errors
+        errorKey = "errors.unauthorized"; // Or a more specific key
+      } else if (error.message.includes("unique constraint")) { // Example for DB constraint errors
+        errorKey = "errors.request.duplicateEntry"; // Define this key in your translations
+      }
+      // Log the actual error message for server-side debugging
+      console.error("Caught error in save-research function:", error.message);
     }
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
+    return new Response(JSON.stringify({ errorKey: errorKey, message: error instanceof Error ? error.message : 'Unknown error' }), {
+      status: 500, // Or a more appropriate status code based on the error
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

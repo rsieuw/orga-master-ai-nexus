@@ -172,6 +172,7 @@ export type Database = {
           id: string
           language_preference: string | null
           name: string | null
+          research_model_preference: string | null
           role: string | null
           status: string
           updated_at: string
@@ -184,6 +185,7 @@ export type Database = {
           id: string
           language_preference?: string | null
           name?: string | null
+          research_model_preference?: string | null
           role?: string | null
           status?: string
           updated_at?: string
@@ -196,6 +198,7 @@ export type Database = {
           id?: string
           language_preference?: string | null
           name?: string | null
+          research_model_preference?: string | null
           role?: string | null
           status?: string
           updated_at?: string
@@ -222,6 +225,7 @@ export type Database = {
           citations: Json | null
           created_at: string
           id: string
+          prompt: string | null
           research_content: string
           subtask_title: string | null
           task_id: string
@@ -231,6 +235,7 @@ export type Database = {
           citations?: Json | null
           created_at?: string
           id?: string
+          prompt?: string | null
           research_content: string
           subtask_title?: string | null
           task_id: string
@@ -240,6 +245,7 @@ export type Database = {
           citations?: Json | null
           created_at?: string
           id?: string
+          prompt?: string | null
           research_content?: string
           subtask_title?: string | null
           task_id?: string
@@ -411,6 +417,7 @@ export type Database = {
           language_preference: string
           email_notifications_enabled: boolean
           ai_mode_preference: string
+          research_model_preference: string
           created_at: string
           updated_at: string
           status: string

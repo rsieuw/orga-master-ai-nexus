@@ -4,6 +4,7 @@ import { useAuth } from "./AuthContext.tsx";
 import { supabase } from "@/integrations/supabase/client.ts";
 import { useToast } from "@/hooks/use-toast.ts";
 import { v4 as uuidv4 } from 'uuid';
+import { useTranslation } from 'react-i18next';
 // Import the context and props type from the hooks file
 import { TaskContext, type TaskContextProps } from "./TaskContext.hooks.ts";
 
@@ -34,9 +35,10 @@ type TaskDatabaseUpdatePayload = {
 
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const { t } = useTranslation();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     const loadTasks = async () => {
@@ -198,7 +200,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       const { data: updatedTaskData, error } = await supabase
         .from('tasks')
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update(payloadForSupabase as any)
+        .update(payloadForSupabase as any) // Cast hele payload naar any
         .eq('id', id)
         .eq('user_id', user.id)
         .select()
@@ -392,18 +394,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     // console.log(`Calling generate-subtasks function for task: ${task.id}`); // Verwijderd
 
     try {
-      // Voorbereiden van de data voor de Edge Function
-      const taskDetails = {
-        title: task.title,
-        description: task.description,
-        priority: task.priority,
-        deadline: task.deadline,
-        // TODO: Voeg eventueel chat context toe (zie Edge Function)
-      };
+      // TODO: Voeg eventueel chat context toe (zie Edge Function)
+      // }; // Verwijder de oude taskDetails samenstelling
 
       // Aanroepen van de Edge Function
       const { data, error } = await supabase.functions.invoke('generate-subtasks', {
-        body: taskDetails,
+        body: { taskId: task.id }, // Stuur alleen de taskId mee
       });
 
       if (error) {
@@ -637,7 +633,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const expandTask = async (taskId: string): Promise<void> => {
     const taskIndex = tasks.findIndex((t: Task) => t.id === taskId);
     if (taskIndex === -1) {
-      toast({ variant: "destructive", title: "Taak niet gevonden" });
+      toast({ variant: "destructive", title: t('taskContext.toast.taskNotFound') });
       throw new Error("Task not found for expansion");
     }
     
@@ -647,7 +643,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       const generatedSubtasks = await generateSubtasksAI(taskId);
       
       if (generatedSubtasks.length === 0) {
-        toast({ title: "Geen subtaken gegenereerd", description: "De AI kon geen subtaken voorstellen." });
+        toast({ title: t('taskContext.toast.noSubtasksGeneratedTitle'), description: t('taskContext.toast.noSubtasksGeneratedDescription') });
         return;
       }
       
@@ -660,11 +656,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       
       await updateTask(taskId, { subtasks: combinedSubtasks });
       
-      toast({ title: "Subtaken gegenereerd", description: `${generatedSubtasks.length} nieuwe subtaken toegevoegd.` });
+      toast({ title: t('taskContext.toast.subtasksGeneratedTitle'), description: t('taskContext.toast.subtasksGeneratedDescription', { count: generatedSubtasks.length }) });
       
     } catch (error) {
       console.error("Error expanding task with AI:", error);
-      toast({ variant: "destructive", title: "Genereren mislukt", description: "Kon geen AI subtaken genereren." });
+      toast({ variant: "destructive", title: t('taskContext.toast.generationFailedTitle'), description: t('taskContext.toast.generationFailedDescription') });
+      // Zet de state terug naar de originele staat bij een fout
       setTasks(prevTasks => prevTasks.map((t: Task) => t.id === taskId ? originalTask : t));
       throw error;
     }

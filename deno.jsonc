@@ -42,4 +42,5 @@
   // }
   // Als je expliciet wilt zijn over de tsconfig locatie:
   // "config": "./tsconfig.json"
+  "nodeModulesDir": "auto" // Instruct Deno to manage a node_modules directory
 } 

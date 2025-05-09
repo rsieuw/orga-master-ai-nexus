@@ -80,7 +80,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
 
   return (
     <form onSubmit={handleSubmit} className="mt-4">
-      <div className="space-y-6 max-h-[65vh] overflow-y-auto lg:overflow-y-visible lg:max-h-none px-2 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">
+      <div className="space-y-6 px-2">
        <div className="space-y-2">
          <Label htmlFor="edit-title">{t('common.title')}</Label>
          <Input
@@ -128,11 +128,13 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
              onValueChange={(value: string) => setStatus(value as TaskStatus)}
            >
              <SelectTrigger id="edit-status">
-               <SelectValue placeholder={t('editTaskDialog.selectStatusPlaceholder')} />
+               <SelectValue>
+                 {t(`common.${status.toLowerCase().replace(' ', '_')}`)}
+               </SelectValue>
              </SelectTrigger>
              <SelectContent>
                <SelectItem value="todo">{t('common.todo')}</SelectItem>
-               <SelectItem value="in_progress">{t('common.inProgress')}</SelectItem>
+               <SelectItem value="in_progress">{t('common.in_progress')}</SelectItem>
                <SelectItem value="done">{t('common.done')}</SelectItem>
              </SelectContent>
            </Select>
@@ -197,7 +199,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
             type="button" 
             variant="outline"
             onClick={() => setOpen(false)} 
-            className="w-full h-10"
+            className="w-full h-12"
           >
               {t('common.cancel')}
           </Button>

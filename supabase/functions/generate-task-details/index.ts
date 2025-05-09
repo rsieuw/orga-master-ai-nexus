@@ -30,32 +30,46 @@ Deno.serve(async (req) => {
     if (!OPENAI_API_KEY) {
       console.error("OPENAI_API_KEY is not set in Supabase secrets.");
       return new Response(
-        JSON.stringify({ error: "Interne serverfout: API configuratie ontbreekt." }),
+        JSON.stringify({ errorKey: "errors.api.configMissing" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // 2. Get user input from request body
+    // 2. Get user input and language preference from request body
     let userInput: string | undefined;
+    let languagePreference: string = 'en'; // Default to English
+    
     try {
        const body = await req.json();
        userInput = body?.input; // Expecting { "input": "user's idea..." }
+       
+       // Get language preference if provided
+       if (body?.languagePreference) {
+         languagePreference = body.languagePreference;
+       }
+       
        if (!userInput || typeof userInput !== 'string' || userInput.trim() === '') {
-          throw new Error("Ongeldige of ontbrekende 'input' in request body.");
+          throw new Error("errors.request.invalidInput"); // Key as message
        }
     } catch (e) {
        console.error("Failed to parse request body or invalid input:", e);
+       // If the error is already one of our keys, use that, otherwise a default key
+       const key = (e instanceof Error && e.message === "errors.request.invalidInput") 
+                   ? e.message 
+                   : "errors.request.invalidBody";
        return new Response(
-         JSON.stringify({ error: e.message || "Ongeldige request body." }),
+         JSON.stringify({ errorKey: key }),
          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
        );
     }
 
-
     // 3. Construct the prompt for OpenAI
-    const systemPrompt = `Je bent een assistent die helpt bij het formuleren van taken. Gebaseer op de input van de gebruiker, genereer een beknopte, actiegerichte taak 'title' (maximaal 10 woorden) en een iets gedetailleerdere 'description' (maximaal 3 zinnen). De response MOET een geldig JSON object zijn met alleen de keys "title" en "description". Voorbeeld: { "title": "Teamlunch organiseren", "description": "Plan een teamlunch voor volgende week vrijdag. Zoek een restaurant en stuur een uitnodiging." }`;
+    // Adjust the system prompt based on language preference
+    const systemPrompt = languagePreference === 'nl' 
+      ? `Je bent een assistent die helpt bij het formuleren van taken. Op basis van de input van de gebruiker, genereer je een beknopte, actie-gerichte taak 'title' (maximaal 10 woorden) en een iets gedetailleerdere 'description' (maximaal 3 zinnen). Het antwoord MOET een geldig JSON-object zijn met alleen de sleutels "title" en "description". Voorbeelden: { "title": "Teamlunch organiseren", "description": "Plan een teamlunch voor volgende vrijdag. Zoek een restaurant en stuur een uitnodiging." }`
+      : `You are an assistant that helps formulate tasks. Based on the user's input, generate a concise, action-oriented task 'title' (maximum 10 words) and a slightly more detailed 'description' (maximum 3 sentences). The response MUST be a valid JSON object with only the keys "title" and "description". Example: { "title": "Organize team lunch", "description": "Plan a team lunch for next Friday. Find a restaurant and send an invitation." }`;
 
-    const userPrompt = `Gebruikersinput: "${userInput}"`;
+    const userPrompt = `User input: "${userInput}"`;
 
     // 4. Call OpenAI API (Chat Completions)
     const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
@@ -76,7 +90,7 @@ Deno.serve(async (req) => {
 
     if (!aiResponse) {
       console.error("OpenAI response did not contain expected content:", chatCompletion);
-      throw new Error("AI service gaf geen bruikbaar antwoord.");
+      throw new Error("errors.ai.noUsableAnswer"); // Key as message
     }
 
     // 5. Parse and validate the response
@@ -85,13 +99,14 @@ Deno.serve(async (req) => {
       generatedData = JSON.parse(aiResponse);
       // Basic validation
       if (typeof generatedData.title !== 'string' || typeof generatedData.description !== 'string') {
-          throw new Error("Ongeldig JSON formaat van AI.");
+          throw new Error("errors.ai.invalidJson"); // Key as message
       }
     } catch (e) {
       console.error("Failed to parse OpenAI JSON response:", aiResponse, e);
-      // Type check for error message
-      const errorMessage = e instanceof Error ? e.message : "Kon het antwoord van de AI service niet verwerken.";
-      throw new Error(errorMessage);
+      const key = (e instanceof Error && e.message === "errors.ai.invalidJson") 
+                  ? e.message 
+                  : "errors.ai.processingFailed";
+      throw new Error(key); // Key as message
     }
 
     // console.log(`OpenAI generated:`, generatedData); // Verwijderd
@@ -103,24 +118,24 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    // console.error("Error in generate-task-details:", error); // Behoud of verwijder server-side logging indien nodig
-    // Type check for error message
-    const errorMessage = error instanceof Error ? error.message : "Interne serverfout bij genereren taakdetails";
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    // console.error("Error in generate-task-details:", error); // Keep or remove server-side logging if necessary
+    let errorKey = "errors.internal.generateTaskDetails"; // Default fallback key
+    if (error instanceof Error) {
+      // Check if the message is already one of our defined keys
+      const knownKeys = [
+        "errors.request.invalidInput", 
+        "errors.ai.noUsableAnswer", 
+        "errors.ai.invalidJson", 
+        "errors.ai.processingFailed"
+      ];
+      if (knownKeys.includes(error.message)) {
+        errorKey = error.message;
+      }
+      // Note: errors.api.configMissing and errors.request.invalidBody worden al direct met JSON.stringify({ errorKey: ... }) afgehandeld.
+    }
+    return new Response(JSON.stringify({ errorKey: errorKey }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/generate-task-details' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
-
-*/

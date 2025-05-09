@@ -15,9 +15,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, ArrowUpDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast.ts';
 import { GradientLoader } from '@/components/ui/loader.tsx';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog.tsx";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog.tsx";
 import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select.tsx";
+import { useMediaQuery } from 'react-responsive';
+import UserCard from '@/components/admin/UserCard.tsx';
+import { format } from 'date-fns';
+import { nl, enUS } from 'date-fns/locale';
+import { cn } from '@/lib/utils.ts';
 
 // Define the expected structure of the data returned by the Edge Function
 // This should now also include the email address
@@ -55,7 +60,7 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
   selectedRole,
   selectedStatus 
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +71,27 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
   const [newRoleForDialog, setNewRoleForDialog] = useState<UserRole | null>(null);
   const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false);
   const [isActivateDialogOpen, setIsActivateDialogOpen] = useState(false);
+
+  const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
+  const currentLocale = i18n.language === 'nl' ? nl : enUS;
+
+  // Callback functions for dialogs
+  const openChangeRoleDialog = (userId: string) => {
+    setSelectedUserIdForAction(userId);
+    const user = users.find(u => u.id === userId);
+    setNewRoleForDialog(user?.role || null);
+    setIsChangeRoleDialogOpen(true);
+  };
+
+  const openDeactivateDialog = (userId: string) => {
+    setSelectedUserIdForAction(userId);
+    setIsDeactivateDialogOpen(true);
+  };
+
+  const openActivateDialog = (userId: string) => {
+    setSelectedUserIdForAction(userId);
+    setIsActivateDialogOpen(true);
+  };
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -153,6 +179,7 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
             title: t('adminUsersPage.toastTitles.roleChangeSuccess'),
             description: t('adminUsersPage.toastMessages.roleChangeSuccess', { userName, newRole }),
         });
+        setIsChangeRoleDialogOpen(false);
      } catch (err: unknown) {
         console.error("Error updating role:", err);
         const message = err instanceof Error ? err.message : t('adminUsersPage.errors.roleUpdateError');
@@ -182,6 +209,7 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
         title: t('adminUsersPage.toastTitles.deactivateSuccess'),
         description: t('adminUsersPage.toastMessages.deactivateSuccess', { userName })
       });
+      setIsDeactivateDialogOpen(false);
     } catch (err: unknown) {
        console.error("Error deactivating user:", err);
        const message = err instanceof Error ? err.message : t('adminUsersPage.errors.deactivateError');
@@ -209,6 +237,7 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
         title: t('adminUsersPage.toastTitles.activateSuccess'),
         description: t('adminUsersPage.toastMessages.activateSuccess', { userName })
       });
+      setIsActivateDialogOpen(false);
     } catch (err: unknown) {
        console.error("Error activating user:", err);
        const message = err instanceof Error ? err.message : t('adminUsersPage.errors.activateError');
@@ -256,38 +285,18 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
     return sortableUsers;
   }, [users, sortConfig]);
 
-  // 2. Filter users after sorting
-  const filteredAndSortedUsers = React.useMemo(() => {
+  // 2. Then filter users
+  const filteredUsers = React.useMemo(() => {
     return sortedUsers.filter(user => {
-      const matchesSearchTerm = (
-        (user.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (user.email?.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-      const matchesRole = selectedRole === 'all' || user.role === selectedRole;
-      const matchesStatus = selectedStatus === 'all' || user.status === selectedStatus;
+      const nameMatch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+      const emailMatch = user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const roleMatch = selectedRole === 'all' || user.role === selectedRole;
+      const statusMatch = selectedStatus === 'all' || user.status === selectedStatus;
 
-      return matchesSearchTerm && matchesRole && matchesStatus;
+      return (nameMatch || emailMatch) && roleMatch && statusMatch;
     });
   }, [sortedUsers, searchTerm, selectedRole, selectedStatus]);
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <GradientLoader />
-        <span className="ml-2 text-lg">{t('adminUsersPage.loading')}</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return <div className="text-red-500 text-center p-4">{t('adminUsersPage.errorMessage', { error })}</div>;
-  }
-
-  if (filteredAndSortedUsers.length === 0) {
-    return <div className="text-center p-4">{t('adminUsersPage.noUsersFound')}</div>;
-  }
-
-  // Function to adjust sort configuration
   const requestSort = (key: keyof UserProfile) => {
     let direction: SortDirection = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -295,114 +304,155 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
     }
     setSortConfig({ key, direction });
   };
-  
-  // Helper to display sort icon
+
   const getSortIcon = (columnKey: keyof UserProfile) => {
-     if (!sortConfig || sortConfig.key !== columnKey) {
-       return <ArrowUpDown className="ml-1 h-3 w-3 opacity-30" />;
-     }
-     return sortConfig.direction === 'asc' ? 
-       <ArrowUpDown className="ml-1 h-3 w-3" /> : 
-       <ArrowUpDown className="ml-1 h-3 w-3 transform rotate-180" />;
+    if (!sortConfig || sortConfig.key !== columnKey) {
+      return <ArrowUpDown className="ml-2 h-3 w-3 opacity-50" />;
+    }
+    return sortConfig.direction === 'desc' ? 
+        <ArrowUpDown className="ml-2 h-3 w-3 transform rotate-180" /> : 
+        <ArrowUpDown className="ml-2 h-3 w-3" />;
   };
+
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return '-';
+    try {
+      return format(new Date(dateString), 'P', { locale: currentLocale });
+    } catch (e) {
+      console.error("Invalid date string for table:", dateString, e);
+      return t('common.invalidDate');
+    }
+  };
+
+  if (isLoading) {
+    return <GradientLoader />;
+  }
+
+  if (error) {
+    return <p className="text-red-500">{t('adminUsersPage.errorMessage', { error })}</p>;
+  }
+
+  if (filteredUsers.length === 0) {
+    return <p>{t('adminUsersPage.noUsersFound')}</p>;
+  }
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead onClick={() => requestSort('name')} className="cursor-pointer">
-              <div className="flex items-center">{t('adminUsersPage.tableHeaders.name')}{getSortIcon('name')}</div>
-            </TableHead>
-            <TableHead onClick={() => requestSort('email')} className="cursor-pointer">
-              <div className="flex items-center">{t('adminUsersPage.tableHeaders.email')}{getSortIcon('email')}</div>
-            </TableHead>
-            <TableHead onClick={() => requestSort('role')} className="cursor-pointer">
-              <div className="flex items-center">{t('adminUsersPage.tableHeaders.role')}{getSortIcon('role')}</div>
-            </TableHead>
-            <TableHead onClick={() => requestSort('status')} className="cursor-pointer">
-             <div className="flex items-center">{t('adminUsersPage.tableHeaders.status')}{getSortIcon('status')}</div>
-            </TableHead>
-            <TableHead onClick={() => requestSort('created_at')} className="cursor-pointer">
-              <div className="flex items-center">{t('adminUsersPage.tableHeaders.registeredAt')}{getSortIcon('created_at')}</div>
-            </TableHead>
-            <TableHead>{t('adminUsersPage.tableHeaders.actions')}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredAndSortedUsers.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>{user.name || '-'}</TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>
-                <Badge variant={getRoleBadgeVariant(user.role)}>{user.role}</Badge> 
-              </TableCell>
-              <TableCell>
-                <Badge variant={user.status === 'active' ? 'default' : 'destructive'} className={user.status === 'active' ? 'bg-green-500' : 'bg-red-500'}>
-                  {user.status === 'active' ? t('adminUsersPage.status.active') : t('adminUsersPage.status.inactive')}
-                </Badge>
-              </TableCell>
-              <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-              <TableCell>
-                <AlertDialog>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">{t('adminUsersPage.actions.openMenu')}</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <AlertDialogTrigger asChild>
-                                <DropdownMenuItem>{t('adminUsersPage.actions.changeRole')}</DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            {user.status === 'active' ? (
-                                <AlertDialogTrigger asChild>
-                                    <DropdownMenuItem onClick={() => { setSelectedUserIdForAction(user.id); setIsDeactivateDialogOpen(true); }}>
-                                        {t('adminUsersPage.actions.deactivate')}
-                                    </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                            ) : (
-                                <AlertDialogTrigger asChild>
-                                     <DropdownMenuItem onClick={() => { setSelectedUserIdForAction(user.id); setIsActivateDialogOpen(true); }}>
-                                        {t('adminUsersPage.actions.activate')}
-                                    </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </AlertDialog>
-              </TableCell>
-            </TableRow>
+      {isMobile ? (
+        <div className="mt-4">
+          {filteredUsers.map(user => (
+            <UserCard 
+              key={user.id} 
+              user={user} 
+              onRoleChange={handleRoleChange}
+              onDeactivateUser={handleDeactivateUser}
+              onActivateUser={handleActivateUser}
+              openChangeRoleDialog={openChangeRoleDialog}
+              openDeactivateDialog={openDeactivateDialog}
+              openActivateDialog={openActivateDialog}
+            />
           ))}
-        </TableBody>
-      </Table>
+        </div>
+      ) : (
+        <Table className="min-w-full divide-y divide-border">
+          <TableHeader>
+            <TableRow className="hover:bg-muted/50">
+              {[ 'name', 'email', 'role', 'status', 'created_at', 'actions'].map((headerKey) => (
+                <TableHead 
+                  key={headerKey}
+                  onClick={() => headerKey !== 'actions' && requestSort(headerKey as keyof UserProfile)}
+                  className={headerKey !== 'actions' ? 'cursor-pointer' : ''}
+                >
+                  <div className="flex items-center">
+                    {t(`adminUsersPage.tableHeaders.${headerKey}` as const)}
+                    {headerKey !== 'actions' && getSortIcon(headerKey as keyof UserProfile)}
+                  </div>
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-border">
+            {filteredUsers.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell className="font-medium text-foreground">{user.name || '-'}</TableCell>
+                <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                <TableCell>
+                  <Badge variant={getRoleBadgeVariant(user.role)} className="capitalize">
+                    {t(`adminDashboard.users.roles.${user.role}` as const) || user.role}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={user.status === 'active' ? 'default' : 'destructive'} 
+                    className={cn(
+                      "capitalize",
+                      user.status === 'active' && "bg-green-600 hover:bg-green-700 text-white"
+                    )}
+                  >
+                     {t(`adminUsersPage.status.${user.status}` as const) || user.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground">{formatDate(user.created_at)}</TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">{t('adminUsersPage.actions.openMenu')}</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-muted border-border shadow-lg">
+                      <DropdownMenuItem onClick={() => openChangeRoleDialog(user.id)} className="hover:bg-primary/10">
+                        {t('adminUsersPage.actions.changeRole')}
+                      </DropdownMenuItem>
+                      {user.status === 'active' ? (
+                        <DropdownMenuItem onClick={() => openDeactivateDialog(user.id)} className="hover:bg-destructive/10 text-destructive">
+                           {t('adminUsersPage.actions.deactivate')}
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem onClick={() => openActivateDialog(user.id)} className="hover:bg-green-500/10 text-green-600">
+                           {t('adminUsersPage.actions.activate')}
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       {/* Change Role Dialog */}
-      {selectedUserIdForAction && isChangeRoleDialogOpen && (
+      {selectedUserIdForAction && (
         <AlertDialog open={isChangeRoleDialogOpen} onOpenChange={setIsChangeRoleDialogOpen}>
-            <AlertDialogContent>
+            <AlertDialogContent className="bg-card border-border">
                 <AlertDialogHeader>
-                    <AlertDialogTitle>{t('adminUsersPage.dialogs.changeRole.title', { userName: users.find(u => u.id === selectedUserIdForAction)?.name || selectedUserIdForAction })}</AlertDialogTitle>
+                    <AlertDialogTitle>{t('adminUsersPage.dialogs.changeRole.title', { userName: users.find(u => u.id === selectedUserIdForAction)?.name || users.find(u => u.id === selectedUserIdForAction)?.email })}</AlertDialogTitle>
                     <AlertDialogDescription>
                         {t('adminUsersPage.dialogs.changeRole.description')}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                <div className="py-4">
-                    <Select onValueChange={(value) => setNewRoleForDialog(value as UserRole)} defaultValue={users.find(u=>u.id === selectedUserIdForAction)?.role}>
-                        <SelectTrigger>
-                            <SelectValue placeholder={t('adminUsersPage.dialogs.changeRole.selectPlaceholder')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="free">{t('adminDashboard.users.roles.free')}</SelectItem> 
-                            <SelectItem value="paid">{t('adminDashboard.users.roles.paid')}</SelectItem>
-                            <SelectItem value="admin">{t('adminDashboard.users.roles.admin')}</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+                <Select 
+                    value={newRoleForDialog || undefined}
+                    onValueChange={(value) => setNewRoleForDialog(value as UserRole)}
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder={t('adminUsersPage.dialogs.changeRole.selectPlaceholder')} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-muted border-border">
+                        <SelectItem value="free">{t('adminDashboard.users.roles.free')}</SelectItem>
+                        <SelectItem value="paid">{t('adminDashboard.users.roles.paid')}</SelectItem>
+                        <SelectItem value="admin">{t('adminDashboard.users.roles.admin')}</SelectItem>
+                    </SelectContent>
+                </Select>
                 <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setIsChangeRoleDialogOpen(false)}>{t('adminUsersPage.dialogs.cancelButton')}</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => { if(newRoleForDialog) handleRoleChange(selectedUserIdForAction, newRoleForDialog); setIsChangeRoleDialogOpen(false); }}>
+                    <AlertDialogCancel className="hover:bg-muted/80">{t('adminUsersPage.dialogs.cancelButton')}</AlertDialogCancel>
+                    <AlertDialogAction 
+                        onClick={() => selectedUserIdForAction && newRoleForDialog && handleRoleChange(selectedUserIdForAction, newRoleForDialog)}
+                        disabled={!newRoleForDialog || newRoleForDialog === users.find(u => u.id === selectedUserIdForAction)?.role}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
                         {t('adminUsersPage.dialogs.saveButton')}
                     </AlertDialogAction>
                 </AlertDialogFooter>
@@ -411,38 +461,44 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
       )}
 
       {/* Deactivate User Dialog */}
-      {selectedUserIdForAction && isDeactivateDialogOpen && (
-          <AlertDialog open={isDeactivateDialogOpen} onOpenChange={setIsDeactivateDialogOpen}>
-            <AlertDialogContent>
+       {selectedUserIdForAction && (
+        <AlertDialog open={isDeactivateDialogOpen} onOpenChange={setIsDeactivateDialogOpen}>
+            <AlertDialogContent className="bg-card border-border">
                 <AlertDialogHeader>
-                    <AlertDialogTitle>{t('adminUsersPage.dialogs.deactivateUser.title', { userName: users.find(u => u.id === selectedUserIdForAction)?.name || selectedUserIdForAction })}</AlertDialogTitle>
+                    <AlertDialogTitle>{t('adminUsersPage.dialogs.deactivateUser.title', { userName: users.find(u => u.id === selectedUserIdForAction)?.name || users.find(u => u.id === selectedUserIdForAction)?.email })}</AlertDialogTitle>
                     <AlertDialogDescription>
                         {t('adminUsersPage.dialogs.deactivateUser.description')}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setIsDeactivateDialogOpen(false)}>{t('adminUsersPage.dialogs.cancelButton')}</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => { handleDeactivateUser(selectedUserIdForAction); setIsDeactivateDialogOpen(false); }} className="bg-red-600 hover:bg-red-700">
+                    <AlertDialogCancel className="hover:bg-muted/80">{t('adminUsersPage.dialogs.cancelButton')}</AlertDialogCancel>
+                    <AlertDialogAction 
+                        onClick={() => selectedUserIdForAction && handleDeactivateUser(selectedUserIdForAction)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
                         {t('adminUsersPage.dialogs.deactivateUser.confirmButton')}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
-      )}
+       )}
 
-       {/* Activate User Dialog */}
-      {selectedUserIdForAction && isActivateDialogOpen && (
-          <AlertDialog open={isActivateDialogOpen} onOpenChange={setIsActivateDialogOpen}>
-            <AlertDialogContent>
+      {/* Activate User Dialog */}
+      {selectedUserIdForAction && (
+        <AlertDialog open={isActivateDialogOpen} onOpenChange={setIsActivateDialogOpen}>
+            <AlertDialogContent className="bg-card border-border">
                 <AlertDialogHeader>
-                    <AlertDialogTitle>{t('adminUsersPage.dialogs.activateUser.title', { userName: users.find(u => u.id === selectedUserIdForAction)?.name || selectedUserIdForAction })}</AlertDialogTitle>
+                    <AlertDialogTitle>{t('adminUsersPage.dialogs.activateUser.title', { userName: users.find(u => u.id === selectedUserIdForAction)?.name || users.find(u => u.id === selectedUserIdForAction)?.email })}</AlertDialogTitle>
                     <AlertDialogDescription>
                         {t('adminUsersPage.dialogs.activateUser.description')}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setIsActivateDialogOpen(false)}>{t('adminUsersPage.dialogs.cancelButton')}</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => { handleActivateUser(selectedUserIdForAction); setIsActivateDialogOpen(false); }} >
+                    <AlertDialogCancel className="hover:bg-muted/80">{t('adminUsersPage.dialogs.cancelButton')}</AlertDialogCancel>
+                    <AlertDialogAction 
+                        onClick={() => selectedUserIdForAction && handleActivateUser(selectedUserIdForAction)}
+                        className="bg-green-600 text-white hover:bg-green-700"
+                    >
                         {t('adminUsersPage.dialogs.activateUser.confirmButton')}
                     </AlertDialogAction>
                 </AlertDialogFooter>
@@ -453,11 +509,61 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
   );
 };
 
-// The AdminUsersPage no longer exports anything directly, but can remain
-// if you want to add specific logic for only this page later.
+// Main page component remains largely the same, it just uses UsersManagementTable
+// ... (rest of the AdminUsersPage component)
 const AdminUsersPage: React.FC = () => {
-  // This component no longer renders anything directly, the table is used in AdminDashboardPage
-  return null; 
+  const { t } = useTranslation();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+
+  return (
+    <div className="container mx-auto p-4 md:p-6 lg:p-8">
+      <h1 className="text-3xl font-bold mb-6 text-foreground">{t('adminDashboard.users.title')}</h1>
+      <p className="text-muted-foreground mb-8">
+        {t('adminDashboard.users.description')}
+      </p>
+
+      <div className="mb-6 flex flex-col md:flex-row gap-4 items-center">
+        <input 
+          type="text" 
+          placeholder={t('adminDashboard.users.searchPlaceholder')}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-grow p-2 border border-border rounded-md bg-input text-foreground focus:ring-2 focus:ring-ring focus:border-ring"
+        />
+        <div className="flex gap-4 w-full md:w-auto">
+          <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as UserRole | 'all')}>
+            <SelectTrigger className="w-full md:w-[180px] bg-input border-border text-foreground">
+              <SelectValue placeholder={t('adminDashboard.users.filterRolePlaceholder')} />
+            </SelectTrigger>
+            <SelectContent className="bg-muted border-border">
+              <SelectItem value="all">{t('adminDashboard.users.roles.all')}</SelectItem>
+              <SelectItem value="admin">{t('adminDashboard.users.roles.admin')}</SelectItem>
+              <SelectItem value="paid">{t('adminDashboard.users.roles.paid')}</SelectItem>
+              <SelectItem value="free">{t('adminDashboard.users.roles.free')}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger className="w-full md:w-[180px] bg-input border-border text-foreground">
+              <SelectValue placeholder={t('adminDashboard.users.filterStatusPlaceholder')} />
+            </SelectTrigger>
+            <SelectContent className="bg-muted border-border">
+              <SelectItem value="all">{t('adminDashboard.users.statuses.all')}</SelectItem>
+              <SelectItem value="active">{t('adminDashboard.users.statuses.active')}</SelectItem>
+              <SelectItem value="inactive">{t('adminDashboard.users.statuses.inactive')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <UsersManagementTable 
+        searchTerm={searchTerm} 
+        selectedRole={selectedRole} 
+        selectedStatus={selectedStatus}
+      />
+    </div>
+  );
 };
 
 export default AdminUsersPage; 

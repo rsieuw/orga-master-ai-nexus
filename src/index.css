@@ -67,16 +67,23 @@
     --input: 214 32% 91%;
     --ring: 221 83% 53%;
   }
-}
 
-@layer base {
+  html {
+    @apply min-h-screen;
+    background-color: hsl(var(--background));
+  }
+
   * {
     /* stylelint-disable-next-line at-rule-no-unknown */
     @apply border-border;
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900;
+    color: hsl(var(--foreground));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    @apply antialiased;
   }
 }
 
@@ -154,6 +161,47 @@
   }
 
   /* End Custom Scrollbar */
+
+  /* Extra opvallende scrollbar voor chatvensters */
+  .chat-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(120, 120, 180, 0.6) transparent;
+  }
+
+  .chat-scrollbar::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  .chat-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+  }
+
+  .chat-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(120, 120, 180, 0.6);
+    border-radius: 10px;
+    border: 2px solid rgba(0, 0, 0, 0.05);
+    background-clip: padding-box;
+  }
+
+  .chat-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(120, 120, 180, 0.8);
+  }
+  /* Einde extra opvallende scrollbar */
+
+  /* Forceer de scrollbar track kleur voor WebKit browsers */
+  .scrollbar-track-blue-200::-webkit-scrollbar-track {
+    background-color: #bfdbfe; /* Tailwind blue-200 */
+  }
+
+  /* Optioneel: Voor Firefox, als je daar ook problemen ziet */
+  .scrollbar-track-blue-200 {
+    /* De thumb kleur wordt door tailwind-scrollbar via --scrollbar-thumb gezet */
+    /* We stellen hier alleen de track kleur expliciet in als fallback */
+    /* Als --scrollbar-thumb niet werkt, kun je hier ook een vaste kleur invullen */
+    scrollbar-color: var(--scrollbar-thumb, #60a5fa) #bfdbfe; /* default thumb blue-400, track blue-200 */
+  }
 }
 
 .task-card {
@@ -243,7 +291,7 @@
 }
 
 .chat-message-research {
-  @apply bg-blue-100 text-gray-900 dark:bg-blue-900/50 dark:text-blue-100;
+  @apply bg-blue-100 text-slate-800 dark:bg-blue-900/60 dark:text-blue-200;
 }
 
 .chat-message-notes {
@@ -254,9 +302,9 @@
   @apply bg-yellow-100 text-yellow-900 dark:bg-yellow-800/50 dark:text-yellow-100 border border-yellow-600/50;
 }
 
-/* ---> Stijl voor opgeslagen onderzoek (terug naar paars, zonder border) <--- */
+/* ---> STYLE CHANGE: Use the same style as unsaved research <--- */
 .chat-message-saved-research {
-  @apply bg-purple-100 text-purple-900 dark:bg-purple-900/40 dark:text-purple-100; /* Paarse stijl, border verwijderd voor consistente layout */
+  @apply bg-blue-100 text-slate-800 dark:bg-blue-900/60 dark:text-blue-200; 
 }
 /* ---> EINDE AANPASSING <--- */
 
