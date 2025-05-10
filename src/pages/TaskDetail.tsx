@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.t
 import { Badge } from "@/components/ui/badge.tsx";
 import { format, parseISO } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
-import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, MoreVertical, Flag, CalendarClock, Info, MessageSquareText, Loader2, ChevronsUp, ChevronsDown, CheckCircle } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, MoreVertical, Flag, CalendarClock, Info, MessageSquareText, Loader2, ChevronUp, ChevronDown } from "lucide-react";
 import { Separator } from "@/components/ui/separator.tsx";
 import {
   AlertDialog,
@@ -287,7 +287,7 @@ export default function TaskDetail() {
   const [editingSubtaskTitle, setEditingSubtaskTitle] = useState<string>("");
   const [longPressedSubtaskId, setLongPressedSubtaskId] = useState<string | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState<{ top: number, left: number } | null>(null);
-  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+  const [isMobileInfoCollapsed, setIsMobileInfoCollapsed] = useState(false);
 
   // State for the resizable columns
   const [columnSizes, setColumnSizes] = useState<{ left: number; right: number }>({ left: 50, right: 50 });
@@ -760,112 +760,108 @@ export default function TaskDetail() {
 
             {task && (
               <CardContent className="flex flex-col flex-grow min-h-0 px-0 lg:p-6 lg:pt-0">
-                <div className={cn("px-4 lg:px-0", isHeaderCollapsed && "lg:block hidden")} style={{ display: isHeaderCollapsed ? 'none' : 'block' }}>
+                <div className="px-4 lg:px-0">
                   <div className="flex-shrink-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost"
-                            className={cn("h-6 px-2 text-xs font-normal rounded-md bg-muted/40", statusColor[task.status])}
-                          >
-                            <Info className="h-4 w-4 mr-1 sm:hidden" />
-                            <span className="hidden sm:inline">{t('common.status')}:&nbsp;</span>
-                            {t(`common.${task.status.toLowerCase().replace(' ', '_')}`)}
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="bg-popover/90 backdrop-blur-lg border border-white/10">
-                          <DropdownMenuItem onSelect={() => handleStatusChange('todo')}>
-                            {t('common.todo')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => handleStatusChange('in_progress')}>
-                            {t('common.in_progress')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => handleStatusChange('done')}>
-                            {t('common.done')}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      {task.priority !== 'none' && (
+                    <div className={cn("transition-all duration-200", isMobileInfoCollapsed ? "hidden lg:block" : "block")}>
+                      <div className="flex flex-wrap items-center gap-2">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button 
                               variant="ghost"
-                              className={cn("h-6 px-2 text-xs font-normal rounded-md bg-muted/40", priorityBadgeColor[task.priority])}
+                              className={cn("h-6 px-2 text-xs font-normal rounded-md bg-muted/40", statusColor[task.status])}
                             >
-                              <Flag className="h-4 w-4 mr-1 sm:hidden" />
-                              <span className="hidden sm:inline">{t('common.priority')}:&nbsp;</span>
-                              {t(`common.${task.priority.toLowerCase()}`)}
+                              <Info className="h-4 w-4 mr-1 sm:hidden" />
+                              <span className="hidden sm:inline">{t('common.status')}:&nbsp;</span>
+                              {t(`common.${task.status.toLowerCase().replace(' ', '_')}`)}
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="start" className="bg-popover/90 backdrop-blur-lg border border-white/10">
-                            <DropdownMenuItem onSelect={() => handlePriorityChange('high')}>
-                              {t('common.high')}
+                            <DropdownMenuItem onSelect={() => handleStatusChange('todo')}>
+                              {t('common.todo')}
                             </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handlePriorityChange('medium')}>
-                              {t('common.medium')}
+                            <DropdownMenuItem onSelect={() => handleStatusChange('in_progress')}>
+                              {t('common.in_progress')}
                             </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handlePriorityChange('low')}>
-                              {t('common.low')}
+                            <DropdownMenuItem onSelect={() => handleStatusChange('done')}>
+                              {t('common.done')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      )}
-                      {task.deadline && (
-                        <Badge 
-                          variant="secondary"
-                          className={cn("h-6 px-2 text-xs font-normal border-none bg-muted/40", deadlineColor)}
-                        >
-                          <CalendarClock className="h-4 w-4 mr-1 sm:hidden" />
-                          <span className="hidden sm:inline">{t('common.deadline')}:&nbsp;</span>
-                          {deadlineText}
-                          {isOverdue && <span className="hidden sm:inline">&nbsp;{t('taskDetail.overdueSR')}</span>}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <div className="mt-3 space-y-4">
-                      <div className="text-sm">
-                        {task.description ? (
-                          <p className="whitespace-pre-wrap text-muted-foreground">{task.description}</p>
-                        ) : (
-                          <p className="italic text-muted-foreground text-sm">{t('taskDetail.noDescription')}</p>
+                        {task.priority !== 'none' && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost"
+                                className={cn("h-6 px-2 text-xs font-normal rounded-md bg-muted/40", priorityBadgeColor[task.priority])}
+                              >
+                                <Flag className="h-4 w-4 mr-1 sm:hidden" />
+                                <span className="hidden sm:inline">{t('common.priority')}:&nbsp;</span>
+                                {t(`common.${task.priority.toLowerCase()}`)}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="bg-popover/90 backdrop-blur-lg border border-white/10">
+                              <DropdownMenuItem onSelect={() => handlePriorityChange('high')}>
+                                {t('common.high')}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => handlePriorityChange('medium')}>
+                                {t('common.medium')}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => handlePriorityChange('low')}>
+                                {t('common.low')}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                        {task.deadline && (
+                          <Badge 
+                            variant="secondary"
+                            className={cn("h-6 px-2 text-xs font-normal border-none bg-muted/40", deadlineColor)}
+                          >
+                            <CalendarClock className="h-4 w-4 mr-1 sm:hidden" />
+                            <span className="hidden sm:inline">{t('common.deadline')}:&nbsp;</span>
+                            {deadlineText}
+                            {isOverdue && <span className="hidden sm:inline">&nbsp;{t('taskDetail.overdueSR')}</span>}
+                          </Badge>
                         )}
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            {completedSubtasks}/{totalSubtasks} {t('taskDetail.subtasksCompleted')}
-                          </span>
-                          <span className="text-muted-foreground text-xs">
-                            {progressValue.toFixed(0)}%
-                          </span>
+                      <div className="mb-4"></div>
+                      <div>
+                        <h3 className="font-medium mb-2">{t('common.description')}</h3>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {task.description || t('taskDetail.noDescription')}
+                        </p>
+                      </div>
+                    </div>
+                    <Separator className="my-4" />
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-medium flex-shrink-0">{t('common.subtasks')}</h3>
+                          {totalSubtasks > 0 && (
+                            <div className="flex items-center gap-2 flex-grow">
+                               <span className="text-xs text-muted-foreground flex-shrink-0">
+                                   {completedSubtasks}/{totalSubtasks}
+                               </span>
+                               <GradientProgress value={progressValue} className="h-1.5 flex-grow lg:w-40 lg:flex-grow-0" /> 
+                               <span className="text-xs font-medium text-muted-foreground/90 flex-shrink-0">
+                                 ({Math.round(progressValue)}%)
+                               </span>
+                            </div>
+                           )}
                         </div>
-                        <GradientProgress value={progressValue} />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => setIsMobileInfoCollapsed(!isMobileInfoCollapsed)}
+                          className="h-7 w-7 text-muted-foreground lg:hidden"
+                          aria-label={isMobileInfoCollapsed ? t('taskDetail.expandDescription') : t('taskDetail.collapseDescription')}
+                        >
+                          {isMobileInfoCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                        </Button>
                       </div>
                     </div>
                   </div>
-                  <Separator className="my-3 bg-border/70" />
                 </div>
-                
-                <div className="flex items-center justify-between px-4 py-2 mb-1 sticky top-0 bg-card/90 backdrop-blur-sm z-10 lg:hidden">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-medium">
-                      {completedSubtasks}/{totalSubtasks} {t('common.subtasks')}
-                    </h3>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
-                    className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                    aria-label={isHeaderCollapsed ? t('common.expand') || 'Uitklappen' : t('common.collapse') || 'Inklappen'}
-                  >
-                    {isHeaderCollapsed ? <ChevronsDown className="h-4 w-4" /> : <ChevronsUp className="h-4 w-4" />}
-                  </Button>
-                </div>
-                
                 <div className="flex-grow overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded pb-2 space-y-1 lg:space-y-1.5 divide-y divide-border/60 lg:divide-y-0">
                   <AnimatePresence mode='wait'>
                     {task.subtasks.length > 0 ? (
