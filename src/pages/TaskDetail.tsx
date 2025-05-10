@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout.tsx";
@@ -17,21 +17,21 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogOverlay,
+  AlertDialogPortal,
   AlertDialogTitle,
   AlertDialogTrigger,
-  AlertDialogOverlay,
-  AlertDialogPortal
 } from "@/components/ui/alert-dialog.tsx";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogOverlay,
+  DialogTrigger,
   DialogClose,
   DialogPortal,
+  DialogOverlay,
 } from "@/components/ui/dialog.tsx";
 import { useToast } from "@/hooks/use-toast.ts";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
@@ -47,7 +47,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useSwipeable } from 'react-swipeable';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MAX_AI_SUBTASK_GENERATIONS } from '@/constants/taskConstants.ts';
 
 // --- SubtaskRow Component ---
 interface SubtaskRowProps {
@@ -117,8 +116,7 @@ function SubtaskRow({
       transition={{ duration: 0.3, ease: "easeInOut" }}
       {...handlers}
       className={cn(
-        "group flex items-start justify-between space-x-3 rounded-md py-2 pl-2 lg:pl-0 pr-2 hover:bg-muted/50 overflow-hidden",
-        subtask.completed && "opacity-50"
+        "group/row flex items-start justify-between space-x-3 rounded-md py-2 pl-2 lg:pl-0 pr-2 hover:bg-muted/50 overflow-hidden"
       )}
       onTouchStart={handlePressStart}
       onTouchEnd={handlePressEnd}
@@ -169,8 +167,8 @@ function SubtaskRow({
             <>
               <label
                 className={cn(
-                  "flex-grow text-sm font-normal leading-snug cursor-pointer hover:text-primary transition-colors relative -top-px",
-                  subtask.completed && "line-through text-muted-foreground hover:text-muted-foreground/80"
+                  "flex-grow text-sm font-normal leading-snug cursor-pointer hover:text-primary transition-colors relative top-[2px] lg:-top-px",
+                  subtask.completed && "text-gray-700 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-400"
                 )}
                 onClick={() => {
                   if (!editingSubtaskId) {
@@ -179,7 +177,9 @@ function SubtaskRow({
                   }
                 }}
               >
-                {subtask.title}
+                <span className={cn("relative", subtask.completed && "line-through")}>
+                  {subtask.title}
+                </span>
               </label>
               <AnimatePresence>
                 {isDescriptionVisible && subtask.description && (
@@ -198,7 +198,7 @@ function SubtaskRow({
           )}
         </div>
       </div>
-      <div className="hidden lg:flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity space-x-1"> 
+      <div className="hidden lg:flex items-center opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity space-x-1"> 
         {editingSubtaskId !== subtask.id && !subtask.completed && ( 
           <Button
             variant="ghost"
@@ -226,8 +226,8 @@ function SubtaskRow({
             </Button>
           </AlertDialogTrigger>
           <AlertDialogPortal>
-            <AlertDialogOverlay className="fixed inset-0 z-[100] bg-black/30 backdrop-blur-sm" />
-            <AlertDialogContent className="border bg-card p-4 shadow-md sm:rounded-lg z-[101]">
+            <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+            <AlertDialogContent className="bg-card/90 backdrop-blur-md border-white/10 z-[90]">
               <AlertDialogHeader>
                 <AlertDialogTitle>{t('taskDetail.subtask.deleteConfirmation.title')}</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -235,7 +235,7 @@ function SubtaskRow({
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
+                <AlertDialogCancel onClick={handlePressEnd} className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => deleteSubtask(task.id, subtask.id)}
                   className="bg-destructive hover:bg-destructive/90"
@@ -254,7 +254,20 @@ function SubtaskRow({
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
-  const { getTaskById, deleteTask, isLoading: tasksLoading, updateSubtask, addSubtask, expandTask, deleteSubtask: deleteSubtaskFromContext, toggleTaskCompletion, updateTask, isGeneratingSubtasksForTask } = useTask();
+  const { 
+    getTaskById, 
+    deleteTask, 
+    isLoading: tasksLoading, 
+    updateSubtask, 
+    addSubtask, 
+    expandTask, 
+    deleteSubtask: deleteSubtaskFromContext, 
+    toggleTaskCompletion, 
+    updateTask, 
+    isGeneratingSubtasksForTask,
+    getMaxAiGenerationsForUser,
+    isAiGenerationLimitReached
+  } = useTask();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -275,10 +288,22 @@ export default function TaskDetail() {
   const [longPressedSubtaskId, setLongPressedSubtaskId] = useState<string | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState<{ top: number, left: number } | null>(null);
 
+  // State for the resizable columns
+  const [columnSizes, setColumnSizes] = useState<{ left: number; right: number }>({ left: 50, right: 50 });
+  const [isResizing, setIsResizing] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const initialX = useRef<number>(0);
+  const initialLeftWidth = useRef<number>(0);
+
   const task: Task | undefined = getTaskById(id || "");
   const currentAiGenerationCount = task?.aiSubtaskGenerationCount || 0;
-  const isAiGenerationLimitReached = currentAiGenerationCount >= MAX_AI_SUBTASK_GENERATIONS;
-
+  
+  // Use the context function to determine the limit
+  const maxGenerations = getMaxAiGenerationsForUser();
+  
+  // Safe function that accounts for a potentially undefined task
+  const isLimitReached = task ? isAiGenerationLimitReached(task) : false;
+  
   useEffect(() => {
     if (!location.hash) {
       globalThis.scrollTo(0, 0);
@@ -289,7 +314,7 @@ export default function TaskDetail() {
     const shouldLock = isEditDialogOpen || isGenerateSubtasksDialogOpen || isMobileGenerateDialogOpen;
     document.body.style.overflow = shouldLock ? 'hidden' : 'auto';
     return () => { document.body.style.overflow = 'auto'; };
-  }, [isEditDialogOpen, isGenerateSubtasksDialogOpen, isMobileGenerateDialogOpen]); // Listen for all dialog states
+  }, [isEditDialogOpen, isGenerateSubtasksDialogOpen, isMobileGenerateDialogOpen]);
 
   useEffect(() => {
     setActiveMobileView(location.hash === '#chat' ? 'chat' : 'details');
@@ -309,9 +334,13 @@ export default function TaskDetail() {
     handleActivity();
     globalThis.addEventListener('scroll', handleActivity, { passive: true });
     globalThis.addEventListener('click', handleActivity, { capture: true });
+    globalThis.addEventListener('mousemove', handleActivity, { passive: true });
+    globalThis.addEventListener('touchmove', handleActivity, { passive: true });
     return () => {
       globalThis.removeEventListener('scroll', handleActivity);
       globalThis.removeEventListener('click', handleActivity, { capture: true });
+      globalThis.removeEventListener('mousemove', handleActivity);
+      globalThis.removeEventListener('touchmove', handleActivity);
       if (hideTimerRef.current !== null) { 
         clearTimeout(hideTimerRef.current);
       }
@@ -400,6 +429,56 @@ export default function TaskDetail() {
     setContextMenuPosition(null);
   };
 
+  // Function to start dragging
+  const startResize = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (containerRef.current) {
+      setIsResizing(true);
+      initialX.current = e.clientX;
+      initialLeftWidth.current = containerRef.current.offsetWidth * (columnSizes.left / 100);
+      
+      // Add cursor styling during drag
+      document.body.style.cursor = 'ew-resize';
+      document.body.style.userSelect = 'none';
+    }
+  };
+
+  // Function for dragging, use useCallback
+  const doResize = useCallback((e: MouseEvent) => {
+    if (isResizing && containerRef.current) {
+      const containerWidth = containerRef.current.offsetWidth;
+      const deltaX = e.clientX - initialX.current;
+      const newLeftWidth = Math.min(Math.max(200, initialLeftWidth.current + deltaX), containerWidth - 200);
+      
+      const leftPercentage = (newLeftWidth / containerWidth) * 100;
+      const rightPercentage = 100 - leftPercentage;
+      
+      setColumnSizes({
+        left: leftPercentage,
+        right: rightPercentage
+      });
+    }
+  }, [isResizing]); // Dependencies of doResize
+
+  // Function to stop dragging, use useCallback
+  const stopResize = useCallback(() => {
+    setIsResizing(false);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }, []); // stopResize has no external dependencies within the component scope
+
+  // Event listeners for dragging
+  useEffect(() => {
+    if (isResizing) {
+      globalThis.addEventListener('mousemove', doResize);
+      globalThis.addEventListener('mouseup', stopResize);
+    }
+    
+    return () => {
+      globalThis.removeEventListener('mousemove', doResize);
+      globalThis.removeEventListener('mouseup', stopResize);
+    };
+  }, [isResizing, doResize, stopResize]);
+
   if (tasksLoading) {
     return null;
   }
@@ -465,10 +544,20 @@ export default function TaskDetail() {
   };
 
   const handleGenerateSubtasks = async () => {
+    console.log('handleGenerateSubtasks aangeroepen');
+    console.log('Task:', task);
     if (task) {
-      await expandTask(task.id);
+      console.log('Roep expandTask aan met task.id:', task.id);
+      try {
+        await expandTask(task.id);
+        console.log('expandTask succesvol uitgevoerd');
+      } catch (error) {
+        console.error('Error in expandTask:', error);
+      }
       setIsGenerateSubtasksDialogOpen(false);
       setIsMobileGenerateDialogOpen(false);
+    } else {
+      console.error('Task is undefined in handleGenerateSubtasks');
     }
   };
 
@@ -527,7 +616,7 @@ export default function TaskDetail() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout noPadding={globalThis.innerWidth < 1024}>
       <div className="relative">
         <Button
           variant="ghost"
@@ -539,11 +628,18 @@ export default function TaskDetail() {
           <span className="sr-only">{t('common.backSR')}</span>
         </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-12rem)] relative z-0">
-          <Card className={cn(
-            "firebase-card flex-col relative overflow-hidden z-10",
-            activeMobileView === 'chat' ? 'hidden lg:flex' : 'flex' 
-          )}>
+        <div 
+          ref={containerRef} 
+          className="flex flex-col lg:flex-row h-[calc(100vh-8rem)] lg:h-[calc(100vh-12rem)] relative z-0 lg:gap-2"
+        >
+          <Card 
+            className={cn(
+              "firebase-card flex-col relative overflow-hidden z-10",
+              "lg:flex-[0_0_auto]",
+              activeMobileView === 'chat' ? 'hidden lg:flex' : 'flex w-full'
+            )}
+            style={globalThis.innerWidth >= 1024 ? { width: `${columnSizes.left}%` } : {}}
+          >
             <CardHeader className="pb-3 px-4 lg:p-6 lg:pb-3">
               <div className="flex items-center">
                 <CardTitle className="text-xl font-semibold">{task?.title}</CardTitle>
@@ -559,8 +655,8 @@ export default function TaskDetail() {
                     </Button>
                   </DialogTrigger>
                   <DialogPortal>
-                    <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" />
-                    <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card p-6 shadow-lg sm:rounded-lg z-50 sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                    <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                    <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card/90 backdrop-blur-md border-white/10 p-6 shadow-lg sm:rounded-lg z-50 sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle className="text-2xl">{t('taskDetail.editTaskDialog.title')}</DialogTitle>
                         <DialogDescription>
@@ -582,28 +678,30 @@ export default function TaskDetail() {
                       <span className="sr-only">{t('taskDetail.deleteTaskSR')}</span>
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm" />
-                  <AlertDialogContent className="bg-card/90 border border-white/5 z-[90]">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>{t('taskDetail.deleteTaskConfirmation.title')}</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {t('taskDetail.deleteTaskConfirmation.description')}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDelete}
-                        className="bg-destructive hover:bg-destructive/90"
-                        disabled={isDeleting}
-                      >
-                        {isDeleting ? (
-                          <GradientLoader size="sm" className="mr-2" />
-                        ) : null}
-                        {t('common.delete')}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
+                  <AlertDialogPortal>
+                    <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm" />
+                    <AlertDialogContent className="bg-card/90 border border-white/5 z-[90]">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('taskDetail.deleteTaskConfirmation.title')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('taskDetail.deleteTaskConfirmation.description')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDelete}
+                          className="bg-destructive hover:bg-destructive/90"
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? (
+                            <GradientLoader size="sm" className="mr-2" />
+                          ) : null}
+                          {t('common.delete')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialogPortal>
                 </AlertDialog>
               </div>
               <div className="lg:hidden">
@@ -629,28 +727,30 @@ export default function TaskDetail() {
                           <span>{t('taskDetail.deleteTask')}</span>
                         </DropdownMenuItem>
                       </AlertDialogTrigger>
-                      <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm" />
-                      <AlertDialogContent className="bg-card/90 border border-white/5 z-[90]">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>{t('taskDetail.deleteTaskConfirmation.title')}</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {t('taskDetail.deleteTaskConfirmation.description')}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={handleDelete}
-                            className="bg-destructive hover:bg-destructive/90"
-                            disabled={isDeleting}
-                          >
-                            {isDeleting ? (
-                              <GradientLoader size="sm" className="mr-2" />
-                            ) : null}
-                            {t('common.delete')}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
+                      <AlertDialogPortal>
+                        <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                        <AlertDialogContent className="bg-card/90 backdrop-blur-md border-white/10 z-[90]">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t('taskDetail.deleteTaskConfirmation.title')}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t('taskDetail.deleteTaskConfirmation.description')}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={handleDelete}
+                              className="bg-destructive hover:bg-destructive/90"
+                              disabled={isDeleting}
+                            >
+                              {isDeleting ? (
+                                <GradientLoader size="sm" className="mr-2" />
+                              ) : null}
+                              {t('common.delete')}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialogPortal>
                     </AlertDialog>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -815,29 +915,31 @@ export default function TaskDetail() {
                                           {t('taskDetail.subtask.delete')}
                                         </button>
                                       </AlertDialogTrigger>
-                                      <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm" />
-                                      <AlertDialogContent className="bg-card p-4 shadow-md sm:rounded-lg z-[90]">
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>{t('taskDetail.subtask.deleteConfirmation.title')}</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            {t('taskDetail.subtask.deleteConfirmation.description', { subtaskTitle: subtaskItem.title })}
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel onClick={closeSubtaskContextMenu} className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
-                                          <AlertDialogAction
-                                            onClick={() => {
-                                              if (task) {
-                                                 deleteSubtaskFromContext(task.id, subtaskItem.id);
-                                              }
-                                              closeSubtaskContextMenu();
-                                            }}
-                                            className="bg-destructive hover:bg-destructive/90"
-                                          >
-                                            {t('common.delete')}
-                                          </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                      </AlertDialogContent>
+                                      <AlertDialogPortal>
+                                        <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                                        <AlertDialogContent className="bg-card/90 backdrop-blur-md border-white/10 z-[90]">
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>{t('taskDetail.subtask.deleteConfirmation.title')}</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              {t('taskDetail.subtask.deleteConfirmation.description', { subtaskTitle: subtaskItem.title })}
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel onClick={closeSubtaskContextMenu} className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
+                                            <AlertDialogAction
+                                              onClick={() => {
+                                                if (task) {
+                                                   deleteSubtaskFromContext(task.id, subtaskItem.id);
+                                                }
+                                                closeSubtaskContextMenu();
+                                              }}
+                                              className="bg-destructive hover:bg-destructive/90"
+                                            >
+                                              {t('common.delete')}
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialogPortal>
                                     </AlertDialog>
                                   </div>
                                 </Card>
@@ -909,7 +1011,7 @@ export default function TaskDetail() {
                             <Tooltip>
                               <DialogTrigger asChild>
                                 <Button
-                                  disabled={isGeneratingSubtasksForTask(task.id) || isAddingSubtask || isAiGenerationLimitReached}
+                                  disabled={isGeneratingSubtasksForTask(task.id) || isAddingSubtask || isLimitReached}
                                   className="h-10 p-[1px] rounded-md bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 relative transition-colors duration-200"
                                 >
                                   <div className="bg-card h-full w-full rounded-[5px] flex items-center justify-center px-4">
@@ -924,14 +1026,46 @@ export default function TaskDetail() {
                                   </div>
                                 </Button>
                               </DialogTrigger>
-                              {isAiGenerationLimitReached && (
+                              {isLimitReached && (
                                 <TooltipContent side="top">
-                                  <p>{t('taskDetail.generateSubtasks.limitReachedTooltip', { count: currentAiGenerationCount, limit: MAX_AI_SUBTASK_GENERATIONS })}</p>
+                                  <p>{t('taskDetail.generateSubtasks.limitReachedTooltip', { count: currentAiGenerationCount, limit: maxGenerations })}</p>
                                 </TooltipContent>
                               )}
                             </Tooltip>
                           </TooltipProvider>
                         </div>
+                        
+                        <DialogPortal>
+                          <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                          <DialogContent className="sm:max-w-[425px] bg-card/90 backdrop-blur-md border border-white/10 shadow-lg">
+                            <DialogHeader>
+                              <DialogTitle>{t('common.generateSubtasksDialogTitle')}</DialogTitle>
+                              <DialogDescription>
+                                {t('common.generateSubtasksDialogDescription', { taskTitle: task?.title })}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="mt-4 space-y-3">
+                              <Button
+                                disabled={isGeneratingSubtasksForTask(task.id) || isLimitReached}
+                                variant="default"
+                                className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
+                                onClick={handleGenerateSubtasks}
+                              >
+                                {isGeneratingSubtasksForTask(task.id) ? (
+                                  <div className="flex items-center gap-2 justify-center">
+                                    <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                                    {t('common.generatingText')}
+                                  </div>
+                                ) : (
+                                  t('taskDetail.generateSubtasks.confirmButton')
+                                )}
+                              </Button>
+                              <DialogClose asChild>
+                                <Button variant="outline" className="w-full h-12">{t('common.cancel')}</Button>
+                              </DialogClose>
+                            </div>
+                          </DialogContent>
+                        </DialogPortal>
                       </Dialog>
                     )}
                   </div>
@@ -940,10 +1074,40 @@ export default function TaskDetail() {
             )}
           </Card>
 
-          <Card className={cn(
-            "firebase-card overflow-hidden flex flex-col flex-grow min-h-0",
-            activeMobileView === 'details' ? 'hidden lg:flex' : 'flex' 
-          )}>
+          {/* Draggable divider - only visible on desktop */}
+          <div
+            className="hidden lg:flex items-center justify-center w-px cursor-ew-resize bg-border hover:bg-primary/40 transition-all duration-300 relative z-30 mx-1 shrink-0 hover:shadow-[0_0_8px_rgba(var(--primary),.4)]"
+            onMouseDown={startResize}
+          >
+            {/* Stylish arrow handle */}
+            <div 
+              className={cn(
+                "absolute w-4 h-8 rounded-full bg-primary/25 backdrop-blur-sm flex items-center justify-center opacity-0 hover:opacity-100 transition-all duration-300",
+                isResizing ? "opacity-100 bg-primary/40 scale-110" : "",
+                "lg:group-hover:opacity-100"
+              )}
+            >
+              <div className="flex items-center justify-center flex-row gap-0.5">
+                <svg width="5" height="7" viewBox="0 0 6 8" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/80">
+                  <path d="M5 7L2 4L5 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <div className="w-px h-4 bg-white/60"></div>
+                <svg width="5" height="7" viewBox="0 0 6 8" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/80">
+                  <path d="M1 1L4 4L1 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <Card 
+            className={cn(
+              "firebase-card overflow-hidden flex flex-col flex-grow min-h-0",
+              "lg:flex-[1_1_auto]",
+              activeMobileView === 'details' ? 'hidden lg:flex' : 'flex w-full lg:w-auto',
+              activeMobileView === 'chat' && 'h-full p-0'
+            )}
+            style={globalThis.innerWidth >= 1024 ? { width: `${columnSizes.right}%` } : { /* Do not explicitly set height here, let flexbox do the work */ }}
+          >
             {task && (
               <div className="flex-grow min-h-0 h-full">
                 <TaskAIChat
@@ -996,90 +1160,98 @@ export default function TaskDetail() {
         </div>
       )}
 
-      <div className={cn(
-          "lg:hidden fixed bottom-16 left-0 right-0 z-40 flex justify-between items-center p-3",
-          showMobileActions ? 'opacity-100' : 'opacity-0 pointer-events-none',
-          'transition-opacity duration-300 ease-in-out'
-      )}>
-        <TooltipProvider delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="default"
-                size="icon" 
-                className="aspect-square rounded-full h-14 w-14 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white shadow-lg"
-                disabled={isGeneratingSubtasksForTask(task.id) || isAiGenerationLimitReached}
-                onClick={() => setIsMobileGenerateDialogOpen(true)}
-              >
-                {isGeneratingSubtasksForTask(task.id) ? (
-                  <Loader2 className="animate-spin h-6 w-6" />
-                ) : (
-                  <Sparkles className="h-6 w-6" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              {isAiGenerationLimitReached ? (
-                <p>{t('taskDetail.generateSubtasks.limitReachedTooltip', { count: currentAiGenerationCount, limit: MAX_AI_SUBTASK_GENERATIONS })}</p>
-              ) : (
-                <p>{t('taskDetail.generateSubtasks.tooltip')}</p>
-              )}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+      {/* Mobile FABs for Add Subtask and Generate Subtasks */}
+      <AnimatePresence>
+        {showMobileActions && globalThis.innerWidth < 1024 && activeMobileView === 'details' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={cn(
+              "fixed bottom-24 left-0 right-0 z-40 flex justify-between items-center p-3",
+              'transition-opacity duration-300 ease-in-out'
+            )}
+          >
+            {/* EERST de Genereer Subtaken (Sparkles) knop */}
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="default"
+                    size="icon" 
+                    className="aspect-square rounded-full h-14 w-14 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white shadow-lg"
+                    disabled={isGeneratingSubtasksForTask(task.id) || isLimitReached}
+                    onClick={() => setIsMobileGenerateDialogOpen(true)}
+                    aria-label={t('taskDetail.generateSubtasks.buttonAriaLabel')}
+                  >
+                    {isGeneratingSubtasksForTask(task.id) ? (
+                      <Loader2 className="animate-spin h-6 w-6" />
+                    ) : (
+                      <Sparkles className="h-6 w-6" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  {isLimitReached ? (
+                    <p>{t('taskDetail.generateSubtasks.limitReachedTooltip', { count: currentAiGenerationCount, limit: maxGenerations })}</p>
+                  ) : (
+                    <p>{t('taskDetail.generateSubtasks.tooltip')}</p>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
-        <TooltipProvider delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="outline"
-                size="icon" 
-                className="aspect-square rounded-full h-14 w-14 bg-secondary/80 backdrop-blur-sm border-white/10 text-muted-foreground hover:text-foreground hover:bg-secondary shadow-lg"
-                onClick={() => setShowAddSubtaskForm(true)}
-                disabled={isAddingSubtask || isGeneratingSubtasksForTask(task.id) || isAiGenerationLimitReached}
-                aria-label={t('taskDetail.addSubtask.buttonAriaLabel')}
-              >
-                <PlusCircle className="h-7 w-7" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <p>{t('taskDetail.addSubtask.tooltip')}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
+            {/* DAARNA de Nieuwe Subtaak (PlusCircle) knop */}
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    size="icon" 
+                    className="aspect-square rounded-full h-14 w-14 bg-secondary/80 backdrop-blur-sm border-white/10 text-muted-foreground hover:text-foreground hover:bg-secondary shadow-lg"
+                    onClick={() => setShowAddSubtaskForm(true)}
+                    disabled={isAddingSubtask || isGeneratingSubtasksForTask(task.id) || isLimitReached}
+                    aria-label={t('taskDetail.addSubtask.buttonAriaLabel')}
+                  >
+                    <PlusCircle className="h-7 w-7" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <p>{t('taskDetail.addSubtask.tooltip')}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Mobile Generate Subtasks Dialog (needs similar update) */}
       <AlertDialog open={isMobileGenerateDialogOpen} onOpenChange={setIsMobileGenerateDialogOpen}>
-        {/* Trigger is handled by the floating button below */}
         <AlertDialogPortal>
-          <AlertDialogOverlay className="fixed inset-0 z-[100] bg-black/30 backdrop-blur-sm" />
-          <AlertDialogContent className="sm:max-w-xl z-[101] border bg-card p-6 shadow-lg sm:rounded-lg">
+          <AlertDialogOverlay className="fixed inset-0 z-[100] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <AlertDialogContent className="sm:max-w-xl z-[101] border bg-card/90 backdrop-blur-md border-white/10 p-6 shadow-lg sm:rounded-lg">
             <AlertDialogHeader>
               <AlertDialogTitle>{t('common.generateSubtasksDialogTitle')}</AlertDialogTitle>
               <AlertDialogDescription>
                 {t('common.generateSubtasksDialogDescription', { taskTitle: task?.title })}
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <div className="mt-4">
+            <div className="mt-4 space-y-3">
               <Button
-                disabled={isGeneratingSubtasksForTask(task.id) || isAiGenerationLimitReached}
+                disabled={isGeneratingSubtasksForTask(task.id) || isLimitReached}
                 variant="default"
                 className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
                 onClick={handleGenerateSubtasks}
               >
                 {isGeneratingSubtasksForTask(task.id) ? (
                   <div className="flex items-center gap-2 justify-center">
-                    <Loader2 className="animate-spin h-4 w-4" />
+                    <Loader2 className="animate-spin h-4 w-4 mr-2" />
                     {t('common.generatingText')}
                   </div>
                 ) : (
                   t('taskDetail.generateSubtasks.confirmButton')
                 )}
               </Button>
+              <AlertDialogCancel className="w-full h-12">{t('common.cancel')}</AlertDialogCancel>
             </div>
-            {/* Add a cancel button if needed */}
-             <AlertDialogCancel className="w-full mt-2">{t('common.cancel')}</AlertDialogCancel>
           </AlertDialogContent>
         </AlertDialogPortal>
       </AlertDialog>
