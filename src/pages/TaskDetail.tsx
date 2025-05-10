@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.t
 import { Badge } from "@/components/ui/badge.tsx";
 import { format, parseISO } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
-import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, MoreVertical, Flag, CalendarClock, Info, MessageSquareText, Loader2, ChevronsUp, ChevronsDown } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, MoreVertical, Flag, CalendarClock, Info, MessageSquareText, Loader2, ChevronsUp, ChevronsDown, CheckCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator.tsx";
 import {
   AlertDialog,
@@ -641,7 +641,7 @@ export default function TaskDetail() {
             )}
             style={globalThis.innerWidth >= 1024 ? { width: `${columnSizes.left}%` } : {}}
           >
-            <CardHeader className={cn("pb-3 px-4 lg:p-6 lg:pb-3", isHeaderCollapsed && "md:hidden")} data-collapsed={isHeaderCollapsed}>
+            <CardHeader className="pb-3 px-4 lg:p-6 lg:pb-3">
               <div className="flex items-center">
                 <CardTitle className="text-xl font-semibold">{task?.title}</CardTitle>
               </div>
@@ -760,19 +760,7 @@ export default function TaskDetail() {
 
             {task && (
               <CardContent className="flex flex-col flex-grow min-h-0 px-0 lg:p-6 lg:pt-0">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
-                  className="md:hidden flex items-center justify-center h-6 mb-1 mx-auto text-muted-foreground hover:text-foreground"
-                >
-                  {isHeaderCollapsed ? <ChevronsDown className="h-4 w-4" /> : <ChevronsUp className="h-4 w-4" />}
-                  <span className="ml-1 text-xs">
-                    {isHeaderCollapsed ? t('common.expand') || 'Uitklappen' : t('common.collapse') || 'Inklappen'}
-                  </span>
-                </Button>
-                
-                <div className={cn("px-4 lg:px-0", isHeaderCollapsed && "md:hidden")} data-collapsed={isHeaderCollapsed}>
+                <div className={cn("px-4 lg:px-0", isHeaderCollapsed && "lg:block hidden")} style={{ display: isHeaderCollapsed ? 'none' : 'block' }}>
                   <div className="flex-shrink-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <DropdownMenu>
@@ -858,6 +846,24 @@ export default function TaskDetail() {
                     </div>
                   </div>
                   <Separator className="my-3 bg-border/70" />
+                </div>
+                
+                <div className="flex items-center justify-between px-4 py-2 mb-1 sticky top-0 bg-card/90 backdrop-blur-sm z-10 lg:hidden">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-sm font-medium">
+                      {completedSubtasks}/{totalSubtasks} {t('common.subtasks')}
+                    </h3>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+                    className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    aria-label={isHeaderCollapsed ? t('common.expand') || 'Uitklappen' : t('common.collapse') || 'Inklappen'}
+                  >
+                    {isHeaderCollapsed ? <ChevronsDown className="h-4 w-4" /> : <ChevronsUp className="h-4 w-4" />}
+                  </Button>
                 </div>
                 
                 <div className="flex-grow overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded pb-2 space-y-1 lg:space-y-1.5 divide-y divide-border/60 lg:divide-y-0">
