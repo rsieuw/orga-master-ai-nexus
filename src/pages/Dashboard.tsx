@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'; // Add React import for React.isValidElement and useState, useEffect, useMemo
+import React, { useState, useEffect, useMemo, useRef } from 'react'; // Add React import for React.isValidElement and useState, useEffect, useMemo, useRef
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { useAuth } from "@/contexts/AuthContext.tsx";
 import TaskCard from "@/components/task/TaskCard.tsx";
@@ -6,7 +6,7 @@ import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Task, TasksByDate, TaskPriority } from "@/types/task.ts";
 import { Button } from "@/components/ui/button.tsx";
-import { Plus } from 'lucide-react'; // Import Plus icon
+import { PlusCircle } from 'lucide-react'; // Import PlusCircle icon
 import SearchInput from '@/components/ui/SearchInput.tsx'; // Import SearchInput
 import TaskFilter, { TaskFilterStatus, TaskFilterPriority } from '@/components/ui/TaskFilter.tsx'; // Import TaskFilter and types
 import {
@@ -22,6 +22,7 @@ import {
 import NewTaskDialog from "@/components/tasks/NewTaskDialog.tsx";
 import { TypeAnimation } from 'react-type-animation'; // Import the component
 import { useTranslation } from 'react-i18next';
+import { motion, AnimatePresence, Variants } from 'framer-motion'; // Framer Motion import and Variants
 
 const LOCAL_STORAGE_KEYS = {
   SEARCH_TERM: 'dashboardSearchTerm',
@@ -54,6 +55,39 @@ const sortTasksByPriority = (a: Task, b: Task): number => {
   return priorityOrder[b.priority] - priorityOrder[a.priority];
 };
 
+// Varianten voor de container van de kaarten (per kolom)
+const columnContainerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.07, // Kleine vertraging tussen elke kaart in de kolom
+    },
+  },
+};
+
+// Varianten voor individuele kaarten
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 20,
+      duration: 0.3,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -10,
+    scale: 0.9,
+    transition: { duration: 0.15 },
+  },
+};
+
 export default function Dashboard() {
   const { isLoading, groupTasksByDate } = useTask();
   const { user } = useAuth();
@@ -82,6 +116,8 @@ export default function Dashboard() {
     return (localStorage.getItem(LOCAL_STORAGE_KEYS.FILTER_PRIORITY) as TaskFilterPriority) || 'all';
   });
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
+  const [showMobileActions, setShowMobileActions] = useState(true);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Update Local Storage when local state changes
   useEffect(() => {
@@ -110,6 +146,34 @@ export default function Dashboard() {
       document.body.style.overflow = 'auto'; // Back to auto
     };
   }, [isNewTaskOpen]);
+
+  // Effect voor het beheren van de zichtbaarheid van de FAB knop
+  useEffect(() => {
+    const INACTIVITY_TIMEOUT = 2500;
+    const handleActivity = () => {
+      if (hideTimerRef.current !== null) {
+        clearTimeout(hideTimerRef.current);
+      }
+      setShowMobileActions(true);
+      hideTimerRef.current = setTimeout(() => {
+        setShowMobileActions(false);
+      }, INACTIVITY_TIMEOUT) as ReturnType<typeof setTimeout>;
+    };
+    handleActivity();
+    globalThis.addEventListener('scroll', handleActivity, { passive: true });
+    globalThis.addEventListener('click', handleActivity, { capture: true });
+    globalThis.addEventListener('mousemove', handleActivity, { passive: true });
+    globalThis.addEventListener('touchmove', handleActivity, { passive: true });
+    return () => {
+      globalThis.removeEventListener('scroll', handleActivity);
+      globalThis.removeEventListener('click', handleActivity, { capture: true });
+      globalThis.removeEventListener('mousemove', handleActivity);
+      globalThis.removeEventListener('touchmove', handleActivity);
+      if (hideTimerRef.current !== null) { 
+        clearTimeout(hideTimerRef.current);
+      }
+    };
+  }, []);
 
   const rawTaskGroups = groupTasksByDate();
 
@@ -196,18 +260,17 @@ export default function Dashboard() {
   tasksForColumnDistribution.forEach(({ task, category }, taskIndex) => { 
     const showTitle = category !== lastCategory;
     
-    // Determine target column based on index and breakpoints
     let targetColumnIndex;
     if (taskIndex < columnBreak1) {
-        targetColumnIndex = 0; // First column
+        targetColumnIndex = 0;
     } else if (taskIndex < columnBreak2) {
-        targetColumnIndex = 1; // Second column
+        targetColumnIndex = 1;
     } else {
-        targetColumnIndex = 2; // Third column
+        targetColumnIndex = 2;
     }
 
     if (showTitle) {
-      const count = filteredAndSortedTaskGroups[category].length; // Get the number of tasks for this category
+      const count = filteredAndSortedTaskGroups[category].length;
       columns[targetColumnIndex].push(
         <h2 key={`title-${String(category)}-${targetColumnIndex}`} className="text-lg font-semibold mb-3 pt-3 md:pt-0">
           {getCategoryTitle(category)}{' '}
@@ -218,10 +281,14 @@ export default function Dashboard() {
     lastCategory = category;
 
     columns[targetColumnIndex].push(
-      // Small margin on mobile, restore on md:
-      <div key={task.id} className="mb-2 md:mb-6"> 
+      <motion.div
+        key={task.id}
+        variants={cardVariants}
+        layout="position"
+        className="mb-2 md:mb-6"
+      >
         <TaskCard task={task} />
-      </div>
+      </motion.div>
     );
   });
   // --- End logic for balanced distribution ---
@@ -243,7 +310,7 @@ export default function Dashboard() {
         <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
           <DialogTrigger asChild>
             <Button size="lg" className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white">
-              <Plus className="mr-2 h-5 w-5" />
+              <PlusCircle className="mr-2 h-5 w-5" />
               {t('dashboard.emptyState.addNewTaskButton')}
             </Button>
           </DialogTrigger>
@@ -327,33 +394,79 @@ export default function Dashboard() {
       </div>
 
       {/* Task grid: No gap on mobile, gap on medium screens and up */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6 items-start">
-        {hasAnyFilteredTasks ? (
-          columns.map((columnItems, colIndex) => (
-            <div key={colIndex} className="flex flex-col gap-0"> 
-              {/* --- Placeholder Logic for column alignment --- */}
-              {
-                // Check if the first item exists and is NOT an h2 (category title)
-                columnItems.length > 0 && 
-                React.isValidElement(columnItems[0]) && 
-                columnItems[0].type !== 'h2' && (
-                  // Render a placeholder with the estimated height of a title + margin
-                  // Hidden on mobile (default), shown from md: breakpoint upwards
-                  <div className="hidden md:block h-10"></div> 
-                )
-              }
-              {/* --- End Placeholder Logic --- */}
-              {columnItems.map((item) => {
-                return item;
-              })}
-            </div>
-          ))
-        ) : (
-          <div className="text-center col-span-1 md:col-span-3 mt-8">
-            {emptyStateMessage}
-          </div>
+      <AnimatePresence mode="sync">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6 items-start">
+          {hasAnyFilteredTasks ? (
+            columns.map((columnItems, colIndex) => (
+              <motion.div
+                key={`col-${colIndex}`}
+                className="flex flex-col gap-0"
+                variants={columnContainerVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                {columnItems.length > 0 && React.isValidElement(columnItems[0]) && columnItems[0].type !== 'h2' && (
+                  <div className="hidden md:block h-10"></div>
+                )}
+                {columnItems.map((item, itemIndex) => (
+                  <React.Fragment key={itemIndex}>{item}</React.Fragment>
+                ))}
+              </motion.div>
+            ))
+          ) : (
+            <motion.div
+              key="empty-state"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="text-center col-span-1 md:col-span-3 mt-8"
+            >
+              {emptyStateMessage}
+            </motion.div>
+          )}
+        </div>
+      </AnimatePresence>
+
+      {/* Floating Action Button voor nieuw taak (alleen op mobiel) */}
+      <AnimatePresence>
+        {showMobileActions && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="md:hidden fixed bottom-24 right-4 z-40"
+          >
+            <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="default"
+                  size="icon" 
+                  className="aspect-square rounded-full h-14 w-14 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white shadow-lg"
+                  aria-label={t('dashboard.emptyState.addNewTaskButton')}
+                >
+                  <PlusCircle className="h-6 w-6" />
+                </Button>
+              </DialogTrigger>
+              <DialogPortal>
+                {isNewTaskOpen && (
+                  <>
+                    <DialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" /> 
+                    <DialogContent className="fixed left-[50%] top-[50%] z-[90] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg md:w-full">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl">{t('appLayout.newTaskDialog.title')}</DialogTitle>
+                        <DialogDescription>
+                          {t('appLayout.newTaskDialog.description')}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <NewTaskDialog setOpen={setIsNewTaskOpen} />
+                    </DialogContent>
+                  </>
+                )}
+              </DialogPortal>
+            </Dialog>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </AppLayout>
   );
 }
