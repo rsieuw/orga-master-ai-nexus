@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.t
 import { Badge } from "@/components/ui/badge.tsx";
 import { format, parseISO } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
-import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, MoreVertical, Flag, CalendarClock, Info, MessageSquareText, Loader2 } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, MoreVertical, Flag, CalendarClock, Info, MessageSquareText, Loader2, ChevronsUp, ChevronsDown } from "lucide-react";
 import { Separator } from "@/components/ui/separator.tsx";
 import {
   AlertDialog,
@@ -287,6 +287,7 @@ export default function TaskDetail() {
   const [editingSubtaskTitle, setEditingSubtaskTitle] = useState<string>("");
   const [longPressedSubtaskId, setLongPressedSubtaskId] = useState<string | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState<{ top: number, left: number } | null>(null);
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
 
   // State for the resizable columns
   const [columnSizes, setColumnSizes] = useState<{ left: number; right: number }>({ left: 50, right: 50 });
@@ -640,7 +641,7 @@ export default function TaskDetail() {
             )}
             style={globalThis.innerWidth >= 1024 ? { width: `${columnSizes.left}%` } : {}}
           >
-            <CardHeader className="pb-3 px-4 lg:p-6 lg:pb-3">
+            <CardHeader className={cn("pb-3 px-4 lg:p-6 lg:pb-3", isHeaderCollapsed && "md:hidden")} data-collapsed={isHeaderCollapsed}>
               <div className="flex items-center">
                 <CardTitle className="text-xl font-semibold">{task?.title}</CardTitle>
               </div>
@@ -759,7 +760,19 @@ export default function TaskDetail() {
 
             {task && (
               <CardContent className="flex flex-col flex-grow min-h-0 px-0 lg:p-6 lg:pt-0">
-                <div className="px-4 lg:px-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+                  className="md:hidden flex items-center justify-center h-6 mb-1 mx-auto text-muted-foreground hover:text-foreground"
+                >
+                  {isHeaderCollapsed ? <ChevronsDown className="h-4 w-4" /> : <ChevronsUp className="h-4 w-4" />}
+                  <span className="ml-1 text-xs">
+                    {isHeaderCollapsed ? t('common.expand') || 'Uitklappen' : t('common.collapse') || 'Inklappen'}
+                  </span>
+                </Button>
+                
+                <div className={cn("px-4 lg:px-0", isHeaderCollapsed && "md:hidden")} data-collapsed={isHeaderCollapsed}>
                   <div className="flex-shrink-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <DropdownMenu>
@@ -822,32 +835,31 @@ export default function TaskDetail() {
                         </Badge>
                       )}
                     </div>
-                    <div className="mb-4"></div>
-                    <div>
-                      <h3 className="font-medium mb-2">{t('common.description')}</h3>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {task.description || t('taskDetail.noDescription')}
-                      </p>
-                    </div>
-                    <Separator className="my-4" />
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
-                      <div className="flex items-center gap-3 w-full">
-                        <h3 className="font-medium flex-shrink-0">{t('common.subtasks')}</h3>
-                        {totalSubtasks > 0 && (
-                          <div className="flex items-center gap-2 flex-grow">
-                             <span className="text-xs text-muted-foreground flex-shrink-0">
-                                 {completedSubtasks}/{totalSubtasks}
-                             </span>
-                             <GradientProgress value={progressValue} className="h-1.5 flex-grow lg:w-40 lg:flex-grow-0" /> 
-                             <span className="text-xs font-medium text-muted-foreground/90 flex-shrink-0">
-                               ({Math.round(progressValue)}%)
-                             </span>
-                          </div>
-                         )}
+                    
+                    <div className="mt-3 space-y-4">
+                      <div className="text-sm">
+                        {task.description ? (
+                          <p className="whitespace-pre-wrap text-muted-foreground">{task.description}</p>
+                        ) : (
+                          <p className="italic text-muted-foreground text-sm">{t('taskDetail.noDescription')}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            {completedSubtasks}/{totalSubtasks} {t('taskDetail.subtasksCompleted')}
+                          </span>
+                          <span className="text-muted-foreground text-xs">
+                            {progressValue.toFixed(0)}%
+                          </span>
+                        </div>
+                        <GradientProgress value={progressValue} />
                       </div>
                     </div>
                   </div>
+                  <Separator className="my-3 bg-border/70" />
                 </div>
+                
                 <div className="flex-grow overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded pb-2 space-y-1 lg:space-y-1.5 divide-y divide-border/60 lg:divide-y-0">
                   <AnimatePresence mode='wait'>
                     {task.subtasks.length > 0 ? (
