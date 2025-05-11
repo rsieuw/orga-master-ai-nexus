@@ -145,7 +145,17 @@
       },
       "copiedToClipboard": "Gekopieerd naar klembord!",
       "genericErrorTitle": "Fout",
-      "genericErrorDescription": "Er is iets misgegaan. Probeer het later opnieuw."
+      "genericErrorDescription": "Er is iets misgegaan. Probeer het later opnieuw.",
+      "layoutPreferenceSaved": {
+        "title": "Indelingsvoorkeur opgeslagen",
+        "description": "Je voorkeur voor de interface-indeling is opgeslagen."
+      }
+    },
+    "desktopLayout": {
+      "label": "Interface-indeling (Desktop)",
+      "description": "Kies de standaardverdeling voor het taakdetail en chatvenster op desktop.",
+      "option5050": "Gebalanceerd (50% / 50%)",
+      "option3367": "Chat gefocust (33% / 67%)"
     }
   },
   "profile": {
@@ -449,22 +459,40 @@
     "paragraph3": "Kom binnenkort terug voor handleidingen, tutorials en API-referenties."
   },
   "dashboard": {
-    "greeting": "Hallo, {{name}}",
-    "defaultUser": "Gebruiker",
-    "tasksOverview": "Hier is een overzicht van je taken",
-    "searchPlaceholder": "Taken zoeken...",
+    "greeting": "Hallo, {{name}}!",
+    "tasksOverview": "Hier is een overzicht van je taken.",
+    "searchPlaceholder": "Zoek taken...",
+    "filterStatusAll": "Alle statussen",
+    "filterStatusCompleted": "Voltooid",
+    "filterStatusIncomplete": "Onvoltooid",
+    "filterPriorityAll": "Alle prioriteiten",
+    "filterPriorityHigh": "Hoge prioriteit",
+    "filterPriorityMedium": "Gemiddelde prioriteit",
+    "filterPriorityLow": "Lage prioriteit",
+    "noTasksFound": "Geen taken gevonden die voldoen aan de criteria.",
+    "noTasksAtAll": "Je hebt nog geen taken. Maak je eerste taak aan!",
+    "allTasksCompleted": "Goed bezig! Alle taken zijn voltooid.",
+    "clearFiltersButton": "Filters wissen",
+    "addNewTaskMobile": "Nieuwe taak",
     "categories": {
-      "overdue": "Te laat",
+      "overdue": "Verlopen",
       "today": "Vandaag",
       "tomorrow": "Morgen",
       "dayAfterTomorrow": "Overmorgen",
       "nextWeek": "Volgende week",
-      "later": "Later"
+      "later": "Binnenkort"
     },
-    "emptyState": {
-      "noTasksAfterFilter": "Geen taken gevonden die voldoen aan de filters.",
-      "noTasksAtAll": "Je hebt nog geen taken.",
-      "addNewTaskButton": "Nieuwe taak toevoegen"
+    "tooltips": {
+      "addNewTask": "Nieuwe taak toevoegen"
+    },
+    "emptyStates": {
+      "noTasks": "Geen taken gevonden",
+      "noTasksDescription": "Probeer je zoekopdracht of filters aan te passen, of maak een nieuwe taak aan.",
+      "allTasksDone": "Alle taken voltooid!",
+      "allTasksDoneDescription": "Goed gedaan! Je hebt al je taken afgerond."
+    },
+    "accessibility": {
+      "taskColumn": "Taak kolom voor {{category}}"
     }
   },
   "taskCard": {
@@ -475,69 +503,113 @@
     }
   },
   "taskDetail": {
+    "backButton": "Terug naar dashboard",
+    "editButton": "Taak bewerken",
+    "deleteButton": "Taak verwijderen",
+    "deleteConfirmation": {
+      "title": "Weet je het zeker?",
+      "description": "Deze actie kan niet ongedaan worden gemaakt. Dit zal de taak definitief verwijderen.",
+      "confirm": "Verwijderen",
+      "cancel": "Annuleren"
+    },
+    "priority": {
+      "high": "Hoog",
+      "medium": "Gemiddeld",
+      "low": "Laag",
+      "label": "Prioriteit"
+    },
+    "status": {
+      "todo": "To Do",
+      "inprogress": "In Uitvoering",
+      "done": "Klaar",
+      "label": "Status"
+    },
+    "dueDate": "Vervaldatum",
+    "createdAt": "Aangemaakt op",
+    "updatedAt": "Laatst bijgewerkt",
+    "assignedTo": "Toegewezen aan",
+    "noAssignee": "Niet toegewezen",
+    "description": "Beschrijving",
+    "noDescription": "Geen beschrijving beschikbaar.",
+    "notes": "Notities",
+    "addNotePlaceholder": "Typ je notitie hier...",
+    "addNoteButton": "Notitie toevoegen",
+    "noNotes": "Nog geen notities.",
+    "subtasks": "Subtaken",
+    "addSubtaskPlaceholder": "Nieuwe subtaak...",
+    "addSubtaskButton": "Subtaak toevoegen",
+    "noSubtasks": "Nog geen subtaken.",
     "subtask": {
-      "editTitleAriaLabel": "Subtaaktitel bewerken",
-      "options": "Opties",
-      "edit": "Bewerken",
-      "delete": "Verwijderen",
+      "editTitleAriaLabel": "Bewerk subtitel",
+      "editSubtaskSR": "Bewerk subtaak",
+      "deleteSubtaskSR": "Verwijder subtaak",
       "deleteConfirmation": {
         "title": "Subtaak verwijderen?",
-        "description": "Weet je zeker dat je de subtaak \"{{subtaskTitle}}\" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
-      },
-      "editSubtaskSR": "Subtaak bewerken",
-      "deleteSubtaskSR": "Subtaak verwijderen"
-    },
-    "notFound": {
-      "title": "Taak niet gevonden"
+        "description": "Weet je zeker dat je de subtaak \"{{subtaskTitle}}\" wilt verwijderen?"
+      }
     },
     "toast": {
-      "subtaskUpdated": "Subtaak bijgewerkt",
-      "updateFailed": "Bijwerken mislukt",
-      "subtaskUpdateFailedDescription": "Kon subtaak niet bijwerken.",
-      "taskDeleted": "Taak verwijderd",
-      "taskDeletedDescription": "Taak \"{{taskTitle}}\" is verwijderd.",
-      "deleteFailed": "Verwijderen mislukt",
-      "taskDeleteFailedDescription": "Kon de taak niet verwijderen.",
-      "subtaskStatusUpdateFailedDescription": "Kon subtaakstatus niet bijwerken.",
       "subtaskAdded": "Subtaak toegevoegd",
       "subtaskAddedDescription": "Subtaak \"{{subtaskTitle}}\" is toegevoegd.",
       "addFailed": "Toevoegen mislukt",
-      "subtaskAddFailedDescription": "Kon de subtaak niet toevoegen."
+      "subtaskAddFailedDescription": "De subtaak kon niet worden toegevoegd. Probeer het opnieuw.",
+      "subtaskUpdated": "Subtaak bijgewerkt",
+      "updateFailed": "Bijwerken mislukt",
+      "subtaskUpdateFailedDescription": "De subtaak kon niet worden bijgewerkt. Probeer het opnieuw.",
+      "subtaskStatusUpdateFailedDescription": "De status van de subtaak kon niet worden bijgewerkt. Probeer het opnieuw.",
+      "taskDeleted": "Taak verwijderd",
+      "taskDeletedDescription": "Taak \"{{taskTitle}}\" is verwijderd.",
+      "deleteFailed": "Verwijderen mislukt",
+      "taskDeleteFailedDescription": "De taak kon niet worden verwijderd. Probeer het opnieuw."
     },
-    "subtasksCompleted": "subtaken voltooid",
-    "noDeadline": "Geen deadline",
-    "invalidDate": "Ongeldige datum",
-    "editTaskSR": "Taak bewerken",
     "editTaskDialog": {
       "title": "Taak bewerken",
       "description": "Pas de details van je taak aan."
     },
-    "deleteTaskSR": "Taak verwijderen",
-    "deleteTaskConfirmation": {
-      "title": "Taak verwijderen?",
-      "description": "Weet je zeker dat je deze taak wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
-    },
-    "taskOptionsSR": "Taakopties",
-    "editTask": "Taak bewerken",
-    "deleteTask": "Taak verwijderen",
-    "overdueSR": "(Te laat)",
-    "noDescription": "Geen beschrijving",
-    "noSubtasks": "Geen subtaken",
-    "addSubtask": {
-      "titleDesktopSR": "Nieuwe subtaaktitel (desktop)",
-      "placeholder": "Nieuwe subtaaktitel",
-      "saveAriaLabel": "Subtaak opslaan",
-      "buttonText": "Subtaak toevoegen",
-      "titleMobileSR": "Nieuwe subtaaktitel (mobiel)",
-      "placeholderMobile": "Nieuwe subtaaktitel...",
-      "buttonAriaLabel": "Subtaak toevoegen",
-      "tooltip": "Subtaak toevoegen"
+    "aiChat": {
+      "title": "AI Assistent",
+      "inputPlaceholder": "Stel een vraag over deze taak...",
+      "sendCommand": "Verstuur (Cmd+Enter)",
+      "showChat": "Toon AI Chat",
+      "hideChat": "Verberg AI Chat",
+      "generatingResponse": "AI genereert antwoord...",
+      "errorResponse": "Fout bij het ophalen van AI-antwoord.",
+      "suggestion": {
+        "generateSubtasks": "Genereer subtaken",
+        "summarizeTask": "Vat taak samen",
+        "estimateTime": "Schat benodigde tijd"
+      }
     },
     "generateSubtasks": {
-      "buttonText": "Subtaken genereren",
-      "confirmButton": "Ja, subtaken genereren",
-      "tooltip": "Subtaken genereren (AI)",
-      "limitReachedTooltip": "AI-generatielimiet bereikt ({{count}}/{{limit}})"
+      "buttonText": "Genereer AI Subtaken",
+      "tooltip": "Gebruik AI om automatisch subtaken te genereren op basis van de taakomschrijving.",
+      "generating": "Subtaken genereren...",
+      "success": "AI heeft subtaken gegenereerd!",
+      "error": "Fout bij genereren van subtaken.",
+      "modalTitle": "AI Gegenereerde Subtaken",
+      "modalDescription": "Bekijk en selecteer de subtaken die je wilt toevoegen.",
+      "addSelectedButton": "Geselecteerde Toevoegen",
+      "buttonAriaLabel": "Genereer subtaken met AI",
+      "fabText": "Taken genereren"
+    },
+    "collapseDescription": "Beschrijving inklappen",
+    "expandDescription": "Beschrijving uitklappen",
+    "deleteTask": "Taak verwijderen",
+    "deleteTaskSR": "Verwijder deze taak",
+    "deleteTaskConfirmation": {
+      "title": "Taak verwijderen?",
+      "description": "Weet je zeker dat je deze taak wilt verwijderen? Deze actie kan niet ongedaan gemaakt worden."
+    },
+    "addSubtask": {
+      "titleDesktopSR": "Titel voor nieuwe subtaak (desktop)",
+      "titleMobileSR": "Titel voor nieuwe subtaak (mobiel)",
+      "placeholder": "Voeg een nieuwe subtaak toe...",
+      "placeholderMobile": "Nieuwe subtaak...",
+      "saveAriaLabel": "Subtaak opslaan",
+      "buttonText": "Subtaak toevoegen",
+      "buttonAriaLabel": "Nieuwe subtaak toevoegen",
+      "tooltip": "Voeg een nieuwe subtaak toe aan deze hoofdtaak.",
+      "fabText": "Nieuwe subtaak"
     }
   },
   "common": {
@@ -627,7 +699,24 @@
     },
     "account": {
       "title": "Accountinstellingen",
-      "description": "Beheer je accountgegevens.",
+      "description": "Beheer je accountgegevens en voorkeuren.",
+      "form": {
+        "nameLabel": "Naam",
+        "namePlaceholder": "Je volledige naam",
+        "emailLabel": "E-mailadres",
+        "emailPlaceholder": "jouw@email.com",
+        "saveButton": "Wijzigingen opslaan",
+        "passwordChangeLabel": "Wachtwoord wijzigen",
+        "currentPasswordLabel": "Huidig wachtwoord",
+        "newPasswordLabel": "Nieuw wachtwoord",
+        "confirmNewPasswordLabel": "Bevestig nieuw wachtwoord",
+        "updatePasswordButton": "Wachtwoord bijwerken",
+        "deleteAccountLabel": "Account verwijderen",
+        "deleteAccountWarning": "Deze actie kan niet ongedaan worden gemaakt. Alle gegevens worden permanent verwijderd.",
+        "deleteAccountButton": "Account permanent verwijderen",
+        "confirmDeleteInputLabel": "Typ 'VERWIJDEREN' om te bevestigen",
+        "confirmDeleteButton": "Ik begrijp het, verwijder mijn account"
+      },
       "username": "Gebruikersnaam",
       "email": "E-mailadres",
       "changePassword": "Wachtwoord wijzigen",
@@ -680,6 +769,48 @@
         "precise": "Nauwkeurig",
         "custom": "Aangepast"
       }
+    },
+    "desktopLayout": {
+      "label": "Interface-indeling (Desktop)",
+      "description": "Kies de standaardverdeling voor het taakdetail en chatvenster op desktop.",
+      "option5050": "Gebalanceerd (50% / 50%)",
+      "option3367": "Chat gefocust (33% / 67%)"
+    },
+    "toast": {
+      "accountUpdated": "Accountgegevens bijgewerkt.",
+      "passwordUpdated": "Wachtwoord succesvol bijgewerkt.",
+      "errorSaving": "Fout bij opslaan. Probeer het opnieuw.",
+      "uiLanguageChanged": {
+        "title": "Interfacetaal gewijzigd",
+        "description": "Interfacetaal is ingesteld op {{language}}."
+      },
+      "layoutPreferenceSaved": {
+        "title": "Indelingsvoorkeur opgeslagen",
+        "description": "Je voorkeur voor de interface-indeling is opgeslagen."
+      },
+      "errorSavingLayoutPreference": {
+        "title": "Fout bij Opslaan Layout",
+        "description": "Kon de layoutvoorkeur niet opslaan. Probeer het opnieuw."
+      },
+      "aiModeSaved": {
+        "title": "AI Modus Opgeslagen",
+        "description": "Standaard AI-modus ingesteld op: {modeLabel}."
+      },
+      "errorSavingAiMode": {
+        "title": "Fout bij opslaan AI-modus",
+        "description": "Kon AI-modusvoorkeur niet opslaan."
+      },
+      "researchModelSaved": {
+        "title": "Onderzoeksmodel opgeslagen",
+        "description": "Standaard onderzoeksmodel ingesteld op: {modeLabel}."
+      },
+      "errorSavingResearchModel": {
+        "title": "Fout bij opslaan onderzoeksmodel",
+        "description": "Kon onderzoeksmodelvoorkeur niet opslaan."
+      },
+      "copiedToClipboard": "Gekopieerd naar klembord!",
+      "genericErrorTitle": "Fout",
+      "genericErrorDescription": "Er is iets misgegaan. Probeer het later opnieuw."
     }
   },
   "profilePage": {
@@ -948,7 +1079,106 @@
       "date": "Datum",
       "user": "Gebruiker",
       "subject": "Onderwerp",
-      "message": "Bericht"
+      "message": "Bericht",
+      "status": "Status",
+      "important": "Belangrijk",
+      "actions": "Acties"
+    },
+    "actions": {
+      "handled": "Markeer als afgehandeld",
+      "read": "Markeer als gelezen",
+      "markImportant": "Markeer als belangrijk",
+      "unmarkImportant": "Markeer als niet belangrijk"
+    },
+    "statusValues": {
+      "read": "Gelezen",
+      "unread": "Ongelezen",
+      "handled": "Afgehandeld",
+      "new": "Nieuw"
+    }
+  },
+  "auth": {
+    "toast": {
+      "logoutFailed": {
+        "title": "Uitloggen mislukt",
+        "descriptionDefault": "Er is iets misgegaan bij het uitloggen. Probeer het opnieuw."
+      },
+      "loginFailed": {
+        "title": "Inloggen mislukt",
+        "descriptionDefault": "Controleer je e-mailadres en wachtwoord en probeer het opnieuw."
+      },
+      "registrationSuccess": {
+        "title": "Registratie succesvol",
+        "description": "Controleer je e-mail om je account te bevestigen."
+      },
+      "registrationFailed": {
+        "title": "Registratie mislukt",
+        "descriptionDefault": "Er is iets misgegaan bij het registreren. Probeer het later opnieuw."
+      },
+      "updateForbidden": {
+        "title": "Update niet toegestaan",
+        "descriptionFreeUserAIMode": "Gratis gebruikers kunnen alleen de 'GPT-4o (Gebalanceerd)' modus gebruiken."
+      },
+      "updateFailed": {
+        "title": "Account bijwerken mislukt",
+        "descriptionDefault": "Er is iets misgegaan bij het bijwerken van je account. Probeer het opnieuw."
+      },
+      "accountDeactivated": {
+        "title": "Account gedeactiveerd",
+        "description": "Dit account is momenteel niet actief. Neem contact op met support voor meer informatie."
+      }
+    }
+  },
+  "taskForm": {
+    "title": "Taak bewerken",
+    "backButton": "Terug",
+    "labels": {
+        "title": "Titel",
+        "description": "Beschrijving",
+        "priority": "Prioriteit",
+        "status": "Status",
+        "deadline": "Deadline"
+    },
+    "placeholders": {
+      "title": "Taaktitel",
+      "description": "Beschrijf de taak...",
+      "selectPriority": "Selecteer prioriteit",
+      "selectStatus": "Selecteer status"
+    },
+    "buttons": {
+      "aiSuggestion": "AI Suggestie",
+      "updateTask": "Taak bijwerken",
+      "updating": "Bijwerken..."
+    },
+    "toast": {
+      "taskNotFound": {
+        "title": "Fout",
+        "description": "Taak niet gevonden. Je wordt teruggestuurd."
+      },
+      "titleMissingForAISuggestion": {
+        "title": "Titel ontbreekt",
+        "description": "Vul eerst een titel in voor een AI-prioriteitssuggestie."
+      },
+      "aiSuggestion": {
+        "title": "AI Suggestie",
+        "description": "De AI stelt voor om prioriteit \"{{priorityName}}\" toe te kennen."
+      },
+      "aiSuggestionFailed": {
+        "title": "Suggestie mislukt",
+        "description": "Kon geen prioriteitssuggestie genereren."
+      },
+      "invalidTaskId": {
+        "title": "Fout",
+        "description": "Ongeldig taak-ID."
+      },
+      "taskUpdated": {
+        "title": "Taak bijgewerkt",
+        "description": "De taak is succesvol bijgewerkt."
+      },
+      "updateFailed": {
+        "title": "Fout",
+        "description": "De taak kon niet worden bijgewerkt."
+      }
     }
   }
 }

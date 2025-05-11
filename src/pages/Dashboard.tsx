@@ -55,18 +55,18 @@ const sortTasksByPriority = (a: Task, b: Task): number => {
   return priorityOrder[b.priority] - priorityOrder[a.priority];
 };
 
-// Varianten voor de container van de kaarten (per kolom)
+// Variants for the card container (per column)
 const columnContainerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.07, // Kleine vertraging tussen elke kaart in de kolom
+      staggerChildren: 0.07, // Small delay between each card in the column
     },
   },
 };
 
-// Varianten voor individuele kaarten
+// Variants for individual cards
 const cardVariants: Variants = {
   hidden: { opacity: 0, y: 20, scale: 0.95 },
   visible: {
@@ -147,7 +147,7 @@ export default function Dashboard() {
     };
   }, [isNewTaskOpen]);
 
-  // Effect voor het beheren van de zichtbaarheid van de FAB knop
+  // Effect for managing FAB button visibility
   useEffect(() => {
     const INACTIVITY_TIMEOUT = 2500;
     const handleActivity = () => {
@@ -309,26 +309,21 @@ export default function Dashboard() {
         <p className="text-muted-foreground mb-4">{t('dashboard.emptyState.noTasksAtAll')}</p>
         <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
           <DialogTrigger asChild>
-            <Button size="lg" className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white">
-              <PlusCircle className="mr-2 h-5 w-5" />
+            <Button variant="default" size="lg" className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900">
               {t('dashboard.emptyState.addNewTaskButton')}
             </Button>
           </DialogTrigger>
           <DialogPortal>
-            {isNewTaskOpen && (
-              <>
-                <DialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" /> 
-                <DialogContent className="fixed left-[50%] top-[50%] z-[90] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg md:w-full">
-                  <DialogHeader>
-                    <DialogTitle className="text-2xl">{t('appLayout.newTaskDialog.title')}</DialogTitle>
-                    <DialogDescription>
-                      {t('appLayout.newTaskDialog.description')}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <NewTaskDialog setOpen={setIsNewTaskOpen} />
-                </DialogContent>
-              </>
-            )}
+            <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+            <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card/90 backdrop-blur-md border-white/10 p-6 shadow-lg sm:rounded-lg z-50 sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-2xl">{t('appLayout.newTaskDialog.title')}</DialogTitle>
+                <DialogDescription>
+                  {t('appLayout.newTaskDialog.description')}
+                </DialogDescription>
+              </DialogHeader>
+              <NewTaskDialog setOpen={setIsNewTaskOpen} />
+            </DialogContent>
           </DialogPortal>
         </Dialog>
       </>
@@ -427,41 +422,41 @@ export default function Dashboard() {
         </div>
       </AnimatePresence>
 
-      {/* Floating Action Button voor nieuw taak (alleen op mobiel) */}
+      {/* Floating Action Button for new task (mobile only) */}
       <AnimatePresence>
         {showMobileActions && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="md:hidden fixed bottom-24 right-4 z-40"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-[75.4px] right-6 z-40 lg:hidden"
+            transition={{ duration: 0.2 }}
           >
             <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
               <DialogTrigger asChild>
-                <Button 
-                  variant="default"
-                  size="icon" 
-                  className="aspect-square rounded-full h-14 w-14 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white shadow-lg"
-                  aria-label={t('dashboard.emptyState.addNewTaskButton')}
-                >
-                  <PlusCircle className="h-6 w-6" />
-                </Button>
+                <div className="flex flex-col items-center cursor-pointer">
+                  <Button
+                    variant="default"
+                    size="icon"
+                    className="aspect-square rounded-full h-14 w-14 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white shadow-lg mb-1"
+                    aria-label={t('navbar.newTaskButton.ariaLabel')}
+                  >
+                    <PlusCircle className="h-7 w-7" />
+                  </Button>
+                  <span className="text-xs text-muted-foreground">{t('navbar.newTaskButton.text')}</span>
+                </div>
               </DialogTrigger>
               <DialogPortal>
-                {isNewTaskOpen && (
-                  <>
-                    <DialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" /> 
-                    <DialogContent className="fixed left-[50%] top-[50%] z-[90] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg md:w-full">
-                      <DialogHeader>
-                        <DialogTitle className="text-2xl">{t('appLayout.newTaskDialog.title')}</DialogTitle>
-                        <DialogDescription>
-                          {t('appLayout.newTaskDialog.description')}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <NewTaskDialog setOpen={setIsNewTaskOpen} />
-                    </DialogContent>
-                  </>
-                )}
+                <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card/90 backdrop-blur-md border-white/10 p-6 shadow-lg sm:rounded-lg z-[70] sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl">{t('appLayout.newTaskDialog.title')}</DialogTitle>
+                    <DialogDescription>
+                      {t('appLayout.newTaskDialog.description')}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <NewTaskDialog setOpen={setIsNewTaskOpen} />
+                </DialogContent>
               </DialogPortal>
             </Dialog>
           </motion.div>

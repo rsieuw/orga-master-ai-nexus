@@ -87,14 +87,14 @@
   - ✅ Meerdere lockfiles opgelost (`deno.lock`, `bun.lockb`).
   - 🟡 `npm audit` toont nog kwetsbaarheden (geaccepteerd risico).
   - ❌ Voer een grondigere beveiligingscheck uit (RLS, input validatie).
-- ❌ **[UI] Duidelijkere Koppeling Subtaak <-> Chat:**
-  - Verbeter de visuele link tussen geselecteerde subtaken en chatberichten.
-- ❌ **[UI] Zoekfunctie Chatgeschiedenis:**
+- ✅ **[UI] Duidelijkere Koppeling Subtaak <-> Chat:**
+  - ✅ Verbeter de visuele link tussen geselecteerde subtaken en chatberichten. (Afgerond, gecontroleerd door gebruiker)
+- ❌ **[UI] Zoekfunctie Chatgeschiedenis:** (Optioneel)
   - Voeg een zoekbalk toe aan het chatpaneel.
-- ❌ **[BUG] Hardnekkige Deno Lint Fouten Oplossen:**
+- ✅ **[BUG] Hardnekkige Deno Lint Fouten Oplossen:**
   - Onderzoek en los de terugkerende `deno-lint(no-sloppy-imports)` en missende extensie fouten op. Controleer configuraties (Deno, ESLint, Vite, TSConfig).
-- ❌ **[UI] Mobiele Weergave/Responsiviteit:**
-  - ❌ **[NIEUW]** Verbeter de weergave en bruikbaarheid op mobiele apparaten. **(Prioriteit: Hoog)**
+- ✅ **[UI] Mobiele Weergave/Responsiviteit:**
+  - ✅ **[NIEUW]** Verbeter de weergave en bruikbaarheid op mobiele apparaten. **(Prioriteit: Hoog)** (Afgerond, gecontroleerd door gebruiker)
 - ❌ **[Admin] API Management:**
   - ❌ **[NIEUW]** Gebruikers API verbruik monitor in admin dashboard.
   - ❌ **[NIEUW]** Gebruikers rate limit instellen (bv. op basis van tokens/calls per periode).
@@ -152,8 +152,8 @@
 - ✅ Admin pagina's gerefactored naar tabs.
 - ✅ OpenAI API Key input in Settings verwijderd (was niet functioneel/veilig).
 - ✅ React Hook dependency errors grotendeels opgelost (bv. in `AuthContext`, `ChatPanel`, `AdminUsersPage`).
-- 🟡 Deno Lint import fouten deels opgelost/onderdrukt, maar blijven hardnekkig (zie taak P3).
-- 🟡 **[NIEUW]** Linterfout/waarschuwing `priorityOrder` in `Dashboard.tsx` (nog open).
+- ✅ Deno Lint import fouten deels opgelost/onderdrukt, maar blijven hardnekkig (zie taak P3). (Opgelost, bevestigd door gebruiker)
+- ✅ **[NIEUW]** Linterfout/waarschuwing `priorityOrder` in `Dashboard.tsx` (nog open). (Opgelost, bevestigd door gebruiker)
 - ✅ **[NIEUW]** Supabase migratie problemen opgelost (`db push`, `db pull`, `migration repair`).
 
 ## Nieuwe Features / Grote Taken

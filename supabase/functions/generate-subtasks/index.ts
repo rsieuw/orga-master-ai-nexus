@@ -31,6 +31,7 @@ interface SubtaskSuggestion {
 // console.log("generate-subtasks function started - v2 (with context)");
 
 interface RequestBody {
+  taskId: string;
   taskTitle: string;
   taskDescription?: string;
   taskPriority?: string;
@@ -45,7 +46,8 @@ interface RequestBody {
 
 const errorMessages = {
   en: {
-    requestMissingParams: "Request body must include 'taskTitle' and 'languagePreference'.",
+    requestMissingParams: "Request body must include 'taskId', 'taskTitle' and 'languagePreference'.",
+    missingTaskId: "Task ID is missing or invalid in the request.",
     missingOpenAiKey: "OpenAI API key not found.",
     aiRequestFailed: "OpenAI API request failed.",
     aiInvalidStructure: "OpenAI response JSON does not have the expected structure.",
@@ -58,7 +60,8 @@ const errorMessages = {
     noDeadline: "No deadline provided."
   },
   nl: {
-    requestMissingParams: "Request body moet 'taskTitle' en 'languagePreference' bevatten.",
+    requestMissingParams: "Request body moet 'taskId', 'taskTitle' en 'languagePreference' bevatten.",
+    missingTaskId: "Taak-ID ontbreekt of is ongeldig in het verzoek.",
     missingOpenAiKey: "OpenAI API key niet gevonden.",
     aiRequestFailed: "OpenAI API request mislukt.",
     aiInvalidStructure: "OpenAI response JSON heeft niet de verwachte structuur.",
@@ -93,6 +96,7 @@ serve(async (req) => {
   try {
     const requestBody = await req.json() as RequestBody;
     const { 
+      taskId,
       taskTitle, 
       taskDescription, 
       taskPriority, 
@@ -105,6 +109,10 @@ serve(async (req) => {
     } = requestBody;
 
     currentLangErrorMessages = errorMessages[languagePreference as keyof typeof errorMessages] || errorMessages.en;
+
+    if (!taskId) {
+      throw new Error(currentLangErrorMessages.missingTaskId);
+    }
 
     if (!taskTitle || !languagePreference) {
       throw new Error(currentLangErrorMessages.requestMissingParams);

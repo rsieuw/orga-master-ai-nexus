@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button.tsx";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select.tsx";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu.tsx";
-import { BrainCircuit, PenSquare, Settings } from "lucide-react";
+import { BookOpen, FileText, Settings } from "lucide-react";
 import { AIModel, aiModels } from "./types.ts";
 import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip.tsx";
@@ -40,22 +40,30 @@ export function ChatControls({
         <Button 
           variant="outline" 
           size="sm" 
-          className={`gap-1 border-white/10 hover:bg-secondary bg-secondary/50 ${!hasPermission(user, 'deepResearch') ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`px-3 py-2 gap-1 hover:bg-secondary ${
+            !hasPermission(user, 'deepResearch') 
+              ? 'opacity-50 cursor-not-allowed bg-secondary/50' 
+              : 'border-0 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white'
+          }`}
           onClick={onResearch}
           disabled={isLoading || isNoteMode || !hasPermission(user, 'deepResearch')}
           title={!hasPermission(user, 'deepResearch') ? t('chatPanel.deepResearchDisabledTooltip') : t('chatPanel.deepResearchTooltip')}
         >
-          <BrainCircuit className="h-4 w-4" />
+          <BookOpen className="h-[20px] w-[20px]" />
           <span className="hidden sm:inline">{t('chatPanel.researchButton')}</span>
         </Button>
         <Button 
           variant="outline" 
           size="sm" 
-          className={`gap-1 border-white/10 hover:bg-secondary ${isNoteMode ? 'bg-yellow-600/30 border-yellow-500/50 text-yellow-300' : 'bg-secondary/50'}`}
+          className={`px-3 py-2 gap-1 border-white/10 hover:bg-secondary ${
+            isNoteMode 
+              ? 'bg-gradient-to-r from-amber-500/30 to-yellow-600/30 border-amber-500/50 text-amber-300 hover:from-amber-500/40 hover:to-yellow-600/40 hover:border-amber-500/60 hover:text-amber-200' 
+              : 'bg-secondary/50'
+          }`}
           onClick={() => setIsNoteMode(!isNoteMode)}
           disabled={isLoading}
         >
-          <PenSquare className="h-4 w-4" />
+          <FileText className="h-[18px] w-[18px]" />
           <span className="hidden sm:inline">{isNoteMode ? t('chatPanel.stopNoteButton') : t('chatPanel.newNoteButton')}</span>
         </Button>
       </div>

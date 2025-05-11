@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-// import { useNavigate } from "react-router-dom"; // Removed unused import
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
@@ -30,12 +29,11 @@ interface NewTaskDialogProps {
 }
 
 export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
-  const { createTask } = useTask();
-  // const navigate = useNavigate(); // Removed unused variable
+  const { addTask, expandTask } = useTask();
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
-  const { user } = useAuth(); // Add auth context to get user language preference
-  
+  const { user } = useAuth();
+
   // Date-fns locales mapping
   const dateLocale = i18n.language === 'nl' ? nl : enUS;
 
@@ -108,32 +106,47 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
   };
 
   // Custom submit handler for creation only
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Prepare the data specifically for the createTask function
-      // It expects Omit<Task, 'id' | 'userId' | 'createdAt' | 'subtasks'>
-      // where deadline should be string | null (or match the DB type after generation)
       const deadlineISO = deadline ? deadline.toISOString() : undefined;
-      
-      // Type assertion to ensure compatibility with createTask expectation
-      const taskData: Omit<Task, 'id' | 'userId' | 'createdAt' | 'subtasks'> = {
+      const taskData: Omit<Task, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'subtasks' | 'aiSubtaskGenerationCount'> = {
         title,
         description,
         priority,
         status,
-        deadline: deadlineISO as string, // Assert as string, Supabase handles undefined ok
+        deadline: deadlineISO as string,
       };
 
-      await createTask(taskData);
-      toast({
-        title: t('newTaskDialog.toast.taskCreatedTitle'),
-        description: t('newTaskDialog.toast.taskCreatedDescription'),
-      });
-      setOpen(false); // Close the dialog after success
+      const newTask = await addTask(taskData);
+
+      if (newTask && newTask.id && generateSubtasks) {
+        try {
+          await expandTask(newTask.id);
+          toast({
+            title: t('newTaskDialog.toast.subtasksGeneratedTitle'),
+            description: t('newTaskDialog.toast.subtasksGeneratedDescription'),
+          });
+        } catch (expandError) {
+          console.error("Fout bij genereren subtaken:", expandError);
+          toast({
+            variant: "destructive",
+            title: t('common.error'),
+            description: t('newTaskDialog.toast.subtaskGenerationFailedDescription'),
+          });
+        }
+      } else if (newTask) {
+         toast({
+           title: t('newTaskDialog.toast.taskCreatedTitle'),
+           description: t('newTaskDialog.toast.taskCreatedDescription'),
+         });
+      }
+
+      setOpen(false);
     } catch (error) {
+      console.error("Fout bij aanmaken taak:", error);
       toast({
         variant: "destructive",
         title: t('common.error'),
@@ -141,6 +154,22 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = async (event: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    if (event.ctrlKey && event.key === 'Enter') {
+      event.preventDefault();
+      if (!title.trim()) {
+        toast({
+          variant: "destructive",
+          title: t('newTaskDialog.toast.missingTitleTitle'),
+          description: t('newTaskDialog.toast.missingTitleDescription'),
+        });
+        return;
+      }
+      setGenerateSubtasks(true);
+      await handleSubmit();
     }
   };
 
@@ -154,9 +183,10 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
             id="initial-input"
             value={initialInput}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInitialInput(e.target.value)}
-            placeholder={t('newTaskDialog.initialInputPlaceholder')}
+            placeholder={t('newTaskDialog.initialInputPlaceholderNew')}
             rows={6}
             className="animated-border-textarea mb-6"
+            onKeyDown={handleKeyDown}
           />
           <div>
             <Button 
@@ -183,6 +213,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
               placeholder={t('editTaskDialog.titlePlaceholder')}
               required
+              onKeyDown={handleKeyDown}
             />
           </div>
 
@@ -194,6 +225,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
               placeholder={t('editTaskDialog.descriptionPlaceholder')}
               rows={4}
+              onKeyDown={handleKeyDown}
             />
           </div>
           

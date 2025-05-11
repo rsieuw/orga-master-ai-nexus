@@ -5,7 +5,7 @@ import { supabase } from '../integrations/supabase/client.ts';
 import { Json } from '@/types/supabase.ts';
 import { useToast } from '@/hooks/use-toast.ts';
 import { useTranslation } from 'react-i18next';
-import { MAX_AI_SUBTASK_GENERATIONS } from '@/constants/taskConstants.ts';
+import { MAX_FREE_USER_AI_SUBTASK_GENERATIONS, MAX_PAID_USER_AI_SUBTASK_GENERATIONS } from '@/constants/taskConstants.ts';
 import { 
   isToday, 
   isTomorrow, 
@@ -15,6 +15,7 @@ import {
   differenceInCalendarDays
 } from 'date-fns';
 import { TaskContext } from './TaskContext.context.ts';
+import { useAuth } from './AuthContext.tsx';
 
 interface DbTask {
   id: string;
@@ -44,6 +45,7 @@ interface DbTaskUpdate {
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const { t, i18n } = useTranslation(); 
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isGeneratingAISubtasksMap, setIsGeneratingAISubtasksMap] = useState<Record<string, boolean>>({});
@@ -158,7 +160,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     
     const { data, error } = await supabase.from('tasks').insert([dbTask]).select().single();
     if (error) throw error;
-    if (data) setTasks(prevTasks => [ ...prevTasks, mapDbTaskToTask(data as DbTask) ]);
+    if (data) {
+      const newTask = mapDbTaskToTask(data as DbTask);
+      setTasks(prevTasks => [ ...prevTasks, newTask ]);
+      return newTask;
+    }
+    return undefined;
   };
 
   const mapTaskToDbUpdate = (taskUpdates: Partial<Task>): DbTaskUpdate => {
@@ -271,7 +278,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const expandTask = async (taskId: string) => {
+    console.log('expandTask aangeroepen met taskId:', taskId);
     const task = tasks.find(t => t.id === taskId);
+    console.log('Task gevonden:', task);
     if (!task) {
       console.error(`Task with id ${taskId} not found.`);
       toast({
@@ -280,29 +289,46 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       });
       return;
     }
+
+    // Bepaal de limiet op basis van de gebruikersrol
+    const maxGenerations = getMaxAiGenerationsForUser();
+    
     const currentGenerationCount = task.aiSubtaskGenerationCount || 0;
-    if (currentGenerationCount >= MAX_AI_SUBTASK_GENERATIONS) {
+    console.log('Current generation count:', currentGenerationCount, 'Limiet:', maxGenerations);
+    
+    if (currentGenerationCount >= maxGenerations) {
+      console.log('Generatie limiet bereikt');
       toast({
         variant: "destructive",
         title: t('common.error'),
-        description: t('taskContext.aiSubtaskGenerationLimitReached', { count: currentGenerationCount, limit: MAX_AI_SUBTASK_GENERATIONS }),
+        description: t('taskContext.aiSubtaskGenerationLimitReached', { count: currentGenerationCount, limit: maxGenerations }),
       });
       return;
     }
+    
+    console.log('Markeren als genereren...');
     setIsGeneratingAISubtasks(taskId);
     try {
       const existingSubtaskTitles = task.subtasks.map(st => st.title);
+      console.log('Bestaande subtaak titels:', existingSubtaskTitles);
       const languagePreference = i18n.language.startsWith('nl') ? 'nl' : 'en';
+      console.log('Aanroepen van Supabase functie met taal:', languagePreference);
+      
+      const requestBody = {
+        taskId: task.id,
+        taskTitle: task.title,
+        taskDescription: task.description,
+        taskPriority: task.priority,
+        taskDeadline: task.deadline,
+        languagePreference: languagePreference,
+        existingSubtaskTitles: existingSubtaskTitles,
+      };
+      console.log('Request body:', requestBody);
+      
       const { data, error: functionError } = await supabase.functions.invoke('generate-subtasks', {
-        body: {
-          taskTitle: task.title,
-          taskDescription: task.description,
-          taskPriority: task.priority,
-          taskDeadline: task.deadline,
-          languagePreference: languagePreference,
-          existingSubtaskTitles: existingSubtaskTitles,
-        },
+        body: requestBody,
       });
+      console.log('Supabase functie resultaat:', data, 'Error:', functionError);
       if (functionError) throw new Error(functionError.message);
       if (data && data.subtasks && Array.isArray(data.subtasks)) {
         const newSubtasks = data.subtasks.filter(
@@ -401,6 +427,17 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     return grouped;
   }, [tasks]);
 
+  // Functies die helpen bij het beheren van de AI generatie limieten
+  const getMaxAiGenerationsForUser = useCallback(() => {
+    const isPaidUser = user?.role === 'paid' || user?.role === 'admin';
+    return isPaidUser ? MAX_PAID_USER_AI_SUBTASK_GENERATIONS : MAX_FREE_USER_AI_SUBTASK_GENERATIONS;
+  }, [user?.role]);
+
+  const isAiGenerationLimitReached = useCallback((task: Task) => {
+    const currentCount = task.aiSubtaskGenerationCount || 0;
+    return currentCount >= getMaxAiGenerationsForUser();
+  }, [getMaxAiGenerationsForUser]);
+
   const contextValue = {
     tasks,
     isLoading,
@@ -416,6 +453,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     isGeneratingSubtasksForTask,
     expandTask,
     groupTasksByDate,
+    getMaxAiGenerationsForUser,
+    isAiGenerationLimitReached,
   };
 
   return (

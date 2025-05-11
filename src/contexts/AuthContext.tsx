@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client.ts";
 import { useToast } from "@/hooks/use-toast.ts";
+import { useTranslation } from 'react-i18next';
 
 export type UserRole = "admin" | "paid" | "free";
 
@@ -11,6 +12,8 @@ export type AiMode = 'gpt4o' | 'creative' | 'precise';
 // Define possible research models - copying from Settings.tsx for now
 // Ideally, this would be defined in a shared types file
 type ResearchModel = 'perplexity-sonar' | 'gpt-4o-mini';
+
+export type LayoutPreference = '50-50' | '33-67';
 
 export interface UserProfile {
   id: string;
@@ -22,10 +25,13 @@ export interface UserProfile {
   email_notifications_enabled: boolean;
   ai_mode_preference: AiMode; // Added field using the literal type
   research_model_preference?: ResearchModel; // Add optional research model preference
+  layout_preference?: LayoutPreference;
   created_at: string;
   updated_at: string;
   status?: string;
   enabled_features: string[];
+  can_use_creative_mode?: boolean;
+  can_use_precise_mode?: boolean;
 }
 
 export interface AuthContextProps {
@@ -36,7 +42,7 @@ export interface AuthContextProps {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
-  updateUser: (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference'>>) => Promise<void>;
+  updateUser: (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference' | 'layout_preference'>>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -48,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [initialAuthCheckComplete, setInitialAuthCheckComplete] = useState<boolean>(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const logout = useCallback(async () => {
     try {
@@ -55,15 +62,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
     } catch (error: unknown) {
       console.error("Logout failed:", error);
-      const message = error instanceof Error ? error.message : "Er is iets misgegaan bij het uitloggen.";
+      const message = error instanceof Error ? error.message : t('auth.toast.logoutFailed.descriptionDefault');
       toast({
         variant: "destructive",
-        title: "Uitloggen mislukt",
+        title: t('auth.toast.logoutFailed.title'),
         description: message,
       });
       throw error;
     }
-  }, [toast]);
+  }, [toast, t]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -101,15 +108,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               console.warn('User is inactive, logging out.');
               toast({ 
                 variant: "destructive", 
-                title: "Account gedeactiveerd", 
-                description: "Dit account is momenteel niet actief."
+                title: t('auth.toast.accountDeactivated.title'), 
+                description: t('auth.toast.accountDeactivated.description')
               });
               logout(); 
               setUser(null);
             } else {
               setUser({
                 ...fullProfile,
-                role: (fullProfile.role === 'admin' || fullProfile.role === 'paid') ? fullProfile.role : 'free'
+                role: (fullProfile.role === 'admin' || fullProfile.role === 'paid') ? fullProfile.role : 'free',
+                layout_preference: fullProfile.layout_preference || '50-50',
               }); 
             }
           } else {
@@ -129,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     fetchProfile();
-  }, [session, initialAuthCheckComplete, logout, toast]);
+  }, [session, initialAuthCheckComplete, logout, toast, t]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -143,10 +151,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     } catch (error: unknown) {
       console.error("Login failed:", error);
-      const message = error instanceof Error ? error.message : "Controleer je e-mail en wachtwoord.";
+      // Prefer specific error from Supabase if available, otherwise generic translated one.
+      const specificMessage = (error instanceof Error && typeof error === 'object' && error !== null && 'status' in error && (error as { status: number }).status === 400)
+                              ? error.message
+                              : null;
+      const message = specificMessage || t('auth.toast.loginFailed.descriptionDefault'); 
       toast({
         variant: "destructive",
-        title: "Inloggen mislukt",
+        title: t('auth.toast.loginFailed.title'),
         description: message,
       });
       throw error;
@@ -167,23 +179,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (error) throw error;
       
-      toast({ title: "Registratie succesvol", description: "Controleer je e-mail om je account te bevestigen." });
+      toast({ 
+        title: t('auth.toast.registrationSuccess.title'), 
+        description: t('auth.toast.registrationSuccess.description') 
+      });
       return;
 
     } catch (error: unknown) {
       console.error("Registration failed:", error);
-      const message = error instanceof Error ? error.message : "Er is iets misgegaan bij het registreren.";
+      const message = error instanceof Error ? error.message : t('auth.toast.registrationFailed.descriptionDefault');
       toast({
         variant: "destructive",
-        title: "Registratie mislukt",
+        title: t('auth.toast.registrationFailed.title'),
         description: message,
       });
       throw error;
     }
   };
 
-  const updateUser = async (data: Partial<Pick<UserProfile, 'name' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference'>>) => {
-    if (!session?.user) {
+  const updateUser = async (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference' | 'layout_preference'>>) => {
+    if (!session || !user) {
+      console.error("Update user failed: No session or user");
       throw new Error("Gebruiker niet ingelogd");
     }
 
@@ -191,8 +207,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (data.ai_mode_preference && user?.role === 'free' && data.ai_mode_preference !== 'gpt4o') {
       toast({
         variant: "destructive",
-        title: "Update niet toegestaan",
-        description: "Gratis gebruikers kunnen alleen de 'GPT-4o (Gebalanceerd)' modus gebruiken.",
+        title: t('auth.toast.updateForbidden.title'),
+        description: t('auth.toast.updateForbidden.descriptionFreeUserAIMode'),
       });
       // Gooi een error om de rest van de functie te stoppen
       throw new Error("Invalid AI mode preference for free user."); 
@@ -209,12 +225,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       // Prepare payload for profiles table update
-      const profileUpdatePayload: Partial<Pick<UserProfile, 'name' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference'>> = {};
+      const profileUpdatePayload: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference' | 'layout_preference'>> = {};
       if (data.name !== undefined) profileUpdatePayload.name = data.name;
       if (data.language_preference !== undefined) profileUpdatePayload.language_preference = data.language_preference;
       if (data.email_notifications_enabled !== undefined) profileUpdatePayload.email_notifications_enabled = data.email_notifications_enabled;
-      if (data.ai_mode_preference !== undefined) profileUpdatePayload.ai_mode_preference = data.ai_mode_preference; // Payload contains the potentially invalid value, but validation above should catch it
+      if (data.ai_mode_preference !== undefined) profileUpdatePayload.ai_mode_preference = data.ai_mode_preference;
       if (data.research_model_preference !== undefined) profileUpdatePayload.research_model_preference = data.research_model_preference;
+      if (data.layout_preference !== undefined) profileUpdatePayload.layout_preference = data.layout_preference;
 
       // Update profiles table if there's anything to update
       if (Object.keys(profileUpdatePayload).length > 0) {
@@ -234,6 +251,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (data.email_notifications_enabled !== undefined) updatedUser.email_notifications_enabled = data.email_notifications_enabled;
           if (data.ai_mode_preference !== undefined) updatedUser.ai_mode_preference = data.ai_mode_preference as AiMode;
           if (data.research_model_preference !== undefined) updatedUser.research_model_preference = data.research_model_preference as ResearchModel;
+          if (data.layout_preference !== undefined) updatedUser.layout_preference = data.layout_preference as LayoutPreference;
           return updatedUser;
       });
       
@@ -242,8 +260,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Update user failed:", error);
       // Don't show generic toast if it was our specific validation error (already shown)
       if (!(error instanceof Error && error.message === "Invalid AI mode preference for free user.")) {
-          const message = error instanceof Error ? error.message : "Er is iets misgegaan bij het bijwerken.";
-          toast({ variant: "destructive", title: "Account bijwerken mislukt", description: message });
+          const message = error instanceof Error ? error.message : t('auth.toast.updateFailed.descriptionDefault');
+          toast({ 
+            variant: "destructive", 
+            title: t('auth.toast.updateFailed.title'), 
+            description: message 
+          });
       }
       throw error; // Re-throw error for potential higher-level handling
     }

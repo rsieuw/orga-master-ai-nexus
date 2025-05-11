@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input.tsx"; // Import Input
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select.tsx"; // Import Select
 import { UserRole } from '@/contexts/AuthContext.tsx'; // Import UserRole
 import { useTranslation } from 'react-i18next'; // Import useTranslation
+import AdminFeedbackPage from "./AdminFeedbackPage.tsx";
+import { Users, Shield, MessageSquare } from "lucide-react"; // Import icons for admin tabs
 
 const AdminDashboardPage: React.FC = () => {
   const { t } = useTranslation(); // Initialize t function
@@ -22,8 +24,18 @@ const AdminDashboardPage: React.FC = () => {
       
       <Tabs defaultValue="users" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="users" className="px-4 py-2 text-base">{t('adminDashboard.tabs.users')}</TabsTrigger>
-          <TabsTrigger value="permissions" className="px-4 py-2 text-base">{t('adminDashboard.tabs.permissions')}</TabsTrigger>
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            <span className="hidden sm:inline">{t('adminDashboard.tabs.users')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            <span className="hidden sm:inline">{t('adminDashboard.tabs.permissions')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="feedback" className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            <span className="hidden sm:inline">{t('adminDashboard.tabs.feedback', 'Berichten')}</span>
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-4">
           {/* Card wrapper for consistency */}
@@ -84,6 +96,9 @@ const AdminDashboardPage: React.FC = () => {
               <PermissionsManagementTable />
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent value="feedback" className="mt-4">
+          <AdminFeedbackPage />
         </TabsContent>
       </Tabs>
 

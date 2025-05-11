@@ -1,0 +1,20 @@
+{
+  "icons": {
+    "source": "D:/DEV/rakesh/cursor/orgamaster-ai-v2/orga-master-ai-nexus/assets/icon.png",
+    "ios": {
+      "background": "#ffffff"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foreground": "D:/DEV/rakesh/cursor/orgamaster-ai-v2/orga-master-ai-nexus/assets/icon.png",
+        "background": "#ffffff"
+      }
+    }
+  },
+  "splash": {
+    "source": "D:/DEV/rakesh/cursor/orgamaster-ai-v2/orga-master-ai-nexus/assets/splash.png",
+    "backgroundColor": "#ffffff",
+    "darkSource": "D:/DEV/rakesh/cursor/orgamaster-ai-v2/orga-master-ai-nexus/assets/splash-dark.png",
+    "darkBackgroundColor": "#121212"
+  }
+} 

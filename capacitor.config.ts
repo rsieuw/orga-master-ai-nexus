@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.orgamasterai.app',
-  appName: 'OrgaMaster AI',
+  appName: 'OrgaMaster',
   webDir: 'dist'
 };
 

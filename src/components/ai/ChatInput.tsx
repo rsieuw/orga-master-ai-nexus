@@ -37,10 +37,10 @@ export function ChatInput({
   };
 
   return (
-    <form className="p-4" onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
       <div className="relative flex items-end gap-2">
         <Textarea
-          className="chat-input flex-grow resize-none pr-10 pt-3 pb-1"
+          className="chat-input flex-grow resize-none pt-3 pb-2"
           placeholder={isNoteMode ? t('chatPanel.notePlaceholder') : t('chatPanel.messagePlaceholder')}
           value={input}
           onChange={handleInputChange}
@@ -56,14 +56,14 @@ export function ChatInput({
                 onClick={onSubmit}
                 size="icon"
                 disabled={isLoading || !input.trim()}
-                className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
+                className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
               >
                 {isLoading ? (
                   <GradientLoader size="sm" />
                 ) : isNoteMode ? (
-                  <Save className="h-4 w-4" />
+                  <Save className="h-6 w-6" />
                 ) : (
-                  <Send className="h-4 w-4" />
+                  <Send className="h-6 w-6" />
                 )}
               </Button>
             </TooltipTrigger>

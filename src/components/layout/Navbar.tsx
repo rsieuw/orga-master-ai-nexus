@@ -50,7 +50,7 @@ export default function Navbar({ openNewTaskModal }: NavbarProps) {
           {isAuthenticated ? (
             <>
               <Button 
-                className="rounded-full h-9 w-9 flex items-center justify-center p-0 sm:h-auto sm:w-auto sm:px-3 sm:py-2 sm:gap-1 md:px-6 md:gap-2 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
+                className="rounded-full md:rounded-lg h-9 w-9 flex items-center justify-center p-0 sm:h-auto sm:w-auto sm:px-3 sm:py-2 sm:gap-1 md:px-6 md:gap-2 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
                 onClick={openNewTaskModal}
                 aria-label={t('navbar.newTaskButton.ariaLabel')}
               >

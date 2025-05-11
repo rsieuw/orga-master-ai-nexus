@@ -27,7 +27,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
   const { updateTask, addSubtask, deleteSubtask, deleteAllSubtasks, updateSubtask } = useTask();
   const { messages, addMessage, updateMessage, isLoading: isLoadingMessages, error: historyError, clearHistory, deleteNote, deleteResearch, togglePinMessage } = useMessages(task?.id ?? null, task?.title ?? '', selectedSubtaskTitle ?? null);
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -199,7 +199,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     });
     addMessage(loaderMessage, false);
     try {
-      const languagePreference = user?.language_preference || 'nl';
+      const languagePreference = user?.language_preference || i18n.language || 'nl';
       const { data: researchResponseData, error: researchError } = await supabase.functions.invoke('deep-research', {
         body: { query: detailedAiPrompt, languagePreference: languagePreference, taskId: task.id },
       });
@@ -280,7 +280,16 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       const requiresResearch = researchKeywords.some(keyword => inputLower.includes(keyword));
       if (requiresSubtaskGeneration) {
         try {
-          const { data: subtaskData, error: subtaskError } = await supabase.functions.invoke('generate-subtasks', { body: { taskId: task.id } });
+          const { data: subtaskData, error: subtaskError } = await supabase.functions.invoke('generate-subtasks', { 
+            body: { 
+              taskId: task.id,
+              taskTitle: task.title,
+              taskDescription: task.description,
+              taskPriority: task.priority,
+              languagePreference: user?.language_preference || i18n.language || 'nl',
+              existingSubtaskTitles: task.subtasks?.map(st => st.title) || []
+            } 
+          });
           if (subtaskError) throw subtaskError;
           if (!subtaskData || typeof subtaskData !== 'object' || !Array.isArray(subtaskData.subtasks)) throw new Error("Invalid response structure from generate-subtasks function.");
           const existingSubtasks = task.subtasks || []; 
@@ -305,7 +314,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       setIsAiResponding(true);
       try {
         const historyToInclude = messages.filter(msg => msg.role === 'user' || (msg.role === 'assistant' && msg.messageType === 'standard')).slice(-8).map(msg => ({ role: msg.role, content: msg.content }));
-        const languagePreference = user?.language_preference || 'nl'; 
+        const languagePreference = user?.language_preference || i18n.language || 'nl'; 
         const { data: aiResponseData, error: functionError } = await supabase.functions.invoke('generate-chat-response', {
           body: { query: currentInput, mode: selectedModel, taskId: task.id, chatHistory: historyToInclude, languagePreference: languagePreference },
         });
@@ -407,14 +416,17 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         </div>
       )}
 
-      <div className="border-t border-border flex flex-col gap-2 flex-shrink-0">
-        <ChatInput 
-          onSubmit={handleSubmit} 
-          isLoading={isLoadingMessages || isResearching || isAiResponding}
-          isNoteMode={isNoteMode}
-          input={input}
-          setInput={setInput}
-        />
+      {/* Container voor ChatInput en ChatControls direct tegen de onderrand */}
+      <div className="border-t border-border flex flex-col flex-shrink-0">
+        <div className="px-4 pt-2 pb-2">
+          <ChatInput 
+            onSubmit={handleSubmit} 
+            isLoading={isLoadingMessages || isResearching || isAiResponding}
+            isNoteMode={isNoteMode}
+            input={input}
+            setInput={setInput}
+          />
+        </div>
         <ChatControls
           isNoteMode={isNoteMode}
           setIsNoteMode={setIsNoteMode}

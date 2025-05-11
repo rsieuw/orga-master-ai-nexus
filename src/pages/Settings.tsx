@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { useToast } from "@/hooks/use-toast.ts";
-import { Settings, User, Palette, Languages } from "lucide-react";
+import { Settings, User, Palette, Languages, Brain } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import {
   Drawer,
@@ -30,6 +30,9 @@ import {
 } from "@/components/ui/drawer.tsx";
 import { Loader } from "@/components/ui/loader.tsx";
 import { useTranslation } from 'react-i18next';
+import type { LayoutPreference } from "@/contexts/AuthContext.tsx";
+import { cn } from "@/lib/utils.ts";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group.tsx";
 
 // Define possible research models - use consistent identifiers with backend
 type ResearchModel = 'perplexity-sonar' | 'gpt-4o-mini';
@@ -50,13 +53,16 @@ export default function SettingsPage() {
   const [isSavingNotifications, setIsSavingNotifications] = useState(false);
   const [selectedAiMode, setSelectedAiMode] = useState<AiMode>('precise');
   const [isSavingAiMode, setIsSavingAiMode] = useState(false);
-  const [researchModelPreference, setResearchModelPreference] = useState<ResearchModel>('perplexity-sonar'); // Add state for research model
-  const [isSavingResearchModel, setIsSavingResearchModel] = useState(false); // Add loading state for research model
+  const [researchModelPreference, setResearchModelPreference] = useState<ResearchModel>('perplexity-sonar');
+  const [isSavingResearchModel, setIsSavingResearchModel] = useState(false);
   const { toast } = useToast();
+  const [layoutPreference, setLayoutPreference] = useState<LayoutPreference>('50-50');
 
   // State for account form
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
+  const [initialLanguageSet, setInitialLanguageSet] = useState(false);
+  const [toastLanguage, setToastLanguage] = useState<string | null>(null);
 
   // Initialize form state when user data is available
   useEffect(() => {
@@ -67,9 +73,39 @@ export default function SettingsPage() {
       setEmailNotifications(user.email_notifications_enabled ?? true);
       setSelectedAiMode(user.ai_mode_preference || 'precise');
       // Initialize research model preference - use a default if not set
-      setResearchModelPreference(user.research_model_preference || 'perplexity-sonar'); 
+      setResearchModelPreference(user.research_model_preference || 'perplexity-sonar');
+      setLayoutPreference(user.layout_preference || '50-50'); // Initialize layout preference
     }
   }, [user]);
+
+  useEffect(() => {
+    if (i18n.isInitialized) {
+        setInitialLanguageSet(true);
+    }
+  }, [i18n.isInitialized]);
+
+  // New useEffect to show toast AFTER language change is fully processed and component re-rendered
+  useEffect(() => {
+    if (toastLanguage && toastLanguage === i18n.language && initialLanguageSet) {
+      const toastTitle = t('settings.toast.uiLanguageChanged.title');
+      let toastDescription: string;
+
+      if (i18n.language === 'nl') {
+        toastDescription = "Interfacetaal is ingesteld op Nederlands.";
+      } else if (i18n.language === 'en') {
+        toastDescription = "Interface language has been set to English.";
+      } else {
+        // Fallback in case of an unexpected language code, though unlikely with current setup
+        toastDescription = t('settings.toast.uiLanguageChanged.description', { language: i18n.language });
+      }
+      
+      toast({
+        title: toastTitle,
+        description: toastDescription,
+      });
+      setToastLanguage(null); // Reset trigger
+    }
+  }, [i18n.language, toastLanguage, t, toast, initialLanguageSet]); 
 
   const handleAiLanguageChange = async (value: string) => {
     setAiLanguage(value);
@@ -91,13 +127,11 @@ export default function SettingsPage() {
     }
   };
 
-  const handleUiLanguageChange = (newLang: string) => {
-    i18n.changeLanguage(newLang);
-    const languageName = newLang === 'nl' ? t('settings.language.dutch') : t('settings.language.english');
-    toast({
-        title: t('settings.toast.uiLanguageChanged.title'),
-        description: t('settings.toast.uiLanguageChanged.description', { language: languageName }),
-      });
+  const handleUiLanguageChange = async (newLang: string) => {
+    if (i18n.language !== newLang) { // Only trigger if language actually changes
+      await i18n.changeLanguage(newLang);
+      setToastLanguage(newLang); // Set trigger for the useEffect to show the toast
+    }
   };
 
   const handleToggleNotifications = async (checked: boolean) => {
@@ -171,34 +205,53 @@ export default function SettingsPage() {
     }
   };
 
-  // Handler for research model change
-  const handleResearchModelChange = async (value: string) => {
-    const newMode = value as ResearchModel;
+  // Handle research model change
+  const handleResearchModelChange = async (value: ResearchModel) => {
+    if (user?.research_model_preference === value && researchModelPreference === value) return;
+
     setIsSavingResearchModel(true);
-    const originalMode = researchModelPreference;
-    setResearchModelPreference(newMode);
+    const originalModel = researchModelPreference;
+    setResearchModelPreference(value);
 
     try {
-      await updateUser({ research_model_preference: newMode }); 
-      // Use i18n keys for the modeLabel
-      const modeLabelKey = newMode === 'perplexity-sonar' 
-        ? 'settings.researchModel.perplexitySonar' 
+      await updateUser({ research_model_preference: value });
+      const modeLabelKey = value === 'perplexity-sonar'
+        ? 'settings.researchModel.perplexitySonar'
         : 'settings.researchModel.gpt4oMini';
-      
+      const modeLabel = t(modeLabelKey);
       toast({
         title: t('settings.toast.researchModelSaved.title'),
-        description: t('settings.toast.researchModelSaved.description', { modeLabel: t(modeLabelKey) })
+        description: t('settings.toast.researchModelSaved.description', { modeLabel }),
       });
     } catch (error) {
-      setResearchModelPreference(originalMode);
-      console.error("Failed to update research model preference:", error);
+      setResearchModelPreference(originalModel);
       toast({
         variant: "destructive",
         title: t('settings.toast.errorSavingResearchModel.title'),
-        description: t('settings.toast.errorSavingResearchModel.description'),
+        description: t('settings.toast.errorSavingResearchModel.description')
       });
     } finally {
       setIsSavingResearchModel(false);
+    }
+  };
+
+  // Handle layout preference change
+  const handleLayoutPreferenceChange = async (value: LayoutPreference) => {
+    const originalLayout = layoutPreference;
+    setLayoutPreference(value);
+    try {
+      await updateUser({ layout_preference: value });
+      toast({
+        title: t('settings.toast.layoutPreferenceSaved.title'),
+        description: t('settings.toast.layoutPreferenceSaved.description')
+      });
+    } catch (error) {
+      setLayoutPreference(originalLayout);
+      toast({
+        variant: "destructive",
+        title: t('settings.toast.errorSavingLayoutPreference.title'),
+        description: t('settings.toast.errorSavingLayoutPreference.description')
+      });
     }
   };
 
@@ -208,28 +261,28 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
       </div>
 
-      <Tabs defaultValue="appearance" className="space-y-6">
+      <Tabs defaultValue="account" className="space-y-6">
         <div className="max-w-3xl mx-auto">
           <TabsList className="grid w-full grid-cols-5 mb-4">
-            <TabsTrigger value="appearance" className="flex items-center gap-2">
-              <Palette className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('settings.tabs.appearance')}</span>
-            </TabsTrigger>
             <TabsTrigger value="account" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('settings.tabs.account')}</span>
+              <User className="h-5 w-5" />
+              {t('settings.tabs.account')}
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="flex items-center gap-2">
+              <Palette className="h-5 w-5" />
+              {t('settings.tabs.appearance')}
             </TabsTrigger>
             <TabsTrigger value="language" className="flex items-center gap-2">
-              <Languages className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('settings.tabs.language')}</span>
+              <Languages className="h-5 w-5" />
+              {t('settings.tabs.language')}
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('settings.tabs.notifications')}</span>
+              <Settings className="h-5 w-5" />
+              {t('settings.tabs.notifications')}
             </TabsTrigger>
             <TabsTrigger value="ai" className="flex items-center gap-2">
-              <Languages className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('settings.tabs.ai')}</span>
+              <Brain className="h-5 w-5" />
+              {t('settings.tabs.ai')}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -255,6 +308,45 @@ export default function SettingsPage() {
                   aria-label={t('settings.theme.toggleAriaLabel')}
                 />
               </div>
+
+              {/* Desktop Layout Preference Section */}
+              <div className="pt-4 border-t border-border/10">
+                <Label className="text-base">{t('settings.desktopLayout.label')}</Label>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {t('settings.desktopLayout.description')}
+                </p>
+                <div className="flex space-x-4 items-center pt-2">
+                  {/* Visual Layout Option: 50-50 */}
+                  <div
+                    onClick={() => handleLayoutPreferenceChange('50-50')}
+                    className={cn(
+                      "cursor-pointer p-3 border-2 rounded-lg transition-all",
+                      layoutPreference === '50-50' ? "border-primary bg-primary/10" : "border-border hover:border-muted-foreground/70"
+                    )}
+                  >
+                    <div className="flex w-24 h-16 bg-muted rounded overflow-hidden items-center justify-center">
+                      <div className="w-1/2 h-full bg-muted-foreground/30"></div>
+                      <div className="w-1/2 h-full bg-muted-foreground/50"></div>
+                    </div>
+                    <p className="text-xs text-center mt-2">{t('settings.desktopLayout.option5050')}</p>
+                  </div>
+
+                  {/* Visual Layout Option: 33-67 */}
+                  <div
+                    onClick={() => handleLayoutPreferenceChange('33-67')}
+                    className={cn(
+                      "cursor-pointer p-3 border-2 rounded-lg transition-all",
+                      layoutPreference === '33-67' ? "border-primary bg-primary/10" : "border-border hover:border-muted-foreground/70"
+                    )}
+                  >
+                    <div className="flex w-24 h-16 bg-muted rounded overflow-hidden items-center justify-center">
+                      <div className="w-1/3 h-full bg-muted-foreground/30"></div>
+                      <div className="w-2/3 h-full bg-muted-foreground/50"></div>
+                    </div>
+                    <p className="text-xs text-center mt-2">{t('settings.desktopLayout.option3367')}</p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -277,7 +369,7 @@ export default function SettingsPage() {
               <div className="flex justify-center pt-4"> 
                 <Button 
                   variant="outline"
-                  className="w-full"
+                  className="w-full h-12"
                   onClick={handleSaveAccount}
                 >
                   {t('settings.account.saveButton')}
@@ -412,27 +504,28 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 mt-1 md:mt-0">
-                  <Select 
+                  <RadioGroup 
                     value={researchModelPreference} 
                     onValueChange={handleResearchModelChange}
-                    disabled={isSavingResearchModel || user?.role === 'free'}
+                    disabled={isSavingResearchModel}
                   >
-                    <SelectTrigger id="research-model-select" className="w-full md:w-48">
-                      <SelectValue placeholder={t('settings.researchModel.placeholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="perplexity-sonar">{t('settings.researchModel.perplexitySonar')}</SelectItem>
-                      <SelectItem value="gpt-4o-mini">{t('settings.researchModel.gpt4oMini')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {isSavingResearchModel && <Loader size="sm" />} 
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="perplexity-sonar" id="perplexity-sonar" />
+                      <Label htmlFor="perplexity-sonar" className="font-normal">{t('settings.researchModel.perplexitySonar')}</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="gpt-4o-mini" id="gpt-4o-mini" />
+                      <Label htmlFor="gpt-4o-mini" className="font-normal">{t('settings.researchModel.gpt4oMini')}</Label>
+                    </div>
+                  </RadioGroup>
+                  {isSavingResearchModel && <Loader size="sm" className="ml-2 mt-2" />}
                 </div>
               </div>
 
               <div className="pt-4 border-t border-border/10">
                 <Drawer>
                   <DrawerTrigger asChild>
-                    <Button variant="outline" className="w-full">{t('settings.aiModelConfig.button')}</Button>
+                    <Button variant="outline" className="w-full h-12">{t('settings.aiModelConfig.button')}</Button>
                   </DrawerTrigger>
                   <DrawerContent>
                     <DrawerHeader>
@@ -466,11 +559,11 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <DrawerFooter>
-                      <Button className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white">
+                      <Button className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white h-12">
                         {t('settings.aiModelConfig.saveButton')}
                       </Button>
                       <DrawerClose asChild>
-                        <Button variant="outline">{t('settings.aiModelConfig.cancelButton')}</Button>
+                        <Button variant="outline" className="h-12">{t('settings.aiModelConfig.cancelButton')}</Button>
                       </DrawerClose>
                     </DrawerFooter>
                   </DrawerContent>

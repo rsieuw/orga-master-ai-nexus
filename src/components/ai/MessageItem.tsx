@@ -30,7 +30,7 @@ export function MessageItem({
   const { t } = useTranslation();
   
   // Define container classes based on message role
-  const messageContainerClasses = `group flex items-start gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`;
+  const messageContainerClasses = `group/message flex items-start gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`;
   
   // Define Markdown components for rendering
   const markdownComponents: Partial<Components> = {
@@ -134,7 +134,7 @@ export function MessageItem({
         {/* Wrapper for action buttons and timestamp at the bottom */}      
         <div className="flex items-center justify-end mt-1 space-x-1 relative">
           {/* Action buttons container */} 
-          <div className={`flex items-center gap-0.5 opacity-0 group-hover:opacity-75 transition-opacity duration-200 order-1`}>
+          <div className={`flex items-center gap-0.5 opacity-0 group-hover/message:opacity-75 transition-opacity duration-200 order-1`}>
             {message.messageType === 'note_saved' && message.dbId && onDeleteNote && (
               <Button
                 variant="ghost"

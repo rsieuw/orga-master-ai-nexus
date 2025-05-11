@@ -75,17 +75,14 @@ The user wants a thorough investigation.
 `;
     }
 
-    systemContent += `
-**Instructions for the research output:**
-Please provide a comprehensive overview addressing the following points. Adapt the level of detail for a general user, focusing on practically applicable information.
-1. Optimal approach and methodology for this specific task.
-2. Necessary tools, resources, or techniques.
-3. Step-by-step instructions for effective execution.
-4. Time-saving strategies and best practices.
-5. Common challenges and solutions.
-6. Relevant experts or sources for further exploration.
+    // Dynamische instructie voor bronnensectie
+    if (languagePreference === 'nl') {
+      systemContent += `\nSluit af met een sectie genaamd "Bronnen". Zet hieronder een genummerde lijst van de gebruikte bronnen. Gebruik de paginatitel als klikbare linktekst en link naar de volledige URL.\n`;
+    } else {
+      systemContent += `\nConclude with a section named "Sources". Below this, provide a numbered list of the used sources. Use the page title as the clickable link text and link to the full URL.\n`;
+    }
 
-Respond in ${languagePreference === 'nl' ? 'Dutch' : 'English'}.`;
+    systemContent += `\n**Instructions for the research output:**\nPlease provide a comprehensive overview addressing the following points. Adapt the level of detail for a general user, focusing on practically applicable information.\n1. Optimal approach and methodology for this specific task.\n2. Necessary tools, resources, or techniques.\n3. Step-by-step instructions for effective execution.\n4. Time-saving strategies and best practices.\n5. Common challenges and solutions.\n6. Relevant experts or sources for further exploration.\n\nRespond in ${languagePreference === 'nl' ? 'Dutch' : 'English'}.`;
     // ---> END MODIFICATION <---
 
     const messages = [

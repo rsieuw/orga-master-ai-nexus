@@ -20,16 +20,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.tsx";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast.ts";
 import { format } from "date-fns";
 import { TaskPriority, TaskStatus } from "@/types/task.ts";
+import { useTranslation } from 'react-i18next';
 
 export default function TaskForm() {
   const { id } = useParams<{ id: string }>();
-  const { getTaskById, updateTask, suggestPriority } = useTask();
+  const { getTaskById, updateTask } = useTask();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -39,7 +41,6 @@ export default function TaskForm() {
     format(new Date(), "yyyy-MM-dd'T'HH:mm")
   );
   const [isLoading, setIsLoading] = useState(false);
-  const [isAiSuggesting, setIsAiSuggesting] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -52,49 +53,29 @@ export default function TaskForm() {
       setDescription(task.description);
       setPriority(task.priority);
       setStatus(task.status);
-      setDeadline(format(new Date(task.deadline), "yyyy-MM-dd'T'HH:mm"));
+      if (task.deadline) {
+        setDeadline(format(new Date(task.deadline), "yyyy-MM-dd'T'HH:mm"));
+      } else {
+        setDeadline(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+      }
     } else {
-      toast({ variant: "destructive", title: "Fout", description: "Taak niet gevonden" });
+      toast({ 
+        variant: "destructive", 
+        title: t('taskForm.toast.taskNotFound.title'), 
+        description: t('taskForm.toast.taskNotFound.description') 
+      });
       navigate("/");
     }
-  }, [id, getTaskById, navigate, toast]);
-
-  const handleGetAIPrioritySuggestion = async () => {
-    if (!title) {
-      toast({
-        variant: "destructive",
-        title: "Titel ontbreekt",
-        description: "Vul eerst een titel in voor een AI suggestie",
-      });
-      return;
-    }
-
-    setIsAiSuggesting(true);
-    try {
-      const suggestedPriority = await suggestPriority(title, description);
-      setPriority(suggestedPriority);
-      toast({
-        title: "AI Suggestie",
-        description: `De AI stelt voor om prioriteit "${
-          suggestedPriority === "high" ? "Hoog" : 
-          suggestedPriority === "medium" ? "Middel" : "Laag"
-        }" toe te kennen.`,
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Suggestie mislukt",
-        description: "Kon geen prioriteit suggestie genereren",
-      });
-    } finally {
-      setIsAiSuggesting(false);
-    }
-  };
+  }, [id, getTaskById, navigate, toast, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) {
-      toast({ variant: "destructive", title: "Fout", description: "Ongeldig taak ID" });
+      toast({ 
+        variant: "destructive", 
+        title: t('taskForm.toast.invalidTaskId.title'), 
+        description: t('taskForm.toast.invalidTaskId.description') 
+      });
       return;
     }
     setIsLoading(true);
@@ -110,15 +91,15 @@ export default function TaskForm() {
 
       await updateTask(id, taskData);
       toast({
-        title: "Taak bijgewerkt",
-        description: "De taak is succesvol bijgewerkt",
+        title: t('taskForm.toast.taskUpdated.title'),
+        description: t('taskForm.toast.taskUpdated.description'),
       });
       navigate("/");
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Fout",
-        description: "De taak kon niet worden bijgewerkt",
+        title: t('taskForm.toast.updateFailed.title'),
+        description: t('taskForm.toast.updateFailed.description'),
       });
     } finally {
       setIsLoading(false);
@@ -130,34 +111,34 @@ export default function TaskForm() {
       <div className="mb-4">
         <Button variant="ghost" onClick={() => navigate(-1)}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Terug
+          {t('taskForm.backButton')}
         </Button>
       </div>
 
       <Card className="max-w-3xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl">Taak bewerken</CardTitle>
+          <CardTitle className="text-2xl">{t('taskForm.title')}</CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="title">Titel</Label>
+              <Label htmlFor="title">{t('taskForm.labels.title')}</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Taak titel"
+                placeholder={t('taskForm.placeholders.title')}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Beschrijving</Label>
+              <Label htmlFor="description">{t('taskForm.labels.description')}</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Beschrijf de taak..."
+                placeholder={t('taskForm.placeholders.description')}
                 rows={4}
               />
             </div>
@@ -165,54 +146,43 @@ export default function TaskForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="priority">Prioriteit</Label>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={handleGetAIPrioritySuggestion}
-                    disabled={isAiSuggesting}
-                    className="h-8"
-                  >
-                    <Sparkles className="mr-2 h-3 w-3" />
-                    AI Suggestie
-                  </Button>
+                  <Label htmlFor="priority">{t('taskForm.labels.priority')}</Label>
                 </div>
                 <Select
                   value={priority}
                   onValueChange={(value) => setPriority(value as TaskPriority)}
                 >
                   <SelectTrigger id="priority">
-                    <SelectValue placeholder="Selecteer prioriteit" />
+                    <SelectValue placeholder={t('taskForm.placeholders.selectPriority')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="high">Hoog</SelectItem>
-                    <SelectItem value="medium">Middel</SelectItem>
-                    <SelectItem value="low">Laag</SelectItem>
+                    <SelectItem value="high">{t('common.high')}</SelectItem>
+                    <SelectItem value="medium">{t('common.medium')}</SelectItem>
+                    <SelectItem value="low">{t('common.low')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">{t('taskForm.labels.status')}</Label>
                 <Select
                   value={status}
                   onValueChange={(value) => setStatus(value as TaskStatus)}
                 >
                   <SelectTrigger id="status">
-                    <SelectValue placeholder="Selecteer status" />
+                    <SelectValue placeholder={t('taskForm.placeholders.selectStatus')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="todo">Te doen</SelectItem>
-                    <SelectItem value="in_progress">In behandeling</SelectItem>
-                    <SelectItem value="done">Voltooid</SelectItem>
+                    <SelectItem value="todo">{t('common.todo')}</SelectItem>
+                    <SelectItem value="in_progress">{t('common.in_progress')}</SelectItem>
+                    <SelectItem value="done">{t('common.done')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="deadline">Deadline</Label>
+              <Label htmlFor="deadline">{t('taskForm.labels.deadline')}</Label>
               <Input
                 id="deadline"
                 type="datetime-local"
@@ -224,7 +194,7 @@ export default function TaskForm() {
           </CardContent>
           <CardFooter className="flex justify-end">
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Bijwerken..." : "Taak bijwerken"}
+              {isLoading ? t('taskForm.buttons.updating') : t('taskForm.buttons.updateTask')}
             </Button>
           </CardFooter>
         </form>

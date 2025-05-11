@@ -64,16 +64,14 @@ export default function TaskCard({ task }: TaskCardProps) {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center cursor-default">
-                        <CheckSquare className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground min-w-[35px]">
+                        <CheckSquare className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">
                           {completedSubtasks}/{totalSubtasks}
                         </span>
-                        <div className="flex items-center w-full">
-                          <GradientProgress value={progressValue} className="h-1.5 w-16 lg:w-28 ml-1.5" />
-                          <span className="text-xs text-muted-foreground ml-1.5 min-w-[40px]">
-                            {Math.round(progressValue)}%
-                          </span>
-                        </div>
+                        <GradientProgress value={progressValue} className="h-1 w-16 lg:w-32 ml-2" />
+                        <span className="text-xs text-muted-foreground/90 ml-2">
+                          ({Math.round(progressValue)}%)
+                        </span>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent className="bg-popover/90 backdrop-blur-lg">

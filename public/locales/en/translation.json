@@ -96,6 +96,12 @@
       "saveButton": "Save",
       "cancelButton": "Cancel"
     },
+    "desktopLayout": {
+      "label": "Interface Layout (Desktop)",
+      "description": "Choose the default arrangement for the task detail and chat window on desktop.",
+      "option5050": "Balanced (50% / 50%)",
+      "option3367": "Chat Focused (33% / 67%)"
+    },
     "toast": {
       "aiLanguageChanged": {
         "title": "AI Language Changed",
@@ -145,7 +151,11 @@
       },
       "copiedToClipboard": "Copied to clipboard!",
       "genericErrorTitle": "Error",
-      "genericErrorDescription": "Something went wrong. Please try again later."
+      "genericErrorDescription": "Something went wrong. Please try again later.",
+      "layoutPreferenceSaved": {
+        "title": "Layout Preference Saved",
+        "description": "Your interface layout preference has been saved."
+      }
     }
   },
   "profile": {
@@ -175,7 +185,8 @@
     "title": "Admin Dashboard",
     "tabs": {
       "users": "Users",
-      "permissions": "Permissions"
+      "permissions": "Permissions",
+      "feedback": "Feedback"
     },
     "users": {
       "title": "User Management",
@@ -230,6 +241,14 @@
     "loading": "Loading users...",
     "errorMessage": "Error: {{error}}",
     "noUsersFound": "No users found matching the criteria.",
+    "tableHeaders": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "created_at": "Registered At",
+      "actions": "Actions"
+    },
     "table": {
       "name": "Name",
       "email": "Email",
@@ -354,7 +373,7 @@
   "navbar": {
     "newTaskButton": {
       "ariaLabel": "Create new task",
-      "text": "New Task"
+      "text": "Generate Tasks"
     },
     "userMenu": {
       "defaultUserName": "User",
@@ -514,21 +533,26 @@
     "noDescription": "No description",
     "noSubtasks": "No subtasks",
     "addSubtask": {
-      "titleDesktopSR": "New subtask title (desktop)",
-      "placeholder": "New subtask title",
+      "titleDesktopSR": "Title for new subtask (desktop)",
+      "titleMobileSR": "Title for new subtask (mobile)",
+      "placeholder": "Add a new subtask...",
+      "placeholderMobile": "New subtask...",
       "saveAriaLabel": "Save subtask",
-      "buttonText": "Add subtask",
-      "titleMobileSR": "New subtask title (mobile)",
-      "placeholderMobile": "New subtask title...",
-      "buttonAriaLabel": "Add subtask",
-      "tooltip": "Add subtask"
+      "buttonText": "Add Subtask",
+      "buttonAriaLabel": "Add new subtask",
+      "tooltip": "Add a new subtask to this main task.",
+      "fabText": "New subtask"
     },
     "generateSubtasks": {
       "buttonText": "Generate Subtasks",
       "confirmButton": "Yes, generate subtasks",
       "tooltip": "Generate subtasks (AI)",
-      "limitReachedTooltip": "AI generation limit reached ({{count}}/{{limit}})"
-    }
+      "limitReachedTooltip": "AI generation limit reached ({{count}}/{{limit}})",
+      "fabText": "Generate Tasks",
+      "buttonAriaLabel": "Generate subtasks with AI"
+    },
+    "collapseDescription": "Collapse task details",
+    "expandDescription": "Expand task details"
   },
   "common": {
     "cancel": "Cancel",
@@ -617,16 +641,91 @@
     },
     "account": {
       "title": "Account Settings",
-      "description": "Manage your account details.",
-      "username": "Username",
-      "email": "Email Address",
-      "changePassword": "Change Password",
-      "currentPassword": "Current Password",
-      "newPassword": "New Password",
-      "confirmNewPassword": "Confirm New Password",
-      "updatePasswordButton": "Update Password",
-      "passwordUpdateSuccess": "Password updated successfully.",
-      "passwordUpdateError": "Error updating password."
+      "description": "Manage your account details and preferences.",
+      "form": {
+        "nameLabel": "Name",
+        "namePlaceholder": "Your full name",
+        "emailLabel": "Email Address",
+        "emailPlaceholder": "your@email.com",
+        "saveButton": "Save Changes",
+        "passwordChangeLabel": "Change Password",
+        "currentPasswordLabel": "Current Password",
+        "newPasswordLabel": "New Password",
+        "confirmNewPasswordLabel": "Confirm New Password",
+        "updatePasswordButton": "Update Password",
+        "deleteAccountLabel": "Delete Account",
+        "deleteAccountWarning": "This action cannot be undone. All data will be permanently deleted.",
+        "deleteAccountButton": "Delete Account Permanently",
+        "confirmDeleteInputLabel": "Type 'DELETE' to confirm",
+        "confirmDeleteButton": "I understand, delete my account"
+      },
+      "language": {
+        "label": "Interface Language",
+        "dutch": "Dutch",
+        "english": "English"
+      },
+      "theme": {
+        "label": "Theme",
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System",
+        "toggleAriaLabel": "Toggle light/dark theme"
+      },
+      "desktopLayout": {
+        "label": "Interface Layout (Desktop)",
+        "description": "Choose the default arrangement for the task detail and chat window on desktop.",
+        "option5050": "Balanced (50% / 50%)",
+        "option3367": "Chat Focused (33% / 67%)"
+      },
+      "notifications": {
+        "label": "Email Notifications",
+        "description": "Receive emails for approaching deadlines."
+      },
+      "toast": {
+        "accountUpdated": "Account details updated.",
+        "passwordUpdated": "Password successfully updated.",
+        "errorSaving": "Error saving. Please try again.",
+        "uiLanguageChanged": {
+          "title": "Interface Language Changed",
+          "description": "Interface language has been set to {{language}}."
+        },
+        "layoutPreferenceSaved": {
+          "title": "Layout Preference Saved",
+          "description": "Your interface layout preference has been saved."
+        },
+        "errorSavingLayoutPreference": {
+          "title": "Error Saving Layout",
+          "description": "Could not save layout preference. Please try again."
+        },
+        "aiModeSaved": {
+          "title": "AI Mode Saved",
+          "description": "Default AI mode set to: {modeLabel}."
+        },
+        "errorSavingAiMode": {
+          "title": "Error Saving AI Mode",
+          "description": "Could not save AI mode preference."
+        },
+        "researchModelSaved": {
+          "title": "Research Model Saved",
+          "description": "Default research model set to: {modeLabel}."
+        },
+        "errorSavingResearchModel": {
+          "title": "Error Saving Research Model",
+          "description": "Could not save research model preference."
+        },
+        "notificationsSaved": {
+          "title": "Notification Preference Saved",
+          "descriptionEnabled": "Email notifications have been enabled.",
+          "descriptionDisabled": "Email notifications have been disabled."
+        },
+        "errorSavingNotifications": {
+          "title": "Error Saving Notifications",
+          "description": "Could not save notification preferences."
+        },
+        "copiedToClipboard": "Copied to clipboard!",
+        "genericErrorTitle": "Error",
+        "genericErrorDescription": "Something went wrong. Please try again later."
+      }
     },
     "language": {
       "title": "Language Settings",
@@ -849,20 +948,25 @@
   },
   "newTaskDialog": {
     "toast": {
-      "missingInputTitle": "Input missing",
-      "missingInputDescription": "Please fill in the 'Describe your task or idea' field first.",
-      "generationFailedTitle": "Generation failed",
-      "generationFailedDescriptionDefault": "An error occurred.",
-      "detailsGeneratedTitle": "Task details generated",
-      "detailsGeneratedDescription": "The title and description have been filled in. You can now adjust them.",
+      "missingInputTitle": "Input Required",
+      "missingInputDescription": "Please enter an idea or task description to generate details.",
+      "generationFailedTitle": "Generation Failed",
+      "generationFailedDescriptionDefault": "An unknown error occurred during generation.",
+      "detailsGeneratedTitle": "Details Generated",
+      "detailsGeneratedDescription": "The AI has filled in the task details. Review and adjust as needed.",
       "taskCreatedTitle": "Task Created",
       "taskCreatedDescription": "The new task has been successfully created.",
-      "createTaskFailedDescription": "The task could not be created."
+      "createTaskFailedDescription": "There was an error creating the task. Please try again later.",
+      "missingTitleTitle": "Title Missing",
+      "missingTitleDescription": "Please enter a title for the task.",
+      "subtasksGeneratedTitle": "Subtasks Generated",
+      "subtasksGeneratedDescription": "The AI has successfully generated subtasks.",
+      "subtaskGenerationFailedDescription": "The AI could not generate subtasks. Please try again later."
     },
     "errors": {
-      "unexpectedAIResponse": "Unexpected response from AI service."
+      "unexpectedAIResponse": "Unexpected response from AI."
     },
-    "initialInputPlaceholder": "Describe your task or idea, e.g., Organize a team lunch for next Friday...",
+    "initialInputPlaceholderNew": "Describe your task or idea, e.g., Organize a team lunch for next Friday...",
     "generatingButton": "Generating...",
     "generateDetailsButton": "Generate Task Details",
     "generateSubtasksLabel": "Automatically generate subtasks (AI)",
@@ -914,7 +1018,8 @@
     "internal": {
       "generateTaskDetails": "Internal server error while generating task details."
     },
-    "taskIdMissing": "Task ID is missing, cannot perform action."
+    "taskIdMissing": "Task ID is missing, cannot perform action.",
+    "unexpectedAIResponse": "Unexpected response from AI."
   },
   "success": {
     "researchSaved": "Research saved successfully!"
@@ -960,5 +1065,114 @@
     "aiSubtaskGenerationFailed": "Failed to generate AI subtasks.",
     "aiSubtasksGeneratedSuccessfully": "AI subtasks generated successfully.",
     "errorUpdatingTaskGenerationCount": "Failed to update AI generation count for the task."
+  },
+  "auth": {
+    "toast": {
+      "logoutFailed": {
+        "title": "Logout Failed",
+        "descriptionDefault": "Something went wrong during logout. Please try again."
+      },
+      "loginFailed": {
+        "title": "Login Failed",
+        "descriptionDefault": "Please check your email and password and try again."
+      },
+      "registrationSuccess": {
+        "title": "Registration Successful",
+        "description": "Please check your email to confirm your account."
+      },
+      "registrationFailed": {
+        "title": "Registration Failed",
+        "descriptionDefault": "Something went wrong during registration. Please try again later."
+      },
+      "updateForbidden": {
+        "title": "Update Not Allowed",
+        "descriptionFreeUserAIMode": "Free users can only use the 'GPT-4o (Balanced)' mode."
+      },
+      "updateFailed": {
+        "title": "Account Update Failed",
+        "descriptionDefault": "Something went wrong while updating your account. Please try again."
+      },
+      "accountDeactivated": {
+        "title": "Account Deactivated",
+        "description": "This account is currently not active. Please contact support for more information."
+      }
+    }
+  },
+  "adminFeedbackPage": {
+    "title": "Feedback Messages",
+    "description": "Overview of feedback received via the contact form.",
+    "noFeedback": "No feedback received yet.",
+    "tableHeaders": {
+      "date": "Date",
+      "user": "User",
+      "subject": "Subject",
+      "message": "Message",
+      "status": "Status",
+      "important": "Important",
+      "actions": "Actions"
+    },
+    "actions": {
+      "handled": "Mark as Handled",
+      "read": "Mark as Read",
+      "markImportant": "Mark as Important",
+      "unmarkImportant": "Unmark as Important"
+    },
+    "statusValues": {
+        "read": "Read",
+        "unread": "Unread",
+        "handled": "Handled"
+    }
+  },
+  "taskForm": {
+    "title": "Edit Task",
+    "backButton": "Back",
+    "labels": {
+        "title": "Title",
+        "description": "Description",
+        "priority": "Priority",
+        "status": "Status",
+        "deadline": "Deadline"
+    },
+    "placeholders": {
+      "title": "Task title",
+      "description": "Describe the task...",
+      "selectPriority": "Select priority",
+      "selectStatus": "Select status"
+    },
+    "buttons": {
+      "aiSuggestion": "AI Suggestion",
+      "updateTask": "Update Task",
+      "updating": "Updating..."
+    },
+    "toast": {
+      "taskNotFound": {
+        "title": "Error",
+        "description": "Task not found. You will be redirected."
+      },
+      "titleMissingForAISuggestion": {
+        "title": "Title Missing",
+        "description": "Please enter a title first for an AI priority suggestion."
+      },
+      "aiSuggestion": {
+        "title": "AI Suggestion",
+        "description": "The AI suggests assigning priority \"{{priorityName}}\"."
+      },
+      "aiSuggestionFailed": {
+        "title": "Suggestion Failed",
+        "description": "Could not generate priority suggestion."
+      },
+      "invalidTaskId": {
+        "title": "Error",
+        "description": "Invalid task ID."
+      },
+      "taskUpdated": {
+        "title": "Task Updated",
+        "description": "The task has been successfully updated."
+      },
+      "updateFailed": {
+        "title": "Error",
+        "description": "The task could not be updated."
+      }
+    }
   }
 }

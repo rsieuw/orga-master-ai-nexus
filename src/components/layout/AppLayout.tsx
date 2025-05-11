@@ -14,14 +14,17 @@ import {
 } from "@/components/ui/dialog.tsx";
 import NewTaskDialog from "@/components/tasks/NewTaskDialog.tsx";
 import { useTranslation } from 'react-i18next';
+import { cn } from "@/lib/utils.ts";
 
 interface AppLayoutProps extends PropsWithChildren {
   requireAuth?: boolean;
+  noPadding?: boolean;
 }
 
 export default function AppLayout({ 
   children, 
-  requireAuth = true 
+  requireAuth = true, 
+  noPadding = false 
 }: AppLayoutProps) {
   const { isAuthenticated } = useAuth();
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
@@ -34,7 +37,11 @@ export default function AppLayout({
   return (
     <div id="app-root-wrapper" className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <Navbar openNewTaskModal={() => setIsNewTaskOpen(true)} />
-      <main className="flex-1 container mx-auto px-4 pt-8 pb-20 mb-4 md:pb-4">
+      <main className={cn(
+        "flex-1",
+        !noPadding && "container mx-auto px-4 pt-8",
+        !noPadding && "pb-20 mb-4 md:pb-4"
+      )}>
         {children}
       </main>
       <Footer />
