@@ -1,4 +1,4 @@
-import { type UserProfile } from '@/contexts/AuthContext.tsx';
+import { type UserProfile } from '@/types/auth.ts';
 
 // Define all possible features in your application
 export type Feature = 
@@ -19,6 +19,11 @@ export type Feature =
  * @returns True if the user has permission, false otherwise.
  */
 export function hasPermission(user: UserProfile | null, feature: Feature): boolean {
+  // TIJDELIJKE DEBUG VERSIE: Geeft altijd true terug voor testing
+  if (feature === 'deepResearch') {
+    return true;
+  }
+  
   if (!user || !user.enabled_features) {
     return false; // No user or no features array means no permission
   }

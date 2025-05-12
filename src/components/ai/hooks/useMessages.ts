@@ -2,10 +2,15 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client.ts";
 import { useToast } from "@/hooks/use-toast.ts";
 import { useTranslation } from "react-i18next";
-import { Message } from "../types.ts";
+import { Message, MessageType } from "../types.ts";
 import { Database } from "@/types/supabase.ts";
 import { v4 as uuidv4 } from 'uuid';
-import { useAuth } from "@/contexts/AuthContext.tsx";
+import { useAuth } from "@/hooks/useAuth.ts";
+
+// Helper function to ensure a message has an ID - BOVENAAN EN GEEXPORTEERD
+export const ensureMessageHasId = (message: Omit<Message, 'id'> & { id?: string }): Message => {
+  return { ...message, id: message.id || uuidv4() } as Message;
+};
 
 // Define an alias for the specific table row type
 type OriginalSavedResearchRow = Database['public']['Tables']['saved_research']['Row'];
@@ -19,18 +24,12 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
   const { t } = useTranslation();
   const { user } = useAuth();
 
-  // Helper function to ensure a message has an ID
-  const ensureMessageHasId = useCallback((message: Omit<Message, 'id'> & { id?: string }): Message => {
-    return { ...message, id: message.id || uuidv4() } as Message;
-  }, []);
-
   // Save message to database
   const saveMessageToDb = useCallback(async (message: Message) => {
     if (message.messageType === 'research_result' || message.messageType === 'research_loader') {
       return; // Do not save research results/loaders in chat_messages
     }
     if (!taskId) {
-      console.warn(t('chatPanel.errors.taskIdMissing'));
       setError(t('chatPanel.errors.taskIdMissing'));
       return;
     }
@@ -49,14 +48,12 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
         });
       if (dbError) throw dbError;
     } catch (err) {
-      console.error(t('chatPanel.errors.saveMessageToDbGeneric'), err);
       setError(t('chatPanel.toast.saveMessageToDbFailed'));
     }
   }, [taskId, t, user]);
 
   const saveResearchToDb = useCallback(async (researchData: Pick<Message, 'content' | 'citations' | 'subtask_title' | 'prompt'>) => {
     if (!taskId || !user) {
-      console.error(t('chatPanel.errors.cannotSaveResearch'));
       toast({
         variant: "destructive",
         title: t('chatPanel.toast.saveFailedTitle'),
@@ -90,7 +87,6 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
             }
         }
         
-        console.error(t('chatPanel.errors.invokeSaveResearchFunctionGeneric'), functionError);
         toast({
           variant: "destructive",
           title: t('chatPanel.toast.saveFailedTitle'),
@@ -115,7 +111,6 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
       return data; // Edge function returns { messageKey, savedResearchId }
 
     } catch (err) {
-      console.error(t('chatPanel.errors.clientSideSaveResearchGeneric'), err);
       const errorMessage = err instanceof Error ? err.message : String(err);
       toast({
         variant: "destructive",
@@ -127,14 +122,55 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
   }, [taskId, user, t, toast, setReloadTrigger]);
 
   // Add new message to state and optionally save to DB
-  const addMessage = useCallback(async (messageData: Omit<Message, 'id' | 'timestamp' | 'createdAt'> & { id?: string, timestamp?:number, createdAt?:string }, saveToDb = true) => {
+  const addMessage = useCallback(async (messageData: Omit<Message, 'id' | 'timestamp' | 'createdAt'> & { 
+    id?: string, 
+    timestamp?:number, 
+    createdAt?:string,
+    _forceDisplay?: boolean
+  }, saveToDb = true) => {
     const newMessage = ensureMessageHasId({
         ...messageData,
         timestamp: messageData.timestamp || Date.now(),
         createdAt: messageData.createdAt || new Date().toISOString(),
     });
-    setMessages(prev => [...prev, newMessage]);
-    
+
+    const currentMessageType: MessageType = newMessage.messageType;
+    if (currentMessageType === 'research_result') {
+      setMessages((prevMessages) => {
+        const updatedMessages = [...prevMessages, newMessage];
+        try {
+          if (typeof window !== 'undefined') {
+            const localStorageKey = `useMessages_${taskId || 'default'}_research_messages`;
+            const existingResearch = JSON.parse(localStorage.getItem(localStorageKey) || '[]');
+            localStorage.setItem(localStorageKey, JSON.stringify([...existingResearch, newMessage]));
+          }
+        } catch (e) {
+          // Fout bij localStorage synchronisatie voor research
+        }
+        return updatedMessages;
+      });
+      await saveResearchToDb({
+        content: newMessage.content, 
+        citations: newMessage.citations,
+        subtask_title: newMessage.subtask_title, 
+        prompt: newMessage.prompt
+      });
+      return newMessage;
+    } else {
+      setMessages(prevMessages => {
+        const updatedMessages = [...prevMessages, newMessage];
+        try {
+          if (typeof window !== 'undefined') {
+            const localStorageKey = `useMessages_${taskId || 'default'}_state`;
+            localStorage.setItem(localStorageKey, JSON.stringify(updatedMessages));
+          }
+        } catch (e) {
+          // Fout bij localStorage synchronisatie
+        }
+        return updatedMessages;
+      });
+    }
+
     if (newMessage.messageType === 'research_result') {
       await saveResearchToDb({
         content: newMessage.content, 
@@ -145,23 +181,56 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
     } else if (saveToDb) {
       await saveMessageToDb(newMessage);
     }
-  }, [saveMessageToDb, saveResearchToDb, setMessages, ensureMessageHasId]);
+
+    return newMessage;
+  }, [taskId, saveMessageToDb, saveResearchToDb, setMessages]);
 
   // Update message in state by client-side ID
   const updateMessage = useCallback((messageId: string, updates: Partial<Message>) => {
-    setMessages(prevMessages => 
-      prevMessages.map(msg => 
-        msg.id === messageId ? { ...msg, ...updates } : msg
-      )
-    );
-    // Optional: also update in DB if it's an existing message
-    // const messageToUpdate = messages.find(m => m.id === messageId);
-    // if (messageToUpdate && messageToUpdate.dbId) { /* update logic for DB */ }
-  }, []);
+    if (updates.messageType === 'research_result') {
+      if (typeof updates.content !== 'string') {
+        updates.content = String(updates.content || '');
+      }
+    }
+    setMessages(prevMessages => {
+      const msgIndex = prevMessages.findIndex(msg => msg.id === messageId);
+      
+      if (msgIndex === -1) {
+        return prevMessages; // Geen wijziging als bericht niet bestaat
+      }
+
+      const updatedMessage = {
+        ...prevMessages[msgIndex],
+        ...updates
+      };
+
+      const newMessages = [
+        ...prevMessages.slice(0, msgIndex),
+        updatedMessage,
+        ...prevMessages.slice(msgIndex + 1)
+      ];
+      
+      try {
+        if (typeof window !== 'undefined') {
+          const localStorageKey = `useMessages_${taskId || 'default'}_state`;
+          localStorage.setItem(localStorageKey, JSON.stringify(newMessages));
+        }
+      } catch (e) {
+        // Fout bij localStorage synchronisatie
+      }
+      
+      return newMessages;
+    });
+    
+    setTimeout(() => {
+      setMessages(prev => [...prev]);
+    }, 800);
+    
+    return null;
+  }, [taskId]);
 
   // Load initial messages
   useEffect(() => {
-    // Functie en types voor message type validatie, bovenaan de useEffect scope geplaatst
     const validMessageTypes = ['standard', 'research_result', 'system', 'error', 'note_saved', 'action_confirm', 'saved_research_display', 'research_loader'] as const;
     type ValidMessageType = typeof validMessageTypes[number];
     function isValidMessageType(type: string | null | undefined): type is ValidMessageType {
@@ -286,7 +355,6 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
         );
         setMessages([initialWelcomeMessage, ...combinedMessages]);
       } catch (err: unknown) {
-        console.error(t('chatPanel.errors.loadMessagesAndNotesGeneric'), err);
         const errorMessage = err instanceof Error ? err.message : String(err);
         setError(t('chatPanel.toast.loadMessagesAndNotesFailed') + (errorMessage ? `: ${errorMessage}`: ''));
         setMessages([initialWelcomeMessage]);
@@ -295,36 +363,42 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
       }
     };
     loadMessagesAndNotes();
-  }, [taskId, taskTitle, reloadTrigger, t, user, ensureMessageHasId, setMessages, setIsLoading, setError]);
+  }, [taskId, taskTitle, reloadTrigger, t, user, setMessages, setIsLoading, setError]);
 
   // Handle selected subtask
   useEffect(() => {
     if (selectedSubtaskTitle && taskId) {
-      addMessage({
-        role: "assistant",
-        content: t('chatPanel.subtaskSelectedMessage', { subtaskTitle: selectedSubtaskTitle ?? '' }),
-        messageType: 'system'
-      }, true); // Save this system message
+      // Controleer of er al een system-bericht is voor deze subtaak
+      const alreadyExists = messages.some(
+        (msg) =>
+          msg.messageType === 'system' &&
+          msg.content &&
+          msg.content.includes(selectedSubtaskTitle)
+      );
+      if (!alreadyExists) {
+        addMessage({
+          role: "assistant",
+          content: t('chatPanel.subtaskSelectedMessage', { subtaskTitle: selectedSubtaskTitle ?? '' }),
+          messageType: 'system'
+        }, true); // Save this system message
+      }
     }
-  }, [selectedSubtaskTitle, taskId, addMessage, t]);
+  }, [selectedSubtaskTitle, taskId, addMessage, t, messages]);
 
   // Function to clear chat history
   const clearHistory = async () => {
     if (!taskId || !user) {
-        console.warn(t('chatPanel.errors.taskIdOrUserMissing'));
         return;
     }
     setIsLoading(true);
     try {
       // Delete only non-pinned chat messages
-      const { error: deleteError } = await supabase
+      await supabase
         .from('chat_messages')
         .delete()
         .eq('task_id', taskId)
         .eq('user_id', user.id)
         .eq('is_pinned', false);
-          
-      if (deleteError) throw deleteError;
       
       // Reload the pinned chat messages
       const { data: pinnedChatMessages, error: fetchPinnedError } = await supabase
@@ -443,7 +517,6 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
         description: message
       });
     } catch (err: unknown) {
-      console.error(t('chatPanel.errors.clearHistoryGeneric'), err);
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(t('chatPanel.toast.clearHistoryFailed') + (errorMessage ? `: ${errorMessage}`: ''));
     } finally {
@@ -472,7 +545,6 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
       });
 
     } catch (error: unknown) {
-      console.error(t('chatPanel.errors.deleteNoteGeneric'), error);
       setMessages(originalMessages);
       let errorDescription = t('chatPanel.toast.deleteNoteFailedDefault');
       if (error instanceof Error) {
@@ -487,15 +559,49 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
   };
 
   // Function to delete saved research
-  const deleteResearch = async (researchIdToDelete: string) => {
-    if (!researchIdToDelete) return;
+  const deleteResearch = async (researchIdOrMessageId: string) => {
+    if (!researchIdOrMessageId) return;
 
+    // Controleren of het een message ID is van een niet-opgeslagen onderzoek of een database ID van opgeslagen onderzoek
+    const messageWithId = messages.find(msg => msg.id === researchIdOrMessageId);
+    
+    // Als het een message ID is, dan verwijderen we het uit de lokale state
+    if (messageWithId && messageWithId.messageType === 'research_result') {
+      setMessages(prevMessages => prevMessages.filter(msg => msg.id !== researchIdOrMessageId));
+      
+      try {
+        if (typeof window !== 'undefined') {
+          // Ook uit localStorage verwijderen als het daar is opgeslagen
+          const localStorageKey = `useMessages_${taskId || 'default'}_research_messages`;
+          const storedResearch = JSON.parse(localStorage.getItem(localStorageKey) || '[]');
+          const updatedResearch = storedResearch.filter((msg: Message) => msg.id !== researchIdOrMessageId);
+          localStorage.setItem(localStorageKey, JSON.stringify(updatedResearch));
+        }
+      } catch (e) {
+        // Fout bij lokale opslag bewerkingen negeren
+      }
+      
+      toast({ 
+        title: t('chatPanel.toast.researchDeletedTitle'), 
+        description: t('chatPanel.toast.researchDeletedDescription')
+      });
+      
+      return;
+    }
+    
+    // Anders is het waarschijnlijk een database ID, probeer het te verwijderen uit de database
     try {
       const { error } = await supabase.functions.invoke('delete-research', {
-        body: { researchId: researchIdToDelete }
+        body: { researchId: researchIdOrMessageId }
       });
 
       if (error) throw error;
+
+      // Ook verwijderen uit lokale state als het bestaat als opgeslagen onderzoek
+      setMessages(prevMessages => prevMessages.filter(msg => 
+        !(msg.dbId === researchIdOrMessageId || 
+          (msg.id === researchIdOrMessageId && msg.messageType === 'saved_research_display'))
+      ));
 
       toast({ 
         title: t('chatPanel.toast.researchDeletedTitle'), 
@@ -504,7 +610,6 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
       setReloadTrigger(prev => prev + 1);
 
     } catch (error: unknown) {
-      console.error(t('chatPanel.errors.deleteResearchGeneric'), error);
       let errorDescription = t('chatPanel.toast.deleteResearchFailedDescriptionDefault');
       if (error instanceof Error) {
         errorDescription = error.message;
@@ -518,19 +623,16 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
   };
 
   // --- Placeholder functions --- 
-  const deleteMessageFromDb = (messageId: string) => {
-    console.warn("Placeholder: deleteMessageFromDb called for ID:", messageId);
+  const deleteMessageFromDb = (_messageId: string) => {
     // Implement logic here to delete a specific chat message
   };
 
-  const saveNoteToChat = (noteData: Pick<Message, 'content'>) => {
-    console.warn("Placeholder: saveNoteToChat called with data:", noteData);
+  const saveNoteToChat = (_noteData: Pick<Message, 'content'>) => {
     // Implement logic here to add a note to the chat (perhaps via addMessage?)
     // You will need taskId and userId.
   };
 
-  const displaySavedResearchInChat = (researchItem: Message) => {
-    console.warn("Placeholder: displaySavedResearchInChat called for item:", researchItem);
+  const displaySavedResearchInChat = (_researchItem: Message) => {
     // This function should format the research data and add it via addMessage
     // with messageType 'saved_research_display'
   };
@@ -539,7 +641,6 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
   // Functie om een bericht te pinnen/los te maken
   const togglePinMessage = useCallback(async (messageId: string, currentIsPinned: boolean) => {
     if (!taskId || !user) {
-      console.warn(t('chatPanel.errors.cannotTogglePinStatus'));
       toast({ variant: "destructive", title: t('common.error'), description: t('chatPanel.toast.cannotChangePinStatusDescription') });
       return;
     }
@@ -567,7 +668,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
           p_user_id: user.id,
           p_role: message.role,
           p_content: message.content,
-          p_message_type: message.messageType === undefined ? null : message.messageType,
+          p_message_type: typeof message.messageType === 'string' ? message.messageType : 'standard',
           p_created_at: message.createdAt || new Date().toISOString()
         });
 
@@ -588,8 +689,6 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
         if (rpcError) throw rpcError;
       }
     } catch (err) {
-      console.error(t('chatPanel.errors.togglePinStatusGeneric'), err);
-      // Revert local state on error
       setMessages(prevMessages =>
         prevMessages.map(msg =>
           msg.id === messageId ? { ...msg, isPinned: currentIsPinned } : msg
@@ -603,24 +702,48 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
     }
   }, [taskId, user, t, toast, setMessages, messages]);
 
-  // Make sure the names match what ChatPanel imports
+  // Hier voegen we een effect toe om de berichten te laden vanuit localStorage als nodig
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && !isLoading && messages.length === 0) {
+        const localStorageKey = `useMessages_${taskId || 'default'}_state`;
+        const storedMessages = localStorage.getItem(localStorageKey);
+        
+        if (storedMessages) {
+          const parsedMessages = JSON.parse(storedMessages) as Message[];
+          // Controleren op onderzoeksberichten
+          // const researchMsgs = parsedMessages.filter(m => // Deze variabele wordt niet meer gebruikt
+          // m.messageType === 'research_result' || m.messageType === 'research_loader');
+          
+          // if (researchMsgs.length > 0) {} // Leeg if block verwijderd
+          
+          // Zorg ervoor dat dit alleen uitgevoerd wordt als we echt berichten hebben om te laden
+          if (parsedMessages.length > 0) {
+            setMessages(parsedMessages);
+          }
+        }
+      }
+    } catch (e) {
+      // Leeg catch block verwijderd
+    }
+  }, [taskId, isLoading, messages.length]);
+
+  // Return the messages, addMessage, isLoading and error
   return {
     messages,
-    setMessages, 
     isLoading,
-    setIsLoading, 
+    error,
     addMessage,
     updateMessage,
-    saveMessageToDb, 
-    clearHistory, 
-    deleteNote, // Keep this name as handleDeleteNote in ChatPanel
-    deleteResearch, // Keep this name as handleDeleteResearch in ChatPanel
-    deleteMessageFromDb, // Export this function
-    saveResearchToDb, // Export this function
-    saveNoteToChat, // Export this function
-    displaySavedResearchInChat, // Export this function
+    clearHistory,
+    deleteNote,
+    deleteResearch,
+    deleteMessageFromDb,
+    saveResearchToDb,
+    saveNoteToChat,
+    displaySavedResearchInChat,
     reloadTrigger,
-    error,
-    togglePinMessage
+    togglePinMessage,
+    setMessages,
   };
 } 

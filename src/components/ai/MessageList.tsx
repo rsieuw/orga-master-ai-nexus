@@ -2,6 +2,7 @@ import { Message } from "./types.ts";
 import { MessageItem } from "./MessageItem.tsx";
 import { Bot } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useMemo } from "react";
 
 interface MessageListProps {
   messages: Message[];
@@ -11,6 +12,7 @@ interface MessageListProps {
   onDeleteNote?: (noteId: string) => void;
   onDeleteResearch?: (researchId: string) => void;
   onTogglePin?: (messageId: string, currentIsPinned: boolean) => void;
+  userAvatarUrl?: string;
 }
 
 export function MessageList({ 
@@ -20,9 +22,46 @@ export function MessageList({
   onCopy, 
   onDeleteNote, 
   onDeleteResearch, 
-  onTogglePin
+  onTogglePin,
+  userAvatarUrl
 }: MessageListProps) {
   const { t } = useTranslation();
+  
+  // Create local copy of messages that applies research detection
+  const enhancedMessages = useMemo(() => {
+    return messages.map(msg => {
+      // If the message looks like a research result but isn't correctly tagged
+      if (msg.role === 'assistant' && 
+          typeof msg.content === 'string' && 
+          msg.content.length > 100 && 
+          (msg.citations !== undefined || msg.content.includes('#')) && 
+          msg.messageType !== 'research_result') {
+        
+        return {
+          ...msg,
+          messageType: 'research_result' as const
+        };
+      }
+      return msg;
+    });
+  }, [messages]);
+  
+  const messageElements = useMemo(() => {
+    return enhancedMessages.map((message) => {
+      return (
+        <MessageItem
+          key={message.id}
+          message={message}
+          isLoading={isLoading}
+          onCopy={onCopy}
+          onDeleteNote={onDeleteNote}
+          onDeleteResearch={onDeleteResearch}
+          onTogglePin={onTogglePin}
+          userAvatarUrl={userAvatarUrl}
+        />
+      );
+    });
+  }, [enhancedMessages, isLoading, onCopy, onDeleteNote, onDeleteResearch, onTogglePin, userAvatarUrl]);
 
   return (
     <div className="px-4 pt-6 pb-4">
@@ -32,18 +71,7 @@ export function MessageList({
         </div>
       )}
       
-      {messages.map((message, index) => (
-        <MessageItem
-          key={message.id || index}
-          message={message}
-          index={index}
-          onCopy={onCopy}
-          onDeleteNote={onDeleteNote}
-          onDeleteResearch={onDeleteResearch}
-          onTogglePin={onTogglePin}
-          isLoading={isLoading}
-        />
-      ))}
+      {messageElements}
       
       {/* Loading indicator for assistant typing */}
       {isAiResponding && (

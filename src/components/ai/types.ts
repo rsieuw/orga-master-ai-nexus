@@ -1,63 +1,68 @@
-// Verwijder de ongebruikte Task import
+// Remove the unused Task import
 // import { Task } from "@/types/task.ts";
-import { LucideIcon, Bot, Brain, Zap } from "lucide-react";
+import { Sparkles, Target, LucideIcon, Bot } from 'lucide-react';
 
 export type MessageRole = "user" | "assistant" | "system";
 
 export type MessageType = 
-  | 'standard'          // Standaard chatbericht (user of assistant)
-  | 'research_result'   // Resultaat van deep research (van assistant)
-  | 'system'            // Systeembericht (bv. "Onderzoek gestart", "Subtaak geselecteerd")
-  | 'error'             // Foutmelding (van assistant)
-  | 'note_saved'        // Bevestiging dat een notitie is opgeslagen (van user, rechts uitgelijnd)
-  | 'action_confirm'    // Bevestiging dat een AI actie is uitgevoerd (bv. taak hernoemd)
-  | 'saved_research_display' // Opgeslagen onderzoeksresultaat voor weergave
-  | 'research_loader'   // Tijdelijk bericht tijdens het laden van onderzoek
-  | 'status';          // 'status' toegevoegd
+  | 'standard'          // Standard chat message (user or assistant)
+  | 'research_result'   // Result of deep research (from assistant)
+  | 'system'            // System message (e.g., "Research started", "Subtask selected")
+  | 'error'             // Error message (from assistant)
+  | 'note_saved'        // Confirmation that a note has been saved (from user, right-aligned)
+  | 'action_confirm'    // Confirmation that an AI action has been performed (e.g., task renamed)
+  | 'saved_research_display' // Saved research result for display
+  | 'research_loader';   // Temporary message while loading research
+
+export interface Citation {
+  url: string;
+  title?: string;
+}
 
 export interface Message {
-  id: string; // Client-side ID toegevoegd
-  role: MessageRole;
+  id: string;
+  role: 'user' | 'assistant';
   content: string;
-  timestamp?: number; // Overweeg createdAt: string te gebruiken voor consistentie
-  createdAt?: string; // Toegevoegd voor consistentie
-  messageType?: MessageType;
-  dbId?: string; // Voor notities en opgeslagen onderzoek, om ze te kunnen verwijderen
-  citations?: string[]; 
-  subtaskId?: string; // Toegevoegd
-  subtask_title?: string | null; // Voor research_result en saved_research_display
-  prompt?: string | null; // Voor research_result en saved_research_display gegenereerd via prompt
-  isLoading?: boolean; // Toegevoegd
-  isError?: boolean; // Toegevoegd
-  savedResearchId?: string; // Toegevoegd
-  canBeSaved?: boolean; // Toegevoegd
-  isPinned?: boolean; // Nieuw veld voor pinnen
+  messageType: 'standard' | 'research_result' | 'system' | 'error' | 'note_saved' | 'action_confirm' | 'saved_research_display' | 'research_loader';
+  timestamp?: number;
+  createdAt?: string;
+  isLoading?: boolean;
+  isError?: boolean;
+  citations?: (Citation | string)[];
+  dbId?: string;
+  isPinned?: boolean;
+  savedResearchId?: string;
+  canBeSaved?: boolean;
+  subtask_title?: string | null;
+  subtaskId?: string | null;
+  prompt?: string | null;
+  _forceDisplay?: boolean; // Nieuwe flag om directe weergave te forceren
 }
 
 export interface AIModel {
-  id: string;
-  name: string;
-  description: string;
+  id: 'default' | 'creative' | 'precise'; // Must match AiMode in AuthContext
+  nameKey: string; // Translation key for the name
+  descriptionKey: string; // Translation key for the description
   icon: LucideIcon;
 }
 
 export const aiModels: AIModel[] = [
   {
-    id: "default",
-    name: "GPT-4o mini",
-    description: "Snelle, algemene antwoorden",
+    id: 'default',
+    nameKey: 'aiModes.default.name',
+    descriptionKey: 'aiModes.default.description',
     icon: Bot,
   },
   {
-    id: "creative",
-    name: "Creative Mode",
-    description: "Voor brainstorming en ideeën",
-    icon: Brain,
+    id: 'creative',
+    nameKey: 'aiModes.creative.name',
+    descriptionKey: 'aiModes.creative.description',
+    icon: Sparkles,
   },
   {
-    id: "precise",
-    name: "Precise Mode",
-    description: "Voor feitelijke en gedetailleerde antwoorden",
-    icon: Zap,
+    id: 'precise',
+    nameKey: 'aiModes.precise.name',
+    descriptionKey: 'aiModes.precise.description',
+    icon: Target,
   },
 ];

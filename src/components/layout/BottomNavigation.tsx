@@ -2,7 +2,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { List, Settings, Info, MessageSquare, User } from 'lucide-react';
 import { cn } from '@/lib/utils.ts';
-import { useAuth } from '@/contexts/AuthContext.tsx';
+import { useAuth } from '@/hooks/useAuth.ts';
 import { useTask } from '@/contexts/TaskContext.hooks.ts';
 import { isPast, isToday, parseISO } from 'date-fns';
 import { Task } from '@/types/task.ts';

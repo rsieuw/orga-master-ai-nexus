@@ -1,57 +1,109 @@
-import React from "react";
 import { Button } from "@/components/ui/button.tsx";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select.tsx";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu.tsx";
-import { BookOpen, FileText, Settings } from "lucide-react";
+import { BookOpen, FileText, Settings, Trash2, Download, X } from "lucide-react";
 import { AIModel, aiModels } from "./types.ts";
 import { useTranslation } from "react-i18next";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip.tsx";
 import { hasPermission } from "@/lib/permissions.ts";
-import { UserProfile } from "@/contexts/AuthContext.tsx";
+import { UserProfile } from "@/types/auth.ts";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx";
+import { useAuth } from "@/hooks/useAuth.ts";
+import { ResearchMode } from "./hooks/useDeepResearch.ts";
+import { useState } from "react";
 
 interface ChatControlsProps {
   isNoteMode: boolean;
   setIsNoteMode: (isNoteMode: boolean) => void;
-  selectedModel: string;
-  setSelectedModel: (model: string) => void;
   onClearHistory: () => void;
   onExport?: () => void;
-  onResearch: () => void;
+  onResearch: (mode: ResearchMode) => void;
+  researchModeOptions: { labelKey: string; value: ResearchMode; icon?: React.ElementType, descriptionKey: string }[];
+  currentResearchMode: ResearchMode;
   user: UserProfile | null;
   isLoading: boolean;
+  isGenerating: boolean;
+  onCancelResearch?: () => void;
+  showCancelButton?: boolean;
 }
 
 export function ChatControls({
   isNoteMode,
   setIsNoteMode,
-  selectedModel,
-  setSelectedModel,
   onClearHistory,
   onExport,
   onResearch,
+  researchModeOptions,
+  currentResearchMode,
   user,
-  isLoading
+  isLoading,
+  isGenerating,
+  onCancelResearch,
+  showCancelButton
 }: ChatControlsProps) {
   const { t } = useTranslation();
+  const { aiMode, setAiMode } = useAuth();
+  const [isResearchPopoverOpen, setIsResearchPopoverOpen] = useState(false);
+
+  const handleAiModelSelect = (modelId: AIModel['id']) => {
+    if (user?.role === 'free' && (modelId === 'creative' || modelId === 'precise')) {
+      console.log("Creative and Precise modes are premium features.");
+      return;
+    }
+    setAiMode(modelId);
+  };
+
+  const activeModel = aiModels.find(model => model.id === aiMode) || aiModels[0];
 
   return (
-    <div className="p-2 px-4 border-t border-white/5 flex items-center justify-between gap-2 bg-background/50">
+    <div className="p-2 border-t border-white/5 flex items-center justify-between gap-2 bg-background/50">
       <div className="flex gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className={`px-3 py-2 gap-1 hover:bg-secondary ${
-            !hasPermission(user, 'deepResearch') 
-              ? 'opacity-50 cursor-not-allowed bg-secondary/50' 
-              : 'border-0 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white'
-          }`}
-          onClick={onResearch}
-          disabled={isLoading || isNoteMode || !hasPermission(user, 'deepResearch')}
-          title={!hasPermission(user, 'deepResearch') ? t('chatPanel.deepResearchDisabledTooltip') : t('chatPanel.deepResearchTooltip')}
-        >
-          <BookOpen className="h-[20px] w-[20px]" />
-          <span className="hidden sm:inline">{t('chatPanel.researchButton')}</span>
-        </Button>
+        <Popover open={isResearchPopoverOpen} onOpenChange={setIsResearchPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className={`px-3 py-2 gap-1 hover:bg-secondary ${
+                !hasPermission(user, 'deepResearch') 
+                  ? 'opacity-50 cursor-not-allowed bg-secondary/50' 
+                  : 'border-0 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white'
+              }`}
+              disabled={isLoading || isNoteMode || !hasPermission(user, 'deepResearch')}
+              title={!hasPermission(user, 'deepResearch') ? t('chatPanel.deepResearchDisabledTooltip') : t('chatPanel.deepResearchTooltip')}
+            >
+              <BookOpen className="h-[20px] w-[20px]" />
+              <span className="hidden sm:inline">{t('chatPanel.researchButton')}</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-2 glass-effect" side="top" align="start" alignOffset={-100} sideOffset={5}>
+            <div className="space-y-1">
+              {researchModeOptions.map((option) => (
+                <Button
+                  key={option.value}
+                  variant={currentResearchMode === option.value ? "secondary" : "ghost"}
+                  className="w-full justify-start space-x-2 h-auto whitespace-normal text-left"
+                  onClick={() => {
+                    console.log("Klik op onderzoek modus:", option.value);
+                    try {
+                      onResearch(option.value);
+                      console.log("Na onResearch aanroep");
+                    } catch (error) {
+                      console.error("Fout bij uitvoeren onResearch:", error);
+                    }
+                    setIsResearchPopoverOpen(false);
+                  }}
+                >
+                  {option.icon && <option.icon className="h-4 w-4 flex-shrink-0 mr-2" />}
+                  <div className="flex flex-col items-start">
+                      <span className="text-sm font-medium">{t(option.labelKey)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {t(option.descriptionKey)}
+                      </span>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+        
         <Button 
           variant="outline" 
           size="sm" 
@@ -69,51 +121,48 @@ export function ChatControls({
       </div>
 
       <div className="flex items-center gap-1">
-        <Select value={selectedModel} onValueChange={setSelectedModel} disabled={isNoteMode || isLoading}>
-          <SelectTrigger 
-            className="w-auto h-8 px-2 bg-secondary/50 border-white/10 hover:bg-secondary focus:ring-0 focus:ring-offset-0 disabled:opacity-50"
-            aria-label={t('chatPanel.selectModelAriaLabel')}
+        {showCancelButton && onCancelResearch && (
+          <Button 
+            variant="ghost"
+            size="icon"
+            onClick={onCancelResearch}
+            className="text-destructive hover:text-destructive-foreground hover:bg-destructive/80 h-8 w-8"
+            title={t("chatPanel.research.stopResearch")}
           >
-            {React.createElement(aiModels.find((m: AIModel) => m.id === selectedModel)?.icon || Settings, { className: "h-4 w-4" })}
-          </SelectTrigger>
-          <SelectContent align="end" side="top" className="glass-effect min-w-[180px]">
-            {aiModels.map((model: AIModel) => {
-              const isDisabled = 
-                (model.id === 'creative' || model.id === 'precise') && 
-                !hasPermission(user, 'chatModes');
-              
-              const showTooltip = isDisabled && (model.id === 'creative' || model.id === 'precise');
-
-              const selectItemContent = (
-                <SelectItem 
-                  key={model.id} 
-                  value={model.id}
-                  disabled={isDisabled}
-                  className="disabled:opacity-50 disabled:cursor-not-allowed"
-                  onSelect={(e) => { if (isDisabled) e.preventDefault(); }}
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="flex items-center space-x-2 px-2" title={t(activeModel.nameKey)}>
+              <activeModel.icon className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-2 glass-effect" side="top" align="start" alignOffset={-100} sideOffset={5}>
+            <div className="space-y-1">
+              {aiModels.map((model) => (
+                <Button
+                  key={model.id}
+                  variant={aiMode === model.id ? "secondary" : "ghost"}
+                  className="w-full justify-start space-x-2 h-auto whitespace-normal text-left"
+                  onClick={() => handleAiModelSelect(model.id)}
+                  disabled={isGenerating || (user?.role === 'free' && (model.id === 'creative' || model.id === 'precise'))}
                 >
-                  <div className="flex items-center gap-2">
-                    {React.createElement(model.icon, { className: "h-4 w-4" })}
-                    <span>{model.name}</span>
+                  <model.icon className="h-4 w-4 flex-shrink-0 mr-2" />
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-medium">{t(model.nameKey)}</span>
+                    <span className="text-xs text-muted-foreground">{t(model.descriptionKey)}</span>
                   </div>
-                </SelectItem>
-              );
-
-              return showTooltip ? (
-                <TooltipProvider key={model.id} delayDuration={100}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>{selectItemContent}</TooltipTrigger>
-                    <TooltipContent side="left" align="center" className="bg-popover/90 backdrop-blur-lg">
-                      <p>{t('chatPanel.chatModesDisabledTooltip')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ) : (
-                selectItemContent
-              );
-            })}
-          </SelectContent>
-        </Select>
+                </Button>
+              ))}
+            </div>
+             {user?.role === 'free' && (
+                <p className="mt-2 text-xs text-center text-muted-foreground px-2">
+                  {t('settings.freeUserPremiumFeatureChat')}
+                </p>
+              )}
+          </PopoverContent>
+        </Popover>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -122,15 +171,17 @@ export function ChatControls({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="end" className="glass-effect">
-            <DropdownMenuItem onClick={onClearHistory} disabled={isLoading}>
-              {t('chatPanel.clearHistoryButton')}
+            <DropdownMenuItem onClick={onClearHistory} disabled={isLoading} className="space-x-2">
+              <Trash2 className="h-4 w-4" />
+              <span>{t('chatPanel.clearHistoryButton')}</span>
             </DropdownMenuItem>
             {(user && user.enabled_features && user.enabled_features.includes('exportChat')) && (
               <DropdownMenuSeparator />
             )}
             {(user && user.enabled_features && user.enabled_features.includes('exportChat') && onExport) && ( 
-              <DropdownMenuItem onClick={onExport}>
-                {t('chatPanel.exportChatButton')}
+              <DropdownMenuItem onClick={onExport} className="space-x-2">
+                <Download className="h-4 w-4" />
+                <span>{t('chatPanel.exportChatButton')}</span>
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>

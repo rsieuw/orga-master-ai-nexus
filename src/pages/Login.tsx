@@ -1,10 +1,12 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext.tsx";
+import { useAuth } from "@/hooks/useAuth.ts";
 import LoginForm from "@/components/auth/LoginForm.tsx";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function Login() {
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
@@ -35,11 +37,11 @@ export default function Login() {
               <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
             </svg>
             <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-              OrgaMaster AI
+              {t("login.title")}
             </span>
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Log in om je taken te beheren
+            {t("login.subtitle")}
           </p>
         </div>
 
@@ -47,9 +49,9 @@ export default function Login() {
 
         <div className="mt-6 text-center">
           <p className="text-muted-foreground text-sm">
-            Nog geen account?{" "}
+            {t("login.noAccount")}{" "}
             <Link to="/register" className="text-primary hover:underline">
-              Registreer hier
+              {t("login.registerHere")}
             </Link>
           </p>
         </div>

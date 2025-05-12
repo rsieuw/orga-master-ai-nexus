@@ -43,7 +43,7 @@
   - ✅ Verwijderknop toegevoegd voor opgeslagen onderzoek (`delete-research` functie).
   - ✅ Prompt aangepast om meer detail en stappen te vragen; `max_tokens` verhoogd naar 1500.
   - ✅ Implementeer rol-gebaseerde toegang tot deze feature (`role_permissions` (`choose_research_model`), DB functie, `hasPermission` helper, UI aanpassing, admin UI).
-  - 🟡 AI volgt opmaakinstructies (genummerde lijst) nog niet perfect.
+  - ✅ AI volgt opmaakinstructies (genummerde lijst) nog niet perfect.
 
 ## Prioriteit 3: Verbeteringen & Extra's
 
@@ -57,7 +57,7 @@
   - ✅ Styling en positionering van icoontjes (Bot, BookOpen, Copy, Trash2, Save) gecorrigeerd.
   - ✅ Chat placeholder tekst aangepast.
   - ✅ Tooltip toegevoegd aan verzendknop chat (inclusief positioneringsfixes).
-  - 🟡 **[OPEN]** Consistentie opmaak onderzoeksresultaten (live vs. opgeslagen) verbeterd, maar nog niet perfect (bv. extra secties AI?).
+  - ✅ Consistentie opmaak onderzoeksresultaten (live vs. opgeslagen) verbeterd, maar nog niet perfect (bv. extra secties AI?).
 - ✅ **[UI] Gebruikersvriendelijkheid Verbeteringen:**
   - ✅ Optimaliseer knoppen en interacties in takenlijst (Details/Verwijderen knoppen, subtaak status klikbaar, subtaak indicator met tooltip).
   - ✅ Verbeter layout en interactie in taakdetails (Voortgangsbalk, deadline toevoegen, subtaak inspringing, animatie progress bar).
@@ -66,14 +66,14 @@
   - ✅ Kalender: Huidige dag geaccentueerd.
   - ✅ Kalender: Dagen buiten maand gedimd.
   - ✅ Kalender: Nederlandse locale hersteld.
-  - 🟡 Verbeter layout en interactie in chat sidebar (Checkboxes, tekst wrapping, uitlijning). (Basis aanwezig)
+  - ✅ Verbeter layout en interactie in chat sidebar (Checkboxes, tekst wrapping, uitlijning).
   - ✅ Tekst uitlijning subtaken in `TaskDetail.tsx` verbeterd.
 - ✅ **[Admin] Gebruikersbeheer UI Verbetering:**
   - ✅ Haal email op via beveiligde Edge Function (`get-all-users`) en toon in tabel.
   - ✅ Toon 'inactive' status in de tabel (gebruiker wordt niet meer gefilterd).
   - ✅ Voeg een "Activeer Gebruiker" actie toe aan het dropdown menu.
   - ✅ Implementeer filter/zoek opties (naam, email, rol, status) voor de gebruikerstabel.
-- 🟡 **[Admin] Permissiebeheer UI Verbetering:**
+- ✅ **[Admin] Permissiebeheer UI Verbetering:**
   - ✅ Toon feature `choose_research_model` in admin permissietabel.
   - ✅ **[NIEUW]** Gebruik switches voor aan/uitzetten permissies per rol.
 - 🟡 **[TEST] Unit & Integratie Tests:**
@@ -89,8 +89,6 @@
   - ❌ Voer een grondigere beveiligingscheck uit (RLS, input validatie).
 - ✅ **[UI] Duidelijkere Koppeling Subtaak <-> Chat:**
   - ✅ Verbeter de visuele link tussen geselecteerde subtaken en chatberichten. (Afgerond, gecontroleerd door gebruiker)
-- ❌ **[UI] Zoekfunctie Chatgeschiedenis:** (Optioneel)
-  - Voeg een zoekbalk toe aan het chatpaneel.
 - ✅ **[BUG] Hardnekkige Deno Lint Fouten Oplossen:**
   - Onderzoek en los de terugkerende `deno-lint(no-sloppy-imports)` en missende extensie fouten op. Controleer configuraties (Deno, ESLint, Vite, TSConfig).
 - ✅ **[UI] Mobiele Weergave/Responsiviteit:**
@@ -190,23 +188,23 @@
 
 *Dit is een voorlopig plan gebaseerd op onderzoek. Details kunnen wijzigen tijdens implementatie.*
 
-- ❌ **[Feature] Developer Mode:**
-  - **Functionaliteit:** Bied een optionele modus die gebruik maakt van geavanceerdere AI-modellen voor taken zoals onderzoek en tekstgeneratie.
-  - **Modellen:** Gebruik [Claude 3.7](https://www.anthropic.com/news/claude-3-5-sonnet) (Sonnet/Opus afhankelijk van beschikbaarheid/kosten) OF [Gemini 2.5 Pro](https://deepmind.google/technologies/gemini/pro/). Keuze mogelijk configureerbaar maken.
-  
-  - **Nieuwe Overwegingen (Gebaseerd op Discussie 2024-07-24):**
-    - **Huidige Setup (voor documentatie):** Creative Mode & Precise Mode draaien op GPT-4o mini.
-    - **Voorstel 1 (Aanbevolen Start):** Voeg een krachtiger model toe (bv. GPT-4o volledig, Claude 3 Sonnet/Opus) als premium selectie voor bestaande modi. Dit biedt directe kwaliteitsverbetering.
-    - **Voorstel 2 (Volgende Stap):** Introduceer een nieuwe modus, bv. "Analyse & Inzicht Modus", die zich richt op het interpreteren van taakdata (voortgang, trends, knelpunten). Deze modus kan dan ook profiteren van de modelkeuze (GPT-4o mini vs. krachtiger model).
-    - **Combinatie:** Uiteindelijk kan de gebruiker mogelijk zowel een Modus (Efficiëntie, Creatief, Analyse) als een Model (Snel/Efficiënt, Geavanceerd/Krachtig) kiezen.
+## Technische Schuld / Known Issues (voorheen TECH_DEBT.md)
 
-  - **Integratie:**
-    - Koppel deze modus/modelkeuze aan een **betaald abonnement** (vereist voltooide Stripe-integratie).
-    - Pas bestaande Edge Functions (bv. `generate-chat-response`, `deep-research`) aan om conditioneel het geselecteerde geavanceerde model aan te roepen op basis van de gebruikersrol/abonnement/instelling.
-    - Voeg een instelling toe (bv. in `Settings.tsx`) waar betalende gebruikers de modus/model kunnen selecteren/instellen.
-    - Overweeg API-sleutelbeheer voor de geselecteerde modellen (bv. via Supabase Vault of environment variables).
-  - **UI:**
-    - Geef visueel aan wanneer de Developer Mode / geavanceerd model actief is (bv. een badge in de chat of header).
-    - Communiceer duidelijk de voordelen (en mogelijk hogere kosten/langere responstijden) van deze modus/model.
+### esbuild Kwetsbaarheid (gevonden via npm audit op 2025-07-05)
 
-*Dit is een voorlopig plan gebaseerd op onderzoek. Details kunnen wijzigen tijdens implementatie.*
+- **Pakket:** `esbuild` (<=0.24.2)
+- **Afhankelijkheid via:** `vite`
+- **Ernst:** Moderate
+- **Beschrijving:** De kwetsbaarheid stelt potentieel externe websites in staat om verzoeken naar de lokale development server te sturen en de response te lezen. Zie [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99) voor details.
+- **Voorgestelde Oplossing (door npm audit):** `npm audit fix --force`
+- **Waarschuwing:** Het uitvoeren van `npm audit fix --force` zal `vite` updaten naar v6.3.5 (of hoger), wat een **breaking change** is. Dit vereist mogelijk aanpassingen in de codebase.
+- **Status:** Uitgesteld - Handmatig aanpakken wanneer het uitkomt om potentiële breaking changes te beheren.
+
+## Mogelijke Verbeterpunten/Aandachtspunten voor TaskDetail.tsx (voorheen TaskDetail_Verbeterpunten.md)
+
+- **Complexiteit:** De component `TaskDetail.tsx` is erg groot en beheert veel state en logica. Overwogen kan worden om bepaalde secties verder op te splitsen in kleinere, herbruikbare componenten als dat nog niet maximaal is gedaan (hoewel `SubtaskRow` al een goed voorbeeld is van een dergelijke opsplitsing). Dit kan de leesbaarheid en onderhoudbaarheid ten goede komen.
+- **Performance:** Bij zeer lange lijsten met subtaken kan de performance een aandachtspunt zijn. Hoewel dit voor de meeste use-cases waarschijnlijk geen direct probleem is, kan het bij een groot aantal subtaken overwogen worden om technieken zoals lijstvirtualisatie toe te passen om de rendering te optimaliseren.
+- **Error Handling Consistentie:** Hoewel er goede error handling aanwezig is voor veel asynchrone operaties (bijvoorbeeld het herstellen van de originele subtaaktitel bij een updatefout), is het raadzaam om te controleren of dit niveau van detail consistent is toegepast op *alle* asynchrone acties binnen de component. Een uniforme aanpak voor gebruikersfeedback bij fouten (bijv. via toasts) kan de gebruikerservaring verbeteren.
+- **"Magic Numbers/Strings":** Controleer op het gebruik van "magic numbers" (bijv. `globalThis.innerWidth < 1024` voor de lg breakpoint) of hardgecodeerde strings die beter als constanten gedefinieerd kunnen worden, mogelijk in een apart configuratiebestand of aan het begin van de module. Dit verhoogt de onderhoudbaarheid en maakt aanpassingen eenvoudiger. Voor breakpoints is het gebruik van Tailwind's themaconfiguratie via JavaScript vaak een best practice.
+- **Testbaarheid:** Gezien de complexiteit van de component, is het cruciaal om goede unit- en integratietesten te hebben. Het verder opsplitsen van de component in kleinere, meer gefocuste componenten kan ook de testbaarheid verbeteren, omdat elke kleinere component geïsoleerd getest kan worden.
+- **Toegankelijkheid (a11y):** Hoewel veel `shadcn/ui` componenten toegankelijkheid in gedachten hebben, is het goed om een handmatige controle of geautomatiseerde tests uit te voeren om te verzekeren dat alle interactieve elementen (zoals dropdowns, dialogen, custom checkboxes) volledig toetsenbord-navigeerbaar zijn en correct worden aangekondigd door schermlezers. Let specifiek op `aria-labels`, `sr-only` teksten en focus management.

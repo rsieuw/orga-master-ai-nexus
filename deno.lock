@@ -65,6 +65,7 @@
     "npm:embla-carousel-react@^8.3.0": "8.6.0_react@18.3.1_embla-carousel@8.6.0",
     "npm:eslint-plugin-react-hooks@^5.1.0-rc.0": "5.2.0_eslint@9.26.0",
     "npm:eslint-plugin-react-refresh@~0.4.6": "0.4.20_eslint@9.26.0",
+    "npm:eslint@9.26.0": "9.26.0",
     "npm:eslint@^9.9.0": "9.26.0",
     "npm:framer-motion@^12.10.4": "12.10.4_react@18.3.1_react-dom@18.3.1__react@18.3.1",
     "npm:globals@^15.9.0": "15.15.0",

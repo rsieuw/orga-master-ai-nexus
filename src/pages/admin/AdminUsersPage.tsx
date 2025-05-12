@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client.ts";
-import { UserProfile, UserRole, AiMode } from '@/contexts/AuthContext.tsx';
+import { UserProfile, UserRole, AiChatMode } from '@/types/auth.ts';
 import {
   Table,
   TableBody,
@@ -127,7 +127,7 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
           updated_at: user.updated_at,
           status: user.status || 'active',
           email_notifications_enabled: user.email_notifications_enabled ?? true,
-          ai_mode_preference: (user.ai_mode_preference || 'gpt4o') as AiMode,
+          ai_mode_preference: (user.ai_mode_preference || 'gpt4o') as AiChatMode,
           enabled_features: [] // Keep or adjust if needed
       }));
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserProfile, UserRole } from '@/contexts/AuthContext.tsx';
+import { UserProfile, UserRole } from '@/types/auth.ts';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';

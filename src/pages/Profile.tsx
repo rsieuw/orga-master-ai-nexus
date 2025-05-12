@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import AppLayout from "@/components/layout/AppLayout.tsx";
-import { useAuth } from "@/contexts/AuthContext.tsx";
+import { useAuth } from "@/hooks/useAuth.ts";
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Badge } from "@/components/ui/badge.tsx";

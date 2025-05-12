@@ -7,6 +7,7 @@ import { CheckSquare, Hourglass } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
 import { useTranslation } from 'react-i18next';
+import { Badge } from "@/components/ui/badge.tsx";
 
 interface TaskCardProps {
   task: Task;
@@ -44,7 +45,14 @@ export default function TaskCard({ task }: TaskCardProps) {
       <Card className={`task-card ${priorityClass} h-full flex flex-col`}>
         <div className="p-3 flex-grow">
           <div className="flex justify-between items-start">
-            <h3 className="font-medium text-base line-clamp-1">{task.title}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-base line-clamp-1">{task.title}</h3>
+              {task.isNew === true && (
+                <Badge variant="default" className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white text-[10px] px-2 py-0 h-5 border-0">
+                  {t('taskCard.new', 'Nieuw')}
+                </Badge>
+              )}
+            </div>
             <div className={`w-2 h-2 rounded-full ${statusColor[task.status]}`}></div>
           </div>
 

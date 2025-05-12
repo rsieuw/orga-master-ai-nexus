@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster.tsx";
 import { Toaster as Sonner } from "@/components/ui/sonner.tsx";
 import { TooltipProvider } from "@/components/ui/tooltip.tsx";
 import { ThemeProvider } from "@/contexts/ThemeContext.tsx";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext.tsx";
+import { AuthProvider } from "@/contexts/AuthContext.tsx";
+import { useAuth } from "@/hooks/useAuth.ts";
 import { TaskProvider } from "@/contexts/TaskContext.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -18,7 +19,6 @@ import Settings from "./pages/Settings.tsx";
 import Profile from "./pages/Profile.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import SupportPage from "./pages/Support.tsx";
-import DocumentationPage from "./pages/Documentation.tsx";
 import ContactPage from "./pages/ContactPage.tsx";
 import PricingPage from "./pages/Pricing.tsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.tsx";
@@ -62,7 +62,6 @@ const AppContent = () => {
             <Route path="/settings" element={<Settings />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/support" element={<SupportPage />} />
-            <Route path="/documentation" element={<DocumentationPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/pricing" element={<PricingPage />} />
             

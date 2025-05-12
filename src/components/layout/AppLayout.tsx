@@ -2,7 +2,7 @@ import { PropsWithChildren, useState } from "react";
 import Navbar from "./Navbar.tsx";
 import Footer from "./Footer.tsx";
 import BottomNavigation from "./BottomNavigation.tsx";
-import { useAuth } from "@/contexts/AuthContext.tsx";
+import { useAuth } from "@/hooks/useAuth.ts";
 import { Navigate } from "react-router-dom";
 import {
   Dialog,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext.tsx";
+import { useAuth } from "@/hooks/useAuth.ts";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.t
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast.ts";
 import { Eye, EyeOff } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 export default function RegisterForm() {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,15 +27,15 @@ export default function RegisterForm() {
     try {
       await register(email, password, name);
       toast({
-        title: "Registratie geslaagd",
-        description: "Welkom bij OrgaMaster AI!",
+        title: t('registerForm.toast.successTitle'),
+        description: t('registerForm.toast.successDescription'),
       });
       navigate("/");
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Registratie mislukt",
-        description: "Er is iets misgegaan bij het registreren.",
+        title: t('registerForm.toast.errorTitle'),
+        description: t('registerForm.toast.errorDescription'),
       });
       console.error("Registration error:", error);
     } finally {
@@ -44,33 +46,33 @@ export default function RegisterForm() {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="text-2xl text-center">Registreren</CardTitle>
+        <CardTitle className="text-2xl text-center">{t('registerForm.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleRegister} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Naam</Label>
+            <Label htmlFor="name">{t('registerForm.nameLabel')}</Label>
             <Input
               id="name"
-              placeholder="Jouw naam"
+              placeholder={t('registerForm.namePlaceholder')}
               value={name}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
+            <Label htmlFor="email">{t('registerForm.emailLabel')}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="jouw@email.com"
+              placeholder={t('registerForm.emailPlaceholder')}
               value={email}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               required
             />
           </div>
           <div className="space-y-2 relative">
-            <Label htmlFor="password">Wachtwoord</Label>
+            <Label htmlFor="password">{t('registerForm.passwordLabel')}</Label>
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -93,7 +95,7 @@ export default function RegisterForm() {
                 <Eye className="h-4 w-4" />
               )}
               <span className="sr-only">
-                {showPassword ? "Verberg" : "Toon"} wachtwoord
+                {showPassword ? t('registerForm.hidePassword') : t('registerForm.showPassword')}
               </span>
             </Button>
           </div>
@@ -103,7 +105,7 @@ export default function RegisterForm() {
               className="w-full bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
               disabled={isLoading}
             >
-            {isLoading ? "Registreren..." : "Registreren"}
+            {isLoading ? t('registerForm.submitButtonLoading') : t('registerForm.submitButton')}
           </Button>
           </div>
         </form>

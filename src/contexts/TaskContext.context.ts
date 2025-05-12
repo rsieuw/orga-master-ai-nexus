@@ -5,7 +5,7 @@ export interface TaskContextType {
   tasks: Task[];
   isLoading: boolean;
   getTaskById: (id: string) => Task | undefined;
-  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'subtasks' | 'userId' | 'aiSubtaskGenerationCount'>) => Promise<Task | undefined>;
+  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'subtasks' | 'userId' | 'aiSubtaskGenerationCount' | 'isNew'>) => Promise<Task | undefined>;
   updateTask: (id: string, updates: Partial<Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId'>>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   addSubtask: (taskId: string, subtaskTitle: string, subtaskDescription?: string) => Promise<void>;
@@ -18,6 +18,7 @@ export interface TaskContextType {
   groupTasksByDate: () => TasksByDate;
   getMaxAiGenerationsForUser: () => number;
   isAiGenerationLimitReached: (task: Task) => boolean;
+  markTaskAsViewed: (id: string) => Promise<void>;
 }
 
 export const TaskContext = createContext<TaskContextType | undefined>(undefined); 

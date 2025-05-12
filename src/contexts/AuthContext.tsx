@@ -1,51 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client.ts";
 import { useToast } from "@/hooks/use-toast.ts";
 import { useTranslation } from 'react-i18next';
-
-export type UserRole = "admin" | "paid" | "free";
-
-// Define the possible AI modes as a literal type
-export type AiMode = 'gpt4o' | 'creative' | 'precise';
-
-// Define possible research models - copying from Settings.tsx for now
-// Ideally, this would be defined in a shared types file
-type ResearchModel = 'perplexity-sonar' | 'gpt-4o-mini';
-
-export type LayoutPreference = '50-50' | '33-67';
-
-export interface UserProfile {
-  id: string;
-  email: string;
-  name: string | null;
-  role: UserRole;
-  avatar_url: string | null;
-  language_preference: string;
-  email_notifications_enabled: boolean;
-  ai_mode_preference: AiMode; // Added field using the literal type
-  research_model_preference?: ResearchModel; // Add optional research model preference
-  layout_preference?: LayoutPreference;
-  created_at: string;
-  updated_at: string;
-  status?: string;
-  enabled_features: string[];
-  can_use_creative_mode?: boolean;
-  can_use_precise_mode?: boolean;
-}
-
-export interface AuthContextProps {
-  isAuthenticated: boolean;
-  user: UserProfile | null;
-  session: Session | null;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
-  updateUser: (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference' | 'layout_preference'>>) => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextProps | undefined>(undefined);
+import { 
+  UserProfile,
+  AiChatMode
+} from "@/types/auth.ts";
+import { AuthContext } from "./AuthContextDef.tsx";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -56,7 +18,113 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  const logout = useCallback(async () => {
+  // State for the selected AI chat mode
+  const [aiMode, setAiModeState] = useState<AiChatMode>('default');
+
+  const updateUser_internal = useCallback(async (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference' | 'research_model_provider' | 'chat_model_provider' | 'layout_preference'>>) => {
+    if (!session || !user) {
+      console.error("Update user failed: No session or user");
+      throw new Error("User not logged in");
+    }
+
+    console.log("updateUser_internal called with data:", data);
+
+    const currentAiModePreference = data.ai_mode_preference || user.ai_mode_preference;
+    if (user?.role === 'free' &&
+        (currentAiModePreference === 'creative' ||
+         currentAiModePreference === 'precise')) {
+      toast({
+        title: t('settings.toast.errorSavingAiMode.title'),
+        description: t('settings.freeUserPremiumFeature'),
+        variant: "destructive",
+      });
+      // Restore aiMode state to the previous value if the update is not allowed
+      // This prevents the UI from optimistically updating to a disallowed mode.
+      setAiModeState(user.ai_mode_preference || 'default');
+      return;
+    }
+
+    try {
+      if (data.name !== undefined && data.name !== user?.name) {
+          if (data.name !== null) {
+              const { error: updateAuthError } = await supabase.auth.updateUser({ data: { name: data.name } });
+              if (updateAuthError) throw updateAuthError;
+          }
+      }
+
+      const profileUpdatePayload: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference' | 'research_model_provider' | 'chat_model_provider' | 'layout_preference'>> = {};
+      if (data.name !== undefined) profileUpdatePayload.name = data.name;
+      if (data.language_preference !== undefined) profileUpdatePayload.language_preference = data.language_preference;
+      if (data.email_notifications_enabled !== undefined) profileUpdatePayload.email_notifications_enabled = data.email_notifications_enabled;
+      // Ensure ai_mode_preference is updated with AiChatMode type
+      if (data.ai_mode_preference !== undefined) profileUpdatePayload.ai_mode_preference = data.ai_mode_preference as AiChatMode;
+      if (data.research_model_preference !== undefined) profileUpdatePayload.research_model_preference = data.research_model_preference;
+      if (data.research_model_provider !== undefined) profileUpdatePayload.research_model_provider = data.research_model_provider;
+      // Safer casting for chat_model_provider
+      if (data.chat_model_provider !== undefined) {
+        // Check if the value is valid for ChatModelProvider type
+        if (data.chat_model_provider === 'perplexity-sonar' || data.chat_model_provider === 'gpt4o-mini') {
+          profileUpdatePayload.chat_model_provider = data.chat_model_provider;
+        }
+      }
+      if (data.layout_preference !== undefined) profileUpdatePayload.layout_preference = data.layout_preference;
+
+      if (Object.keys(profileUpdatePayload).length > 0) {
+        console.log("Updating profile with payload:", profileUpdatePayload);
+        
+        const { error: updateProfileError } = await supabase
+          .from('profiles')
+          .update(profileUpdatePayload)
+          .eq('id', user.id);
+          
+        if (updateProfileError) {
+          console.error("Profile update error:", updateProfileError);
+          throw updateProfileError;
+        } else {
+          console.log("Profile update successful");
+        }
+      }
+
+      setUser(prevUser => {
+        const updatedUser = prevUser ? { ...prevUser, ...profileUpdatePayload } as UserProfile : null;
+        console.log("User state updated to:", updatedUser);
+        return updatedUser;
+      });
+      
+      if (data.ai_mode_preference) {
+        setAiModeState(data.ai_mode_preference as AiChatMode);
+      }
+
+    } catch (error: unknown) {
+      console.error("Update user failed:", error);
+      toast({
+        title: t('auth.toast.updateFailed.title'),
+        description: t('auth.toast.updateFailed.descriptionDefault'),
+        variant: "destructive",
+      });
+      // Rollback optimistic update if necessary, or refetch user
+      // For now, restore aiModeState if updateUser fails for ai_mode_preference
+      if (data.ai_mode_preference && user?.ai_mode_preference) {
+        setAiModeState(user.ai_mode_preference);
+      }
+      throw error;
+    }
+  }, [session, user, t, toast, setUser, setAiModeState]);
+
+  // Wrapper for setAiMode to also call updateUser for persistence
+  const setAiMode = useCallback(async (mode: AiChatMode) => {
+    setAiModeState(mode);
+    if (user) { // Only update if there is a user
+      try {
+        await updateUser_internal({ ai_mode_preference: mode });
+      } catch (error) {
+        console.error("Failed to persist aiMode preference:", error);
+        // Optional: toast message for the user if saving fails
+      }
+    }
+  }, [user, updateUser_internal]);
+
+  const logout_internal = useCallback(async () => { // Renamed to avoid conflict with exported logout
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
@@ -94,6 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (initialAuthCheckComplete && session?.user) {
         setIsLoading(true); 
         try {
+          console.log("Fetching user profile...");
           const { data: profileData, error } = await supabase
             .rpc('get_user_profile_with_permissions', { user_id: session.user.id })
             .single();
@@ -103,6 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(null);
           } else if (profileData) {
             const fullProfile = profileData as unknown as UserProfile;
+            console.log("Raw profile data:", fullProfile);
 
             if (fullProfile.status === 'inactive') {
               console.warn('User is inactive, logging out.');
@@ -111,14 +181,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 title: t('auth.toast.accountDeactivated.title'), 
                 description: t('auth.toast.accountDeactivated.description')
               });
-              logout(); 
+              await logout_internal(); // use internal version
               setUser(null);
             } else {
-              setUser({
+              const resolvedProfile = {
                 ...fullProfile,
                 role: (fullProfile.role === 'admin' || fullProfile.role === 'paid') ? fullProfile.role : 'free',
                 layout_preference: fullProfile.layout_preference || '50-50',
-              }); 
+                ai_mode_preference: fullProfile.ai_mode_preference || 'default',
+              } as UserProfile;
+              console.log("Setting user with layout_preference:", resolvedProfile.layout_preference);
+              setUser(resolvedProfile);
+              setAiModeState(resolvedProfile.ai_mode_preference); // Set aiMode state based on profile
             }
           } else {
             console.warn('Profile Effect: Profile not found via function for user:', session.user?.id);
@@ -137,7 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     fetchProfile();
-  }, [session, initialAuthCheckComplete, logout, toast, t]);
+  }, [session, initialAuthCheckComplete, logout_internal, toast, t]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -151,7 +225,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     } catch (error: unknown) {
       console.error("Login failed:", error);
-      // Prefer specific error from Supabase if available, otherwise generic translated one.
       const specificMessage = (error instanceof Error && typeof error === 'object' && error !== null && 'status' in error && (error as { status: number }).status === 400)
                               ? error.message
                               : null;
@@ -164,6 +237,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
   };
+
+  const exportedLogout = useCallback(async () => { // Renamed for export
+    await logout_internal();
+  }, [logout_internal]);
 
   const register = async (email: string, password: string, name: string) => {
     try {
@@ -197,94 +274,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateUser = async (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference' | 'layout_preference'>>) => {
-    if (!session || !user) {
-      console.error("Update user failed: No session or user");
-      throw new Error("Gebruiker niet ingelogd");
-    }
-
-    // --- START VALIDATION FOR AI MODE --- 
-    if (data.ai_mode_preference && user?.role === 'free' && data.ai_mode_preference !== 'gpt4o') {
-      toast({
-        variant: "destructive",
-        title: t('auth.toast.updateForbidden.title'),
-        description: t('auth.toast.updateForbidden.descriptionFreeUserAIMode'),
-      });
-      // Gooi een error om de rest van de functie te stoppen
-      throw new Error("Invalid AI mode preference for free user."); 
-    }
-    // --- END VALIDATION FOR AI MODE ---
-
-    try {
-      // Update auth.users if name changed (optional, consider if email should be updatable too)
-      if (data.name !== undefined && data.name !== user?.name) {
-          if (data.name !== null) { 
-              const { error: updateAuthError } = await supabase.auth.updateUser({ data: { name: data.name } });
-              if (updateAuthError) throw updateAuthError; 
-          }
-      }
-      
-      // Prepare payload for profiles table update
-      const profileUpdatePayload: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference' | 'layout_preference'>> = {};
-      if (data.name !== undefined) profileUpdatePayload.name = data.name;
-      if (data.language_preference !== undefined) profileUpdatePayload.language_preference = data.language_preference;
-      if (data.email_notifications_enabled !== undefined) profileUpdatePayload.email_notifications_enabled = data.email_notifications_enabled;
-      if (data.ai_mode_preference !== undefined) profileUpdatePayload.ai_mode_preference = data.ai_mode_preference;
-      if (data.research_model_preference !== undefined) profileUpdatePayload.research_model_preference = data.research_model_preference;
-      if (data.layout_preference !== undefined) profileUpdatePayload.layout_preference = data.layout_preference;
-
-      // Update profiles table if there's anything to update
-      if (Object.keys(profileUpdatePayload).length > 0) {
-        const { error: updateProfileError } = await supabase
-          .from('profiles')
-          .update(profileUpdatePayload) // Update using the prepared payload
-          .eq('id', session.user.id);
-        if (updateProfileError) throw updateProfileError;
-      }
-
-      // Update local user state optimistically
-      setUser(currentUser => {
-          if (!currentUser) return null;
-          const updatedUser = { ...currentUser };
-          if (data.name !== undefined) updatedUser.name = data.name;
-          if (data.language_preference !== undefined) updatedUser.language_preference = data.language_preference;
-          if (data.email_notifications_enabled !== undefined) updatedUser.email_notifications_enabled = data.email_notifications_enabled;
-          if (data.ai_mode_preference !== undefined) updatedUser.ai_mode_preference = data.ai_mode_preference as AiMode;
-          if (data.research_model_preference !== undefined) updatedUser.research_model_preference = data.research_model_preference as ResearchModel;
-          if (data.layout_preference !== undefined) updatedUser.layout_preference = data.layout_preference as LayoutPreference;
-          return updatedUser;
-      });
-      
-    } catch (error: unknown) {
-      // Handle errors (including the validation error thrown above)
-      console.error("Update user failed:", error);
-      // Don't show generic toast if it was our specific validation error (already shown)
-      if (!(error instanceof Error && error.message === "Invalid AI mode preference for free user.")) {
-          const message = error instanceof Error ? error.message : t('auth.toast.updateFailed.descriptionDefault');
-          toast({ 
-            variant: "destructive", 
-            title: t('auth.toast.updateFailed.title'), 
-            description: message 
-          });
-      }
-      throw error; // Re-throw error for potential higher-level handling
-    }
-  };
-
   return (
-    <AuthContext.Provider
-      value={{ isAuthenticated, user, session, isLoading, login, logout, register, updateUser }}
-    >
+    <AuthContext.Provider value={{
+      isAuthenticated,
+      user,
+      session,
+      isLoading,
+      login,
+      logout: exportedLogout, // use renamed version for export
+      register,
+      updateUser: updateUser_internal, // use internal version
+      aiMode,
+      setAiMode 
+    }}>
       {children}
     </AuthContext.Provider>
   );
 }
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};

@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { renderWithProviders } from '@/test/utils';
-import AppLayout from './AppLayout';
-import { useAuth } from '@/contexts/AuthContext';
+import AppLayout from './AppLayout.tsx';
+import { useAuth } from '@/hooks/useAuth.ts';
 
 // Mock useAuth hook
 vi.mock('@/contexts/AuthContext', async (importOriginal) => {

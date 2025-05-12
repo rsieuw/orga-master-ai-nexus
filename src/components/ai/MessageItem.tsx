@@ -1,5 +1,5 @@
-import { Message } from "./types.ts";
-import { Bot, Copy, Sparkles, Trash2, Pin } from "lucide-react";
+import { Message, Citation } from "./types.ts";
+import { Bot, Copy, Sparkles, Trash2, Pin, User } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -10,27 +10,27 @@ import { GradientLoader } from "@/components/ui/loader.tsx";
 
 interface MessageItemProps {
   message: Message;
-  index: number;
   onCopy: (text: string) => void;
   onDeleteNote?: (noteId: string) => void;
   onDeleteResearch?: (researchId: string) => void;
   onTogglePin?: (messageId: string, currentIsPinned: boolean) => void;
   isLoading: boolean;
+  userAvatarUrl?: string;
 }
 
 export function MessageItem({ 
   message, 
-  index, 
   onCopy, 
   onDeleteNote, 
   onDeleteResearch,
   onTogglePin,
-  isLoading 
+  isLoading,
+  userAvatarUrl
 }: MessageItemProps) {
   const { t } = useTranslation();
-  
+
   // Define container classes based on message role
-  const messageContainerClasses = `group/message flex items-start gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`;
+  const messageContainerClasses = `group/message flex items-start gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4` + (message.messageType === 'research_result' ? ' DBG-RESEARCH-CONTAINER' : '');
   
   // Define Markdown components for rendering
   const markdownComponents: Partial<Components> = {
@@ -56,7 +56,7 @@ export function MessageItem({
   // Render specifically for research_loader
   if (message.messageType === 'research_loader') {
     return (
-      <div key={index} className={messageContainerClasses}>
+      <div className={messageContainerClasses}>
         <div className="mt-1 flex-shrink-0">
           <Bot className="h-5 w-5 text-muted-foreground" />
         </div>
@@ -72,18 +72,34 @@ export function MessageItem({
 
   // Render for all other message types
   return (
-    <div key={index} className={messageContainerClasses}>
-      {(message.role === 'assistant' && message.messageType !== 'saved_research_display') && (
+    <div className={messageContainerClasses}>
+      {(message.role === 'assistant' && 
+        message.messageType !== 'saved_research_display' && 
+        message.messageType !== 'research_result') && (
         <div className="mt-1 flex-shrink-0">
           <Bot className="h-5 w-5 text-muted-foreground" /> 
         </div>
       )}
-      {message.messageType === 'saved_research_display' && (
+      {(message.messageType === 'saved_research_display' || message.messageType === 'research_result') && (
         <div className="mt-1 flex-shrink-0">
           <Sparkles className="h-5 w-5 text-primary" />
         </div>
       )}
+      {message.role === 'user' && (
+        <div className="mt-1 flex-shrink-0 order-2 ml-2">
+          {userAvatarUrl ? (
+            <div className="h-5 w-5 rounded-full overflow-hidden">
+              <img src={userAvatarUrl} alt="User" className="h-full w-full object-cover" />
+            </div>
+          ) : (
+            <User className="h-5 w-5 text-muted-foreground" />
+          )}
+        </div>
+      )}
       <div
+        id={`message-${message.id}`}
+        data-message-id={message.id}
+        data-message-type={message.messageType}
         className={`chat-message relative px-2 py-1 rounded-lg max-w-[80%] group ${ 
           message.messageType === 'note_saved' 
             ? "chat-message-note-saved"
@@ -107,15 +123,66 @@ export function MessageItem({
           </p>
         )}
         
-        {(message.messageType === 'note_saved' || message.messageType === 'saved_research_display' || message.messageType === 'research_result') ? (
-          <div className="text-sm">
-            <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
-                components={markdownComponents} 
-              >
-                {message.content || ''}
-            </ReactMarkdown>
+        {(message.messageType === 'note_saved' || message.messageType === 'saved_research_display' || message.messageType === 'research_result' || 
+          // Extra detectie voor niet-getagde onderzoeksresultaten
+          (message.role === 'assistant' && typeof message.content === 'string' && message.content.length > 100 && (message.citations !== undefined || message.content.includes('#')))) ? (
+          // Research result rendering
+          <div>
+            {(message.messageType === 'research_result' || 
+              // Extra detectie voor niet-getagde onderzoeksresultaten
+              (message.role === 'assistant' && typeof message.content === 'string' && message.content.length > 100 && (message.citations !== undefined || message.content.includes('#')))) ? (
+              <div className="text-sm">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                  components={markdownComponents}
+                >
+                  {typeof message.content === 'string' ? message.content : 'Geen inhoud beschikbaar'}
+                </ReactMarkdown>
+                
+                {/* Alleen bronnen tonen als ze nog niet in de content staan */}
+                {message.citations && message.citations.length > 0 && 
+                 typeof message.content === 'string' && 
+                 !message.content.includes('# Sources') && 
+                 !message.content.includes('## Sources') && 
+                 !message.content.includes('# Bronnen') && 
+                 !message.content.includes('## Bronnen') && (
+                  <div className="mt-4">
+                    <h3 className="text-sm font-medium">{t('messageItem.sources')}</h3>
+                    <ul className="mt-2 space-y-2">
+                      {message.citations.map((citation, index) => {
+                        const isCitationObject = typeof citation === 'object' && citation !== null;
+                        return (
+                          <li key={index}>
+                            <a
+                              href={isCitationObject ? (citation as Citation).url : '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline text-xs"
+                            >
+                              {isCitationObject 
+                                ? ((citation as Citation).title || (citation as Citation).url || t('messageItem.source', 'Bron')) 
+                                : (typeof citation === 'string' ? citation : t('messageItem.source', 'Bron'))}
+                            </a>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ) : message.messageType === 'note_saved' || message.messageType === 'saved_research_display' ? (
+              // Bestaande notitie rendering
+              <div className="text-sm">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                  components={markdownComponents}
+                >
+                  {typeof message.content === 'string' ? message.content : ''}
+                </ReactMarkdown>
+              </div>
+            ) : null}
           </div>
         ) : message.role === 'assistant' ? (
           <div className="text-sm">
@@ -148,12 +215,12 @@ export function MessageItem({
                 <span className="sr-only">{t('chatPanel.deleteNoteSR')}</span>
               </Button>
             )}
-            {message.messageType === 'saved_research_display' && message.dbId && onDeleteResearch && (
+            {(message.messageType === 'saved_research_display' || message.messageType === 'research_result') && message.id && onDeleteResearch && (
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-5 w-5 text-current hover:bg-transparent hover:text-foreground"
-                onClick={() => onDeleteResearch(message.dbId!)}
+                onClick={() => onDeleteResearch(message.id)}
                 title={t('chatPanel.deleteResearchTitle')}
                 disabled={isLoading}
               >

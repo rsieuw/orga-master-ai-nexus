@@ -2,7 +2,12 @@ import { useState, useEffect } from "react";
 import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card.tsx";
 import { useTheme } from "@/contexts/ThemeContext.tsx";
-import { useAuth, AiMode } from "@/contexts/AuthContext.tsx";
+import { useAuth } from "@/hooks/useAuth.ts";
+import {
+  AiChatMode,
+  ResearchModelMode,
+  LayoutPreference
+} from "@/types/auth.ts";
 import {
   Select,
   SelectContent,
@@ -13,35 +18,44 @@ import {
 import { Switch } from "@/components/ui/switch.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { Textarea } from "@/components/ui/textarea.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { useToast } from "@/hooks/use-toast.ts";
-import { Settings, User, Palette, Languages, Brain } from "lucide-react";
+import { Settings, User, Palette, Languages, Brain, Search, SlidersHorizontal, Lightbulb, Target, Library, ListOrdered, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer.tsx";
 import { Loader } from "@/components/ui/loader.tsx";
 import { useTranslation } from 'react-i18next';
-import type { LayoutPreference } from "@/contexts/AuthContext.tsx";
 import { cn } from "@/lib/utils.ts";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group.tsx";
 
-// Define possible research models - use consistent identifiers with backend
-type ResearchModel = 'perplexity-sonar' | 'gpt-4o-mini';
+// Define research model provider type from backend
+type ResearchModelProvider = 'perplexity-sonar' | 'gpt4o-mini';
 
-// Use labelKey for i18n
-const aiModeOptions: { value: AiMode; labelKey: string }[] = [
-  { value: 'gpt4o', labelKey: 'settings.aiMode.options.gpt4oBalanced' },
-  { value: 'creative', labelKey: 'settings.aiMode.options.creativeMode' },
-  { value: 'precise', labelKey: 'settings.aiMode.options.preciseMode' },
+// Define chat model provider type (using same options as research model provider)
+type ChatModelProvider = 'perplexity-sonar' | 'gpt4o-mini';
+
+// Use labelKey for i18n - AI Chat interaction modes
+const aiModeOptions: { value: AiChatMode; labelKey: string; descriptionKey: string; icon: React.ElementType }[] = [
+  { value: 'default', labelKey: 'aiModes.default.name', descriptionKey: 'aiModes.default.description', icon: SlidersHorizontal },
+  { value: 'creative', labelKey: 'aiModes.creative.name', descriptionKey: 'aiModes.creative.description', icon: Lightbulb },
+  { value: 'precise', labelKey: 'aiModes.precise.name', descriptionKey: 'aiModes.precise.description', icon: Target },
+];
+
+// Use labelKey for research models modes
+const researchModelOptions: { value: ResearchModelMode; labelKey: string; descriptionKey: string; icon: React.ElementType }[] = [
+  { value: 'research', labelKey: 'settings.researchModel.research', descriptionKey: 'settings.researchModel.researchDescription', icon: Library },
+  { value: 'instruction', labelKey: 'settings.researchModel.instruction', descriptionKey: 'settings.researchModel.instructionDescription', icon: ListOrdered },
+  { value: 'creative', labelKey: 'settings.researchModel.creative', descriptionKey: 'settings.researchModel.creativeDescription', icon: Sparkles },
+];
+
+// Define available research model providers
+const researchModelProviders: { value: ResearchModelProvider; labelKey: string; descriptionKey: string; icon: React.ElementType }[] = [
+  { value: 'perplexity-sonar', labelKey: 'settings.researchModel.perplexitySonar', descriptionKey: 'settings.researchModel.perplexitySonarDescription', icon: Search },
+  { value: 'gpt4o-mini', labelKey: 'settings.researchModel.gpt4oMini', descriptionKey: 'settings.researchModel.gpt4oMiniDescription', icon: Brain },
+];
+
+// Define available chat model providers - reusing same labels as research model providers
+const chatModelProviders: { value: ChatModelProvider; labelKey: string; descriptionKey: string; icon: React.ElementType }[] = [
+  { value: 'perplexity-sonar', labelKey: 'settings.researchModel.perplexitySonar', descriptionKey: 'settings.chatModel.perplexitySonarDescription', icon: Search },
+  { value: 'gpt4o-mini', labelKey: 'settings.researchModel.gpt4oMini', descriptionKey: 'settings.chatModel.gpt4oMiniDescription', icon: Brain },
 ];
 
 export default function SettingsPage() {
@@ -51,10 +65,13 @@ export default function SettingsPage() {
   const [aiLanguage, setAiLanguage] = useState<string>(user?.language_preference || "nl");
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [isSavingNotifications, setIsSavingNotifications] = useState(false);
-  const [selectedAiMode, setSelectedAiMode] = useState<AiMode>('precise');
+  const [selectedAiMode, setSelectedAiMode] = useState<AiChatMode>('default');
   const [isSavingAiMode, setIsSavingAiMode] = useState(false);
-  const [researchModelPreference, setResearchModelPreference] = useState<ResearchModel>('perplexity-sonar');
+  const [researchModelPreference, setResearchModelPreference] = useState<ResearchModelMode>('research');
+  const [researchModelProvider, setResearchModelProvider] = useState<ResearchModelProvider>('perplexity-sonar');
   const [isSavingResearchModel, setIsSavingResearchModel] = useState(false);
+  const [chatModelProvider, setChatModelProvider] = useState<ChatModelProvider>('gpt4o-mini');
+  const [isSavingChatModel, setIsSavingChatModel] = useState(false);
   const { toast } = useToast();
   const [layoutPreference, setLayoutPreference] = useState<LayoutPreference>('50-50');
 
@@ -72,9 +89,35 @@ export default function SettingsPage() {
       setAiLanguage(user.language_preference || "nl");
       setEmailNotifications(user.email_notifications_enabled ?? true);
       setSelectedAiMode(user.ai_mode_preference || 'precise');
+      
       // Initialize research model preference - use a default if not set
-      setResearchModelPreference(user.research_model_preference || 'perplexity-sonar');
-      setLayoutPreference(user.layout_preference || '50-50'); // Initialize layout preference
+      const savedModel = user.research_model_preference || 'research';
+      // Ensure type compatibility for research model mode
+      if (['research', 'instruction', 'creative'].includes(savedModel)) {
+        setResearchModelPreference(savedModel as ResearchModelMode);
+      } else {
+        setResearchModelPreference('research');
+      }
+      
+      // Initialize research model provider - use a default if not set
+      const savedProvider = user.research_model_provider || 'perplexity-sonar';
+      // Ensure type compatibility for research model provider
+      if (['perplexity-sonar', 'gpt4o-mini'].includes(savedProvider)) {
+        setResearchModelProvider(savedProvider as ResearchModelProvider);
+      } else {
+        setResearchModelProvider('perplexity-sonar');
+      }
+      
+      // Initialize chat model provider - use a default if not set
+      const savedChatProvider = user.chat_model_provider || 'gpt4o-mini';
+      // Ensure type compatibility for chat model provider
+      if (['perplexity-sonar', 'gpt4o-mini'].includes(savedChatProvider)) {
+        setChatModelProvider(savedChatProvider as ChatModelProvider);
+      } else {
+        setChatModelProvider('gpt4o-mini');
+      }
+      
+      setLayoutPreference(user.layout_preference || '50-50');
     }
   }, [user]);
 
@@ -179,7 +222,7 @@ export default function SettingsPage() {
   };
 
   const handleAiModeChange = async (value: string) => {
-    const newMode = value as AiMode;
+    const newMode = value as AiChatMode;
     setIsSavingAiMode(true);
     const originalMode = selectedAiMode;
     setSelectedAiMode(newMode);
@@ -206,8 +249,9 @@ export default function SettingsPage() {
   };
 
   // Handle research model change
-  const handleResearchModelChange = async (value: ResearchModel) => {
-    if (user?.research_model_preference === value && researchModelPreference === value) return;
+  const handleResearchModelChange = async (value: ResearchModelMode) => {
+    // Skip if the value is already set
+    if (value === researchModelPreference) return;
 
     setIsSavingResearchModel(true);
     const originalModel = researchModelPreference;
@@ -215,9 +259,14 @@ export default function SettingsPage() {
 
     try {
       await updateUser({ research_model_preference: value });
-      const modeLabelKey = value === 'perplexity-sonar'
-        ? 'settings.researchModel.perplexitySonar'
-        : 'settings.researchModel.gpt4oMini';
+      let modeLabelKey = 'settings.researchModel.research';
+      
+      if (value === 'instruction') {
+        modeLabelKey = 'settings.researchModel.instruction';
+      } else if (value === 'creative') {
+        modeLabelKey = 'settings.researchModel.creative';
+      }
+      
       const modeLabel = t(modeLabelKey);
       toast({
         title: t('settings.toast.researchModelSaved.title'),
@@ -232,6 +281,78 @@ export default function SettingsPage() {
       });
     } finally {
       setIsSavingResearchModel(false);
+    }
+  };
+
+  // Handle research model provider change
+  const handleResearchModelProviderChange = async (value: ResearchModelProvider) => {
+    // Skip if the value is already set
+    if (value === researchModelProvider) return;
+
+    setIsSavingResearchModel(true);
+    const originalProvider = researchModelProvider;
+    setResearchModelProvider(value);
+
+    try {
+      await updateUser({ research_model_provider: value });
+      let providerLabelKey = 'settings.researchModel.perplexitySonar';
+      
+      if (value === 'gpt4o-mini') {
+        providerLabelKey = 'settings.researchModel.gpt4oMini';
+      }
+      
+      const providerLabel = t(providerLabelKey);
+      toast({
+        title: t('settings.toast.researchModelProviderSaved.title'),
+        description: t('settings.toast.researchModelProviderSaved.description', { provider: providerLabel }),
+      });
+    } catch (error) {
+      // Revert to original value on error
+      setResearchModelProvider(originalProvider);
+      console.error("Failed to update research model provider:", error);
+      toast({
+        variant: "destructive",
+        title: t('settings.toast.errorSavingResearchModel.title'),
+        description: t('settings.toast.errorSavingResearchModel.description'),
+      });
+    } finally {
+      setIsSavingResearchModel(false);
+    }
+  };
+
+  // Handle chat model provider change
+  const handleChatModelProviderChange = async (value: ChatModelProvider) => {
+    // Skip if the value is already set
+    if (value === chatModelProvider) return;
+
+    setIsSavingChatModel(true);
+    const originalProvider = chatModelProvider;
+    setChatModelProvider(value);
+
+    try {
+      await updateUser({ chat_model_provider: value });
+      let providerLabelKey = 'settings.researchModel.perplexitySonar';
+      
+      if (value === 'gpt4o-mini') {
+        providerLabelKey = 'settings.researchModel.gpt4oMini';
+      }
+      
+      const providerLabel = t(providerLabelKey);
+      toast({
+        title: t('settings.toast.chatModelProviderSaved.title'),
+        description: t('settings.toast.chatModelProviderSaved.description', { provider: providerLabel }),
+      });
+    } catch (error) {
+      // Revert to original value on error
+      setChatModelProvider(originalProvider);
+      console.error("Failed to update chat model provider:", error);
+      toast({
+        variant: "destructive",
+        title: t('settings.toast.errorSavingChatModel.title'),
+        description: t('settings.toast.errorSavingChatModel.description'),
+      });
+    } finally {
+      setIsSavingChatModel(false);
     }
   };
 
@@ -461,113 +582,168 @@ export default function SettingsPage() {
               <CardTitle>{t('settings.aiSettings.title')}</CardTitle>
               <CardDescription>{t('settings.aiSettings.description')}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between">
-                <div className="flex-grow">
-                  <Label htmlFor="ai-mode-select">{t('settings.aiMode.label')}</Label>
+            <CardContent className="space-y-4">
+              {/* Chat AI Mode Selection */}
+              <div className="space-y-3">
+                <div className="flex flex-col space-y-1">
+                  <h3 className="text-lg font-medium">{t('settings.aiMode.chatAiSettings')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {t('settings.aiMode.description')}
+                    {t('settings.aiMode.chatAiSettingsDescription')}
                     {user?.role === 'free' && (
-                       <span className="text-xs block text-amber-500">{t('settings.aiMode.freeUserLimitation')}</span>
+                      <span className="text-xs block text-amber-500 mt-1">{t('settings.freeUserPremiumFeature')}</span>
                     )}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 mt-1 md:mt-0">
-                  <Select 
-                    value={selectedAiMode} 
-                    onValueChange={handleAiModeChange}
-                    disabled={isSavingAiMode || user?.role === 'free'}
-                  >
-                    <SelectTrigger id="ai-mode-select" className="w-full md:w-48">
-                      <SelectValue placeholder={t('settings.aiMode.placeholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {aiModeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value} >
-                          {t(option.labelKey)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {isSavingAiMode && <Loader size="sm" />} 
+
+                {/* Chat Model Provider Selection & AI Interaction Mode */} 
+                <div className="pt-4 border-t border-muted">
+                    <div className="space-y-1">
+                      <Label className="text-md font-semibold">{t('settings.chatModel.label')}</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {chatModelProviders.map((provider) => (
+                          <div
+                            key={provider.value}
+                            className={cn(
+                              "p-4 rounded-lg border-2 transition-all cursor-pointer",
+                              chatModelProvider === provider.value 
+                                ? "border-primary bg-primary/10" 
+                                : "border-border hover:border-border/80",
+                              (user?.role === 'free' && provider.value !== 'gpt4o-mini') ? "opacity-50 cursor-not-allowed" : ""
+                            )}
+                            onClick={() => {
+                              if (user?.role === 'free' && provider.value !== 'gpt4o-mini') {
+                                toast({
+                                  title: t('settings.toast.errorSavingChatModel.title'),
+                                  description: t('settings.freeUserPremiumFeature'),
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              handleChatModelProviderChange(provider.value);
+                            }}
+                          >
+                            <div className="flex items-center mb-1">
+                              <provider.icon className="h-5 w-5 mr-2 text-primary" />
+                              <h4 className="text-md font-medium">{t(provider.labelKey)}</h4>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {t(provider.descriptionKey)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* AI Interaction Mode Selection */}
+                    <div className="pt-2">
+                      <Label className="text-md font-semibold">{t('settings.aiMode.label')}</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-1">
+                        {aiModeOptions.map((option) => {
+                          const isSelected = selectedAiMode === option.value;
+                          const disabled = user?.role === 'free' && (option.value === 'creative' || option.value === 'precise');
+
+                          return (
+                            <div
+                              key={option.value}
+                              className={cn(
+                                "p-4 rounded-lg border-2 transition-all",
+                                isSelected ? 'border-primary bg-primary/10' : 'border-border hover:border-border/80',
+                                disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                              )}
+                              onClick={() => !disabled && handleAiModeChange(option.value)}
+                            >
+                              <div className="flex items-center mb-1">
+                                <option.icon className="h-5 w-5 mr-2 text-primary" />
+                                <h4 className="text-md font-medium">{t(option.labelKey)}</h4>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">{t(option.descriptionKey)}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                 </div>
+                {(isSavingAiMode || isSavingChatModel) && <div className="flex justify-center"><Loader size="md" /></div>}
               </div>
               
-              <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between pt-4 border-t border-border/10 md:pt-0 md:border-t-0">
-                <div className="flex-grow">
-                  <Label htmlFor="research-model-select">{t('settings.researchModel.label')}</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {t('settings.researchModel.description')}
-                    {user?.role === 'free' && (
-                      <span className="text-xs block text-amber-500">{t('settings.researchModel.freeUserLimitation')}</span>
-                    )}
-                  </p>
+              {/* Research Model Section */}
+              <div className="space-y-3 pt-4 border-t border-border/10">
+                <div className="flex flex-col space-y-1">
+                    <h3 className="text-lg font-medium">{t('settings.researchModel.label')}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {t('settings.researchModel.description')}
+                      {user?.role === 'free' && (
+                        <span className="text-xs block text-amber-500 mt-1">{t('settings.researchModel.freeUserLimitation')}</span>
+                      )}
+                    </p>
                 </div>
-                <div className="flex items-center gap-2 mt-1 md:mt-0">
-                  <RadioGroup 
-                    value={researchModelPreference} 
-                    onValueChange={handleResearchModelChange}
-                    disabled={isSavingResearchModel}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="perplexity-sonar" id="perplexity-sonar" />
-                      <Label htmlFor="perplexity-sonar" className="font-normal">{t('settings.researchModel.perplexitySonar')}</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="gpt-4o-mini" id="gpt-4o-mini" />
-                      <Label htmlFor="gpt-4o-mini" className="font-normal">{t('settings.researchModel.gpt4oMini')}</Label>
-                    </div>
-                  </RadioGroup>
-                  {isSavingResearchModel && <Loader size="sm" className="ml-2 mt-2" />}
-                </div>
-              </div>
 
-              <div className="pt-4 border-t border-border/10">
-                <Drawer>
-                  <DrawerTrigger asChild>
-                    <Button variant="outline" className="w-full h-12">{t('settings.aiModelConfig.button')}</Button>
-                  </DrawerTrigger>
-                  <DrawerContent>
-                    <DrawerHeader>
-                      <DrawerTitle>{t('settings.aiModelConfig.drawerTitle')}</DrawerTitle>
-                      <DrawerDescription>{t('settings.aiModelConfig.drawerDescription')}</DrawerDescription>
-                    </DrawerHeader>
-                    <div className="p-4 space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="default-model-select">{t('settings.aiModelConfig.defaultModelLabel')}</Label>
-                        <Select defaultValue="gpt-4o-mini" disabled>
-                          <SelectTrigger id="default-model-select">
-                            <SelectValue placeholder={t('settings.aiModelConfig.defaultModelPlaceholder')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="gpt-4o-mini">{t('settings.researchModel.gpt4oMini')}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground">
-                          {t('settings.aiModelConfig.defaultModelDescription')}
-                        </p>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="system-prompt">{t('settings.aiModelConfig.systemPromptLabel')}</Label>
-                        <Textarea 
-                          id="system-prompt" 
-                          placeholder={t('settings.aiModelConfig.systemPromptPlaceholder')} 
-                          className="min-h-[100px] bg-gray-700"
-                          defaultValue={t('settings.aiModelConfig.systemPromptDefaultValue')}
-                        />
-                      </div>
+                {/* Research Model Provider Selection & Research Modes */} 
+                <div className="pt-4 border-t border-muted">
+                    <div className="space-y-1">
+                        <Label className="text-md font-semibold">{t('settings.researchModel.placeholder')}</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {researchModelProviders.map((provider) => (
+                          <div
+                            key={provider.value}
+                            className={cn(
+                              "p-4 rounded-lg border-2 transition-all cursor-pointer",
+                              researchModelProvider === provider.value 
+                                ? "border-primary bg-primary/10" 
+                                : "border-border hover:border-border/80",
+                              (user?.role === 'free' && provider.value !== 'gpt4o-mini') ? "opacity-50 cursor-not-allowed" : ""
+                            )}
+                            onClick={() => {
+                              if (user?.role === 'free' && provider.value !== 'gpt4o-mini') {
+                                toast({
+                                  title: t('settings.toast.errorSavingResearchModel.title'),
+                                  description: t('settings.freeUserPremiumFeature'),
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              handleResearchModelProviderChange(provider.value);
+                            }}
+                          >
+                            <div className="flex items-center mb-1">
+                              <provider.icon className="h-5 w-5 mr-2 text-primary" />
+                              <h4 className="text-md font-medium">{t(provider.labelKey)}</h4>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {t(provider.descriptionKey)}
+                            </p>
+                          </div>
+                        ))}
+                        </div>
                     </div>
-                    <DrawerFooter>
-                      <Button className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white h-12">
-                        {t('settings.aiModelConfig.saveButton')}
-                      </Button>
-                      <DrawerClose asChild>
-                        <Button variant="outline" className="h-12">{t('settings.aiModelConfig.cancelButton')}</Button>
-                      </DrawerClose>
-                    </DrawerFooter>
-                  </DrawerContent>
-                </Drawer>
+
+                    <div className="pt-2">
+                        <Label className="text-md font-semibold">{t('settings.researchModel.research')}</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-1">
+                        {researchModelOptions.map((option) => (
+                          <div
+                            key={option.value}
+                            className={cn(
+                              "p-4 rounded-lg border-2 transition-all cursor-pointer",
+                              researchModelPreference === option.value 
+                                ? "border-primary bg-primary/10" 
+                                : "border-border hover:border-border/80"
+                            )}
+                            onClick={() => handleResearchModelChange(option.value)}
+                          >
+                            <div className="flex items-center mb-1">
+                              <option.icon className="h-5 w-5 mr-2 text-primary" />
+                              <h4 className="text-md font-medium">{t(option.labelKey)}</h4>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {t(option.descriptionKey)}
+                            </p>
+                          </div>
+                        ))}
+                        </div>
+                    </div>
+                </div>
+                {isSavingResearchModel && <div className="flex justify-center"><Loader size="sm" className="mt-2" /></div>}
               </div>
             </CardContent>
           </Card>

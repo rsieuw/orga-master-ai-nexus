@@ -45,38 +45,86 @@ interface OpenAIChatCompletion {
   system_fingerprint?: string;
 }
 
-const errorMessages = {
+// Translation helper - simplified implementation for Edge Functions
+const translations = {
   en: {
-    queryRequired: "Query is required",
-    modeRequired: "Mode is required",
-    taskIdRequired: "taskId is required",
-    openAIApiKeyMissing: "OPENAI_API_KEY environment variable not set",
-    supabaseUrlMissing: "SUPABASE_URL environment variable not set",
-    supabaseAnonKeyMissing: "SUPABASE_ANON_KEY environment variable not set",
-    errorFetchingSubtasks: "Error fetching task subtasks:",
-    exceptionFetchingSubtasks: "Exception fetching subtasks:",
-    openAIRequestFailed: "OpenAI API request failed:",
-    nonJsonResponseFromAI: "Received non-JSON response from AI.",
-    structureMismatchOrChoicesMissing: "Parsed data does not match expected OpenAIChatCompletion structure or choices are missing.",
-    payloadNotValidObject: "Payload from AI is not a valid object, ignoring for finalPayload.",
-    functionExecError: "Function execution error"
+    errors: {
+      chatResponse: {
+        queryRequired: "Query is required",
+        modeRequired: "Mode is required",
+        taskIdRequired: "taskId is required",
+        openAIApiKeyMissing: "OPENAI_API_KEY environment variable not set",
+        supabaseUrlMissing: "SUPABASE_URL environment variable not set",
+        supabaseAnonKeyMissing: "SUPABASE_ANON_KEY environment variable not set",
+        errorFetchingSubtasks: "Error fetching task subtasks:",
+        exceptionFetchingSubtasks: "Exception fetching subtasks:",
+        openAIRequestFailed: "OpenAI API request failed:",
+        nonJsonResponseFromAI: "Received non-JSON response from AI.",
+        structureMismatchOrChoicesMissing: "Parsed data does not match expected OpenAIChatCompletion structure or choices are missing.",
+        payloadNotValidObject: "Payload from AI is not a valid object, ignoring for finalPayload.",
+        functionExecError: "Function execution error",
+        unknownError: "Unknown error",
+        failedParseErrorBody: "Failed to parse error body"
+      }
+    },
+    responses: {
+      defaultError: "Sorry, I couldn't generate a response.",
+      defaultAction: "Okay, I'll perform the action.",
+      noSubtasks: "No subtasks currently exist."
+    }
   },
   nl: {
-    queryRequired: "Query is vereist",
-    modeRequired: "Modus is vereist",
-    taskIdRequired: "taskId is vereist",
-    openAIApiKeyMissing: "OPENAI_API_KEY omgevingsvariabele niet ingesteld",
-    supabaseUrlMissing: "SUPABASE_URL omgevingsvariabele niet ingesteld",
-    supabaseAnonKeyMissing: "SUPABASE_ANON_KEY omgevingsvariabele niet ingesteld",
-    errorFetchingSubtasks: "Fout bij ophalen subtasks:",
-    exceptionFetchingSubtasks: "Exceptie bij ophalen subtasks:",
-    openAIRequestFailed: "OpenAI API request mislukt:",
-    nonJsonResponseFromAI: "Geen JSON-respons ontvangen van AI.",
-    structureMismatchOrChoicesMissing: "Geparste data komt niet overeen met de verwachte OpenAIChatCompletion structuur of keuzes ontbreken.",
-    payloadNotValidObject: "Payload van AI is geen geldig object, wordt genegeerd voor finalPayload.",
-    functionExecError: "Fout bij uitvoeren functie"
+    errors: {
+      chatResponse: {
+        queryRequired: "Query is vereist",
+        modeRequired: "Modus is vereist",
+        taskIdRequired: "taskId is vereist",
+        openAIApiKeyMissing: "OPENAI_API_KEY omgevingsvariabele niet ingesteld",
+        supabaseUrlMissing: "SUPABASE_URL omgevingsvariabele niet ingesteld",
+        supabaseAnonKeyMissing: "SUPABASE_ANON_KEY omgevingsvariabele niet ingesteld",
+        errorFetchingSubtasks: "Fout bij ophalen subtasks:",
+        exceptionFetchingSubtasks: "Exceptie bij ophalen subtasks:",
+        openAIRequestFailed: "OpenAI API request mislukt:",
+        nonJsonResponseFromAI: "Geen JSON-respons ontvangen van AI.",
+        structureMismatchOrChoicesMissing: "Geparste data komt niet overeen met de verwachte OpenAIChatCompletion structuur of keuzes ontbreken.",
+        payloadNotValidObject: "Payload van AI is geen geldig object, wordt genegeerd voor finalPayload.",
+        functionExecError: "Fout bij uitvoeren functie",
+        unknownError: "Onbekende fout",
+        failedParseErrorBody: "Kon foutgegevens niet verwerken"
+      }
+    },
+    responses: {
+      defaultError: "Sorry, ik kon geen antwoord genereren.",
+      defaultAction: "Oké, ik voer de actie uit.",
+      noSubtasks: "Er bestaan nog geen subtaken."
+    }
   }
 };
+
+// Translation function
+function t(key: string, lang = 'en'): string {
+  const langKey = lang === 'nl' ? 'nl' : 'en';
+  
+  // Split the key path (e.g. "errors.chatResponse.queryRequired")
+  const path = key.split('.');
+  
+  // Navigate through the translations object
+  let result: unknown = translations[langKey];
+  for (const segment of path) {
+    if (result && typeof result === 'object' && segment in (result as Record<string, unknown>)) {
+      result = (result as Record<string, unknown>)[segment];
+    } else {
+      // Fallback to English if key not found
+      console.warn(`Translation key not found: ${key}, language: ${langKey}`);
+      if (langKey !== 'en') {
+        return t(key, 'en');
+      }
+      return key; // Last resort fallback
+    }
+  }
+  
+  return result as string;
+}
 
 // console.log("generate-chat-response function started V2");
 
@@ -90,11 +138,11 @@ serve(async (req) => {
     // 1. Extract data from request
     const { query, mode, taskId, chatHistory, languagePreference = 'en' } = await req.json();
     const langKey = languagePreference === 'nl' ? 'nl' : 'en';
-    const messages = errorMessages[langKey];
+    
     // console.log(`V2: Received query: ${query}, mode: ${mode}, taskId: ${taskId}, lang: ${languagePreference}, history length: ${chatHistory?.length || 0}`);
-    if (!query) throw new Error(messages.queryRequired);
-    if (!mode) throw new Error(messages.modeRequired);
-    if (!taskId) throw new Error(messages.taskIdRequired); // Need taskId to fetch subtasks
+    if (!query) throw new Error(t('errors.chatResponse.queryRequired', langKey));
+    if (!mode) throw new Error(t('errors.chatResponse.modeRequired', langKey));
+    if (!taskId) throw new Error(t('errors.chatResponse.taskIdRequired', langKey)); // Need taskId to fetch subtasks
     const preferredLanguage = languagePreference === 'en' ? 'English' : 'Dutch';
 
     // 2. Load API Keys and Supabase Config
@@ -102,9 +150,9 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
 
-    if (!openAIApiKey) throw new Error(messages.openAIApiKeyMissing);
-    if (!supabaseUrl) throw new Error(messages.supabaseUrlMissing);
-    if (!supabaseAnonKey) throw new Error(messages.supabaseAnonKeyMissing);
+    if (!openAIApiKey) throw new Error(t('errors.chatResponse.openAIApiKeyMissing', langKey));
+    if (!supabaseUrl) throw new Error(t('errors.chatResponse.supabaseUrlMissing', langKey));
+    if (!supabaseAnonKey) throw new Error(t('errors.chatResponse.supabaseAnonKeyMissing', langKey));
 
     // 3. Initialize Supabase Client
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -121,14 +169,14 @@ serve(async (req) => {
             .single();
 
         if (taskError) {
-            console.error(messages.errorFetchingSubtasks, taskError);
+            console.error(t('errors.chatResponse.errorFetchingSubtasks', langKey), taskError);
             // Don't throw, proceed without subtask context if fetching fails
         } else if (taskData && Array.isArray(taskData.subtasks)) {
             currentSubtasks = taskData.subtasks;
             // console.log(`V2: Fetched ${currentSubtasks.length} subtasks for context.`);
         }
     } catch (e) {
-        console.error(messages.exceptionFetchingSubtasks, e);
+        console.error(t('errors.chatResponse.exceptionFetchingSubtasks', langKey), e);
     }
 
     // 5. Prepare Prompt and Parameters for OpenAI
@@ -141,16 +189,28 @@ serve(async (req) => {
       case 'precise':
         baseSystemPrompt += " Respond precisely and factually. Stick strictly to known information.";
         temperature = 0.2;
-        model = "gpt-4o";
+        model = "gpt-4o-mini";
         baseSystemPrompt += "\n\nMODE: Precise. Respond with factual, accurate, and concise responses.";
         // console.log("V2: Using Precise Mode settings");
         break;
       case 'creative':
         baseSystemPrompt += " Be creative, brainstorm ideas, and use imaginative language regarding the task.";
         temperature = 0.8;
-        model = "gpt-4o";
+        model = "gpt-4o-mini";
         baseSystemPrompt += "\n\nMODE: Creative. Be imaginative, explore possibilities, and suggest novel ideas.";
         // console.log("V2: Using Creative Mode settings");
+        break;
+      case 'research':
+        baseSystemPrompt += " Focus on providing well-researched, in-depth information with proper citations when possible.";
+        temperature = 0.3;
+        model = "gpt-4o-mini";
+        baseSystemPrompt += "\n\nMODE: Research. Provide thorough analysis and fact-based responses.";
+        break;
+      case 'instruction':
+        baseSystemPrompt += " Focus on following instructions precisely, step-by-step, and in a systematic manner.";
+        temperature = 0.2;
+        model = "gpt-4o-mini";
+        baseSystemPrompt += "\n\nMODE: Instruction. Follow directions precisely and provide structured guidance.";
         break;
       default:
         baseSystemPrompt += "\n\nMODE: Balanced (Default). Provide helpful, relevant, and concise responses.";
@@ -170,7 +230,7 @@ If the user asks you to rename or update the title of the main task:
 
     // --- Add Subtask Management Instructions ---
     const subtaskInstructions = `\
-You can manage subtasks based on the user's request **if they explicitly mention 'subtask'**. The current subtasks for this task (ID: ${taskId}) are:\n${currentSubtasks.length > 0 ? JSON.stringify(currentSubtasks) : "No subtasks currently exist."}
+You can manage subtasks based on the user's request **if they explicitly mention 'subtask'**. The current subtasks for this task (ID: ${taskId}) are:\n${currentSubtasks.length > 0 ? JSON.stringify(currentSubtasks) : t('responses.noSubtasks', langKey)}
 
 If the user **explicitly asks to add, update, or delete a 'subtask'**:
 1. Acknowledge the request in your natural language response.
@@ -185,7 +245,7 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
 5. Ensure the 'response' field always contains your user-facing text answer.
 `;
 
-    // --- Language Instruction (Nu dynamisch) ---
+    // --- Language Instruction (Now dynamic) ---
     const languageInstruction = `\n\n**IMPORTANT: Always respond in ${preferredLanguage}.**`;
 
     // Combine all instructions
@@ -213,9 +273,9 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
     });
 
     if (!completion.ok) {
-      const errorBody = await completion.json().catch(()=>({ message: "Failed to parse error body" }));
+      const errorBody = await completion.json().catch(()=>({ message: t('errors.chatResponse.failedParseErrorBody', langKey) }));
       console.error("V2: OpenAI API Error Response:", errorBody);
-      throw new Error(`${messages.openAIRequestFailed} ${completion.statusText} - ${errorBody?.error?.message || JSON.stringify(errorBody)}`);
+      throw new Error(`${t('errors.chatResponse.openAIRequestFailed', langKey)} ${completion.statusText} - ${errorBody?.error?.message || JSON.stringify(errorBody)}`);
     }
 
     // --- Response Parsing ---
@@ -226,7 +286,7 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
     try {
       structuredData = JSON.parse(rawData);
     } catch (parseError) {
-       throw new Error(messages.nonJsonResponseFromAI); 
+       throw new Error(t('errors.chatResponse.nonJsonResponseFromAI', langKey)); 
     }
 
     let aiContentString: string | null = null;
@@ -238,13 +298,13 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
       }
     } else {
       // Handle cases where structuredData is not the expected OpenAI object or choices are missing
-      console.warn(messages.structureMismatchOrChoicesMissing);
+      console.warn(t('errors.chatResponse.structureMismatchOrChoicesMissing', langKey));
     }
 
     // Initialize finalResponseObject with defaults
     let finalAction: string | null = null;
     let finalPayload: Record<string, unknown> | null = null; // Ensure finalPayload matches expected type or is null
-    let finalResponse: string = preferredLanguage === 'Dutch' ? "Sorry, ik kon geen antwoord genereren." : "Sorry, I couldn't generate a response.";
+    let finalResponse: string = preferredLanguage === 'Dutch' ? t('responses.defaultError', 'nl') : t('responses.defaultError', 'en');
 
     if (aiContentString) {
         // Try to parse the content string itself as JSON (in case AI wrapped the whole action object)
@@ -268,7 +328,7 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
                     // If payload exists but not an object (e.g. string, number), it doesn't fit Record<string, unknown>
                     // Decide how to handle: log a warning, or try to wrap it if applicable, or ignore.
                     // For now, we ignore if it's not a valid Record structure for the payload field.
-                    console.warn(messages.payloadNotValidObject);
+                    console.warn(t('errors.chatResponse.payloadNotValidObject', langKey));
                 }
 
                 if (typeof response === 'string') {
@@ -276,7 +336,7 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
                     // console.log("V2: Parsed 'response' text from aiContentString.");
                 } else if (finalAction) {
                     // If we found an action but no explicit response text, use a default
-                    finalResponse = preferredLanguage === 'Dutch' ? "Oké, ik voer de actie uit." : "Okay, I'll perform the action.";
+                    finalResponse = preferredLanguage === 'Dutch' ? t('responses.defaultAction', 'nl') : t('responses.defaultAction', 'en');
                 } else {
                    // If it's JSON but not our action structure, treat contentJson as the response text?
                    // Or stick to default error. Let's stick to default for now.
@@ -307,7 +367,7 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
     if (finalPayload !== null) {
         finalResponseObject.payload = finalPayload;
     }
-    // ---> EINDE HERZIENE LOGICA <---
+    // ---> END REVISED LOGIC <---
 
     // 6. Return the structured response
     // console.log(`V2: Final structured response being sent:`, finalResponseObject);
@@ -318,19 +378,21 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
 
   } catch (e) {
     const langKeyForError = req.headers.get('accept-language')?.includes('nl') ? 'nl' : 'en'; // Basic language detection for error
-    const errorResponseMessage = errorMessages[langKeyForError].functionExecError;
+    const errorMessage = t('errors.chatResponse.functionExecError', langKeyForError);
     console.error("Error in generate-chat-response:", e); // Log the full error object
     
-    let details = "Unknown error"; // Default error detail
+    let details = t('errors.chatResponse.unknownError', langKeyForError); // Default error detail
     if (e instanceof Error) {
       details = e.message;
     } else if (typeof e === 'string') {
       details = e;
     }
 
-    return new Response(JSON.stringify({ error: errorResponseMessage, details: details }), {
+    return new Response(JSON.stringify({ error: errorMessage, details: details }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     });
   }
 }); 
+
+

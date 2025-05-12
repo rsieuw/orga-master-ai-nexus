@@ -9,6 +9,10 @@
     "medium": "Medium",
     "low": "Low"
   },
+  "messageItem": {
+    "sources": "Sources",
+    "source": "Source"
+  },
   "settings": {
     "title": "Settings",
     "tabs": {
@@ -64,24 +68,43 @@
       "title": "AI Settings",
       "description": "Configure AI functionality."
     },
+    "freeUserPremiumFeature": "This feature is only available for paid users. Please upgrade your account to access premium AI modes.",
+    "freeUserPremiumFeatureChat": "Upgrade to Premium to access 'Creative' and 'Precise' modes.",
     "aiMode": {
       "label": "Default AI Mode",
-      "description": "Choose the default behavior for AI interactions.",
-      "freeUserLimitation": "('Creative' and 'Precise' for paid users only)",
+      "description": "Choose the behavior for AI interactions.",
+      "freeUserLimitation": "('Creative' and 'Precise' modes only for paid users)",
       "placeholder": "Select mode",
+      "chatAiSettings": "Chat AI Settings",
+      "chatAiSettingsDescription": "Configure AI for daily conversations and task suggestions.",
       "options": {
-        "gpt4oBalanced": "GPT-4o (Balanced)",
-        "creativeMode": "Creative Mode",
-        "preciseMode": "Precise Mode"
+        "gpt4oBalanced": "Standard mode",
+        "creativeMode": "Creative mode",
+        "preciseMode": "Precise mode",
+        "instructionMode": "Instruction mode"
       }
     },
     "researchModel": {
       "label": "Research Model",
-      "description": "Choose the AI model for the 'Deep Research' feature.",
+      "description": "Choose the AI model for 'Deep Research' functionality.",
       "freeUserLimitation": "(Available for paid users)",
       "placeholder": "Select model",
       "perplexitySonar": "Perplexity Sonar",
-      "gpt4oMini": "GPT-4o Mini"
+      "gpt4oMini": "GPT-4o Mini",
+      "research": "Research Mode (default)",
+      "instruction": "Instruction Mode",
+      "creative": "Creative Mode",
+      "researchDescription": "Provides factual answers with citations and maximum depth.",
+      "instructionDescription": "Follows instructions precisely and is ideal for directed tasks.",
+      "creativeDescription": "Offers innovative ideas and original perspectives with enhanced creativity.",
+      "perplexitySonarDescription": "Uses Perplexity Sonar for in-depth answers with up-to-date web data and citations.",
+      "gpt4oMiniDescription": "Uses GPT-4o Mini for quick, reliable answers based on previous training."
+    },
+    "chatModel": {
+      "label": "Chat Model Provider",
+      "description": "Choose which model is used for standard chat functionality.",
+      "perplexitySonarDescription": "Uses Perplexity Sonar for comprehensive and contextual responses.",
+      "gpt4oMiniDescription": "Uses GPT-4o Mini for efficient and balanced responses (default)."
     },
     "aiModelConfig": {
       "button": "AI Model Configuration",
@@ -401,7 +424,6 @@
     "by": "by",
     "links": {
       "support": "Support",
-      "documentation": "Documentation",
       "contact": "Contact"
     }
   },
@@ -450,13 +472,6 @@
     "paragraph1": "Do you have questions or are you experiencing problems with OrgaMaster AI? Contact our support team.",
     "paragraph2a": "You can reach us via email at:",
     "paragraph3": "We strive to answer your questions as quickly as possible."
-  },
-  "documentationPage": {
-    "mainTitle": "Documentation",
-    "cardTitle": "OrgaMaster AI Documentation",
-    "paragraph1": "Welcome to the documentation for OrgaMaster AI.",
-    "paragraph2": "Currently, we are working hard on comprehensive documentation to help you get the most out of the application.",
-    "paragraph3": "Check back soon for guides, tutorials, and API references."
   },
   "dashboard": {
     "greeting": "Hello, {{name}}",
@@ -801,136 +816,98 @@
   },
   "chatPanel": {
     "titleWithTask": "Chat: {{taskTitle}}",
-    "messagePlaceholder": "Type your message...",
-    "clearHistoryButton": "Clear History",
-    "exportChatButton": "Export Chat",
-    "researchButton": "Research",
-    "newNoteButton": "New Note",
-    "deepResearchTooltip": "Perform Deep Research",
-    "settingsTooltip": "Chat Settings",
-    "loadingHistory": "Loading history...",
-    "sendMessageTooltip": "Send message",
-    "selectModelAriaLabel": "Select AI research model",
-    "research": {
-      "startingDeepResearchOn": "Starting deep research on: {{topic}}",
-      "contextPrompt": "with custom context: \\\"{{prompt}}\\\"",
-      "contextSubtaskForMain": "for subtask \\\"{{subtaskTitle}}\\\" (of main task \\\"{{mainTaskTitle}}\\\")",
-      "contextMainTask": "for main task \\\"{{mainTaskTitle}}\\\"",
-      "researchLoadingText": "Researching... please wait.",
-      "researchCompleted": "Research completed.",
-      "researchForPromptLabel": "Research for prompt: {{prompt}}",
-      "researchForSubtaskLabel": "Research for subtask: {{subtaskTitle}}"
-    },
-    "startConversationPrompt": "Start a conversation by typing a message.",
-    "initialAssistantMessage": "Hello {{username}}! I'm ready to help you with your task: {{taskTitle}}. What can I do for you?",
-    "subtaskSelectedMessage": "Okay, we are now focusing on the subtask: {{subtaskTitle}}.",
-    "researchForPromptLabel": "Research for prompt: \"{{prompt}}\"",
-    "researchForSubtaskLabel": "Research for subtask: {{subtaskTitle}}",
-    "closeSR": "Close chat",
-    "copyMessageTitle": "Copy message",
-    "copyMessageSR": "Copy message to clipboard",
-    "saveResearchTitle": "Save research",
-    "saveResearchSR": "Save research",
-    "deleteNoteTitle": "Delete note",
-    "deleteNoteSR": "Delete this note",
-    "deleteResearchTitle": "Delete saved research",
-    "deleteResearchSR": "Delete this saved research",
-    "defaultUsername": "there",
-    "defaultTaskTitle": "the current task",
-    "errors": {
-      "taskIdMissing": "Task ID is missing, cannot perform action.",
-      "userNotLoggedIn": "User is not logged in.",
-      "taskIdOrUserMissing": "Task ID or user not available. Cannot save research.",
-      "cannotTogglePinStatus": "Task ID or user is missing, cannot toggle pin status.",
-      "messageNotFoundInState": "Message not found in local state.",
-      "couldNotFetchSavedResearchAfterClear": "Could not fetch saved research after clearing history: {{error}}",
-      "saveMessageToDbGeneric": "Error saving message to DB:",
-      "invokeSaveResearchFunctionGeneric": "Error invoking save-research function:",
-      "clientSideSaveResearchGeneric": "Client-side error saving research via function:",
-      "fetchPinnedMessagesGeneric": "Error fetching pinned messages:",
-      "couldNotFetchSavedResearch": "Could not fetch saved research:",
-      "loadMessagesAndNotesGeneric": "Error loading messages and notes:",
-      "clearHistoryGeneric": "Error clearing history and reloading items:",
-      "deleteNoteGeneric": "Error deleting note:",
-      "deleteResearchGeneric": "Error deleting saved research:",
-      "togglePinStatusGeneric": "Error toggling pin status:",
-      "cannotSaveResearch": "Cannot save research: taskId or user is not available.",
-      "request": {
-        "missingTaskId": "Task ID is missing or invalid in the request.",
-        "missingOpenAiKey": "OpenAI API key is not configured.",
-        "missingSupabaseUrl": "Supabase URL is not configured.",
-        "missingSupabaseAnonKey": "Supabase anonymous key is not configured."
-      },
-      "task": {
-        "notFound": "Main task not found.",
-        "fetchFailed": "Failed to fetch main task details."
-      },
-      "chat": {
-        "fetchFailed": "Could not fetch chat messages."
-      },
-      "notes": {
-        "fetchFailed": "Could not fetch notes."
-      },
-      "research": {
-        "fetchFailed": "Could not fetch research results."
-      },
-      "ai": {
-        "requestFailed": "OpenAI API request failed.",
-        "invalidStructure": "Invalid response structure from OpenAI.",
-        "jsonParseFailed": "Failed to parse OpenAI JSON response.",
-        "noContent": "No content received from OpenAI.",
-        "subtasks": {
-          "invalidArray": "AI response object does not contain a valid 'subtasks' array.",
-          "invalidArrayStructure": "AI response 'subtasks' array items must have 'title' and 'description' strings.",
-          "extractionFailed": "Failed to parse AI content or extract subtasks array."
-        }
-      },
-      "functionExecError": "Error executing function."
-    },
+    "loadingHistory": "Loading messages...",
+    "startConversationPrompt": "Start a conversation with the AI assistant",
     "toast": {
-      "saveFailedTitle": "Save Failed",
-      "deepResearchSuccessTitle": "Deep Research Completed",
-      "loadMessagesAndNotesFailed": "Failed to load messages and notes",
-      "saveMessageToDbFailed": "Failed to save message to database.",
-      "saveResearchToDbFailed": "Failed to save research: {{error}}",
-      "historyClearedTitle": "History Cleared",
-      "historyClearedDescription": "Chat history has been successfully cleared.",
-      "historyClearedWithPinnedDescription": "History cleared, {{count}} pinned messages kept.",
-      "historyClearedWithKeptItemsDescription": "History cleared. Kept: {{items}}.",
-      "clearHistoryFailed": "Failed to clear history",
-      "noteDeletedTitle": "Note Deleted",
-      "noteDeletedDescription": "The note has been successfully deleted.",
-      "deleteFailedTitle": "Deletion Failed",
-      "deleteNoteFailedDefault": "Failed to delete the note. Please try again.",
-      "researchDeletedTitle": "Research Deleted",
-      "researchDeletedDescription": "The saved research has been successfully deleted.",
-      "deleteResearchFailedDescriptionDefault": "Failed to delete the research. Please try again.",
-      "researchSavedTitle": "Research Saved",
-      "researchSavedDescription": "The research has been successfully saved.",
-      "messagePinnedTitle": "Message Pinned",
-      "messagePinnedDescription": "The message has been pinned and will be kept when clearing history.",
-      "togglePinFailedDescription": "Could not update message pin status in database.",
+      "copiedTitle": "Copied",
+      "copiedDescription": "Text has been copied to clipboard",
+      "copyFailedTitle": "Copy failed",
+      "copyFailedDescription": "Could not copy the text",
+      "noteSavedTitle": "Note saved",
+      "saveNoteFailedDefault": "Could not save note",
+      "saveFailedTitle": "Save failed",
+      "exportFailedTitle": "Export failed",
+      "exportFailedDescriptionNoTask": "No task is selected",
+      "exportFailedDescription": "No messages to export",
+      "exportStartedTitle": "Export started",
+      "exportStartedDescription": "The conversation is being exported to a text file",
+      "subtasksGeneratedTitle": "Subtasks generated",
+      "subtaskGenerationFailedTitle": "Subtask generation failed",
+      "taskUpdatedTitle": "Task updated",
+      "subtaskAddedTitle": "Subtask added",
+      "allSubtasksDeletedTitle": "All subtasks deleted",
+      "actionFailedTitle": "Action failed",
+      "topicRequiredTitle": "Topic required",
+      "topicRequiredDescription": "Enter a topic for research",
+      "researchDeletedTitle": "Research deleted",
+      "researchDeletedDescription": "The research has been successfully deleted",
+      "historyClearedTitle": "History cleared",
+      "historyClearedDescription": "The chat history has been cleared",
+      "historyClearedWithKeptItemsDescription": "The chat history has been cleared, but {{items}} were kept",
       "pinnedItemsKept": "{{count}} pinned messages",
       "notesItemsKept": "{{count}} notes",
       "researchItemsKept": "{{count}} research items",
-      "cannotChangePinStatusDescription": "Could not change pin status."
+      "clearHistoryFailed": "Could not clear chat history"
     },
-    "notePlaceholder": "Type your note here...",
-    "stopNoteButton": "Stop Note Mode",
-    "saveNoteTooltip": "Save note",
+    "errors": {
+      "userNotLoggedIn": "User not logged in"
+    },
+    "export": {
+      "chatConversationForTask": "Chat conversation for task:",
+      "exportedOn": "Exported on:",
+      "roleUser": "User",
+      "roleAssistant": "Assistant"
+    },
+    "research": {
+      "instructionPrefixForSubtask": "For subtask '{{subtask}}', help me with:",
+      "userRequestPrefix": "Research about:",
+      "forSubtaskContinuation": " for subtask '{{subtask}}'",
+      "errorMessage": "An error occurred during research. Please try again later."
+    },
+    "defaultTaskTitle": "this task",
+    "researchModePopover": {
+      "researchMode": "Research",
+      "instructionMode": "Instruction",
+      "creativeMode": "Creative",
+      "descriptionResearch": "Factual and clear",
+      "descriptionInstruction": "Follows precise instructions",
+      "descriptionCreative": "Original and innovative"
+    },
+    "searchPlaceholder": "Type to research...",
+    "searchMessagesPlaceholder": "Search in messages...",
+    "searchingMessages": "Searching messages",
+    "searchingResearch": "Researching",
+    "noSearchResults": "No messages found with this search term.",
+    "deleteNoteTitle": "Delete note",
+    "deleteNoteSR": "Delete this note",
+    "deleteResearchTitle": "Delete research",
+    "deleteResearchSR": "Delete this research",
     "pinMessageTitle": "Pin message",
-    "unpinMessageTitle": "Unpin message",
     "pinMessageSR": "Pin this message",
+    "unpinMessageTitle": "Unpin message",
     "unpinMessageSR": "Unpin this message",
-    "pinnedMessages": "Pinned messages",
-    "noteSavedTitle": "Note Saved"
+    "copyMessageTitle": "Copy message",
+    "copyMessageSR": "Copy this message",
+    "notePlaceholder": "Write a note...",
+    "messagePlaceholder": "Type a message...",
+    "saveNoteTooltip": "Save note (Ctrl+Enter)",
+    "sendMessageTooltip": "Send message (Ctrl+Enter)",
+    "clearHistoryButton": "Clear History",
+    "exportChatButton": "Export Chat",
+    "researchButton": "Research",
+    "researchPlaceholder": "Research topic...",
+    "newNoteButton": "New Note",
+    "stopNoteButton": "Stop Note Mode",
+    "deepResearchTooltip": "Perform Deep Research",
+    "settingsTooltip": "Chat Settings"
   },
   "chatInput": {
     "placeholder": "Type your message or / for commands...",
     "placeholderNote": "Type your note...",
     "sendButton": "Send",
     "noteModeButton": "Save as Note",
-    "chatModeButton": "Back to Chat"
+    "chatModeButton": "Back to Chat",
+    "stopNoteModeButton": "Stop Note Mode"
   },
   "editTaskDialog": {
     "toast": {
@@ -1019,7 +996,29 @@
       "generateTaskDetails": "Internal server error while generating task details."
     },
     "taskIdMissing": "Task ID is missing, cannot perform action.",
-    "unexpectedAIResponse": "Unexpected response from AI."
+    "unexpectedAIResponse": "Unexpected response from AI.",
+    "chatResponse": {
+      "queryRequired": "Query is required",
+      "modeRequired": "Mode is required",
+      "taskIdRequired": "taskId is required",
+      "openAIApiKeyMissing": "OPENAI_API_KEY environment variable not set",
+      "supabaseUrlMissing": "SUPABASE_URL environment variable not set",
+      "supabaseAnonKeyMissing": "SUPABASE_ANON_KEY environment variable not set",
+      "errorFetchingSubtasks": "Error fetching task subtasks",
+      "exceptionFetchingSubtasks": "Exception fetching subtasks",
+      "openAIRequestFailed": "OpenAI API request failed",
+      "nonJsonResponseFromAI": "Received non-JSON response from AI",
+      "structureMismatchOrChoicesMissing": "Parsed data does not match expected OpenAIChatCompletion structure or choices are missing",
+      "payloadNotValidObject": "Payload from AI is not a valid object, ignoring for finalPayload",
+      "functionExecError": "Function execution error",
+      "unknownError": "Unknown error",
+      "failedParseErrorBody": "Failed to parse error body"
+    }
+  },
+  "responses": {
+    "defaultError": "Sorry, I couldn't generate a response.",
+    "defaultAction": "Okay, I'll perform the action.",
+    "noSubtasks": "No subtasks currently exist."
   },
   "success": {
     "researchSaved": "Research saved successfully!"
@@ -1051,17 +1050,24 @@
       "noSubtasksGeneratedDescription": "The AI could not suggest any subtasks.",
       "generationFailedTitle": "Generation Failed",
       "generationFailedDescription": "Could not generate AI subtasks.",
-      "taskNotFound": "Task with ID '{{taskId}}' not found.",
+      "taskNotFound": "Task with ID {{taskId}} not found.",
+      "fetchError": "Error fetching tasks.",
+      "notAuthenticated": "You must be logged in to perform this action.",
+      "updateTaskFailed": "Could not update the task",
       "aiSubtaskGenerationLimitReached": "AI subtask generation limit reached for this task ({{count}}/{{limit}}).",
       "aiSubtaskGenerationFailed": "Failed to generate AI subtasks.",
       "aiSubtasksGeneratedSuccessfully": "AI subtasks generated successfully.",
       "errorUpdatingTaskGenerationCount": "Failed to update AI generation count for the task.",
       "addSubtasksFailed": "Failed to save new AI subtasks to the database.",
-      "aiNoNewSubtasksGenerated": "AI did not generate any new unique subtasks.",
-      "fetchError": "Error fetching tasks.",
-      "notAuthenticated": "You must be logged in to perform this action."
+      "aiNoNewSubtasksGenerated": "AI did not generate any new unique subtasks."
     },
-    "aiSubtaskGenerationLimitReached": "AI subtask generation limit reached for this task ({{count}}/{{limit}}).",
+    "errors": {
+      "taskNotFoundToAddSubtask": "Task not found to add subtask",
+      "taskNotFoundToUpdateSubtask": "Task not found to update subtask",
+      "taskNotFoundToDeleteSubtask": "Task not found to delete subtask"
+    },
+    "taskNotFound": "Task with ID {taskId} not found",
+    "aiSubtaskGenerationLimitReached": "You have reached the limit of {limit} AI subtask generations for this task (current: {count})",
     "aiSubtaskGenerationFailed": "Failed to generate AI subtasks.",
     "aiSubtasksGeneratedSuccessfully": "AI subtasks generated successfully.",
     "errorUpdatingTaskGenerationCount": "Failed to update AI generation count for the task."
@@ -1174,5 +1180,53 @@
         "description": "The task could not be updated."
       }
     }
+  },
+  "aiModes": {
+    "default": {
+      "name": "Standard mode",
+      "description": "Fast, versatile assistant for everyday tasks."
+    },
+    "creative": {
+      "name": "Creative mode",
+      "description": "Creative responses for brainstorming and innovative ideas."
+    },
+    "precise": {
+      "name": "Precise mode",
+      "description": "Factual and detailed answers with a focus on accuracy."
+    },
+    "instruction": {
+      "name": "Instruction mode",
+      "description": "Step-by-step guides and structured instructions for practical tasks."
+    }
+  },
+  "login": {
+    "title": "OrgaMaster AI",
+    "subtitle": "Log in to manage your tasks",
+    "noAccount": "Don't have an account?",
+    "registerHere": "Register here"
+  },
+  "register": {
+    "title": "OrgaMaster AI",
+    "subtitle": "Register to get started",
+    "haveAccount": "Already have an account?",
+    "loginHere": "Login here"
+  },
+  "registerForm": {
+    "toast": {
+      "successTitle": "Registration successful",
+      "successDescription": "Welcome to OrgaMaster AI!",
+      "errorTitle": "Registration failed",
+      "errorDescription": "Something went wrong during registration."
+    },
+    "title": "Register",
+    "nameLabel": "Name",
+    "namePlaceholder": "Your name",
+    "emailLabel": "Email",
+    "emailPlaceholder": "your@email.com",
+    "passwordLabel": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "submitButton": "Register",
+    "submitButtonLoading": "Registering..."
   }
 }

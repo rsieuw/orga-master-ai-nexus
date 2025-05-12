@@ -47,7 +47,7 @@ import { Tooltip, TooltipContent, TooltipProvider } from "@/components/ui/toolti
 import { useSwipeable } from 'react-swipeable';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from "@/contexts/AuthContext.tsx";
+import { useAuth } from "@/hooks/useAuth.ts";
 
 // --- SubtaskRow Component ---
 interface SubtaskRowProps {
@@ -228,7 +228,7 @@ function SubtaskRow({
           </AlertDialogTrigger>
           <AlertDialogPortal>
             <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-            <AlertDialogContent className="bg-card/90 backdrop-blur-md border-white/10 z-[90]">
+            <AlertDialogContent className="bg-card/90 backdrop-blur-md border border-white/10 z-[90]">
               <AlertDialogHeader>
                 <AlertDialogTitle>{t('taskDetail.subtask.deleteConfirmation.title')}</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -267,7 +267,8 @@ export default function TaskDetail() {
     updateTask, 
     isGeneratingSubtasksForTask,
     getMaxAiGenerationsForUser,
-    isAiGenerationLimitReached
+    isAiGenerationLimitReached,
+    markTaskAsViewed
   } = useTask();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -290,7 +291,7 @@ export default function TaskDetail() {
   const [contextMenuPosition, setContextMenuPosition] = useState<{ top: number, left: number } | null>(null);
   const [isInfoCollapsed, setIsInfoCollapsed] = useState(false);
 
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
   // Function to get column sizes based on preference
   // Accepts user as argument because `user` from context might not be ready during initial call
@@ -303,13 +304,29 @@ export default function TaskDetail() {
   }, []);
 
   // Initialize state. `user` might be null initially.
-  // useState initializer runs only once, so we use useEffect to set it once user is available.
-  const [columnSizes, setColumnSizes] = useState<{ left: number; right: number }>({ left: 50, right: 50 });
+  // Defaults will be overridden when user data becomes available
+  const [columnSizes, setColumnSizes] = useState<{ left: number; right: number }>(() => {
+    // Als gebruiker al beschikbaar is bij eerste render, gebruik de voorkeur meteen
+    console.log("Initial state calculation, user:", user?.layout_preference);
+    if (user && user.layout_preference) {
+      const sizes = user.layout_preference === '33-67' 
+        ? { left: 33.33, right: 66.67 }
+        : { left: 50, right: 50 };
+      console.log("Using user preference for initial state:", user.layout_preference, sizes);
+      return sizes;
+    }
+    // Anders standaard 50-50
+    console.log("No user preference available, using default 50-50");
+    return { left: 50, right: 50 };
+  });
   const [isResizing, setIsResizing] = useState(false);
   const prevIsResizingRef = useRef<boolean>(); // To store the previous value of isResizing
   const containerRef = useRef<HTMLDivElement>(null);
   const initialX = useRef<number>(0);
   const initialLeftWidth = useRef<number>(0);
+  const hasAppliedInitialLayoutRef = useRef(false); // Bijhouden of de gebruikersvoorkeur al is toegepast
+  const saveLayoutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedPreferenceRef = useRef<string | null>(null); // Bijhouden welke voorkeur als laatste is opgeslagen
 
   const task: Task | undefined = getTaskById(id || "");
   const currentAiGenerationCount = task?.aiSubtaskGenerationCount || 0;
@@ -336,27 +353,98 @@ export default function TaskDetail() {
     setActiveMobileView(location.hash === '#chat' ? 'chat' : 'details');
   }, [location.hash]);
 
+  // Explicitly initialize layout when user becomes available
+  useEffect(() => {
+    if (user && !hasAppliedInitialLayoutRef.current) {
+      console.log("Explicitly initializing layout from user preference:", user.layout_preference);
+      const newSizes = calculateColumnSizesFromPreference(user);
+      setColumnSizes(newSizes);
+      hasAppliedInitialLayoutRef.current = true;
+    }
+  }, [user, calculateColumnSizesFromPreference]);
+
+  // Function to save layout preference with debounce
+  const debounceSaveLayoutPreference = useCallback((sizes: { left: number; right: number }) => {
+    // Clear any existing timeout
+    if (saveLayoutTimeoutRef.current) {
+      clearTimeout(saveLayoutTimeoutRef.current);
+    }
+
+    // Set a new timeout
+    saveLayoutTimeoutRef.current = setTimeout(() => {
+      if (user) {
+        const newPreference = sizes.left <= (33.33 + 50) / 2 ? '33-67' : '50-50';
+        const currentUserPreference = user.layout_preference;
+        
+        console.log("Attempting to save layout preference:", {
+          newPreference,
+          currentUserPreference,
+          lastSavedPreference: lastSavedPreferenceRef.current
+        });
+        
+        // Voorkom onnodige updates als de voorkeur niet is gewijzigd
+        if (newPreference !== currentUserPreference && newPreference !== lastSavedPreferenceRef.current) {
+          (async () => {
+            try {
+              console.log("Layout preference changed, saving:", newPreference);
+              await updateUser({ layout_preference: newPreference });
+              lastSavedPreferenceRef.current = newPreference as string;
+            } catch (error) {
+              console.error("Error saving layout preference:", error);
+            }
+          })();
+        } else {
+          console.log("Layout preference unchanged, skipping save:", newPreference);
+        }
+      }
+    }, 1000); // 1 seconde wachten na laatste aanpassing
+  }, [user, updateUser]);
+
   // Effect to set initial column sizes and update if user.layout_preference changes
   useEffect(() => {
     const wasResizingInPreviousRender = prevIsResizingRef.current;
 
+    // Log voor debugging
+    console.log("Layout update check:", {
+      isResizing,
+      wasResizingInPreviousRender,
+      user: user?.layout_preference,
+      hasAppliedInitialLayout: hasAppliedInitialLayoutRef.current,
+      currentLayout: `${columnSizes.left.toFixed(2)}-${columnSizes.right.toFixed(2)}`
+    });
+
     if (isResizing) {
-      // Currently resizing. `doResize` is handling live updates.
-      // `stopResize` will handle the final snapped state upon mouse release.
-    } else { // `isResizing` is false in the current render.
-      if (wasResizingInPreviousRender === true) {
-        // We just transitioned from resizing (true in prev render) to not resizing (false in current render).
-        // `stopResize` has already been called and set the snapped `columnSizes`.
-        // So, do nothing here to let the snapped sizes persist.
-      } else {
-        // This case covers:
-        // 1. Initial render (isResizing is false, wasResizingInPreviousRender is undefined or initially false).
-        // 2. `user.layout_preference` changed while `isResizing` was already false.
-        // In these scenarios, apply the user's preference or default.
-        setColumnSizes(calculateColumnSizesFromPreference(user));
+      // Currently resizing - doResize handles updates, don't override
+      return;
+    } 
+    
+    if (wasResizingInPreviousRender === true) {
+      console.log("Just finished resizing, saving preference");
+      debounceSaveLayoutPreference(columnSizes);
+      return;
+    } 
+    
+    if (user) {
+      console.log("Checking if layout needs to be updated:", {
+        hasAppliedInitialLayout: hasAppliedInitialLayoutRef.current,
+        userPreference: user.layout_preference,
+        currentLayout: Math.abs(columnSizes.left - 33.33) < 1 ? '33-67' : '50-50'
+      });
+      
+      // Only apply the user preference once on mount or when it changes in the user object
+      if (!hasAppliedInitialLayoutRef.current || user.layout_preference !== (hasAppliedInitialLayoutRef.current ? 
+          (Math.abs(columnSizes.left - 33.33) < 1 ? '33-67' : '50-50') : null)) {
+        // Deze conditie behandelt:
+        // 1. Initiële render wanneer user beschikbaar komt
+        // 2. Wanneer user.layout_preference verandert
+        const newSizes = calculateColumnSizesFromPreference(user);
+        console.log("Applying layout preference:", user.layout_preference, newSizes);
+        setColumnSizes(newSizes);
+        hasAppliedInitialLayoutRef.current = true;
+        lastSavedPreferenceRef.current = user.layout_preference as string;
       }
     }
-  }, [user, isResizing, calculateColumnSizesFromPreference]);
+  }, [user, isResizing, calculateColumnSizesFromPreference, debounceSaveLayoutPreference]);
 
   useEffect(() => {
     const INACTIVITY_TIMEOUT = 2500;
@@ -511,15 +599,16 @@ export default function TaskDetail() {
     // or ensure columnSizes is stable if read directly.
     // For this case, columnSizes.left would be the most recent one set by doResize.
     setColumnSizes(currentSizes => {
-      if (currentSizes.left <= snapThreshold) {
-        return { left: 33.33, right: 66.67 };
-      } else {
-        return { left: 50, right: 50 };
-      }
+      // Bepaal nieuwe layout - dit zorgt voor de visuele "snap"
+      const newSizes = currentSizes.left <= snapThreshold 
+        ? { left: 33.33, right: 66.67 } 
+        : { left: 50, right: 50 };
+      
+      // De opslag van voorkeuren wordt afgehandeld door de useEffect hierboven
+      // als we klaar zijn met resizen (prevIsResizingRef.current === true && isResizing === false)
+      return newSizes;
     });
-
-  }, []); // Dependencies for useCallback are important. If columnSizes itself was needed, it should be here.
-          // However, we are setting based on the final dragged state, which should be fine.
+  }, []);
 
   // Event listeners for dragging
   useEffect(() => {
@@ -539,6 +628,19 @@ export default function TaskDetail() {
     // prevIsResizingRef.current will hold the value of isResizing from the *previous* render cycle.
     prevIsResizingRef.current = isResizing;
   }); // No dependency array, so it runs after each render.
+
+  // Mark the task as viewed when it is loaded
+  useEffect(() => {
+    if (id && task && !task.isNew) {
+      // Alleen markeren als de taak als nieuw is gemarkeerd
+      return;
+    }
+    
+    if (id && task) {
+      console.log("Marking task as viewed:", id);
+      markTaskAsViewed(id);
+    }
+  }, [id, task, markTaskAsViewed]);
 
   if (tasksLoading) {
     return null;
@@ -1108,9 +1210,9 @@ export default function TaskDetail() {
                         <Dialog open={isGenerateSubtasksDialogOpen} onOpenChange={setIsGenerateSubtasksDialogOpen}>
                           <div className="flex flex-wrap items-center gap-2 h-10">
                             <Button 
-                              variant="outline"
+                              variant="default"
                               onClick={() => setShowAddSubtaskForm(true)} 
-                              className="h-10 px-4 text-muted-foreground hover:text-foreground"
+                              className="h-10 px-4 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
                             >
                                <PlusCircle className="mr-2 h-4 w-4" />
                                {t('taskDetail.addSubtask.buttonText')}
@@ -1303,9 +1405,9 @@ export default function TaskDetail() {
             {/* THEN the New Subtask (PlusCircle) button */}
             <div className="flex flex-col items-center">
               <Button 
-                variant="outline"
+                variant="default"
                 size="icon" 
-                className="aspect-square rounded-full h-14 w-14 bg-secondary/80 backdrop-blur-sm border-white/10 text-muted-foreground hover:text-foreground hover:bg-secondary shadow-lg mb-1"
+                className="aspect-square rounded-full h-14 w-14 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 shadow-lg mb-1"
                 onClick={() => setShowAddSubtaskForm(true)}
                 disabled={isAddingSubtask || isGeneratingSubtasksForTask(task.id) || isLimitReached}
                 aria-label={t('taskDetail.addSubtask.buttonAriaLabel')}

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button.tsx";
 import { Switch } from "@/components/ui/switch.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.tsx";
 import { useToast } from "@/hooks/use-toast.ts";
-import { UserRole } from '@/contexts/AuthContext.tsx'; // Import UserRole if needed
+import { UserRole } from '@/types/auth.ts'; // Import UserRole if needed
 import { GradientLoader } from '@/components/ui/loader.tsx'; // Import loader
 import { useTranslation } from 'react-i18next'; // Import useTranslation
 

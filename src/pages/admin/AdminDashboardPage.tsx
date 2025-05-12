@@ -6,7 +6,7 @@ import { UsersManagementTable } from "./AdminUsersPage.tsx"; // Import the table
 import { PermissionsManagementTable } from "./AdminPermissionsPage.tsx";
 import { Input } from "@/components/ui/input.tsx"; // Import Input
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select.tsx"; // Import Select
-import { UserRole } from '@/contexts/AuthContext.tsx'; // Import UserRole
+import { UserRole } from '@/types/auth.ts'; // Import UserRole
 import { useTranslation } from 'react-i18next'; // Import useTranslation
 import AdminFeedbackPage from "./AdminFeedbackPage.tsx";
 import { Users, Shield, MessageSquare } from "lucide-react"; // Import icons for admin tabs

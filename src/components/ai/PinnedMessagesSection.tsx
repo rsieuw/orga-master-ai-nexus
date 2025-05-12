@@ -10,13 +10,15 @@ interface PinnedMessagesSectionProps {
   onCopy: (text: string) => void;
   onTogglePin: (messageId: string, currentIsPinned: boolean) => void;
   isLoading: boolean;
+  userAvatarUrl?: string;
 }
 
 export function PinnedMessagesSection({ 
   messages, 
   onCopy, 
   onTogglePin,
-  isLoading 
+  isLoading,
+  userAvatarUrl
 }: PinnedMessagesSectionProps) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(true);
@@ -46,10 +48,10 @@ export function PinnedMessagesSection({
             <MessageItem
               key={message.id || index}
               message={message}
-              index={index}
               onCopy={onCopy}
               onTogglePin={onTogglePin}
               isLoading={isLoading}
+              userAvatarUrl={userAvatarUrl}
             />
           ))}
         </div>

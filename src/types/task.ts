@@ -22,6 +22,7 @@ export interface Task {
   updatedAt: string; // ISO string
   subtasks: SubTask[];
   aiSubtaskGenerationCount?: number; // Nieuw veld
+  isNew?: boolean; // Geeft aan of de taak nieuw en nog niet geopend is
 }
 
 export interface AIResearchResult {

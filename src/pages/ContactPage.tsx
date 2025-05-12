@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from '@/components/ui/textarea.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { useToast } from '@/hooks/use-toast.ts';
-import { useAuth } from '@/contexts/AuthContext.tsx';
+import { useAuth } from '@/hooks/useAuth.ts';
 import { supabase } from '@/integrations/supabase/client.ts';
 import { Loader2, ArrowLeft } from 'lucide-react'; // Import ArrowLeft icon
 import { useNavigate } from 'react-router-dom'; // Initialize useNavigate hook

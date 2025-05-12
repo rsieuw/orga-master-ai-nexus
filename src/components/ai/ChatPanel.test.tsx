@@ -3,7 +3,7 @@ import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/utils.tsx';
 import ChatPanel from './ChatPanel.tsx';
-import { useAuth } from '../../contexts/AuthContext.tsx';
+import { useAuth } from '@/hooks/useAuth.ts';
 import { useToast } from '../../hooks/use-toast.ts';
 import { Task } from '@/types/task.ts';
 import { supabase } from '@/integrations/supabase/client.ts';

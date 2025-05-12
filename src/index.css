@@ -291,7 +291,7 @@
 }
 
 .chat-message-research {
-  @apply bg-blue-100 text-slate-800 dark:bg-blue-900/60 dark:text-blue-200;
+  @apply bg-gradient-to-br from-indigo-900/80 via-blue-800/80 to-blue-900/80 text-blue-50 border border-blue-600/40 shadow-md;
 }
 
 .chat-message-notes {
@@ -302,11 +302,10 @@
   @apply bg-yellow-100 text-yellow-900 dark:bg-yellow-800/50 dark:text-yellow-100 border border-yellow-600/50;
 }
 
-/* ---> STYLE CHANGE: Use the same style as unsaved research <--- */
+/* Style voor opgeslagen onderzoek, iets lichter dan normale onderzoeksballonnen */
 .chat-message-saved-research {
-  @apply bg-blue-100 text-slate-800 dark:bg-blue-900/60 dark:text-blue-200; 
+  @apply bg-gradient-to-br from-indigo-800/70 via-indigo-700/70 to-blue-800/70 text-blue-50 border border-indigo-500/50 shadow-sm;
 }
-/* ---> EINDE AANPASSING <--- */
 
 .chat-input {
   @apply w-full border border-white/10 rounded-lg p-3 bg-card/60 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/40;

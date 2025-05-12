@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'; // Add React import for React.isValidElement and useState, useEffect, useMemo, useRef
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
-import { useAuth } from "@/contexts/AuthContext.tsx";
+import { useAuth } from "@/hooks/useAuth.ts";
 import TaskCard from "@/components/task/TaskCard.tsx";
 import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";

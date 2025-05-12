@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
-import { useAuth } from "@/contexts/AuthContext.tsx";
+import { useAuth } from "@/hooks/useAuth.ts";
 import { PlusCircle, User, LogOut, Settings, CircleUserRound, Shield, Star } from "lucide-react";
 import {
   DropdownMenu,

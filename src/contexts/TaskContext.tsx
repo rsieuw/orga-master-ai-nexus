@@ -15,7 +15,7 @@ import {
   differenceInCalendarDays
 } from 'date-fns';
 import { TaskContext } from './TaskContext.context.ts';
-import { useAuth } from './AuthContext.tsx';
+import { useAuth } from '@/hooks/useAuth.ts';
 
 interface DbTask {
   id: string;
@@ -29,6 +29,7 @@ interface DbTask {
   updated_at: string | null;
   subtasks: Json;
   ai_subtask_generation_count: number | null;
+  last_viewed_at: string | null;
 }
 
 interface DbTaskUpdate {
@@ -40,6 +41,7 @@ interface DbTaskUpdate {
   subtasks?: Json;
   updated_at?: string;
   ai_subtask_generation_count?: number;
+  last_viewed_at?: string | null;
 }
 
 export function TaskProvider({ children }: { children: React.ReactNode }) {
@@ -72,7 +74,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         if (typeof dbTask.subtasks === 'string') {
           parsedSubtasks = JSON.parse(dbTask.subtasks) as SubTask[];
         } else {
-          // Het kan ook een JSON object zijn dat al geparsed is
+          // It can also be a JSON object that has already been parsed
           parsedSubtasks = dbTask.subtasks as unknown as SubTask[];
         }
       }
@@ -80,6 +82,21 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       console.error("Error parsing subtasks:", error, dbTask.subtasks);
       parsedSubtasks = [];
     }
+    
+    // Een taak is alleen nieuw als:
+    // 1. Het is nog nooit bekeken (last_viewed_at is null)
+    // 2. Het is recent aangemaakt (binnen de laatste 24 uur)
+    const createdAtDate = new Date(dbTask.created_at);
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+    
+    // Check localStorage om te zien of de taak al is bekeken
+    // Dit is een tijdelijke oplossing totdat de migratie is uitgevoerd
+    const viewedTaskIds = localStorage.getItem('viewedTaskIds');
+    const viewedTasks = viewedTaskIds ? JSON.parse(viewedTaskIds) : [];
+    const isViewedInLocalStorage = viewedTasks.includes(dbTask.id);
+    
+    const isNewTask = !dbTask.last_viewed_at && !isViewedInLocalStorage && createdAtDate > twentyFourHoursAgo;
     
     return {
       id: dbTask.id,
@@ -93,6 +110,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       updatedAt: dbTask.updated_at ? new Date(dbTask.updated_at).toISOString() : new Date(dbTask.created_at).toISOString(),
       subtasks: parsedSubtasks,
       aiSubtaskGenerationCount: dbTask.ai_subtask_generation_count || 0,
+      isNew: isNewTask,
     };
   };
 
@@ -143,7 +161,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     return tasks.find((task: Task) => task.id === id);
   };
 
-  const addTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'subtasks' | 'userId' | 'aiSubtaskGenerationCount'>) => {
+  const addTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'subtasks' | 'userId' | 'aiSubtaskGenerationCount' | 'isNew'>) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) throw new Error(t('taskContext.toast.notAuthenticated'));
     
@@ -155,7 +173,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       deadline: task.deadline || null,
       user_id: session.user.id,
       subtasks: JSON.stringify([]),
-      ai_subtask_generation_count: 0
+      ai_subtask_generation_count: 0,
+      last_viewed_at: null // Nieuwe taken hebben nog geen last_viewed_at
     };
     
     const { data, error } = await supabase.from('tasks').insert([dbTask]).select().single();
@@ -234,7 +253,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   const addSubtask = async (taskId: string, subtaskTitle: string, subtaskDescription?: string) => {
     const task = tasks.find(t => t.id === taskId);
-    if (!task) throw new Error('Task not found to add subtask');
+    if (!task) throw new Error(t('taskContext.errors.taskNotFoundToAddSubtask'));
     
     const newSubtask: SubTask = {
       id: uuidv4(),
@@ -251,7 +270,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   const updateSubtask = async (taskId: string, subtaskId: string, updates: Partial<Omit<SubTask, 'id' | 'taskId' | 'createdAt'>>) => {
     const task = tasks.find(t => t.id === taskId);
-    if (!task) throw new Error('Task not found to update subtask');
+    if (!task) throw new Error(t('taskContext.errors.taskNotFoundToUpdateSubtask'));
     
     const updatedSubtasks = (task.subtasks || []).map(st =>
       st.id === subtaskId ? { ...st, ...updates } : st
@@ -262,7 +281,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   const deleteSubtask = async (taskId: string, subtaskId: string) => {
     const task = tasks.find(t => t.id === taskId);
-    if (!task) throw new Error('Task not found to delete subtask');
+    if (!task) throw new Error(t('taskContext.errors.taskNotFoundToDeleteSubtask'));
     
     const updatedSubtasks = (task.subtasks || []).filter(st => st.id !== subtaskId);
     await updateTask(taskId, { subtasks: updatedSubtasks });
@@ -278,9 +297,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const expandTask = async (taskId: string) => {
-    console.log('expandTask aangeroepen met taskId:', taskId);
+    console.log('expandTask called with taskId:', taskId);
     const task = tasks.find(t => t.id === taskId);
-    console.log('Task gevonden:', task);
+    console.log('Task found:', task);
     if (!task) {
       console.error(`Task with id ${taskId} not found.`);
       toast({
@@ -290,14 +309,14 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Bepaal de limiet op basis van de gebruikersrol
+    // Determine the limit based on the user role
     const maxGenerations = getMaxAiGenerationsForUser();
     
     const currentGenerationCount = task.aiSubtaskGenerationCount || 0;
-    console.log('Current generation count:', currentGenerationCount, 'Limiet:', maxGenerations);
+    console.log('Current generation count:', currentGenerationCount, 'Limit:', maxGenerations);
     
     if (currentGenerationCount >= maxGenerations) {
-      console.log('Generatie limiet bereikt');
+      console.log('Generation limit reached');
       toast({
         variant: "destructive",
         title: t('common.error'),
@@ -306,13 +325,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     
-    console.log('Markeren als genereren...');
+    console.log('Marking as generating...');
     setIsGeneratingAISubtasks(taskId);
     try {
       const existingSubtaskTitles = task.subtasks.map(st => st.title);
-      console.log('Bestaande subtaak titels:', existingSubtaskTitles);
+      console.log('Existing subtask titles:', existingSubtaskTitles);
       const languagePreference = i18n.language.startsWith('nl') ? 'nl' : 'en';
-      console.log('Aanroepen van Supabase functie met taal:', languagePreference);
+      console.log('Calling Supabase function with language:', languagePreference);
       
       const requestBody = {
         taskId: task.id,
@@ -328,7 +347,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       const { data, error: functionError } = await supabase.functions.invoke('generate-subtasks', {
         body: requestBody,
       });
-      console.log('Supabase functie resultaat:', data, 'Error:', functionError);
+      console.log('Supabase function result:', data, 'Error:', functionError);
       if (functionError) throw new Error(functionError.message);
       if (data && data.subtasks && Array.isArray(data.subtasks)) {
         const newSubtasks = data.subtasks.filter(
@@ -438,6 +457,39 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     return currentCount >= getMaxAiGenerationsForUser();
   }, [getMaxAiGenerationsForUser]);
 
+  const markTaskAsViewed = async (id: string) => {
+    console.log("markTaskAsViewed called with id:", id);
+    const taskIndex = tasks.findIndex(t => t.id === id);
+    if (taskIndex === -1) {
+      console.log("Task not found in tasks array");
+      return;
+    }
+    
+    // Update only the local state without touching the database for now
+    // This avoids the database error until the migration is properly applied
+    
+    // Sla de taak-ID op in localStorage (tijdelijke oplossing)
+    try {
+      const viewedTaskIds = localStorage.getItem('viewedTaskIds');
+      const viewedTasks = viewedTaskIds ? JSON.parse(viewedTaskIds) : [];
+      if (!viewedTasks.includes(id)) {
+        viewedTasks.push(id);
+        localStorage.setItem('viewedTaskIds', JSON.stringify(viewedTasks));
+      }
+    } catch (e) {
+      console.error('Error updating localStorage:', e);
+    }
+    
+    console.log("Updating local state only");
+    // Update local state
+    setTasks(prevTasks => 
+      prevTasks.map(task => 
+        task.id === id ? { ...task, isNew: false } : task
+      )
+    );
+    console.log("Local state updated, task is now marked as not new");
+  };
+
   const contextValue = {
     tasks,
     isLoading,
@@ -455,6 +507,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     groupTasksByDate,
     getMaxAiGenerationsForUser,
     isAiGenerationLimitReached,
+    markTaskAsViewed
   };
 
   return (

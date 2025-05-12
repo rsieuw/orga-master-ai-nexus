@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Task, SubTask } from "@/types/task.ts";
 import { Button } from "@/components/ui/button.tsx";
-import { Loader2, X, Brain } from "lucide-react";
+import { Loader2, X, Brain, ListChecks, SparklesIcon, Search, MessageCircleMore } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
-import { useAuth } from "@/contexts/AuthContext.tsx";
+import { useAuth } from "@/hooks/useAuth.ts";
 import { supabase } from "@/integrations/supabase/client.ts";
 import { useToast } from "@/hooks/use-toast.ts";
 import { useTranslation } from 'react-i18next';
@@ -13,10 +13,10 @@ import { Message } from "./types.ts";
 import { MessageList } from "./MessageList.tsx";
 import { ChatInput } from "./ChatInput.tsx";
 import { ChatControls } from "./ChatControls.tsx";
-// import { ChatSettingsDialog } from "./ChatSettingsDialog.tsx";
-// import { DeepResearchDialog } from "./DeepResearchDialog.tsx";
-import { useMessages } from "./hooks/useMessages.ts";
+import { useMessages, ensureMessageHasId } from "./hooks/useMessages.ts";
 import { PinnedMessagesSection } from "./PinnedMessagesSection.tsx";
+import { useDeepResearch, ResearchMode } from "./hooks/useDeepResearch.ts";
+import { Input } from "@/components/ui/input.tsx";
 
 interface ChatPanelProps {
   task: Task | null;
@@ -25,7 +25,18 @@ interface ChatPanelProps {
 
 export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps) {
   const { updateTask, addSubtask, deleteSubtask, deleteAllSubtasks, updateSubtask } = useTask();
-  const { messages, addMessage, updateMessage, isLoading: isLoadingMessages, error: historyError, clearHistory, deleteNote, deleteResearch, togglePinMessage } = useMessages(task?.id ?? null, task?.title ?? '', selectedSubtaskTitle ?? null);
+  const {
+    messages,
+    addMessage,
+    updateMessage,
+    isLoading: messagesLoading,
+    error: messagesError,
+    clearHistory,
+    deleteNote,
+    deleteResearch,
+    togglePinMessage,
+    setMessages: setRawMessages,
+  } = useMessages(task?.id ?? null, task?.title ?? null, selectedSubtaskTitle ?? null);
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
@@ -34,37 +45,61 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
 
   const [input, setInput] = useState("");
   const [isNoteMode, setIsNoteMode] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("default");
-  const [isResearching, setIsResearching] = useState(false);
   const [isAiResponding, setIsAiResponding] = useState(false);
 
-  const ensureMessageHasId = (message: Omit<Message, 'id'> & { id?: string }): Message => {
-    return { ...message, id: message.id || uuidv4() } as Message;
-  };
+  const [currentResearchMode, setCurrentResearchMode] = useState<ResearchMode>('research');
+  const [showSearchInput, setShowSearchInput] = useState(false);
+  const [searchInputText, setSearchInputText] = useState("");
+  const [isSearchingMessages, setIsSearchingMessages] = useState(false);
 
-  useEffect(() => {
-    // Use setTimeout to ensure layout is calculated before scrolling
-    const timer = setTimeout(() => {
-      if (scrollAreaRef.current) { 
-        scrollAreaRef.current.scrollTo({ 
-          top: scrollAreaRef.current.scrollHeight, 
-          behavior: 'smooth' 
-        });
+  const filteredMessages = useMemo(() => {
+    if (!isSearchingMessages || !searchInputText.trim()) {
+      return messages;
+    }
+    const searchTerm = searchInputText.toLowerCase();
+    return messages.filter(message => 
+      message.content.toLowerCase().includes(searchTerm)
+    );
+  }, [messages, searchInputText, isSearchingMessages]);
+
+  const {
+    startDeepResearch,
+    isResearching,
+    cancelResearch,
+  } = useDeepResearch({
+    task, 
+    addMessage, 
+    updateMessage, 
+    setMessages: setRawMessages 
+  });
+
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => {
+      if (scrollAreaRef.current) {
+        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
       }
-    }, 100); // Use 100ms delay for more reliable scrolling
-    
-    // Cleanup function to clear the timeout if component unmounts or messages change again quickly
-    return () => clearTimeout(timer);
-  }, [messages]);
+    }, 100);  // Korte vertraging om ervoor te zorgen dat de DOM volledig is bijgewerkt
+  }, []);
+  
+  // Scroll naar beneden wanneer berichten veranderen
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+  
+  // Scroll naar beneden wanneer een subtaak wordt geselecteerd
+  useEffect(() => {
+    if (selectedSubtaskTitle) {
+      scrollToBottom();
+    }
+  }, [selectedSubtaskTitle, scrollToBottom]);
 
   const handleCloseChat = () => navigate('/');
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
       toast({ title: t('chatPanel.toast.copiedTitle'), description: t('chatPanel.toast.copiedDescription') });
-    }, (err) => {
+    }, (_err) => {
       toast({ variant: "destructive", title: t('chatPanel.toast.copyFailedTitle'), description: t('chatPanel.toast.copyFailedDescription') });
-      console.error('Could not copy text: ', err);
     });
   };
 
@@ -91,7 +126,6 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       toast({ title: t('chatPanel.toast.noteSavedTitle') });
       success = true;
     } catch (error: unknown) {
-      console.error("Fout bij opslaan notitie:", error);
       let errorMsg = t("chatPanel.toast.saveNoteFailedDefault");
       if (error instanceof Error) errorMsg = error.message;
       toast({ variant: "destructive", title: t('chatPanel.toast.saveFailedTitle'), description: errorMsg });
@@ -146,105 +180,103 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     toast({ title: t('chatPanel.toast.exportStartedTitle'), description: t('chatPanel.toast.exportStartedDescription') });
   };
 
-  const handleDeepResearch = async (customPrompt?: string) => {
-    if (!task?.id) return;
-    const { hasPermission } = await import("@/lib/permissions.ts");
+  const handleDeepResearch = useCallback(async (mode: ResearchMode = 'research', prompt?: string) => {
+    if (!task) {
+      return;
+    }
 
-    if (!hasPermission(user, 'deepResearch')) {
-      toast({ variant: "default", title: t('chatPanel.toast.featureNotAvailableTitle'), description: t('chatPanel.toast.featureNotAvailableDescription') });
-      return; 
+    const researchTopic = prompt || task.title || t('chatPanel.defaultTaskTitle');
+    
+    if (!researchTopic) {
+      toast({ variant: "default", title: t('chatPanel.toast.topicRequiredTitle'), description: t('chatPanel.toast.topicRequiredDescription') });
+      return;
     }
-    if (isResearching) return;
-    setIsResearching(true);
-    let contextDetailKey = "";
-    let contextDetailParams: Record<string, string> = {};
-    if (customPrompt) {
-        contextDetailKey = 'chatPanel.research.contextPrompt';
-        contextDetailParams = { prompt: customPrompt.substring(0, 100) + (customPrompt.length > 100 ? "..." : "") };
-    } else if (selectedSubtaskTitle) {
-        contextDetailKey = 'chatPanel.research.contextSubtaskForMain';
-        contextDetailParams = { subtaskTitle: selectedSubtaskTitle, mainTaskTitle: task.title || '' };
-    } else {
-        contextDetailKey = 'chatPanel.research.contextMainTask';
-        contextDetailParams = { mainTaskTitle: task.title || '' };
-    }
-    const contextForUserMessage = t(contextDetailKey, contextDetailParams);
-    const userMessageContentForDisplay = t('chatPanel.research.startingDeepResearchOn', { topic: contextForUserMessage });
-    const detailedAiPrompt = `
-  Generate a comprehensive and well-structured answer on the following topic: "${customPrompt || (selectedSubtaskTitle ? selectedSubtaskTitle : (task.title || ''))}".
-  Write in an objective and informative tone, similar to how Perplexity AI generates answers.
-  ${customPrompt ? `Use the following specific instructions from the user: "${customPrompt}"` : (selectedSubtaskTitle ? `Focus specifically on the subtask "${selectedSubtaskTitle}" in the context of the main task "${task.title || ''}".` : (task.description ? `Consider the following task description: "${task.description}"` : ""))}
-  
-  Return the answer in Markdown format and follow this structure:
-  1.  Start with a general introduction.
-  2.  Use clear headings (e.g., ## Title) for each important section.
-  3.  Use bullet points (*, -, +) for details and lists.
-  4.  If relevant and useful for the topic, include a comparative table in Markdown format.
-  5.  Reference sources in the text with simple numbered anchors, for example: "This is a fact [1]. Another fact [2].".
-  6.  Conclude with a section named "Sources". Below this, provide a numbered list of the used sources. Use the page title as the clickable link text and link to the full URL. For example:
-      1. [Page Title of Source 1](https://example.com/source1)
-      2. [Title of Article 2](https://othersite.net/article2)
-  
-  Ensure the output is directly usable as Markdown.
-  `;
-    addMessage(ensureMessageHasId({
-      role: "assistant",
-      content: userMessageContentForDisplay,
-      messageType: 'system'
-    }), true); 
-    const loaderMessage = ensureMessageHasId({
-      role: "assistant",
-      content: t('chatPanel.research.researchLoadingText'),
-      messageType: 'research_loader'
+
+    const userRequestMessageText = mode === 'instruction' && selectedSubtaskTitle && prompt 
+      ? `${t('chatPanel.research.instructionPrefixForSubtask', { subtask: selectedSubtaskTitle })} ${prompt}`
+      : prompt || `${t('chatPanel.research.userRequestPrefix')} ${task.title}${selectedSubtaskTitle ? t('chatPanel.research.forSubtaskContinuation', { subtask: selectedSubtaskTitle }) : ''}`;
+
+    const userRequestMessage = ensureMessageHasId({
+      role: 'user',
+      content: userRequestMessageText,
+      messageType: 'standard'
     });
-    addMessage(loaderMessage, false);
+    await addMessage(userRequestMessage, false);
+    
+    setCurrentResearchMode(mode);
     try {
-      const languagePreference = user?.language_preference || i18n.language || 'nl';
-      const { data: researchResponseData, error: researchError } = await supabase.functions.invoke('deep-research', {
-        body: { query: detailedAiPrompt, languagePreference: languagePreference, taskId: task.id },
-      });
-      if (researchError) throw researchError;
-      if (!researchResponseData || typeof researchResponseData !== 'object') throw new Error("Invalid response structure from deep-research function.");
-      if (researchResponseData.error) throw new Error(researchResponseData.error);
-      const researchContent = researchResponseData.researchResult;
-      let researchCitations: string[] | undefined = undefined;
-      if (Array.isArray(researchResponseData.citations) && researchResponseData.citations.every((c: unknown): c is string => typeof c === 'string')) {
-        researchCitations = researchResponseData.citations;
-      }
-
-      if (typeof researchContent === 'string' && researchContent.trim().length > 0) {
-        updateMessage(loaderMessage.id, {
-          content: t('chatPanel.research.researchCompleted'),
-          messageType: 'system',
-          citations: undefined,
-          subtask_title: undefined,
-          prompt: undefined,
-          isError: false 
-        });
-        addMessage(ensureMessageHasId({ 
-          role: "assistant",
-          content: researchContent,
-          messageType: 'research_result',
-          citations: researchCitations,
-          subtask_title: selectedSubtaskTitle,
-          prompt: customPrompt
-        }));
-        toast({ title: t('chatPanel.toast.deepResearchSuccessTitle') });
-      } else {
-        updateMessage(loaderMessage.id, {
-          content: t('chatPanel.error.noResearchContent'), 
-          messageType: 'system',
-          isError: true
-        });
-      }
+      await startDeepResearch(researchTopic, mode);
     } catch (error) {
-      console.error("Error in deep research:", error);
-      const errorContent = t('chatPanel.error.deepResearch') + (error instanceof Error ? `: ${error.message}`: '');
-      updateMessage(loaderMessage.id, { content: errorContent, isError: true, messageType: 'system' });
-      toast({ variant: "destructive", title: t('chatPanel.toast.deepResearchFailedTitle'), description: error instanceof Error ? error.message : t('chatPanel.toast.deepResearchFailedDescriptionDefault') });
-    } finally {
-      setIsResearching(false);
+      
+      const errorMessage = ensureMessageHasId({
+        role: 'assistant',
+        content: `${t('chatPanel.research.errorMessage')}`,
+        messageType: 'error'
+      });
+      await addMessage(errorMessage, false);
     }
+    scrollToBottom();
+  }, [task, selectedSubtaskTitle, t, toast, startDeepResearch, addMessage, setCurrentResearchMode, scrollToBottom]);
+
+  const handleSearchSubmit = () => {
+    if (searchInputText.trim()) {
+      if (isSearchingMessages) {
+        // Search in messages
+        // Filtering is already done in the useMemo above
+      } else {
+        // Use the old functionality for research
+        handleDeepResearch(currentResearchMode, searchInputText.trim());
+        setSearchInputText("");
+        setShowSearchInput(false);
+      }
+    }
+  };
+
+  const handleSearchModeToggle = () => {
+    // Force showing the search field
+    setShowSearchInput(true);
+    
+    // Change the search mode
+    const newMode = !isSearchingMessages;
+    setIsSearchingMessages(newMode);
+    
+    if (!newMode && searchInputText.trim()) {
+      // If we're switching from message search to research, clear the search
+      setSearchInputText("");
+    }
+    
+    // Focus on the search field
+    setTimeout(() => {
+      const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
+      if (searchInput) {
+        searchInput.focus();
+      }
+    }, 100);
+  };
+
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInputText(e.target.value);
+    if (isSearchingMessages && !showSearchInput) {
+      setShowSearchInput(true);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchInputText("");
+    if (isSearchingMessages) {
+      // Keep the search function open but clear the text
+    } else {
+      setShowSearchInput(false);
+    }
+  };
+
+  const handleSearchBlur = () => {
+    // If there's no text and we're not searching in messages, collapse the search field
+    setTimeout(() => {
+      if (!searchInputText.trim() && !isSearchingMessages) {
+        setShowSearchInput(false);
+      }
+    }, 200); // Small delay to allow clicking buttons
   };
 
   const handleSubmit = async () => {
@@ -254,30 +286,40 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     if (isNoteMode) {
       const saved = await handleSaveNote(currentInput);
       if (saved) setIsNoteMode(false); 
+      scrollToBottom();
     } else {
       const userMessage = ensureMessageHasId({ role: "user", content: currentInput, messageType: 'standard' });
-      addMessage(userMessage, true);
+      await addMessage(userMessage, true);
+      scrollToBottom();
       const inputLower = currentInput.toLowerCase();
+      
       const customResearchTriggerNL = "onderzoek prompt:";
       const customResearchTriggerEN = "research prompt:";
       let customPrompt: string | undefined = undefined;
+
       if (inputLower.startsWith(customResearchTriggerNL)) customPrompt = currentInput.substring(customResearchTriggerNL.length).trim();
       else if (inputLower.startsWith(customResearchTriggerEN)) customPrompt = currentInput.substring(customResearchTriggerEN.length).trim();
+      
       if (customPrompt && customPrompt.length > 0) {
-        handleDeepResearch(customPrompt);
+        handleDeepResearch(currentResearchMode, customPrompt);
         return;
       }
+
       const dutchVerbs = ["genere", "maak", "splits", "deel ", "aanmaken"];
       const dutchNouns = ["subta", "taken"]; 
       const englishVerbs = ["generate", "create", "split", "break "];
       const englishNouns = ["subtask", "tasks"];
+
       const hasDutchVerb = dutchVerbs.some(verb => inputLower.includes(verb));
       const hasEnglishVerb = englishVerbs.some(verb => inputLower.includes(verb));
       const hasDutchNoun = dutchNouns.some(noun => inputLower.includes(noun));
       const hasEnglishNoun = englishNouns.some(noun => inputLower.includes(noun));
+      
       const requiresSubtaskGeneration = (hasDutchVerb && hasDutchNoun) || (hasEnglishVerb && hasEnglishNoun);
+      
       const researchKeywords = ["onderzoek", "research", "zoek op", "find out", "investigate"];
       const requiresResearch = researchKeywords.some(keyword => inputLower.includes(keyword));
+
       if (requiresSubtaskGeneration) {
         try {
           const { data: subtaskData, error: subtaskError } = await supabase.functions.invoke('generate-subtasks', { 
@@ -296,27 +338,30 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
           const newSubtasks = subtaskData.subtasks.map((st: { title: string }) => ({ id: uuidv4(), title: st.title, completed: false, createdAt: new Date().toISOString() }));
           const combinedSubtasks = [...existingSubtasks, ...newSubtasks];
           await updateTask(task.id, { subtasks: combinedSubtasks });
+          
           let confirmationContent = "Okay, I have added the following subtasks:\n<ul>\n";
           newSubtasks.forEach((st: { title: string }) => { confirmationContent += `  <li>${st.title}</li>\n`; });
           confirmationContent += "</ul>";
+          
           addMessage(ensureMessageHasId({ role: "assistant", content: confirmationContent, messageType: 'action_confirm' }), true);
           toast({ title: t('chatPanel.toast.subtasksGeneratedTitle') });
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : "Unknown error";
           addMessage(ensureMessageHasId({ role: "assistant", content: `Sorry, generating subtasks failed: ${errorMsg}`, messageType: 'error' }), true);
           toast({ variant: "destructive", title: t('chatPanel.toast.subtaskGenerationFailedTitle'), description: errorMsg });
-        } finally { /* setIsLoading(false); */ }
+        }
         return;
       } else if (requiresResearch) {
-        handleDeepResearch(currentInput); 
+        handleDeepResearch(currentResearchMode); 
         return; 
       }
+
       setIsAiResponding(true);
       try {
         const historyToInclude = messages.filter(msg => msg.role === 'user' || (msg.role === 'assistant' && msg.messageType === 'standard')).slice(-8).map(msg => ({ role: msg.role, content: msg.content }));
         const languagePreference = user?.language_preference || i18n.language || 'nl'; 
         const { data: aiResponseData, error: functionError } = await supabase.functions.invoke('generate-chat-response', {
-          body: { query: currentInput, mode: selectedModel, taskId: task.id, chatHistory: historyToInclude, languagePreference: languagePreference },
+          body: { query: currentInput, mode: currentResearchMode, taskId: task.id, chatHistory: historyToInclude, languagePreference: languagePreference },
         });
         if (functionError) throw functionError;
         if (!aiResponseData) throw new Error("AI function returned no data.");
@@ -342,7 +387,8 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
               case "ADD_SUBTASK": { if (!aiResponseData.payload?.title) throw new Error("Invalid payload"); await addSubtask(task.id, aiResponseData.payload.title); assistantMessageContent = `Subtask "${aiResponseData.payload.title}" added.`; toast({ title: t('chatPanel.toast.subtaskAddedTitle') }); break; }
               case "DELETE_SUBTASK": { if (!aiResponseData.payload?.subtaskId) throw new Error("Invalid payload"); await deleteSubtask(task.id, aiResponseData.payload.subtaskId); assistantMessageContent = `Subtask (ID: ${aiResponseData.payload.subtaskId}) deleted.`; break; }
               case "DELETE_ALL_SUBTASKS": { if (!aiResponseData.payload?.taskId || aiResponseData.payload.taskId !== task.id) throw new Error("Invalid payload"); await deleteAllSubtasks(task.id); assistantMessageContent = `All subtasks deleted.`; toast({ title: t('chatPanel.toast.allSubtasksDeletedTitle') }); break; }
-              default: console.warn("Unknown AI action:", aiResponseData.action); assistantMessageContent = aiResponseData.content || `Action "${aiResponseData.action}" received, unknown how to process.`;
+              default: // console.warn("Unknown AI action:", aiResponseData.action); 
+                assistantMessageContent = aiResponseData.content || `Action "${aiResponseData.action}" received, unknown how to process.`;
             }
             messageToSave = { role: "assistant", content: assistantMessageContent, messageType: 'action_confirm' };
           } catch (actionError) {
@@ -354,9 +400,13 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         } else {
            messageToSave = { role: "assistant", content: "Sorry, received an unexpected response.", messageType: 'error' };
         }
-        if (messageToSave) addMessage(messageToSave, true);
+        if (messageToSave) {
+          await addMessage(messageToSave, true);
+          scrollToBottom();
+        }
       } catch (error) {
-        addMessage(ensureMessageHasId({ role: "assistant", content: "Sorry, connection to AI failed.", messageType: 'error' }), true);
+        await addMessage(ensureMessageHasId({ role: "assistant", content: "Sorry, connection to AI failed.", messageType: 'error' }), true);
+        scrollToBottom();
       } finally { 
         setIsAiResponding(false);
       }
@@ -371,14 +421,67 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       );
   }
 
+  const researchModeOptions: { labelKey: string; value: ResearchMode; icon?: React.ElementType, descriptionKey: string }[] = [
+    { value: 'research', labelKey: 'chatPanel.researchModePopover.researchMode', icon: Brain, descriptionKey: 'chatPanel.researchModePopover.descriptionResearch' },
+    { value: 'instruction', labelKey: 'chatPanel.researchModePopover.instructionMode', icon: ListChecks, descriptionKey: 'chatPanel.researchModePopover.descriptionInstruction' },
+    { value: 'creative', labelKey: 'chatPanel.researchModePopover.creativeMode', icon: SparklesIcon, descriptionKey: 'chatPanel.researchModePopover.descriptionCreative' },
+  ];
+
+  const messagesForList = [...messages];
+  
   return (
     <div className="flex flex-col h-full bg-card border-l border-border overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2 border-b border-border flex-shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <Brain className="h-4 w-4 text-primary flex-shrink-0" /> 
+          <MessageCircleMore className="h-4 w-4 text-primary flex-shrink-0" /> 
           <h2 className="text-base font-semibold truncate" title={task.title ?? ''}>{t('chatPanel.titleWithTask', { taskTitle: task.title ?? '' })}</h2>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 mr-1">
+            <div className="relative flex items-center">
+              <Input
+                type="search"
+                placeholder={isSearchingMessages ? t('chatPanel.searchMessagesPlaceholder') : t('chatPanel.searchPlaceholder')}
+                value={searchInputText}
+                onChange={handleSearchInputChange}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearchSubmit();
+                  }
+                }}
+                onBlur={handleSearchBlur}
+                className={`h-7 text-xs transition-all duration-300 ease-in-out ${showSearchInput ? 'w-48 px-2 opacity-100' : 'w-0 p-0 opacity-0'} border-border`}
+                style={{ borderWidth: showSearchInput ? '1px' : '0px' }}
+              />
+              {searchInputText && showSearchInput && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-5 w-5 absolute right-1"
+                  onMouseDown={(e) => {
+                    // Prevent onBlur from being triggered by the mouse
+                    e.preventDefault();
+                  }}
+                  onClick={handleClearSearch}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+            <Button 
+              variant={isSearchingMessages ? "default" : "ghost"}
+              size="icon" 
+              className="h-7 w-7"
+              title={isSearchingMessages ? t('chatPanel.searchingMessages') : t('chatPanel.searchingResearch')}
+              onClick={handleSearchModeToggle}
+              onMouseDown={(e) => {
+                // Prevent onBlur from being triggered by the mouse
+                e.preventDefault();
+              }}
+            >
+              <Search className={`h-4 w-4 ${isSearchingMessages ? "text-primary-foreground" : "text-muted-foreground"}`} />
+            </Button>
+          </div>
           <Button variant="ghost" size="icon" className="h-7 w-7 lg:hidden" onClick={handleCloseChat}>
             <X className="h-4 w-4" />
           </Button>
@@ -387,41 +490,47 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
 
       <div className="flex-grow min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded relative" ref={scrollAreaRef}>
         <PinnedMessagesSection 
-          messages={messages} 
+          messages={messages.filter(m => m.isPinned)} 
           onTogglePin={togglePinMessage} 
           onCopy={handleCopy}
-          isLoading={isLoadingMessages}
+          isLoading={messagesLoading}
         />
         <MessageList 
-            messages={messages} 
+            messages={isSearchingMessages && searchInputText.trim() ? filteredMessages : messagesForList}
             onDeleteNote={handleDeleteNote} 
             onDeleteResearch={handleDeleteResearch} 
             onTogglePin={togglePinMessage}
             onCopy={handleCopy} 
-            isLoading={isLoadingMessages}
+            isLoading={messagesLoading}
             isAiResponding={isAiResponding}
+            userAvatarUrl={user?.avatar_url || undefined}
         />
       </div>
-
-      {historyError && (
-        <div className="p-4 border-t border-destructive bg-destructive/10 text-destructive-foreground text-sm flex-shrink-0">
-          {String(historyError)} 
+      
+      {isSearchingMessages && searchInputText.trim() && filteredMessages.length === 0 && (
+        <div className="p-4 text-center text-muted-foreground">
+          {t('chatPanel.noSearchResults')}
         </div>
       )}
 
-      {isLoadingMessages && (
+      {messagesError && (
+        <div className="p-4 border-t border-destructive bg-destructive/10 text-destructive-foreground text-sm flex-shrink-0">
+          {String(messagesError)} 
+        </div>
+      )}
+
+      {messagesLoading && (
         <div className="p-2 text-sm text-muted-foreground flex items-center justify-center flex-shrink-0">
           <Loader2 className="h-4 w-4 animate-spin mr-2" />
           {t('chatPanel.loadingHistory')}
         </div>
       )}
 
-      {/* Container voor ChatInput en ChatControls direct tegen de onderrand */}
       <div className="border-t border-border flex flex-col flex-shrink-0">
-        <div className="px-4 pt-2 pb-2">
+        <div className="p-2">
           <ChatInput 
             onSubmit={handleSubmit} 
-            isLoading={isLoadingMessages || isResearching || isAiResponding}
+            isLoading={messagesLoading || isResearching || isAiResponding}
             isNoteMode={isNoteMode}
             input={input}
             setInput={setInput}
@@ -430,28 +539,18 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         <ChatControls
           isNoteMode={isNoteMode}
           setIsNoteMode={setIsNoteMode}
-          selectedModel={selectedModel}
-          setSelectedModel={setSelectedModel}
           onClearHistory={clearHistory}
           onExport={handleExportChat}
-          onResearch={() => handleDeepResearch()} 
+          onResearch={handleDeepResearch}
+          researchModeOptions={researchModeOptions}
+          currentResearchMode={currentResearchMode}
           user={user}
-          isLoading={isLoadingMessages || isResearching || isAiResponding}
+          isLoading={messagesLoading}
+          isGenerating={isResearching || isAiResponding}
+          onCancelResearch={cancelResearch}
+          showCancelButton={isResearching}
         />
       </div>
-
-      {/* <ChatSettingsDialog 
-        isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)}
-        onClearHistory={clearHistory}
-      />
-      <DeepResearchDialog 
-        isOpen={isDeepResearchOpen} 
-        onClose={() => setIsDeepResearchOpen(false)} 
-        onStartResearch={handleDeepResearch}
-        taskTitle={task.title ?? ''}
-        isResearching={isResearching}
-      /> */}
     </div>
   );
 }

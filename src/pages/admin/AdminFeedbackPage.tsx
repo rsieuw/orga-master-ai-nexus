@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 import { nl, enUS } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button.tsx';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, ArrowUpDown } from 'lucide-react';
 
 interface FeedbackEntry {
   id: string;
@@ -29,6 +29,14 @@ interface FeedbackEntry {
   important: boolean | null;
 }
 
+// Type for sort configuration
+type SortDirection = 'asc' | 'desc';
+type SortableFeedbackKeys = 'created_at' | 'subject' | 'status' | 'important' | 'user_email'; // Added user_email
+type SortConfig = {
+  key: SortableFeedbackKeys;
+  direction: SortDirection;
+} | null;
+
 const AdminFeedbackPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const [feedbackEntries, setFeedbackEntries] = useState<FeedbackEntry[]>([]);
@@ -36,6 +44,7 @@ const AdminFeedbackPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'created_at', direction: 'desc' });
 
   const currentLocale = i18n.language === 'nl' ? nl : enUS;
 
@@ -70,6 +79,60 @@ const AdminFeedbackPage: React.FC = () => {
   useEffect(() => {
     fetchFeedback();
   }, [fetchFeedback]);
+
+  const sortedFeedbackEntries = React.useMemo(() => {
+    const sortableItems = [...feedbackEntries];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+
+        // Handle null or undefined values by pushing them to the end
+        if (aValue == null && bValue == null) return 0;
+        if (aValue == null) return 1;
+        if (bValue == null) return -1;
+
+        if (sortConfig.key === 'created_at') {
+          return (new Date(aValue as string).getTime() - new Date(bValue as string).getTime()) * (sortConfig.direction === 'asc' ? 1 : -1);
+        }
+        
+        if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
+          return (aValue === bValue ? 0 : aValue ? -1 : 1) * (sortConfig.direction === 'asc' ? 1 : -1);
+        }
+
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return aValue.localeCompare(bValue, i18n.language, { sensitivity: 'base' }) * (sortConfig.direction === 'asc' ? 1 : -1);
+        }
+        // Fallback for other types or mixed types (less likely with FeedbackEntry structure)
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [feedbackEntries, sortConfig, i18n.language]);
+
+  const requestSort = (key: SortableFeedbackKeys) => {
+    let direction: SortDirection = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (columnKey: SortableFeedbackKeys) => {
+    if (!sortConfig || sortConfig.key !== columnKey) {
+      return <ArrowUpDown className="ml-2 h-3 w-3 text-muted-foreground/50" />;
+    }
+    if (sortConfig.direction === 'asc') {
+      return <ArrowUpDown className="ml-2 h-3 w-3 transform rotate-180" />; // Simplified, use ArrowUp if available and preferred
+    }
+    return <ArrowUpDown className="ml-2 h-3 w-3" />; // Simplified, use ArrowDown if available and preferred
+  };
 
   const formatDate = (dateString: string) => {
     try {
@@ -142,16 +205,41 @@ const AdminFeedbackPage: React.FC = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-8"></TableHead>
-                  <TableHead className="whitespace-nowrap">{t('adminFeedbackPage.tableHeaders.date', 'Datum')}</TableHead>
-                  <TableHead className="hidden md:table-cell">{t('adminFeedbackPage.tableHeaders.user', 'Gebruiker')}</TableHead>
-                  <TableHead>{t('adminFeedbackPage.tableHeaders.subject', 'Onderwerp')}</TableHead>
-                  <TableHead className="hidden sm:table-cell">{t('adminFeedbackPage.tableHeaders.status', 'Status')}</TableHead>
-                  <TableHead className="w-10">{t('adminFeedbackPage.tableHeaders.important', 'Belangrijk')}</TableHead>
+                  <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => requestSort('created_at')}>
+                    <div className="flex items-center">
+                      {t('adminFeedbackPage.tableHeaders.date', 'Datum')}
+                      {getSortIcon('created_at')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => requestSort('user_email')}>
+                    <div className="flex items-center">
+                      {t('adminFeedbackPage.tableHeaders.user', 'Gebruiker')}
+                      {getSortIcon('user_email')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => requestSort('subject')}>
+                    <div className="flex items-center">
+                      {t('adminFeedbackPage.tableHeaders.subject', 'Onderwerp')}
+                      {getSortIcon('subject')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="hidden sm:table-cell cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => requestSort('status')}>
+                    <div className="flex items-center">
+                      {t('adminFeedbackPage.tableHeaders.status', 'Status')}
+                      {getSortIcon('status')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="w-10 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => requestSort('important')}>
+                    <div className="flex items-center">
+                      {t('adminFeedbackPage.tableHeaders.important', 'Belangrijk')}
+                      {getSortIcon('important')}
+                    </div>
+                  </TableHead>
                   <TableHead className="w-auto">{t('adminFeedbackPage.tableHeaders.actions', 'Acties')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {feedbackEntries.map((entry) => {
+                {sortedFeedbackEntries.map((entry) => {
                   const isExpanded = expandedId === entry.id;
                   return (
                     <React.Fragment key={entry.id}>
@@ -234,7 +322,7 @@ const AdminFeedbackPage: React.FC = () => {
                           <TableCell colSpan={7} className="p-4">
                             <div className="text-sm w-full">
                               <strong>{t('adminFeedbackPage.tableHeaders.message', 'Bericht')}:</strong>
-                              <div className="whitespace-pre-wrap mb-2">{entry.message}</div>
+                              <div className="whitespace-pre-wrap mb-2 overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">{entry.message}</div>
                               <div className="text-xs text-muted-foreground flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-4">
                                 {entry.id && <span className="mr-4"><strong>ID:</strong> {entry.id}</span>}
                                 <span><strong>{t('adminFeedbackPage.tableHeaders.date', 'Datum')}:</strong> {formatDate(entry.created_at)}</span>

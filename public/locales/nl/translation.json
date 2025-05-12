@@ -9,6 +9,22 @@
     "medium": "Gemiddeld",
     "low": "Laag"
   },
+  "login": {
+    "title": "OrgaMaster AI",
+    "subtitle": "Log in om je taken te beheren",
+    "noAccount": "Nog geen account?",
+    "registerHere": "Registreer hier"
+  },
+  "register": {
+    "title": "OrgaMaster AI",
+    "subtitle": "Registreer om aan de slag te gaan",
+    "haveAccount": "Heb je al een account?",
+    "loginHere": "Log in hier"
+  },
+  "messageItem": {
+    "sources": "Bronnen",
+    "source": "Bron"
+  },
   "settings": {
     "title": "Instellingen",
     "tabs": {
@@ -64,15 +80,20 @@
       "title": "AI-instellingen",
       "description": "Configureer AI-functionaliteit."
     },
+    "freeUserPremiumFeature": "Deze functie is alleen beschikbaar voor betaalde gebruikers. Upgrade je account om toegang te krijgen tot premium AI-modi.",
+    "freeUserPremiumFeatureChat": "Upgrade naar Premium voor toegang tot de 'Creatieve' en 'Precieze' modus.",
     "aiMode": {
       "label": "Standaard AI-modus",
       "description": "Kies het standaardgedrag voor AI-interacties.",
-      "freeUserLimitation": "('Creatief' en 'Nauwkeurig' alleen voor betaalde gebruikers)",
+      "freeUserLimitation": "('Creatieve' en 'Precieze' modus alleen voor betaalde gebruikers)",
       "placeholder": "Selecteer modus",
+      "chatAiSettings": "Chat AI-instellingen",
+      "chatAiSettingsDescription": "Configureer de AI voor dagelijkse gesprekken en taaksuggesties.",
       "options": {
-        "gpt4oBalanced": "GPT-4o (Gebalanceerd)",
-        "creativeMode": "Creatieve Modus",
-        "preciseMode": "Nauwkeurige Modus"
+        "gpt4oBalanced": "Standaard modus",
+        "creativeMode": "Creatieve modus",
+        "preciseMode": "Precieze modus",
+        "instructionMode": "Instructie modus"
       }
     },
     "researchModel": {
@@ -81,7 +102,21 @@
       "freeUserLimitation": "(Beschikbaar voor betaalde gebruikers)",
       "placeholder": "Selecteer model",
       "perplexitySonar": "Perplexity Sonar",
-      "gpt4oMini": "GPT-4o Mini"
+      "gpt4oMini": "GPT-4o Mini",
+      "research": "Onderzoeksmodus (standaard)",
+      "instruction": "Instructie modus",
+      "creative": "Creatieve modus",
+      "researchDescription": "Geeft feitelijke antwoorden met bronvermeldingen en maximaal diepte.",
+      "instructionDescription": "Volgt nauwgezet instructies en is ideaal voor gerichte taken.",
+      "creativeDescription": "Biedt innovatieve ideeën en originele invalshoeken met meer creativiteit.",
+      "perplexitySonarDescription": "Gebruikt Perplexity Sonar voor diepgaande antwoorden met actuele webgegevens en bronvermeldingen.",
+      "gpt4oMiniDescription": "Gebruikt GPT-4o Mini voor snelle, betrouwbare antwoorden op basis van eerdere training."
+    },
+    "chatModel": {
+      "label": "Chat Model Provider",
+      "description": "Kies welk model gebruikt wordt voor de standaard chat functionaliteit.",
+      "perplexitySonarDescription": "Gebruikt Perplexity Sonar voor uitgebreide en contextuele antwoorden.",
+      "gpt4oMiniDescription": "Gebruikt GPT-4o Mini voor efficiënte en evenwichtige antwoorden (standaard)."
     },
     "aiModelConfig": {
       "button": "AI-modelconfiguratie",
@@ -139,9 +174,17 @@
         "title": "Onderzoeksmodel opgeslagen",
         "description": "Standaard onderzoeksmodel ingesteld op: {modeLabel}."
       },
-      "errorSavingResearchModel": {
-        "title": "Fout bij opslaan onderzoeksmodel",
-        "description": "Kon onderzoeksmodelvoorkeur niet opslaan."
+      "researchModelProviderSaved": {
+        "title": "Onderzoeksmodel provider gewijzigd",
+        "description": "Onderzoeksmodel provider ingesteld op: {provider}."
+      },
+      "chatModelProviderSaved": {
+        "title": "Chat model provider gewijzigd",
+        "description": "Chat model provider ingesteld op: {provider}."
+      },
+      "errorSavingChatModel": {
+        "title": "Fout bij opslaan chat model provider",
+        "description": "Kon chat model voorkeur niet opslaan."
       },
       "copiedToClipboard": "Gekopieerd naar klembord!",
       "genericErrorTitle": "Fout",
@@ -401,7 +444,6 @@
     "by": "door",
     "links": {
       "support": "Ondersteuning",
-      "documentation": "Documentatie",
       "contact": "Contact"
     }
   },
@@ -450,13 +492,6 @@
     "paragraph1": "Heb je vragen of ervaar je problemen met OrgaMaster AI? Neem contact op met ons ondersteuningsteam.",
     "paragraph2a": "Je kunt ons bereiken via e-mail op:",
     "paragraph3": "We streven ernaar je vragen zo snel mogelijk te beantwoorden."
-  },
-  "documentationPage": {
-    "mainTitle": "Documentatie",
-    "cardTitle": "OrgaMaster AI Documentatie",
-    "paragraph1": "Welkom bij de documentatie voor OrgaMaster AI.",
-    "paragraph2": "Op dit moment werken we hard aan uitgebreide documentatie om je te helpen het meeste uit de applicatie te halen.",
-    "paragraph3": "Kom binnenkort terug voor handleidingen, tutorials en API-referenties."
   },
   "dashboard": {
     "greeting": "Hallo, {{name}}!",
@@ -592,6 +627,7 @@
       "buttonAriaLabel": "Genereer subtaken met AI",
       "fabText": "Taken genereren"
     },
+    "overdueSR": "(Verlopen)",
     "collapseDescription": "Beschrijving inklappen",
     "expandDescription": "Beschrijving uitklappen",
     "deleteTask": "Taak verwijderen",
@@ -804,13 +840,23 @@
         "title": "Onderzoeksmodel opgeslagen",
         "description": "Standaard onderzoeksmodel ingesteld op: {modeLabel}."
       },
-      "errorSavingResearchModel": {
-        "title": "Fout bij opslaan onderzoeksmodel",
-        "description": "Kon onderzoeksmodelvoorkeur niet opslaan."
+      "researchModelProviderSaved": {
+        "title": "Onderzoeksmodel provider gewijzigd",
+        "description": "Onderzoeksmodel provider ingesteld op: {provider}."
+      },
+      "chatModelProviderSaved": {
+        "title": "Chat model provider gewijzigd",
+        "description": "Chat model provider ingesteld op: {provider}."
+      },
+      "errorSavingChatModel": {
+        "title": "Fout bij opslaan chat model provider",
+        "description": "Kon chat model voorkeur niet opslaan."
       },
       "copiedToClipboard": "Gekopieerd naar klembord!",
       "genericErrorTitle": "Fout",
-      "genericErrorDescription": "Er is iets misgegaan. Probeer het later opnieuw."
+      "genericErrorDescription": "Er is iets misgegaan. Probeer het later opnieuw.",
+      "topicRequiredTitle": "Onderwerp vereist",
+      "topicRequiredDescription": "Een onderwerp voor onderzoek kon niet worden bepaald."
     }
   },
   "profilePage": {
@@ -842,20 +888,30 @@
     "systemSettingsButton": "Systeeminstellingen"
   },
   "chatPanel": {
-    "title": "AI Chat",
-    "closeButton": "Sluiten",
-    "messagePlaceholder": "Typ hier je bericht aan de AI...",
-    "notePlaceholder": "Typ hier je notitie...",
-    "sendMessageTooltip": "Verstuur (Ctrl+Enter)",
-    "saveNoteTooltip": "Notitie opslaan (Ctrl+Enter)",
+    "titleWithTask": "Chat: {{taskTitle}}",
+    "messagePlaceholder": "Type je bericht...",
     "clearHistoryButton": "Geschiedenis wissen",
     "exportChatButton": "Chat exporteren",
     "researchButton": "Onderzoek",
+    "researchPlaceholder": "Onderzoeksonderwerp...",
     "newNoteButton": "Nieuwe notitie",
-    "deepResearchTooltip": "Grondig onderzoek uitvoeren",
-    "settingsTooltip": "Chatinstellingen",
+    "stopNoteButton": "Stop notitie modus",
+    "deepResearchTooltip": "Voer grondig onderzoek uit",
+    "settingsTooltip": "Chat-instellingen",
     "loadingHistory": "Geschiedenis laden...",
+    "sendMessageTooltip": "Verstuur bericht",
+    "saveNoteTooltip": "Notitie opslaan",
     "selectModelAriaLabel": "Selecteer AI-onderzoeksmodel",
+    "notePlaceholder": "Typ je notitie hier...",
+    "searchMessagesPlaceholder": "Zoek in berichten...",
+    "searchPlaceholder": "Typ om te onderzoeken...",
+    "noSearchResults": "Geen berichten gevonden met deze zoekterm.",
+    "searchingMessages": "Zoeken in berichten",
+    "searchingResearch": "Onderzoeken",
+    "defaultTaskTitle": "deze taak",
+    "defaultUsername": "gebruiker",
+    "researchForSubtaskLabel": "Onderzoek voor subtaak: {{subtaskTitle}}",
+    "researchForPromptLabel": "Onderzoek voor prompt: {{prompt}}",
     "research": {
       "startingDeepResearchOn": "Start grondig onderzoek naar: {{topic}}",
       "contextPrompt": "met aangepaste context: \"{{prompt}}\"",
@@ -863,69 +919,75 @@
       "contextMainTask": "voor hoofdtaak \"{{mainTaskTitle}}\"",
       "researchLoadingText": "Onderzoek uitvoeren... even geduld.",
       "researchCompleted": "Onderzoek voltooid.",
-      "researchForPromptLabel": "Onderzoek voor prompt: {{prompt}}",
-      "researchForSubtaskLabel": "Onderzoek voor subtaak: {{subtaskTitle}}"
+      "userRequestPrefix": "Doe onderzoek over:",
+      "forSubtaskContinuation": " voor subtaak '{{subtask}}'",
+      "instructionPrefixForSubtask": "Voor subtaak '{{subtask}}', help me met:",
+      "errorMessage": "Er is een fout opgetreden tijdens het onderzoek. Probeer het later opnieuw."
     },
-    "startConversationPrompt": "Start een gesprek door een bericht te typen.",
+    "researchModePopover": {
+      "title": "Kies Onderzoeksmodus",
+      "researchMode": "Onderzoek",
+      "instructionMode": "Instructie",
+      "creativeMode": "Creatief",
+      "descriptionResearch": "Feitelijk en duidelijk",
+      "descriptionInstruction": "Volgt precieze instructies",
+      "descriptionCreative": "Origineel en innoverend"
+    },
+    "startConversationPrompt": "Begin een gesprek met de AI-assistent",
     "initialAssistantMessage": "Hallo {{username}}! Ik ben klaar om je te helpen met je taak: {{taskTitle}}. Wat kan ik voor je doen?",
     "subtaskSelectedMessage": "Oké, we richten ons nu op de subtaak: {{subtaskTitle}}.",
     "closeSR": "Chat sluiten",
-    "copyMessageTitle": "Bericht kopiëren",
-    "copyMessageSR": "Bericht kopiëren naar klembord",
+    "copyMessageTitle": "Kopieer bericht",
+    "copyMessageSR": "Kopieer dit bericht",
     "saveResearchTitle": "Onderzoek opslaan",
     "saveResearchSR": "Onderzoek opslaan",
-    "deleteNoteTitle": "Notitie verwijderen",
-    "deleteNoteSR": "Deze notitie verwijderen",
-    "deleteResearchTitle": "Opgeslagen onderzoek verwijderen",
-    "deleteResearchSR": "Dit opgeslagen onderzoek verwijderen",
-    "defaultUsername": "daar",
-    "defaultTaskTitle": "de huidige taak",
-    "errors": {
-      "taskIdMissing": "Taak-ID ontbreekt, kan actie niet uitvoeren.",
-      "userNotLoggedIn": "Gebruiker is niet ingelogd.",
-      "taskIdOrUserMissing": "Taak-ID of gebruiker niet beschikbaar. Kan onderzoek niet opslaan.",
-      "cannotTogglePinStatus": "Taak-ID of gebruiker ontbreekt, kan vastpin-status niet wijzigen.",
-      "messageNotFoundInState": "Bericht niet gevonden in lokale staat.",
-      "couldNotFetchSavedResearchAfterClear": "Kon opgeslagen onderzoek niet ophalen na het wissen van de geschiedenis: {{error}}",
-      "saveMessageToDbGeneric": "Fout bij opslaan bericht in DB:",
-      "invokeSaveResearchFunctionGeneric": "Fout bij aanroepen save-research functie:",
-      "clientSideSaveResearchGeneric": "Client-side fout bij opslaan onderzoek via functie:",
-      "fetchPinnedMessagesGeneric": "Fout bij ophalen vastgepinde berichten:",
-      "couldNotFetchSavedResearch": "Kon opgeslagen onderzoek niet ophalen:",
-      "loadMessagesAndNotesGeneric": "Fout bij laden berichten en notities:",
-      "clearHistoryGeneric": "Fout bij wissen geschiedenis en herladen items:",
-      "deleteNoteGeneric": "Fout bij verwijderen notitie:",
-      "deleteResearchGeneric": "Fout bij verwijderen opgeslagen onderzoek:",
-      "togglePinStatusGeneric": "Fout bij wijzigen vastpin-status:",
-      "cannotSaveResearch": "Kan onderzoek niet opslaan: taak-ID of gebruiker is niet beschikbaar."
-    },
+    "deleteNoteTitle": "Verwijder notitie",
+    "deleteNoteSR": "Verwijder deze notitie",
+    "deleteResearchTitle": "Verwijder onderzoek",
+    "deleteResearchSR": "Verwijder dit onderzoek",
+    "pinMessageTitle": "Pin bericht",
+    "pinMessageSR": "Pin dit bericht",
+    "unpinMessageTitle": "Unpin bericht",
+    "unpinMessageSR": "Unpin dit bericht",
     "toast": {
+      "copiedTitle": "Gekopieerd",
+      "copiedDescription": "Tekst is gekopieerd naar het klembord",
+      "copyFailedTitle": "Kopiëren mislukt",
+      "copyFailedDescription": "Kon de tekst niet kopiëren",
+      "noteSavedTitle": "Notitie opgeslagen",
+      "saveNoteFailedDefault": "Kon notitie niet opslaan",
       "saveFailedTitle": "Opslaan mislukt",
-      "deepResearchSuccessTitle": "Grondig onderzoek voltooid",
-      "loadMessagesAndNotesFailed": "Kon berichten en notities niet laden",
-      "saveMessageToDbFailed": "Kon bericht niet opslaan in database.",
-      "saveResearchToDbFailed": "Kon onderzoek niet opslaan: {{error}}",
-      "historyClearedTitle": "Geschiedenis gewist",
-      "historyClearedDescription": "Chatgeschiedenis is succesvol gewist.",
-      "historyClearedWithPinnedDescription": "Geschiedenis gewist, {{count}} vastgezette berichten behouden.",
-      "historyClearedWithKeptItemsDescription": "Geschiedenis gewist. Behouden: {{items}}.",
-      "clearHistoryFailed": "Kon geschiedenis niet wissen",
-      "noteDeletedTitle": "Notitie verwijderd",
-      "noteDeletedDescription": "De notitie is succesvol verwijderd.",
-      "deleteFailedTitle": "Verwijderen mislukt",
-      "deleteNoteFailedDefault": "Kon de notitie niet verwijderen. Probeer het opnieuw.",
+      "exportFailedTitle": "Exporteren mislukt",
+      "exportFailedDescriptionNoTask": "Er is geen taak geselecteerd",
+      "exportFailedDescription": "Er zijn geen berichten om te exporteren",
+      "exportStartedTitle": "Exporteren gestart",
+      "exportStartedDescription": "Het gesprek wordt geëxporteerd naar een tekstbestand",
+      "subtasksGeneratedTitle": "Subtaken gegenereerd",
+      "subtaskGenerationFailedTitle": "Genereren subtaken mislukt",
+      "taskUpdatedTitle": "Taak bijgewerkt",
+      "subtaskAddedTitle": "Subtaak toegevoegd",
+      "allSubtasksDeletedTitle": "Alle subtaken verwijderd",
+      "actionFailedTitle": "Actie mislukt",
+      "topicRequiredTitle": "Onderwerp vereist",
+      "topicRequiredDescription": "Voer een onderwerp in voor het onderzoek",
       "researchDeletedTitle": "Onderzoek verwijderd",
-      "researchDeletedDescription": "Het opgeslagen onderzoek is succesvol verwijderd.",
-      "deleteResearchFailedDescriptionDefault": "Kon het onderzoek niet verwijderen. Probeer het opnieuw.",
-      "researchSavedTitle": "Onderzoek opgeslagen",
-      "researchSavedDescription": "Het onderzoek is succesvol opgeslagen.",
-      "messagePinnedTitle": "Bericht vastgezet",
-      "messagePinnedDescription": "Het bericht is vastgezet en blijft behouden bij het wissen van de geschiedenis.",
-      "togglePinFailedDescription": "Kon vastpin-status van bericht niet bijwerken in database.",
+      "researchDeletedDescription": "Het onderzoek is succesvol verwijderd",
+      "historyClearedTitle": "Geschiedenis gewist",
+      "historyClearedDescription": "De chatgeschiedenis is gewist",
+      "historyClearedWithKeptItemsDescription": "De chatgeschiedenis is gewist, maar {{items}} blijven behouden",
       "pinnedItemsKept": "{{count}} vastgezette berichten",
       "notesItemsKept": "{{count}} notities",
       "researchItemsKept": "{{count}} onderzoeken",
-      "cannotChangePinStatusDescription": "Kon vastpin-status niet wijzigen."
+      "clearHistoryFailed": "Kon de chatgeschiedenis niet wissen"
+    },
+    "errors": {
+      "userNotLoggedIn": "Gebruiker niet ingelogd"
+    },
+    "export": {
+      "chatConversationForTask": "Chat conversatie voor taak:",
+      "exportedOn": "Geëxporteerd op:",
+      "roleUser": "Gebruiker",
+      "roleAssistant": "Assistent"
     },
     "pinnedMessages": "Vastgezette berichten",
     "noteSavedTitle": "Notitie opgeslagen"
@@ -978,53 +1040,10 @@
     "createTaskButton": "Taak aanmaken",
     "creatingButton": "Aanmaken..."
   },
-  "errors": {
-    "unauthorized": "Niet geautoriseerd.",
-    "internalServerError": "Er is een interne serverfout opgetreden.",
-    "research": {
-      "idRetrievalFailed": "Kon de ID van het opgeslagen onderzoek niet ophalen."
-    },
-    "profiles": {
-      "notFound": "Geen profielen gevonden."
-    },
-    "api": {
-      "configMissing": "Interne serverfout: API-configuratie ontbreekt."
-    },
-    "request": {
-      "invalidInput": "Ongeldige of ontbrekende 'input' in verzoek body.",
-      "invalidBody": "Ongeldige verzoek body.",
-      "missingTaskId": "Geldige taskId is vereist in de verzoek body."
-    },
-    "env": {
-      "openaiKeyMissing": "OPENAI_API_KEY omgevingsvariabele niet ingesteld.",
-      "supabaseUrlMissing": "SUPABASE_URL omgevingsvariabele niet ingesteld.",
-      "supabaseAnonKeyMissing": "SUPABASE_ANON_KEY omgevingsvariabele niet ingesteld."
-    },
-    "task": {
-      "fetchFailed": "Fout bij ophalen taak.",
-      "notFound": "Taak niet gevonden."
-    },
-    "openai": {
-      "requestFailed": "OpenAI API-verzoek mislukt."
-    },
-    "ai": {
-      "noUsableAnswer": "AI-service heeft geen bruikbaar antwoord gegeven.",
-      "invalidJson": "Ongeldig JSON-formaat van AI.",
-      "processingFailed": "Kon de reactie van de AI-service niet verwerken.",
-      "invalidStructure": "Ongeldige structuur ontvangen van OpenAI API.",
-      "jsonParseFailed": "Kon de JSON-reactie van de AI niet parsen.",
-      "noContent": "Geen inhoud gevonden in AI-reactie.",
-      "subtasks": {
-        "invalidArray": "AI-reactie bevat geen geldige 'subtasks'-array.",
-        "invalidArrayStructure": "AI-reactie 'subtasks'-array-items moeten 'title'- en 'description'-strings hebben.",
-        "extractionFailed": "Kon geen geldige subtasks-array uit AI-reactie extraheren."
-      }
-    },
-    "internal": {
-      "generateTaskDetails": "Interne serverfout bij het genereren van taakdetails."
-    },
-    "taskIdMissing": "Taak-ID ontbreekt, kan actie niet uitvoeren.",
-    "unexpectedAIResponse": "Onverwachte reactie van AI."
+  "responses": {
+    "defaultError": "Sorry, ik kon geen antwoord genereren.",
+    "defaultAction": "Oké, ik voer de actie uit.",
+    "noSubtasks": "Er bestaan nog geen subtaken."
   },
   "success": {
     "researchSaved": "Onderzoek succesvol opgeslagen!"
@@ -1056,17 +1075,24 @@
       "noSubtasksGeneratedDescription": "De AI kon geen subtaken suggereren.",
       "generationFailedTitle": "Genereren mislukt",
       "generationFailedDescription": "Kon geen AI-subtaken genereren.",
-      "taskNotFound": "Taak met ID '{{taskId}}' niet gevonden.",
+      "taskNotFound": "Taak met ID {{taskId}} niet gevonden.",
+      "fetchError": "Fout bij ophalen taken.",
+      "notAuthenticated": "Je moet ingelogd zijn om deze actie uit te voeren.",
+      "updateTaskFailed": "Kon de taak niet bijwerken",
       "aiSubtaskGenerationLimitReached": "AI-subtaakgeneratielimiet bereikt voor deze taak ({{count}}/{{limit}}).",
       "aiSubtaskGenerationFailed": "Kon geen AI-subtaken genereren.",
       "aiSubtasksGeneratedSuccessfully": "AI-subtaken succesvol gegenereerd.",
       "errorUpdatingTaskGenerationCount": "Kon AI-generatietelling voor de taak niet bijwerken.",
       "addSubtasksFailed": "Kon nieuwe AI-subtaken niet opslaan in de database.",
-      "aiNoNewSubtasksGenerated": "AI heeft geen nieuwe unieke subtaken gegenereerd.",
-      "fetchError": "Fout bij ophalen taken.",
-      "notAuthenticated": "Je moet ingelogd zijn om deze actie uit te voeren."
+      "aiNoNewSubtasksGenerated": "AI heeft geen nieuwe unieke subtaken gegenereerd."
     },
-    "aiSubtaskGenerationLimitReached": "AI-subtaakgeneratielimiet bereikt voor deze taak ({{count}}/{{limit}}).",
+    "errors": {
+      "taskNotFoundToAddSubtask": "Taak niet gevonden om subtaak toe te voegen",
+      "taskNotFoundToUpdateSubtask": "Taak niet gevonden om subtaak bij te werken",
+      "taskNotFoundToDeleteSubtask": "Taak niet gevonden om subtaak te verwijderen"
+    },
+    "taskNotFound": "Taak met ID {taskId} niet gevonden",
+    "aiSubtaskGenerationLimitReached": "Je hebt de limiet van {limit} AI-subtaakgeneraties bereikt voor deze taak (huidige: {count})",
     "aiSubtaskGenerationFailed": "Kon geen AI-subtaken genereren.",
     "aiSubtasksGeneratedSuccessfully": "AI-subtaken succesvol gegenereerd.",
     "errorUpdatingTaskGenerationCount": "Kon AI-generatietelling voor de taak niet bijwerken."
@@ -1180,5 +1206,41 @@
         "description": "De taak kon niet worden bijgewerkt."
       }
     }
+  },
+  "aiModes": {
+    "default": {
+      "name": "Standaard modus",
+      "description": "Snelle, universele assistent voor alledaagse taken."
+    },
+    "creative": {
+      "name": "Creatieve modus",
+      "description": "Creatieve antwoorden voor brainstorming en innovatieve ideeën."
+    },
+    "precise": {
+      "name": "Precieze modus",
+      "description": "Feitelijke en gedetailleerde antwoorden met focus op nauwkeurigheid."
+    },
+    "instruction": {
+      "name": "Instructie modus",
+      "description": "Stapsgewijze gidsen en gestructureerde instructies voor praktische taken."
+    }
+  },
+  "registerForm": {
+    "toast": {
+      "successTitle": "Registratie geslaagd",
+      "successDescription": "Welkom bij OrgaMaster AI!",
+      "errorTitle": "Registratie mislukt",
+      "errorDescription": "Er is iets misgegaan bij het registreren."
+    },
+    "title": "Registreren",
+    "nameLabel": "Naam",
+    "namePlaceholder": "Jouw naam",
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "jouw@email.com",
+    "passwordLabel": "Wachtwoord",
+    "showPassword": "Toon wachtwoord",
+    "hidePassword": "Verberg wachtwoord",
+    "submitButton": "Registreren",
+    "submitButtonLoading": "Registreren..."
   }
 }

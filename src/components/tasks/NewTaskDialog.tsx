@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx";
 import { Calendar } from "@/components/ui/calendar.tsx";
 import { useTranslation } from 'react-i18next';
-import { useAuth } from "@/contexts/AuthContext.tsx";
+import { useAuth } from "@/hooks/useAuth.ts";
 
 interface NewTaskDialogProps {
   setOpen: (open: boolean) => void;
