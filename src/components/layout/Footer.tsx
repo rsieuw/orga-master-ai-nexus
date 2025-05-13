@@ -12,13 +12,15 @@ export default function Footer() {
         <p className="hidden md:block text-sm leading-loose text-muted-foreground">
           &copy; {new Date().getFullYear()} OrgaMaster AI. {appVersion}
         </p>
-        <p className="block text-center text-sm text-muted-foreground">
-          {t('footer.builtWith')} <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">❤️</span> {t('footer.by')}{" "}
+        <p className="block text-center text-sm bg-gradient-to-r from-blue-600 to-purple-700 bg-clip-text text-transparent">
+          {t('footer.builtWith')}
+          <span className="mx-1 bg-gradient-to-r from-blue-700 to-purple-800 bg-clip-text text-transparent shadow-lg shadow-purple-700/50">❤️</span>
+          {t('footer.by')}{" "}
           <a 
             href="https://www.artifexai.nl" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="font-bold hover:underline bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent"
+            className="font-bold hover:underline"
           >
             Artifex AI
           </a>

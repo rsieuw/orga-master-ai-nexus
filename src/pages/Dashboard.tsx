@@ -89,10 +89,25 @@ const cardVariants: Variants = {
   },
 };
 
+// Define the gradient classes for each priority
+const priorityGradients = [
+  'bg-gradient-to-r from-[#b12429] via-[#8112a9] to-[#690365]', // High (custom hex)
+  'bg-gradient-to-r from-[#db7b0b] via-[#9e4829] to-[#651945]', // Medium (custom hex)
+  'bg-gradient-to-r from-blue-500 via-cyan-400 to-teal-400', // Low
+  'bg-gradient-to-r from-blue-600 to-purple-700' // Original blue-purple (lighter)
+];
+
 export default function Dashboard() {
   const { isLoading, groupTasksByDate } = useTask();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const [greetingGradient, setGreetingGradient] = useState(''); // State for the gradient class
+
+  // Select a random gradient when the component mounts
+  useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * priorityGradients.length);
+    setGreetingGradient(priorityGradients[randomIndex]);
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   const getCategoryTitle = (category: keyof TasksByDate): string => {
     switch (category) {
@@ -306,8 +321,8 @@ export default function Dashboard() {
   });
   // --- End logic for balanced distribution ---
 
-  // Construct the greeting text dynamically
-  const greetingText = t('dashboard.greeting', { name: user?.name || t('dashboard.defaultUser') });
+  // Construct the greeting text using user?.name
+  const greeting = t('dashboard.greeting', { name: user?.name || user?.email || t('common.guest') });
 
   // --- Determine message for empty state ---
   let emptyStateMessage: React.ReactNode = null;
@@ -371,16 +386,18 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 md:space-x-4">
           {/* Wrapper div for Greeting and Subtitle */}
           <div> 
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-700 to-purple-800 bg-clip-text text-transparent">
-              <TypeAnimation
-                sequence={[
-                  100, 
-                  greetingText,
-                ]}
-                wrapper="span"
-                speed={50}
-                cursor
-              />
+            <h1 className={`text-3xl md:text-3xl lg:text-4xl font-bold`}> 
+              <span className={`bg-clip-text text-transparent ${greetingGradient}`}>
+                <TypeAnimation
+                  sequence={[
+                    100, 
+                    greeting,
+                  ]}
+                  wrapper="span"
+                  speed={50}
+                  cursor
+                />
+              </span>
             </h1>
             <p className="text-muted-foreground mt-1">
               {t('dashboard.tasksOverview')}
