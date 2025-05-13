@@ -56,13 +56,13 @@ const sortTasksByPriority = (a: Task, b: Task): number => {
   return priorityOrder[b.priority] - priorityOrder[a.priority];
 };
 
-// Variants for the card container (per column)
-const columnContainerVariants: Variants = {
+// Variants voor animaties
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.07, // Small delay between each card in the column
+      staggerChildren: 0.07,
     },
   },
 };
@@ -246,80 +246,47 @@ export default function Dashboard() {
     setFilterPriority(priority);
     setFilterCategory(category);
   };
-
-  // --- Create a flat list of filtered and sorted tasks for column distribution --- 
-  const tasksForColumnDistribution: { task: Task; category: keyof TasksByDate }[] = [];
-  (Object.keys(filteredAndSortedTaskGroups) as Array<keyof TasksByDate>).forEach(category => {
-    filteredAndSortedTaskGroups[category].forEach(task => {
-      tasksForColumnDistribution.push({ task, category });
-    });
-  });
-  // --- End flat list creation ---
-
-  // --- Restore logic for balanced column distribution ---
-  const numColumns = 3; 
-  const columns: React.ReactNode[][] = Array.from({ length: numColumns }, () => []);
-  let lastCategory: keyof TasksByDate | null = null;
-  // Use tasksForColumnDistribution to calculate totalTasks and distribution
-  const totalTasks = tasksForColumnDistribution.length; 
-
-  // Calculate base number of tasks per column and the remainder
-  const baseTasks = Math.floor(totalTasks / numColumns);
-  const remainder = totalTasks % numColumns;
-
-  // Determine column sizes for balanced distribution
-  const col0Size = baseTasks;
-  let col1Size = baseTasks;
-  let col2Size = baseTasks;
-
-  // Distribute the remainder (e.g., for 10 tasks -> 3, 4, 3; for 11 tasks -> 3, 4, 4)
-  if (remainder === 1) {
-    col1Size += 1; // Assign extra task to the middle column
-  } else if (remainder === 2) {
-    col1Size += 1; // Assign extra task to middle column
-    col2Size += 1; // Assign extra task to last column
-  }
-
-  // Define breakpoints for column distribution
-  const columnBreak1 = col0Size;
-  const columnBreak2 = col0Size + col1Size;
-
-  // Use tasksForColumnDistribution to fill columns
-  tasksForColumnDistribution.forEach(({ task, category }, taskIndex) => { 
-    const showTitle = category !== lastCategory;
+  
+  // --- NIEUWE CATEGORIE-GEBASEERDE HORIZONTALE DISTRIBUTIE ---
+  // Genereer categorie secties met taken in horizontale rijen
+  const taskCategorySections = useMemo(() => {
+    const sections: React.ReactNode[] = [];
     
-    let targetColumnIndex;
-    if (taskIndex < columnBreak1) {
-        targetColumnIndex = 0;
-    } else if (taskIndex < columnBreak2) {
-        targetColumnIndex = 1;
-    } else {
-        targetColumnIndex = 2;
-    }
-
-    if (showTitle) {
-      const count = filteredAndSortedTaskGroups[category].length;
-      columns[targetColumnIndex].push(
-        <h2 key={`title-${String(category)}-${targetColumnIndex}`} className="text-lg font-semibold mb-3 pt-3 md:pt-0">
-          {getCategoryTitle(category)}{' '}
-          <span className="text-sm font-normal text-muted-foreground">({count})</span>
-        </h2>
-      );
-    }
-    lastCategory = category;
-
-    columns[targetColumnIndex].push(
-      <motion.div
-        key={task.id}
-        variants={cardVariants}
-        layout="position"
-        className="mb-2 md:mb-6"
-      >
-        <TaskCard task={task} />
-      </motion.div>
-    );
-  });
-  // --- End logic for balanced distribution ---
+    // Loop door elke categorie (overdue, today, etc.)
+    (Object.keys(filteredAndSortedTaskGroups) as Array<keyof TasksByDate>).forEach(category => {
+      const tasksInCategory = filteredAndSortedTaskGroups[category];
+      
+      // Alleen categorieën met taken tonen
+      if (tasksInCategory.length > 0) {
+        // Voeg categorie titel toe
+        sections.push(
+          <div key={`category-${category}`} className="mt-8 first:mt-0">
+            <h2 className="text-lg font-semibold mb-3">
+              {getCategoryTitle(category)}{' '}
+              <span className="text-sm font-normal text-muted-foreground">({tasksInCategory.length})</span>
+            </h2>
+            
+            {/* Grid container voor de taken - responsief met 1, 2 of 4 kolommen */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+              {tasksInCategory.map(task => (
+                <motion.div
+                  key={task.id}
+                  variants={cardVariants}
+                  layout="position"
+                  className="mb-2"
+                >
+                  <TaskCard task={task} />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+    });
+    
+    return sections;
+  }, [filteredAndSortedTaskGroups]);
+  // --- EINDE NIEUWE HORIZONTALE DISTRIBUTIE ---
 
   // Construct the greeting text using user?.name
   const greeting = t('dashboard.greeting', { name: user?.name || user?.email || t('common.guest') });
@@ -416,38 +383,29 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Task grid: No gap on mobile, gap on medium screens and up */}
+        {/* Nieuwe taak categorieweergave - horizontale rijen per categorie */}
         <AnimatePresence mode="sync">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6 items-start">
-            {hasAnyFilteredTasks ? (
-              columns.map((columnItems, colIndex) => (
-                <motion.div
-                  key={`col-${colIndex}`}
-                  className="flex flex-col gap-0"
-                  variants={columnContainerVariants}
-                  initial="hidden"
-                  animate="visible"
-                >
-                  {columnItems.length > 0 && React.isValidElement(columnItems[0]) && columnItems[0].type !== 'h2' && (
-                    <div className="hidden md:block h-10"></div>
-                  )}
-                  {columnItems.map((item, itemIndex) => (
-                    <React.Fragment key={itemIndex}>{item}</React.Fragment>
-                  ))}
-                </motion.div>
-              ))
-            ) : (
-              <motion.div
-                key="empty-state"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="text-center col-span-1 md:col-span-3 mt-8"
-              >
-                {emptyStateMessage}
-              </motion.div>
-            )}
-          </div>
+          {hasAnyFilteredTasks ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-4"
+              variants={containerVariants}
+            >
+              {taskCategorySections}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="empty-state"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="text-center mt-8"
+            >
+              {emptyStateMessage}
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* Floating Action Button for new task (mobile only) */}
