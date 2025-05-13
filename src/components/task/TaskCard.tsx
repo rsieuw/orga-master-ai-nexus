@@ -92,7 +92,7 @@ export default function TaskCard({ task }: TaskCardProps) {
         data-category={task.category}
       >
         {task.category && (
-          <div className="absolute bottom-2 right-4 z-0 pointer-events-none">
+          <div className={`absolute ${totalSubtasks > 0 ? 'bottom-[2.7rem]' : 'bottom-6'} right-4 z-0 pointer-events-none`}>
             {getCategoryBackgroundIcon(task.category)}
           </div>
         )}
@@ -101,7 +101,7 @@ export default function TaskCard({ task }: TaskCardProps) {
           <div>
             <div className="flex justify-between items-start">
               <h3 className="font-medium text-base line-clamp-1">
-                {task.emoji && <span className="mr-1.5 text-2xl task-emoji">{task.emoji}</span>}
+                {task.emoji && <span className="mr-1.5 text-xl task-emoji">{task.emoji}</span>}
                 {task.title}
               </h3>
               {/* Kalenderbadge */}
@@ -140,7 +140,7 @@ export default function TaskCard({ task }: TaskCardProps) {
               )}
             </div>
             {task.description && (
-              <p className="text-muted-foreground text-sm mt-1 line-clamp-2">
+              <p className={`text-muted-foreground text-sm mt-1 ${totalSubtasks > 0 ? 'line-clamp-2' : 'line-clamp-3'}`}>
                 {task.description}
               </p>
             )}

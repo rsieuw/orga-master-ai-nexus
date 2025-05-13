@@ -285,7 +285,7 @@ export default function Dashboard() {
     });
     
     return sections;
-  }, [filteredAndSortedTaskGroups]);
+  }, [filteredAndSortedTaskGroups, getCategoryTitle]);
   // --- EINDE NIEUWE HORIZONTALE DISTRIBUTIE ---
 
   // Construct the greeting text using user?.name
