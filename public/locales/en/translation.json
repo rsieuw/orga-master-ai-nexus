@@ -207,7 +207,7 @@
       "totalTasks": "Total Tasks",
       "completed": "Completed",
       "todo": "To do",
-      "inProgress": "In Progress"
+      "in_progress": "In Progress"
     }
   },
   "adminDashboard": {
@@ -919,18 +919,18 @@
     "stopNoteModeButton": "Stop Note Mode"
   },
   "editTaskDialog": {
+    "titlePlaceholder": "Enter task title here",
+    "descriptionPlaceholder": "Add an optional description...",
+    "selectPriorityPlaceholder": "Select a priority",
+    "selectCategoryPlaceholder": "Select a category",
+    "chooseDate": "Choose a date",
+    "clearDeadlineSR": "Clear deadline",
     "toast": {
       "taskUpdatedTitle": "Task Updated",
       "taskUpdatedDescription": "The changes have been saved.",
       "updateErrorTitle": "Update Error",
       "updateErrorDescription": "The task could not be updated."
-    },
-    "titlePlaceholder": "Task title",
-    "descriptionPlaceholder": "Describe the task...",
-    "selectPriorityPlaceholder": "Select priority",
-    "selectStatusPlaceholder": "Select status",
-    "chooseDate": "Choose a date",
-    "clearDeadlineSR": "Clear deadline"
+    }
   },
   "newTaskDialog": {
     "toast": {

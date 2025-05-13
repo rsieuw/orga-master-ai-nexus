@@ -307,16 +307,13 @@ export default function TaskDetail() {
   // Defaults will be overridden when user data becomes available
   const [columnSizes, setColumnSizes] = useState<{ left: number; right: number }>(() => {
     // Als gebruiker al beschikbaar is bij eerste render, gebruik de voorkeur meteen
-    console.log("Initial state calculation, user:", user?.layout_preference);
     if (user && user.layout_preference) {
       const sizes = user.layout_preference === '33-67' 
         ? { left: 33.33, right: 66.67 }
         : { left: 50, right: 50 };
-      console.log("Using user preference for initial state:", user.layout_preference, sizes);
       return sizes;
     }
     // Anders standaard 50-50
-    console.log("No user preference available, using default 50-50");
     return { left: 50, right: 50 };
   });
   const [isResizing, setIsResizing] = useState(false);
@@ -356,7 +353,6 @@ export default function TaskDetail() {
   // Explicitly initialize layout when user becomes available
   useEffect(() => {
     if (user && !hasAppliedInitialLayoutRef.current) {
-      console.log("Explicitly initializing layout from user preference:", user.layout_preference);
       const newSizes = calculateColumnSizesFromPreference(user);
       setColumnSizes(newSizes);
       hasAppliedInitialLayoutRef.current = true;
@@ -376,25 +372,16 @@ export default function TaskDetail() {
         const newPreference = sizes.left <= (33.33 + 50) / 2 ? '33-67' : '50-50';
         const currentUserPreference = user.layout_preference;
         
-        console.log("Attempting to save layout preference:", {
-          newPreference,
-          currentUserPreference,
-          lastSavedPreference: lastSavedPreferenceRef.current
-        });
-        
         // Voorkom onnodige updates als de voorkeur niet is gewijzigd
         if (newPreference !== currentUserPreference && newPreference !== lastSavedPreferenceRef.current) {
           (async () => {
             try {
-              console.log("Layout preference changed, saving:", newPreference);
               await updateUser({ layout_preference: newPreference });
               lastSavedPreferenceRef.current = newPreference as string;
             } catch (error) {
               console.error("Error saving layout preference:", error);
             }
           })();
-        } else {
-          console.log("Layout preference unchanged, skipping save:", newPreference);
         }
       }
     }, 1000); // 1 seconde wachten na laatste aanpassing
@@ -404,47 +391,26 @@ export default function TaskDetail() {
   useEffect(() => {
     const wasResizingInPreviousRender = prevIsResizingRef.current;
 
-    // Log voor debugging
-    console.log("Layout update check:", {
-      isResizing,
-      wasResizingInPreviousRender,
-      user: user?.layout_preference,
-      hasAppliedInitialLayout: hasAppliedInitialLayoutRef.current,
-      currentLayout: `${columnSizes.left.toFixed(2)}-${columnSizes.right.toFixed(2)}`
-    });
-
     if (isResizing) {
       // Currently resizing - doResize handles updates, don't override
       return;
     } 
     
     if (wasResizingInPreviousRender === true) {
-      console.log("Just finished resizing, saving preference");
       debounceSaveLayoutPreference(columnSizes);
       return;
     } 
     
     if (user) {
-      console.log("Checking if layout needs to be updated:", {
-        hasAppliedInitialLayout: hasAppliedInitialLayoutRef.current,
-        userPreference: user.layout_preference,
-        currentLayout: Math.abs(columnSizes.left - 33.33) < 1 ? '33-67' : '50-50'
-      });
-      
-      // Only apply the user preference once on mount or when it changes in the user object
       if (!hasAppliedInitialLayoutRef.current || user.layout_preference !== (hasAppliedInitialLayoutRef.current ? 
           (Math.abs(columnSizes.left - 33.33) < 1 ? '33-67' : '50-50') : null)) {
-        // Deze conditie behandelt:
-        // 1. Initiële render wanneer user beschikbaar komt
-        // 2. Wanneer user.layout_preference verandert
         const newSizes = calculateColumnSizesFromPreference(user);
-        console.log("Applying layout preference:", user.layout_preference, newSizes);
         setColumnSizes(newSizes);
         hasAppliedInitialLayoutRef.current = true;
         lastSavedPreferenceRef.current = user.layout_preference as string;
       }
     }
-  }, [user, isResizing, calculateColumnSizesFromPreference, debounceSaveLayoutPreference]);
+  }, [user, isResizing, calculateColumnSizesFromPreference, debounceSaveLayoutPreference, columnSizes]);
 
   useEffect(() => {
     const INACTIVITY_TIMEOUT = 2500;
@@ -637,7 +603,6 @@ export default function TaskDetail() {
     }
     
     if (id && task) {
-      console.log("Marking task as viewed:", id);
       markTaskAsViewed(id);
     }
   }, [id, task, markTaskAsViewed]);
@@ -707,13 +672,9 @@ export default function TaskDetail() {
   };
 
   const handleGenerateSubtasks = async () => {
-    console.log('handleGenerateSubtasks called');
-    console.log('Task:', task);
     if (task) {
-      console.log('Calling expandTask with task.id:', task.id);
       try {
         await expandTask(task.id);
-        console.log('expandTask executed successfully');
       } catch (error) {
         console.error('Error in expandTask:', error);
       }
@@ -964,7 +925,7 @@ export default function TaskDetail() {
                                 >
                                   <Info className="h-4 w-4 mr-1 sm:hidden" />
                                   <span className="hidden sm:inline">{t('common.status')}:&nbsp;</span>
-                                  {t(`common.${task.status.toLowerCase().replace(' ', '_')}`)}
+                                  {t(task.status === 'todo' ? 'common.todo' : task.status === 'in_progress' ? 'common.in_progress' : 'common.done')}
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" className="bg-popover/90 backdrop-blur-lg border border-white/10">
@@ -988,18 +949,18 @@ export default function TaskDetail() {
                                   >
                                     <Flag className="h-4 w-4 mr-1 sm:hidden" />
                                     <span className="hidden sm:inline">{t('common.priority')}:&nbsp;</span>
-                                    {t(`common.${task.priority.toLowerCase()}`)}
+                                    {t(task.priority === 'low' ? 'taskDetail.priority.low' : task.priority === 'medium' ? 'taskDetail.priority.medium' : task.priority === 'high' ? 'taskDetail.priority.high' : 'taskDetail.priority.none')}
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="start" className="bg-popover/90 backdrop-blur-lg border border-white/10">
                                   <DropdownMenuItem onSelect={() => handlePriorityChange('high')}>
-                                    {t('common.high')}
+                                    {t('taskDetail.priority.high')}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onSelect={() => handlePriorityChange('medium')}>
-                                    {t('common.medium')}
+                                    {t('taskDetail.priority.medium')}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onSelect={() => handlePriorityChange('low')}>
-                                    {t('common.low')}
+                                    {t('taskDetail.priority.low')}
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>

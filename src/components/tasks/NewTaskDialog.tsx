@@ -53,7 +53,6 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
 
   // New state for emoji and auto-categorization
   const [taskEmoji, setTaskEmoji] = useState<string>("");
-  const [autoCategorize, setAutoCategorize] = useState<boolean>(true); // Default to true
 
   // AI generation function - now calls the Edge Function
   const handleGenerateTaskDetails = async () => {
@@ -92,7 +91,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
         setDescription(data.description);
         
         // Set category if auto-categorization is enabled and category is available
-        if (autoCategorize && data.category) {
+        if (data.category) {
           setCategory(data.category as TaskCategory);
         }
         
@@ -303,7 +302,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="category">{t('common.category')}</Label>
-              {autoCategorize && category && (
+              {category && (
                 <span className="text-xs text-muted-foreground flex items-center">
                   <Sparkles className="h-3 w-3 mr-1" />
                   {t('newTaskDialog.aiSuggested')}
@@ -360,21 +359,6 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
           </div>
           
           {/* Checkboxes moved to the bottom */}
-          {/* Auto-categorize checkbox */}
-          <div className="flex items-center space-x-2 pt-2">
-            <Checkbox 
-              id="auto-categorize" 
-              checked={autoCategorize} 
-              onCheckedChange={(checked: boolean | 'indeterminate') => setAutoCategorize(Boolean(checked))}
-            />
-            <Label
-              htmlFor="auto-categorize"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              {t('newTaskDialog.autoCategorizeLabel')}
-            </Label>
-          </div>
-          
           {/* Generate subtasks checkbox */}
           <div className="flex items-center space-x-2 pt-2">
             <Checkbox 

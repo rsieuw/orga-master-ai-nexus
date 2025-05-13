@@ -227,7 +227,7 @@
       "totalTasks": "Totaal aantal taken",
       "completed": "Voltooid",
       "todo": "Te doen",
-      "inProgress": "In uitvoering"
+      "in_progress": "In uitvoering"
     }
   },
   "adminDashboard": {
@@ -560,12 +560,6 @@
       "low": "Laag",
       "label": "Prioriteit"
     },
-    "status": {
-      "todo": "Te doen",
-      "inprogress": "In uitvoering",
-      "done": "Klaar",
-      "label": "Status"
-    },
     "dueDate": "Vervaldatum",
     "createdAt": "Aangemaakt op",
     "updatedAt": "Laatst bijgewerkt",
@@ -682,7 +676,7 @@
     "view": "Bekijken",
     "next": "Volgende",
     "previous": "Vorige",
-    "done": "Voltooid",
+    "done": "Klaar",
     "new": "Nieuw",
     "task": "Taak",
     "name": "Naam",
@@ -702,7 +696,9 @@
     "notAuthenticated": "Je moet ingelogd zijn om deze actie uit te voeren.",
     "category": "Categorie",
     "title": "Titel",
-    "description": "Beschrijving"
+    "description": "Beschrijving",
+    "in_progress": "In uitvoering",
+    "todo": "Te doen"
   },
   "pageTitles": {
     "home": "Home",
@@ -1015,18 +1011,18 @@
     "chatModeButton": "Terug naar chat"
   },
   "editTaskDialog": {
+    "titlePlaceholder": "Voer hier de titel van de taak in",
+    "descriptionPlaceholder": "Voeg een optionele beschrijving toe...",
+    "selectPriorityPlaceholder": "Selecteer een prioriteit",
+    "selectCategoryPlaceholder": "Selecteer een categorie",
+    "chooseDate": "Kies een datum",
+    "clearDeadlineSR": "Deadline wissen",
     "toast": {
       "taskUpdatedTitle": "Taak bijgewerkt",
       "taskUpdatedDescription": "De wijzigingen zijn opgeslagen.",
       "updateErrorTitle": "Bijwerkfout",
       "updateErrorDescription": "De taak kon niet worden bijgewerkt."
-    },
-    "titlePlaceholder": "Taaktitel",
-    "descriptionPlaceholder": "Beschrijf de taak...",
-    "selectPriorityPlaceholder": "Selecteer prioriteit",
-    "selectStatusPlaceholder": "Selecteer status",
-    "chooseDate": "Kies een datum",
-    "clearDeadlineSR": "Deadline wissen"
+    }
   },
   "newTaskDialog": {
     "toast": {
@@ -1129,16 +1125,19 @@
       "actions": "Acties"
     },
     "actions": {
-      "handled": "Markeer als afgehandeld",
-      "read": "Markeer als gelezen",
-      "markImportant": "Markeer als belangrijk",
-      "unmarkImportant": "Markeer als niet belangrijk"
+      "handled": "Afgehandeld",
+      "read": "Gelezen"
     },
     "statusValues": {
       "read": "Gelezen",
       "unread": "Ongelezen",
       "handled": "Afgehandeld",
       "new": "Nieuw"
+    },
+    "toast": {
+      "deletedTitle": "Bericht verwijderd",
+      "deletedDescription": "Het feedbackbericht is succesvol verwijderd.",
+      "deleteError": "Kon bericht niet verwijderen: {error}"
     }
   },
   "auth": {

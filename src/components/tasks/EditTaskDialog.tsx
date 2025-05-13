@@ -136,9 +136,9 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
                <SelectValue placeholder={t('editTaskDialog.selectPriorityPlaceholder')} />
              </SelectTrigger>
              <SelectContent>
-               <SelectItem value="high">{t('common.high')}</SelectItem>
-               <SelectItem value="medium">{t('common.medium')}</SelectItem>
-               <SelectItem value="low">{t('common.low')}</SelectItem>
+               <SelectItem value="high">{t('taskDetail.priority.high')}</SelectItem>
+               <SelectItem value="medium">{t('taskDetail.priority.medium')}</SelectItem>
+               <SelectItem value="low">{t('taskDetail.priority.low')}</SelectItem>
              </SelectContent>
            </Select>
          </div>
@@ -151,7 +151,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
            >
              <SelectTrigger id="edit-status">
                <SelectValue>
-                 {t(`common.${status.toLowerCase().replace(' ', '_')}`)}
+                 {t(status === 'todo' ? 'common.todo' : status === 'in_progress' ? 'common.in_progress' : 'common.done')}
                </SelectValue>
              </SelectTrigger>
              <SelectContent>

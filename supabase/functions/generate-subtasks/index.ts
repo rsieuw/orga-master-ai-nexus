@@ -85,7 +85,7 @@ interface FunctionErrorResponse {
 }
 
 serve(async (req) => {
-  // console.log("generate-subtasks function invoked at: ", new Date().toISOString()); // Retain for now if useful for debugging
+  // console.log("generate-subtasks function invoked at: ", new Date().toISOString()); // Remove this line
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

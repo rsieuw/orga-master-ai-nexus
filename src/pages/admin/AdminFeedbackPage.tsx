@@ -56,14 +56,13 @@ const AdminFeedbackPage: React.FC = () => {
         .from('feedback')
         .select('*')
         .order('created_at', { ascending: false });
-
+      
       if (dbError) {
         throw dbError;
       }
 
       setFeedbackEntries((data || []) as FeedbackEntry[]);
     } catch (err: unknown) {
-      console.error("Error fetching feedback:", err);
       const message = err instanceof Error ? err.message : t('common.error'); // Gebruik een generieke error message
       setError(message);
       toast({
@@ -163,7 +162,23 @@ const AdminFeedbackPage: React.FC = () => {
       .from('feedback')
       .delete()
       .eq('id', id);
-    if (!error) fetchFeedback();
+    if (!error) {
+      // Optimistic update: Remove the item from the local state
+      setFeedbackEntries(currentEntries => 
+        currentEntries.filter(entry => entry.id !== id)
+      );
+      toast({
+        title: t('adminFeedbackPage.toast.deletedTitle', 'Bericht verwijderd'),
+        description: t('adminFeedbackPage.toast.deletedDescription', 'Het feedbackbericht is succesvol verwijderd.'),
+      });
+    } else {
+      console.error("Error deleting feedback:", error);
+      toast({
+        variant: "destructive",
+        title: t('common.error'),
+        description: t('adminFeedbackPage.toast.deleteError', 'Kon bericht niet verwijderen: ') + error.message,
+      });
+    }
   };
 
   if (isLoading) {

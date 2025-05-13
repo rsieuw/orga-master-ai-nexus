@@ -366,12 +366,12 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      {/* Header section: responsive flex container */}
-      <div className="mb-6 flex flex-col md:flex-row md:justify-between md:items-center">
-        {/* Left side: Greeting */}
-        <div className="mb-6 md:mb-0">
-          <h1 className="text-3xl font-bold h-10">
-            {user !== undefined && (
+      <div className="space-y-6">
+        {/* Greeting and Search/Filter Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 md:space-x-4">
+          {/* Wrapper div for Greeting and Subtitle */}
+          <div> 
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-700 to-purple-800 bg-clip-text text-transparent">
               <TypeAnimation
                 sequence={[
                   100, 
@@ -379,102 +379,101 @@ export default function Dashboard() {
                 ]}
                 wrapper="span"
                 speed={50}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent"
                 cursor
               />
-            )}
-          </h1>
-          <p className="text-muted-foreground">
-            {t('dashboard.tasksOverview')}
-          </p>
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {t('dashboard.tasksOverview')}
+            </p>
+          </div>
+          {/* Search and Filter */}
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <SearchInput
+              onChange={handleSearchChange}
+              placeholder={t('dashboard.searchPlaceholder')}
+              className="flex-grow min-w-0"
+            />
+            <TaskFilter 
+              onFilterChange={handleFilterChange} 
+            />
+          </div>
         </div>
-        {/* Right side: Search & Filter */}
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <SearchInput
-            onChange={handleSearchChange}
-            placeholder={t('dashboard.searchPlaceholder')}
-            className="flex-grow min-w-0"
-          />
-          <TaskFilter 
-            onFilterChange={handleFilterChange} 
-          />
-        </div>
-      </div>
 
-      {/* Task grid: No gap on mobile, gap on medium screens and up */}
-      <AnimatePresence mode="sync">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6 items-start">
-          {hasAnyFilteredTasks ? (
-            columns.map((columnItems, colIndex) => (
+        {/* Task grid: No gap on mobile, gap on medium screens and up */}
+        <AnimatePresence mode="sync">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6 items-start">
+            {hasAnyFilteredTasks ? (
+              columns.map((columnItems, colIndex) => (
+                <motion.div
+                  key={`col-${colIndex}`}
+                  className="flex flex-col gap-0"
+                  variants={columnContainerVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {columnItems.length > 0 && React.isValidElement(columnItems[0]) && columnItems[0].type !== 'h2' && (
+                    <div className="hidden md:block h-10"></div>
+                  )}
+                  {columnItems.map((item, itemIndex) => (
+                    <React.Fragment key={itemIndex}>{item}</React.Fragment>
+                  ))}
+                </motion.div>
+              ))
+            ) : (
               <motion.div
-                key={`col-${colIndex}`}
-                className="flex flex-col gap-0"
-                variants={columnContainerVariants}
-                initial="hidden"
-                animate="visible"
+                key="empty-state"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="text-center col-span-1 md:col-span-3 mt-8"
               >
-                {columnItems.length > 0 && React.isValidElement(columnItems[0]) && columnItems[0].type !== 'h2' && (
-                  <div className="hidden md:block h-10"></div>
-                )}
-                {columnItems.map((item, itemIndex) => (
-                  <React.Fragment key={itemIndex}>{item}</React.Fragment>
-                ))}
+                {emptyStateMessage}
               </motion.div>
-            ))
-          ) : (
+            )}
+          </div>
+        </AnimatePresence>
+
+        {/* Floating Action Button for new task (mobile only) */}
+        <AnimatePresence>
+          {showMobileActions && (
             <motion.div
-              key="empty-state"
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="text-center col-span-1 md:col-span-3 mt-8"
+              exit={{ opacity: 0, y: 20 }}
+              className="fixed bottom-[75.4px] right-6 z-40 lg:hidden"
+              transition={{ duration: 0.2 }}
             >
-              {emptyStateMessage}
+              <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+                <DialogTrigger asChild>
+                  <div className="flex flex-col items-center cursor-pointer">
+                    <Button
+                      variant="default"
+                      size="icon"
+                      className="aspect-square rounded-full h-14 w-14 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white shadow-lg mb-1"
+                      aria-label={t('navbar.newTaskButton.ariaLabel')}
+                    >
+                      <PlusCircle className="h-7 w-7" />
+                    </Button>
+                    <span className="text-xs text-muted-foreground">{t('navbar.newTaskButton.text')}</span>
+                  </div>
+                </DialogTrigger>
+                <DialogPortal>
+                  <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                  <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card/90 backdrop-blur-md border-white/10 p-6 shadow-lg sm:rounded-lg z-[70] sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl">{t('appLayout.newTaskDialog.title')}</DialogTitle>
+                      <DialogDescription>
+                        {t('appLayout.newTaskDialog.description')}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <NewTaskDialog setOpen={setIsNewTaskOpen} />
+                  </DialogContent>
+                </DialogPortal>
+              </Dialog>
             </motion.div>
           )}
-        </div>
-      </AnimatePresence>
-
-      {/* Floating Action Button for new task (mobile only) */}
-      <AnimatePresence>
-        {showMobileActions && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-[75.4px] right-6 z-40 lg:hidden"
-            transition={{ duration: 0.2 }}
-          >
-            <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
-              <DialogTrigger asChild>
-                <div className="flex flex-col items-center cursor-pointer">
-                  <Button
-                    variant="default"
-                    size="icon"
-                    className="aspect-square rounded-full h-14 w-14 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white shadow-lg mb-1"
-                    aria-label={t('navbar.newTaskButton.ariaLabel')}
-                  >
-                    <PlusCircle className="h-7 w-7" />
-                  </Button>
-                  <span className="text-xs text-muted-foreground">{t('navbar.newTaskButton.text')}</span>
-                </div>
-              </DialogTrigger>
-              <DialogPortal>
-                <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-                <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card/90 backdrop-blur-md border-white/10 p-6 shadow-lg sm:rounded-lg z-[70] sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="text-2xl">{t('appLayout.newTaskDialog.title')}</DialogTitle>
-                    <DialogDescription>
-                      {t('appLayout.newTaskDialog.description')}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <NewTaskDialog setOpen={setIsNewTaskOpen} />
-                </DialogContent>
-              </DialogPortal>
-            </Dialog>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>
+      </div>
     </AppLayout>
   );
 }
