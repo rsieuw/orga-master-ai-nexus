@@ -32,8 +32,8 @@
       "description": "Select light or dark theme.",
       "toggleAriaLabel": "Toggle theme",
       "options": {
-        "light": "Light",
-        "dark": "Dark",
+        "light": "Light (Experimental)",
+        "dark": "Dark (Experimental)",
         "customDark": "Custom Dark"
       }
     },
@@ -189,6 +189,12 @@
   },
   "profile": {
     "title": "Profile",
+    "toast": {
+      "profileUpdated": {
+        "title": "Profile Updated",
+        "description": "Your profile details have been successfully saved."
+      }
+    },
     "userInfo": {
       "title": "User Information",
       "nameLabel": "Name",
@@ -567,11 +573,16 @@
     },
     "generateSubtasks": {
       "buttonText": "Generate Subtasks",
-      "confirmButton": "Yes, generate subtasks",
-      "tooltip": "Generate subtasks (AI)",
-      "limitReachedTooltip": "AI generation limit reached ({{count}}/{{limit}})",
-      "fabText": "Generate Tasks",
-      "buttonAriaLabel": "Generate subtasks with AI"
+      "tooltip": "Use AI to automatically generate subtasks based on the task description.",
+      "generating": "Generating subtasks...",
+      "success": "Subtasks generated!",
+      "error": "Error generating subtasks.",
+      "modalTitle": "Generated Subtasks",
+      "modalDescription": "Review and select the subtasks you want to add.",
+      "addSelectedButton": "Add Selected",
+      "buttonAriaLabel": "Generate subtasks",
+      "fabText": "Generate Subtasks",
+      "confirmButton": "Yes, generate subtasks"
     },
     "collapseDescription": "Collapse task details",
     "expandDescription": "Expand task details"
@@ -1243,5 +1254,12 @@
     "hidePassword": "Hide password",
     "submitButton": "Register",
     "submitButtonLoading": "Registering..."
+  },
+  "generateSubtasks": {
+    "buttonText": "Generate Subtasks",
+    "buttonAriaLabel": "Generate subtasks",
+    "limitReachedTooltip": "You have used {count}/{limit} generations for this task.",
+    "confirmButton": "Yes, generate subtasks",
+    "fabText": "Generate"
   }
 }

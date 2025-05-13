@@ -19,8 +19,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       return savedTheme;
     }
     
-    // Default to dark theme instead of checking system preference
-    return "dark";
+    // Default to custom-dark theme
+    return "custom-dark";
   });
 
   useEffect(() => {

@@ -92,7 +92,7 @@ export default function TaskCard({ task }: TaskCardProps) {
         data-category={task.category}
       >
         {task.category && (
-          <div className={`absolute ${totalSubtasks > 0 ? 'bottom-[2.7rem]' : 'bottom-6'} right-4 z-0 pointer-events-none`}>
+          <div className={`absolute ${totalSubtasks > 0 ? 'bottom-[3rem]' : 'bottom-6'} right-4 z-0 pointer-events-none`}>
             {getCategoryBackgroundIcon(task.category)}
           </div>
         )}

@@ -44,8 +44,8 @@
       "description": "Selecteer licht of donker thema.",
       "toggleAriaLabel": "Wissel thema",
       "options": {
-        "light": "Licht",
-        "dark": "Donker",
+        "light": "Licht (Experimenteel)",
+        "dark": "Donker (Experimenteel)",
         "customDark": "Aangepast Donker"
       }
     },
@@ -209,6 +209,12 @@
   },
   "profile": {
     "title": "Profiel",
+    "toast": {
+      "profileUpdated": {
+        "title": "Profiel bijgewerkt",
+        "description": "Je profielgegevens zijn succesvol opgeslagen."
+      }
+    },
     "userInfo": {
       "title": "Gebruikersinformatie",
       "nameLabel": "Naam",
@@ -617,16 +623,17 @@
       }
     },
     "generateSubtasks": {
-      "buttonText": "Genereer AI Subtaken",
+      "buttonText": "Genereer Subtaken",
       "tooltip": "Gebruik AI om automatisch subtaken te genereren op basis van de taakomschrijving.",
       "generating": "Subtaken genereren...",
-      "success": "AI heeft subtaken gegenereerd!",
+      "success": "Subtaken gegenereerd!",
       "error": "Fout bij genereren van subtaken.",
-      "modalTitle": "AI Gegenereerde Subtaken",
+      "modalTitle": "Gegenereerde Subtaken",
       "modalDescription": "Bekijk en selecteer de subtaken die je wilt toevoegen.",
       "addSelectedButton": "Geselecteerde Toevoegen",
-      "buttonAriaLabel": "Genereer subtaken met AI",
-      "fabText": "Taken genereren"
+      "buttonAriaLabel": "Genereer subtaken",
+      "fabText": "Subtaken genereren",
+      "confirmButton": "Ja, genereer subtaken"
     },
     "overdueSR": "(Verlopen)",
     "collapseDescription": "Beschrijving inklappen",
@@ -689,8 +696,8 @@
     "backSR": "Ga terug",
     "closeSR": "Venster sluiten",
     "cancelAriaLabel": "Annuleren",
-    "generateSubtasksDialogTitle": "Subtaken genereren (AI)?",
-    "generateSubtasksDialogDescription": "Wil je de AI-assistent vragen om relevante subtaken voor \"{{taskTitle}}\" te suggereren op basis van de beschrijving?",
+    "generateSubtasksDialogTitle": "Genereer Subtaken",
+    "generateSubtasksDialogDescription": "Wil je subtaken genereren voor '{{taskTitle}}'?",
     "generatingText": "Genereren...",
     "information": "Informatie",
     "notAuthenticated": "Je moet ingelogd zijn om deze actie uit te voeren.",
@@ -1259,5 +1266,23 @@
     "hidePassword": "Verberg wachtwoord",
     "submitButton": "Registreren",
     "submitButtonLoading": "Registreren..."
+  },
+  "maxAiGenerationsReached": "Maximale AI-generaties bereikt",
+  "maxAiGenerationsReachedDescription": "Je hebt de limiet voor het aantal AI-gegenereerde taken/subtaken bereikt.",
+  "generateSubtasks": {
+    "buttonText": "Genereer Subtaken",
+    "buttonAriaLabel": "Genereer subtaken",
+    "limitReachedTooltip": "Je hebt {count}/{limit} generaties voor deze taak gebruikt.",
+    "confirmButton": "Ja, genereer subtaken",
+    "fabText": "Genereer"
+  },
+  "subtask": {
+    "editTitleAriaLabel": "Bewerk subtitel",
+    "editSubtaskSR": "Bewerk subtaak",
+    "deleteSubtaskSR": "Verwijder subtaak",
+    "deleteConfirmation": {
+      "title": "Subtaak verwijderen?",
+      "description": "Weet je zeker dat je de subtaak \"{{subtaskTitle}}\" wilt verwijderen?"
+    }
   }
 }

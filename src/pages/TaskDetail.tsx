@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
-import { Badge } from "@/components/ui/badge.tsx";
 import { format, parseISO } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
-import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, MoreVertical, Flag, CalendarClock, Info, MessageSquareText, Loader2, ChevronUp, ChevronDown } from "lucide-react";
-import { Separator } from "@/components/ui/separator.tsx";
+import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, MessageSquareText, Loader2, ChevronUp, ChevronDown } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,224 +32,20 @@ import {
   DialogOverlay,
 } from "@/components/ui/dialog.tsx";
 import { useToast } from "@/hooks/use-toast.ts";
-import { Checkbox } from "@/components/ui/checkbox.tsx";
 import TaskAIChat from "@/components/ai/TaskAIChat.tsx";
 import { GradientLoader } from "@/components/ui/loader.tsx";
-import EditTaskDialog from "@/components/tasks/EditTaskDialog.tsx";
 import { cn } from "@/lib/utils.ts";
 import { Input } from "@/components/ui/input.tsx";
 import { Task, SubTask, TaskPriority, TaskStatus } from "@/types/task.ts";
 import { GradientProgress } from "@/components/ui/GradientProgress.tsx";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu.tsx";
 import { Tooltip, TooltipContent, TooltipProvider } from "@/components/ui/tooltip.tsx";
-import { useSwipeable } from 'react-swipeable';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from "@/hooks/useAuth.ts";
-
-// --- SubtaskRow Component ---
-interface SubtaskRowProps {
-  task: Task;
-  subtask: SubTask;
-  index: number;
-  editingSubtaskId: string | null;
-  editingSubtaskTitle: string;
-  handleSubtaskToggle: (subtaskId: string, completed: boolean) => void;
-  handleSubtaskLabelClick: (title: string) => void;
-  startEditingSubtask: (subtask: SubTask) => void;
-  handleSaveSubtaskEdit: () => Promise<void>;
-  handleSubtaskEditKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
-  setEditingSubtaskTitle: (title: string) => void;
-  deleteSubtask: (taskId: string, subtaskId: string) => Promise<void>;
-  onSubtaskLongPress: (subtaskId: string, event: React.TouchEvent | React.MouseEvent) => void;
-}
-
-function SubtaskRow({
-  task,
-  subtask,
-  index,
-  editingSubtaskId,
-  editingSubtaskTitle,
-  handleSubtaskToggle,
-  handleSubtaskLabelClick,
-  startEditingSubtask,
-  handleSaveSubtaskEdit,
-  handleSubtaskEditKeyDown,
-  setEditingSubtaskTitle,
-  deleteSubtask,
-  onSubtaskLongPress,
-}: SubtaskRowProps) {
-  const { t } = useTranslation();
-  const [isDescriptionVisible, setIsDescriptionVisible] = useState(false);
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pressThreshold = 500;
-
-  const handlePressStart = (event: React.TouchEvent | React.MouseEvent) => {
-    if (editingSubtaskId === subtask.id) return;
-    longPressTimerRef.current = setTimeout(() => {
-      onSubtaskLongPress(subtask.id, event);
-      longPressTimerRef.current = null;
-    }, pressThreshold);
-  };
-
-  const handlePressEnd = () => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  };
-  
-  const handlers = useSwipeable({
-    onSwipedRight: () => handleSubtaskToggle(subtask.id, !subtask.completed),
-    trackMouse: false,
-    preventScrollOnSwipe: true,
-  });
-
-  return (
-    <motion.div
-      key={subtask.id}
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
-      {...handlers}
-      className={cn(
-        "group/row flex items-start justify-between space-x-3 rounded-md py-2 pl-2 lg:pl-0 pr-2 hover:bg-muted/50 overflow-hidden"
-      )}
-      onTouchStart={handlePressStart}
-      onTouchEnd={handlePressEnd}
-      onMouseDown={(e: React.MouseEvent<HTMLDivElement>) => {
-        if (e.button === 0 && e.target instanceof HTMLElement && 
-            !e.target.closest('input, button, label, a, [role="button"], [data-state="open"]')) {
-          handlePressStart(e);
-        }
-      }}
-      onMouseUp={(e: React.MouseEvent<HTMLDivElement>) => { if (e.button === 0) handlePressEnd(); }}
-      onMouseLeave={handlePressEnd} 
-    >
-      <div 
-        className="flex items-start space-x-2 flex-grow min-w-0"
-      >
-        <div className="relative h-7 w-7 lg:h-5 lg:w-5 flex-shrink-0 ml-[9px] mt-[2px]">
-          <Checkbox
-            id={`subtask-${subtask.id}`}
-            checked={subtask.completed}
-            onCheckedChange={(checked: boolean | string | undefined) => handleSubtaskToggle(subtask.id, !!checked)}
-            className={cn(
-              "absolute inset-0 h-full w-full border-primary data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600",
-            )}
-            disabled={editingSubtaskId === subtask.id}
-          />
-          <span className={cn(
-            "absolute inset-0 flex items-center justify-center text-xs font-medium pointer-events-none",
-            subtask.completed ? "hidden" : "text-muted-foreground/70",
-            "lg:text-[10px]"
-          )}>
-            {index + 1}
-          </span>
-        </div>
-        <div className="flex-grow">
-          {editingSubtaskId === subtask.id ? (
-            <Input
-              type="text"
-              id={`subtask-edit-${subtask.id}`}
-              aria-label={t('taskDetail.subtask.editTitleAriaLabel')}
-              value={editingSubtaskTitle}
-              onChange={(e) => setEditingSubtaskTitle(e.target.value)}
-              onBlur={handleSaveSubtaskEdit}
-              onKeyDown={handleSubtaskEditKeyDown}
-              className="h-7 text-sm flex-grow mr-2"
-              autoFocus
-            />
-          ) : (
-            <>
-              <label
-                className={cn(
-                  "flex-grow text-sm font-normal leading-snug cursor-pointer hover:text-primary transition-colors relative top-[2px] lg:-top-px",
-                  subtask.completed && "text-gray-700 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-400"
-                )}
-                onClick={() => {
-                  if (!editingSubtaskId) {
-                    handleSubtaskLabelClick(subtask.title);
-                    setIsDescriptionVisible(!isDescriptionVisible);
-                  }
-                }}
-              >
-                <span className={cn("relative", subtask.completed && "line-through")}>
-                  {subtask.title}
-                </span>
-              </label>
-              <AnimatePresence>
-                {isDescriptionVisible && subtask.description && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                    animate={{ opacity: 1, height: 'auto', marginTop: '0.25rem' }}
-                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                    transition={{ duration: 0.2, ease: "easeInOut" }}
-                    className="text-xs text-muted-foreground pl-1 pr-2 whitespace-pre-wrap pb-2"
-                  >
-                    {subtask.description}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </>
-          )}
-        </div>
-      </div>
-      <div className="hidden lg:flex items-center opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity space-x-1"> 
-        {editingSubtaskId !== subtask.id && !subtask.completed && ( 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 text-muted-foreground hover:text-foreground"
-            onClick={(e) => {
-                e.stopPropagation();
-                startEditingSubtask(subtask);
-            }}
-          >
-            <Edit className="h-4 w-4" />
-            <span className="sr-only">{t('taskDetail.subtask.editSubtaskSR')}</span>
-          </Button>
-        )}
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-destructive"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Trash2 className="h-4 w-4" />
-              <span className="sr-only">{t('taskDetail.subtask.deleteSubtaskSR')}</span>
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogPortal>
-            <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-            <AlertDialogContent className="bg-card/90 backdrop-blur-md border border-white/10 z-[90]">
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t('taskDetail.subtask.deleteConfirmation.title')}</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {t('taskDetail.subtask.deleteConfirmation.description', { subtaskTitle: subtask.title })}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={handlePressEnd} className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => deleteSubtask(task.id, subtask.id)}
-                  className="bg-destructive hover:bg-destructive/90"
-                >
-                  {t('common.delete')}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialogPortal>
-        </AlertDialog>
-      </div>
-    </motion.div>
-  );
-}
-// --- End SubtaskRow Component ---
+import SubtaskRow from "@/components/task/SubtaskRow.tsx";
+import { useResizableLayout } from "@/hooks/useResizableLayout.ts";
+import TaskInfoDisplay from "@/components/task/TaskInfoDisplay.tsx";
+import TaskActions from "@/components/task/TaskActions.tsx";
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
@@ -259,9 +53,9 @@ export default function TaskDetail() {
     getTaskById, 
     deleteTask, 
     isLoading: tasksLoading, 
-    updateSubtask, 
-    addSubtask, 
-    expandTask, 
+    updateSubtask,
+    addSubtask,
+    expandTask,
     deleteSubtask: deleteSubtaskFromContext, 
     toggleTaskCompletion, 
     updateTask, 
@@ -285,366 +79,25 @@ export default function TaskDetail() {
   const [isMobileGenerateDialogOpen, setIsMobileGenerateDialogOpen] = useState(false);
   const [showMobileActions, setShowMobileActions] = useState(true);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
-  const [editingSubtaskTitle, setEditingSubtaskTitle] = useState<string>("");
   const [longPressedSubtaskId, setLongPressedSubtaskId] = useState<string | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState<{ top: number, left: number } | null>(null);
   const [isInfoCollapsed, setIsInfoCollapsed] = useState(false);
 
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
 
-  // Function to get column sizes based on preference
-  // Accepts user as argument because `user` from context might not be ready during initial call
-  const calculateColumnSizesFromPreference = useCallback((currentUser: typeof user | null) => {
-    const preference = currentUser?.layout_preference || '50-50';
-    if (preference === '33-67') {
-      return { left: 33.33, right: 66.67 };
-    }
-    return { left: 50, right: 50 }; // Default to 50-50
-  }, []);
-
-  // Initialize state. `user` might be null initially.
-  // Defaults will be overridden when user data becomes available
-  const [columnSizes, setColumnSizes] = useState<{ left: number; right: number }>(() => {
-    // Als gebruiker al beschikbaar is bij eerste render, gebruik de voorkeur meteen
-    if (user && user.layout_preference) {
-      const sizes = user.layout_preference === '33-67' 
-        ? { left: 33.33, right: 66.67 }
-        : { left: 50, right: 50 };
-      return sizes;
-    }
-    // Anders standaard 50-50
-    return { left: 50, right: 50 };
-  });
-  const [isResizing, setIsResizing] = useState(false);
-  const prevIsResizingRef = useRef<boolean>(); // To store the previous value of isResizing
-  const containerRef = useRef<HTMLDivElement>(null);
-  const initialX = useRef<number>(0);
-  const initialLeftWidth = useRef<number>(0);
-  const hasAppliedInitialLayoutRef = useRef(false); // Bijhouden of de gebruikersvoorkeur al is toegepast
-  const saveLayoutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastSavedPreferenceRef = useRef<string | null>(null); // Bijhouden welke voorkeur als laatste is opgeslagen
+  const { 
+    columnSizes, 
+    containerRef, 
+    startResize, 
+    isResizing
+  } = useResizableLayout({ initialLayoutPreference: (user?.layout_preference as '50-50' | '33-67') || '50-50' });
 
   const task: Task | undefined = getTaskById(id || "");
   const currentAiGenerationCount = task?.aiSubtaskGenerationCount || 0;
   
-  // Use the context function to determine the limit
   const maxGenerations = getMaxAiGenerationsForUser();
-  
-  // Safe function that accounts for a potentially undefined task
   const isLimitReached = task ? isAiGenerationLimitReached(task) : false;
   
-  useEffect(() => {
-    if (!location.hash) {
-      globalThis.scrollTo(0, 0);
-    }
-  }, [location.hash]);
-
-  useEffect(() => {
-    const shouldLock = isEditDialogOpen || isGenerateSubtasksDialogOpen || isMobileGenerateDialogOpen;
-    document.body.style.overflow = shouldLock ? 'hidden' : 'auto';
-    return () => { document.body.style.overflow = 'auto'; };
-  }, [isEditDialogOpen, isGenerateSubtasksDialogOpen, isMobileGenerateDialogOpen]);
-
-  useEffect(() => {
-    setActiveMobileView(location.hash === '#chat' ? 'chat' : 'details');
-  }, [location.hash]);
-
-  // Explicitly initialize layout when user becomes available
-  useEffect(() => {
-    if (user && !hasAppliedInitialLayoutRef.current) {
-      const newSizes = calculateColumnSizesFromPreference(user);
-      setColumnSizes(newSizes);
-      hasAppliedInitialLayoutRef.current = true;
-    }
-  }, [user, calculateColumnSizesFromPreference]);
-
-  // Function to save layout preference with debounce
-  const debounceSaveLayoutPreference = useCallback((sizes: { left: number; right: number }) => {
-    // Clear any existing timeout
-    if (saveLayoutTimeoutRef.current) {
-      clearTimeout(saveLayoutTimeoutRef.current);
-    }
-
-    // Set a new timeout
-    saveLayoutTimeoutRef.current = setTimeout(() => {
-      if (user) {
-        const newPreference = sizes.left <= (33.33 + 50) / 2 ? '33-67' : '50-50';
-        const currentUserPreference = user.layout_preference;
-        
-        // Voorkom onnodige updates als de voorkeur niet is gewijzigd
-        if (newPreference !== currentUserPreference && newPreference !== lastSavedPreferenceRef.current) {
-          (async () => {
-            try {
-              await updateUser({ layout_preference: newPreference });
-              lastSavedPreferenceRef.current = newPreference as string;
-            } catch (error) {
-              console.error("Error saving layout preference:", error);
-            }
-          })();
-        }
-      }
-    }, 1000); // 1 seconde wachten na laatste aanpassing
-  }, [user, updateUser]);
-
-  // Effect to set initial column sizes and update if user.layout_preference changes
-  useEffect(() => {
-    const wasResizingInPreviousRender = prevIsResizingRef.current;
-
-    if (isResizing) {
-      // Currently resizing - doResize handles updates, don't override
-      return;
-    } 
-    
-    if (wasResizingInPreviousRender === true) {
-      debounceSaveLayoutPreference(columnSizes);
-      return;
-    } 
-    
-    if (user) {
-      if (!hasAppliedInitialLayoutRef.current || user.layout_preference !== (hasAppliedInitialLayoutRef.current ? 
-          (Math.abs(columnSizes.left - 33.33) < 1 ? '33-67' : '50-50') : null)) {
-        const newSizes = calculateColumnSizesFromPreference(user);
-        setColumnSizes(newSizes);
-        hasAppliedInitialLayoutRef.current = true;
-        lastSavedPreferenceRef.current = user.layout_preference as string;
-      }
-    }
-  }, [user, isResizing, calculateColumnSizesFromPreference, debounceSaveLayoutPreference, columnSizes]);
-
-  useEffect(() => {
-    const INACTIVITY_TIMEOUT = 2500;
-    const handleActivity = () => {
-      if (hideTimerRef.current !== null) {
-        clearTimeout(hideTimerRef.current);
-      }
-      setShowMobileActions(true);
-      hideTimerRef.current = setTimeout(() => {
-        setShowMobileActions(false);
-      }, INACTIVITY_TIMEOUT) as ReturnType<typeof setTimeout>;
-    };
-    handleActivity();
-    globalThis.addEventListener('scroll', handleActivity, { passive: true });
-    globalThis.addEventListener('click', handleActivity, { capture: true });
-    globalThis.addEventListener('mousemove', handleActivity, { passive: true });
-    globalThis.addEventListener('touchmove', handleActivity, { passive: true });
-    return () => {
-      globalThis.removeEventListener('scroll', handleActivity);
-      globalThis.removeEventListener('click', handleActivity, { capture: true });
-      globalThis.removeEventListener('mousemove', handleActivity);
-      globalThis.removeEventListener('touchmove', handleActivity);
-      if (hideTimerRef.current !== null) { 
-        clearTimeout(hideTimerRef.current);
-      }
-    };
-  }, []);
-
-  const totalSubtasks = task?.subtasks.length ?? 0;
-  const completedSubtasks = task?.subtasks.filter(st => st.completed).length ?? 0;
-  const progressValue = totalSubtasks > 0
-    ? (completedSubtasks / totalSubtasks) * 100
-    : 0;
-
-  const handleSubtaskLabelClick = (title: string) => {
-    setSelectedSubtaskTitle(title);
-  };
-
-  const startEditingSubtask = (subtask: SubTask) => {
-    setEditingSubtaskId(subtask.id);
-    setEditingSubtaskTitle(subtask.title);
-  };
-
-  const cancelSubtaskEdit = () => {
-    setEditingSubtaskId(null);
-    setEditingSubtaskTitle("");
-  };
-
-  const handleSaveSubtaskEdit = async () => {
-    if (!editingSubtaskId || !task) return;
-    const originalSubtask = task.subtasks.find(st => st.id === editingSubtaskId);
-    if (originalSubtask && editingSubtaskTitle.trim() && originalSubtask.title !== editingSubtaskTitle.trim()) {
-      try {
-        await updateSubtask(task.id, editingSubtaskId, { title: editingSubtaskTitle.trim() });
-        toast({ title: t('taskDetail.toast.subtaskUpdated') });
-      } catch (error) {
-        toast({ variant: "destructive", title: t('taskDetail.toast.updateFailed'), description: t('taskDetail.toast.subtaskUpdateFailedDescription') });
-        setEditingSubtaskTitle(originalSubtask.title);
-      }
-    }
-    cancelSubtaskEdit();
-  };
-
-  const handleSubtaskEditKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      handleSaveSubtaskEdit();
-    } else if (event.key === 'Escape') {
-      cancelSubtaskEdit();
-    }
-  };
-  
-  const handleSubtaskLongPress = (subtaskId: string, event: React.TouchEvent | React.MouseEvent) => {
-    const targetElement = (event.currentTarget as HTMLElement);
-    if (targetElement) {
-      const rect = targetElement.getBoundingClientRect();
-      let top, left;
-      if ('touches' in event && event.touches.length > 0) {
-        top = event.touches[0].clientY;
-        left = event.touches[0].clientX;
-      } else if ('clientX' in event) {
-        top = event.clientY;
-        left = event.clientX;
-      } else {
-        top = rect.bottom;
-        left = rect.left + rect.width / 2;
-      }
-      
-      const menuWidth = 192;
-      const menuHeight = 150;
-      if (left + menuWidth > globalThis.innerWidth) {
-        left = globalThis.innerWidth - menuWidth - 10;
-      }
-      if (top + menuHeight > globalThis.innerHeight) {
-        top = globalThis.innerHeight - menuHeight - 10;
-      }
-      if (left < 10) left = 10;
-      if (top < 10) top = 10;
-
-      setContextMenuPosition({ top, left });
-    }
-    setLongPressedSubtaskId(subtaskId);
-    event.stopPropagation();
-    event.preventDefault();
-  };
-
-  const closeSubtaskContextMenu = () => {
-    setLongPressedSubtaskId(null);
-    setContextMenuPosition(null);
-  };
-
-  // Function to start dragging
-  const startResize = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (containerRef.current) {
-      setIsResizing(true);
-      initialX.current = e.clientX;
-      initialLeftWidth.current = containerRef.current.offsetWidth * (columnSizes.left / 100);
-      
-      // Add cursor styling during drag
-      document.body.style.cursor = 'ew-resize';
-      document.body.style.userSelect = 'none';
-    }
-  };
-
-  // Function for dragging, use useCallback
-  const doResize = useCallback((e: MouseEvent) => {
-    if (isResizing && containerRef.current) {
-      const containerWidth = containerRef.current.offsetWidth;
-      const deltaX = e.clientX - initialX.current;
-      const newLeftWidth = Math.min(Math.max(200, initialLeftWidth.current + deltaX), containerWidth - 200);
-      
-      const leftPercentage = (newLeftWidth / containerWidth) * 100;
-      const rightPercentage = 100 - leftPercentage;
-      
-      setColumnSizes({
-        left: leftPercentage,
-        right: rightPercentage
-      });
-    }
-  }, [isResizing]); // Dependencies of doResize
-
-  // Function to stop dragging, use useCallback
-  const stopResize = useCallback(() => {
-    setIsResizing(false);
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-
-    // Snap to the nearest preferred layout
-    // Calculate the midpoint between 33.33% and 50%
-    const snapThreshold = (33.33 + 50) / 2; // Approximately 41.665
-
-    // Use a functional update for setColumnSizes if it depends on the current state
-    // or ensure columnSizes is stable if read directly.
-    // For this case, columnSizes.left would be the most recent one set by doResize.
-    setColumnSizes(currentSizes => {
-      // Bepaal nieuwe layout - dit zorgt voor de visuele "snap"
-      const newSizes = currentSizes.left <= snapThreshold 
-        ? { left: 33.33, right: 66.67 } 
-        : { left: 50, right: 50 };
-      
-      // De opslag van voorkeuren wordt afgehandeld door de useEffect hierboven
-      // als we klaar zijn met resizen (prevIsResizingRef.current === true && isResizing === false)
-      return newSizes;
-    });
-  }, []);
-
-  // Event listeners for dragging
-  useEffect(() => {
-    if (isResizing) {
-      globalThis.addEventListener('mousemove', doResize);
-      globalThis.addEventListener('mouseup', stopResize);
-    }
-    
-    return () => {
-      globalThis.removeEventListener('mousemove', doResize);
-      globalThis.removeEventListener('mouseup', stopResize);
-    };
-  }, [isResizing, doResize, stopResize]);
-
-  useEffect(() => {
-    // This effect runs after every render. So, when the main effect (below) runs,
-    // prevIsResizingRef.current will hold the value of isResizing from the *previous* render cycle.
-    prevIsResizingRef.current = isResizing;
-  }); // No dependency array, so it runs after each render.
-
-  // Mark the task as viewed when it is loaded
-  useEffect(() => {
-    if (id && task && !task.isNew) {
-      // Alleen markeren als de taak als nieuw is gemarkeerd
-      return;
-    }
-    
-    if (id && task) {
-      markTaskAsViewed(id);
-    }
-  }, [id, task, markTaskAsViewed]);
-
-  if (tasksLoading) {
-    return null;
-  }
-
-  if (!task) {
-    return (
-      <AppLayout>
-        <div className="flex flex-col items-center justify-center h-64">
-          <h1 className="text-2xl font-bold mb-2">{t('taskDetail.notFound.title')}</h1>
-          <Button onClick={() => navigate(-1)} className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t('common.back')}
-          </Button>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await deleteTask(task.id);
-      toast({
-        title: t('taskDetail.toast.taskDeleted'),
-        description: t('taskDetail.toast.taskDeletedDescription', { taskTitle: task.title }),
-      });
-      navigate("/");
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: t('taskDetail.toast.deleteFailed'),
-        description: t('taskDetail.toast.taskDeleteFailedDescription'),
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
   const handleSubtaskToggle = async (subtaskId: string, completed: boolean) => {
     if (!task) return;
     try {
@@ -683,6 +136,59 @@ export default function TaskDetail() {
     } else {
       console.error('Task is undefined in handleGenerateSubtasks');
     }
+  };
+
+  useEffect(() => {
+    if (!location.hash) {
+      globalThis.scrollTo(0, 0);
+    }
+  }, [location.hash]);
+
+  useEffect(() => {
+    const shouldLock = isEditDialogOpen || isGenerateSubtasksDialogOpen || isMobileGenerateDialogOpen;
+    document.body.style.overflow = shouldLock ? 'hidden' : 'auto';
+    return () => { document.body.style.overflow = 'auto'; };
+  }, [isEditDialogOpen, isGenerateSubtasksDialogOpen, isMobileGenerateDialogOpen]);
+
+  useEffect(() => {
+    setActiveMobileView(location.hash === '#chat' ? 'chat' : 'details');
+  }, [location.hash]);
+
+  useEffect(() => {
+    const INACTIVITY_TIMEOUT = 2500;
+    const handleActivity = () => {
+      if (hideTimerRef.current !== null) {
+        clearTimeout(hideTimerRef.current);
+      }
+      setShowMobileActions(true);
+      hideTimerRef.current = setTimeout(() => {
+        setShowMobileActions(false);
+      }, INACTIVITY_TIMEOUT) as ReturnType<typeof setTimeout>;
+    };
+    handleActivity();
+    globalThis.addEventListener('scroll', handleActivity, { passive: true });
+    globalThis.addEventListener('click', handleActivity, { capture: true });
+    globalThis.addEventListener('mousemove', handleActivity, { passive: true });
+    globalThis.addEventListener('touchmove', handleActivity, { passive: true });
+    return () => {
+      globalThis.removeEventListener('scroll', handleActivity);
+      globalThis.removeEventListener('click', handleActivity, { capture: true });
+      globalThis.removeEventListener('mousemove', handleActivity);
+      globalThis.removeEventListener('touchmove', handleActivity);
+      if (hideTimerRef.current !== null) { 
+        clearTimeout(hideTimerRef.current);
+      }
+    };
+  }, []);
+
+  const totalSubtasks = task?.subtasks.length ?? 0;
+  const completedSubtasks = task?.subtasks.filter(st => st.completed).length ?? 0;
+  const progressValue = totalSubtasks > 0
+    ? (completedSubtasks / totalSubtasks) * 100
+    : 0;
+
+  const handleSubtaskLabelClick = (title: string) => {
+    setSelectedSubtaskTitle(title);
   };
 
   const handleStatusChange = (newStatus: string) => {
@@ -739,6 +245,59 @@ export default function TaskDetail() {
     done: "border-green-400 text-green-400",
   };
 
+  const closeSubtaskContextMenu = () => {
+    setLongPressedSubtaskId(null);
+    setContextMenuPosition(null);
+  };
+
+  useEffect(() => {
+    if (id && task && !task.isNew) {
+      return;
+    }
+    
+    if (id && task) {
+      markTaskAsViewed(id);
+    }
+  }, [id, task, markTaskAsViewed]);
+
+  if (tasksLoading) {
+    return null;
+  }
+
+  if (!task) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center h-64">
+          <h1 className="text-2xl font-bold mb-2">{t('taskDetail.notFound.title')}</h1>
+          <Button onClick={() => navigate(-1)} className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            {t('common.back')}
+          </Button>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteTask(task.id);
+      toast({
+        title: t('taskDetail.toast.taskDeleted'),
+        description: t('taskDetail.toast.taskDeletedDescription', { taskTitle: task.title }),
+      });
+      navigate("/");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: t('taskDetail.toast.deleteFailed'),
+        description: t('taskDetail.toast.taskDeleteFailedDescription'),
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <AppLayout noPadding={globalThis.innerWidth < 1024}>
       <div className="relative">
@@ -781,238 +340,56 @@ export default function TaskDetail() {
                 )}>{task?.title}</CardTitle>
               </div>
             </CardHeader>
-            <div className="absolute top-3 right-[14px] z-20">
-              <div className="hidden lg:flex gap-1">
-                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">{t('taskDetail.editTaskSR')}</span>
-                    </Button>
-                  </DialogTrigger>
-                  <DialogPortal>
-                    <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-                    <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card/90 backdrop-blur-md border-white/10 p-6 shadow-lg sm:rounded-lg z-50 sm:max-w-[600px]">
-                      <DialogHeader>
-                        <DialogTitle className="text-2xl">{t('taskDetail.editTaskDialog.title')}</DialogTitle>
-                        <DialogDescription>
-                          {t('taskDetail.editTaskDialog.description')}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-                        <X className="h-4 w-4" />
-                        <span className="sr-only">{t('common.closeSR')}</span>
-                      </DialogClose>
-                      <EditTaskDialog task={task} setOpen={setIsEditDialogOpen} />
-                    </DialogContent>
-                  </DialogPortal>
-                </Dialog>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive/80">
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">{t('taskDetail.deleteTaskSR')}</span>
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogPortal>
-                    <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm" />
-                    <AlertDialogContent className="bg-card/90 border border-white/5 z-[90]">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{t('taskDetail.deleteTaskConfirmation.title')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t('taskDetail.deleteTaskConfirmation.description')}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDelete}
-                          className="bg-destructive hover:bg-destructive/90"
-                          disabled={isDeleting}
-                        >
-                          {isDeleting ? (
-                            <GradientLoader size="sm" className="mr-2" />
-                          ) : null}
-                          {t('common.delete')}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialogPortal>
-                </AlertDialog>
-              </div>
-              <div className="lg:hidden">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className={cn(
-                        "h-7 w-7 transition-all duration-300 ease-in-out",
-                        isInfoCollapsed ? "mt-[0.2rem]" : "mt-[0.9rem]"
-                      )}
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                      <span className="sr-only">{t('taskDetail.taskOptionsSR')}</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-popover/90 backdrop-blur-lg border border-white/10">
-                    <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      <span>{t('taskDetail.editTask')}</span>
-                    </DropdownMenuItem>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <DropdownMenuItem
-                          onSelect={(e) => e.preventDefault()}
-                          className="text-sm focus:text-destructive focus:bg-destructive/10"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                          <span>{t('taskDetail.deleteTask')}</span>
-                        </DropdownMenuItem>
-                      </AlertDialogTrigger>
-                      <AlertDialogPortal>
-                        <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-                        <AlertDialogContent className="bg-card/90 backdrop-blur-md border-white/10 z-[90]">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>{t('taskDetail.deleteTaskConfirmation.title')}</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {t('taskDetail.deleteTaskConfirmation.description')}
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={handleDelete}
-                              className="bg-destructive hover:bg-destructive/90"
-                              disabled={isDeleting}
-                            >
-                              {isDeleting ? (
-                                <GradientLoader size="sm" className="mr-2" />
-                              ) : null}
-                              {t('common.delete')}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialogPortal>
-                    </AlertDialog>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
+            <TaskActions 
+              task={task}
+              isEditDialogOpen={isEditDialogOpen}
+              setIsEditDialogOpen={setIsEditDialogOpen}
+              handleDelete={handleDelete}
+              isDeleting={isDeleting}
+              isInfoCollapsed={isInfoCollapsed} 
+              t={t}
+            />
 
             {task && (
               <CardContent className="p-0 flex flex-col flex-grow min-h-0">
                 <div className="p-6 pt-0 flex flex-col flex-grow min-h-0 px-0 pb-0 lg:p-6 lg:pt-0">
+                  <TaskInfoDisplay
+                    task={task}
+                    isInfoCollapsed={isInfoCollapsed}
+                    statusColor={statusColor}
+                    priorityBadgeColor={priorityBadgeColor}
+                    deadlineText={deadlineText}
+                    deadlineColor={deadlineColor}
+                    isOverdue={isOverdue}
+                    onStatusChange={handleStatusChange}
+                    onPriorityChange={handlePriorityChange}
+                  />
                   <div className="px-4 lg:px-0">
-                    <div className="flex-shrink-0">
-                      <AnimatePresence mode="sync">
-                        <motion.div 
-                          initial={false}
-                          animate={{ 
-                            height: isInfoCollapsed ? 0 : 'auto',
-                            opacity: isInfoCollapsed ? 0 : 1,
-                            marginBottom: isInfoCollapsed ? 0 : 'auto' 
-                          }}
-                          transition={{ duration: 0.3, ease: "easeInOut" }}
-                          className={cn("overflow-hidden")}
-                        >
-                          <div className="flex flex-wrap items-center gap-2">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button 
-                                  variant="ghost"
-                                  className={cn("h-6 px-2 text-xs font-normal rounded-md bg-muted/40", statusColor[task.status])}
-                                >
-                                  <Info className="h-4 w-4 mr-1 sm:hidden" />
-                                  <span className="hidden sm:inline">{t('common.status')}:&nbsp;</span>
-                                  {t(task.status === 'todo' ? 'common.todo' : task.status === 'in_progress' ? 'common.in_progress' : 'common.done')}
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start" className="bg-popover/90 backdrop-blur-lg border border-white/10">
-                                <DropdownMenuItem onSelect={() => handleStatusChange('todo')}>
-                                  {t('common.todo')}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => handleStatusChange('in_progress')}>
-                                  {t('common.in_progress')}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => handleStatusChange('done')}>
-                                  {t('common.done')}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                            {task.priority !== 'none' && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button 
-                                    variant="ghost"
-                                    className={cn("h-6 px-2 text-xs font-normal rounded-md bg-muted/40", priorityBadgeColor[task.priority])}
-                                  >
-                                    <Flag className="h-4 w-4 mr-1 sm:hidden" />
-                                    <span className="hidden sm:inline">{t('common.priority')}:&nbsp;</span>
-                                    {t(task.priority === 'low' ? 'taskDetail.priority.low' : task.priority === 'medium' ? 'taskDetail.priority.medium' : task.priority === 'high' ? 'taskDetail.priority.high' : 'taskDetail.priority.none')}
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="bg-popover/90 backdrop-blur-lg border border-white/10">
-                                  <DropdownMenuItem onSelect={() => handlePriorityChange('high')}>
-                                    {t('taskDetail.priority.high')}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onSelect={() => handlePriorityChange('medium')}>
-                                    {t('taskDetail.priority.medium')}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onSelect={() => handlePriorityChange('low')}>
-                                    {t('taskDetail.priority.low')}
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                            {task.deadline && (
-                              <Badge 
-                                variant="secondary"
-                                className={cn("h-6 px-2 text-xs font-normal border-none bg-muted/40", deadlineColor)}
-                              >
-                                <CalendarClock className="h-4 w-4 mr-1 sm:hidden" />
-                                <span className="hidden sm:inline">{t('common.deadline')}:&nbsp;</span>
-                                {deadlineText}
-                                {isOverdue && <span className="hidden sm:inline">&nbsp;{t('taskDetail.overdueSR')}</span>}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="mb-4"></div>
-                          <div>
-                            <h3 className="font-medium mb-2">{t('common.description')}</h3>
-                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                              {task.description || t('taskDetail.noDescription')}
-                            </p>
-                          </div>
-                        </motion.div>
-                      </AnimatePresence>
-                      <Separator className="my-4" />
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-3 flex-grow">
-                            <h3 className="font-medium flex-shrink-0">{t('common.subtasks')}</h3>
-                            {totalSubtasks > 0 && (
-                              <div className="flex items-center gap-2 flex-grow">
-                                <span className="text-xs text-muted-foreground flex-shrink-0">
-                                  {completedSubtasks}/{totalSubtasks}
-                                </span>
-                                <GradientProgress value={progressValue} className="h-1.5 flex-grow lg:w-40 lg:flex-grow-0" /> 
-                                <span className="text-xs font-medium text-muted-foreground/90 flex-shrink-0">
-                                  ({Math.round(progressValue)}%)
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => setIsInfoCollapsed(!isInfoCollapsed)}
-                            className="h-7 w-7 text-muted-foreground flex-shrink-0 ml-2"
-                            aria-label={isInfoCollapsed ? t('taskDetail.expandDescription') : t('taskDetail.collapseDescription')}
-                          >
-                            {isInfoCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                          </Button>
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3 flex-grow">
+                          <h3 className="font-medium flex-shrink-0">{t('common.subtasks')}</h3>
+                          {totalSubtasks > 0 && (
+                            <div className="flex items-center gap-2 flex-grow">
+                              <span className="text-xs text-muted-foreground flex-shrink-0">
+                                {completedSubtasks}/{totalSubtasks}
+                              </span>
+                              <GradientProgress value={progressValue} className="h-1.5 flex-grow lg:w-40 lg:flex-grow-0" /> 
+                              <span className="text-xs font-medium text-muted-foreground/90 flex-shrink-0">
+                                ({Math.round(progressValue)}%)
+                              </span>
+                            </div>
+                          )}
                         </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => setIsInfoCollapsed(!isInfoCollapsed)}
+                          className="h-7 w-7 text-muted-foreground flex-shrink-0 ml-2"
+                          aria-label={isInfoCollapsed ? t('taskDetail.expandDescription') : t('taskDetail.collapseDescription')}
+                        >
+                          {isInfoCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -1029,16 +406,8 @@ export default function TaskDetail() {
                                 task={task}
                                 subtask={subtaskItem}
                                 index={index}
-                                editingSubtaskId={editingSubtaskId}
-                                editingSubtaskTitle={editingSubtaskTitle}
                                 handleSubtaskToggle={handleSubtaskToggle}
                                 handleSubtaskLabelClick={handleSubtaskLabelClick}
-                                startEditingSubtask={startEditingSubtask}
-                                handleSaveSubtaskEdit={handleSaveSubtaskEdit}
-                                handleSubtaskEditKeyDown={handleSubtaskEditKeyDown}
-                                setEditingSubtaskTitle={setEditingSubtaskTitle}
-                                deleteSubtask={deleteSubtaskFromContext}
-                                onSubtaskLongPress={handleSubtaskLongPress}
                               />
                               {longPressedSubtaskId === subtaskItem.id && contextMenuPosition && (
                                 <>
@@ -1069,7 +438,6 @@ export default function TaskDetail() {
                                         type="button"
                                         className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted/80 disabled:opacity-50"
                                         onClick={() => {
-                                          startEditingSubtask(subtaskItem);
                                           closeSubtaskContextMenu();
                                         }}
                                         disabled={subtaskItem.completed}
@@ -1248,15 +616,18 @@ export default function TaskDetail() {
 
           {/* Draggable divider - only visible on desktop */}
           <div
-            className="hidden lg:flex items-center justify-center w-px cursor-ew-resize bg-border hover:bg-primary/40 transition-all duration-300 relative z-30 mx-1 shrink-0 hover:shadow-[0_0_8px_rgba(var(--primary),.4)]"
-            onMouseDown={startResize}
+            className={cn(
+              "hidden lg:flex items-center justify-center w-px cursor-ew-resize bg-border hover:bg-primary/40 transition-all duration-300 relative z-30 mx-1 shrink-0 hover:shadow-[0_0_8px_rgba(var(--primary),.4)]",
+              "group" // Added group for potential hover effects on children
+            )}
+            onMouseDown={startResize} // Ensured startResize is used
           >
             {/* Stylish arrow handle */}
             <div 
               className={cn(
-                "absolute w-4 h-8 rounded-full bg-primary/25 backdrop-blur-sm flex items-center justify-center opacity-0 hover:opacity-100 transition-all duration-300",
-                isResizing ? "opacity-100 bg-primary/40 scale-110" : "",
-                "lg:group-hover:opacity-100"
+                "absolute w-4 h-8 rounded-full bg-primary/25 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300",
+                isResizing ? "opacity-100 bg-primary/40 scale-110" : "", // Ensured isResizing is used
+                "lg:group-hover:opacity-100" // Made consistent with parent group hover
               )}
             >
               <div className="flex items-center justify-center flex-row gap-0.5">
@@ -1332,7 +703,6 @@ export default function TaskDetail() {
         </div>
       )}
 
-      {/* Mobile FABs for Add Subtask and Generate Subtasks */}
       <AnimatePresence>
         {showMobileActions && !showAddSubtaskForm && globalThis.innerWidth < 1024 && activeMobileView === 'details' && (
           <motion.div
@@ -1344,7 +714,6 @@ export default function TaskDetail() {
               'transition-opacity duration-300 ease-in-out'
             )}
           >
-            {/* FIRST the Generate Subtasks (Sparkles) button */}
             <div className="flex flex-col items-center">
               <Button 
                 variant="default"
@@ -1363,7 +732,6 @@ export default function TaskDetail() {
               <span className="text-xs text-muted-foreground">{t('taskDetail.generateSubtasks.fabText')}</span>
             </div>
 
-            {/* THEN the New Subtask (PlusCircle) button */}
             <div className="flex flex-col items-center">
               <Button 
                 variant="default"

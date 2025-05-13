@@ -300,7 +300,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateUser = async (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference' | 'research_model_provider' | 'chat_model_provider' | 'layout_preference'>>) => {
     await updateUser_internal(data);
     toast({
-      title: t('profile.toast.profileUpdated'),
+      title: t('profile.toast.profileUpdated.title'),
+      description: t('profile.toast.profileUpdated.description'),
     });
   };
 
