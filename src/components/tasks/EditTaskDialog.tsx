@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast.ts";
 import { format, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Task, TaskPriority, TaskStatus } from "@/types/task.ts";
+import { TASK_CATEGORIES, TaskCategory } from "@/constants/categories.ts";
 import { cn } from "@/lib/utils.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx";
 import { Calendar } from "@/components/ui/calendar.tsx";
@@ -36,6 +37,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
   const [description, setDescription] = useState(task.description ?? "");
   const [priority, setPriority] = useState<TaskPriority>(task.priority);
   const [status, setStatus] = useState<TaskStatus>(task.status);
+  const [category, setCategory] = useState<TaskCategory | undefined>(task.category as TaskCategory | undefined);
   const [deadline, setDeadline] = useState<Date | undefined>(() => {
       try {
           return task.deadline ? parseISO(task.deadline) : undefined;
@@ -58,6 +60,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
         description,
         priority,
         status,
+        category,
         deadline: deadlineISO,
       };
 
@@ -80,7 +83,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
 
   return (
     <form onSubmit={handleSubmit} className="mt-4">
-      <div className="space-y-6 px-2">
+      <div className="space-y-6 px-2 max-h-[80vh] overflow-y-auto lg:max-h-none lg:overflow-y-visible scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">
        <div className="space-y-2">
          <Label htmlFor="edit-title">{t('common.title')}</Label>
          <Input
@@ -91,6 +94,25 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
            required
          />
        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-category">Categorie</Label>
+          <Select
+            value={category}
+            onValueChange={(value: string) => setCategory(value as TaskCategory)}
+          >
+            <SelectTrigger id="edit-category">
+              <SelectValue placeholder={t('editTaskDialog.selectCategoryPlaceholder', 'Selecteer een categorie')} />
+            </SelectTrigger>
+            <SelectContent>
+              {TASK_CATEGORIES.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
        <div className="space-y-2">
          <Label htmlFor="edit-description">{t('common.description')}</Label>
@@ -186,22 +208,22 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
             </div>
         </div>
 
-      <div className="space-y-3 pt-6">
-          <Button 
-            type="submit" 
-            disabled={isLoading} 
-            className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
-          >
-            {isLoading ? <GradientLoader size="sm" className="mr-2"/> : null}
-            {t('common.save')}
-          </Button>
+      <div className="flex gap-3 pt-4">
           <Button 
             type="button" 
             variant="outline"
             onClick={() => setOpen(false)} 
-            className="w-full h-12"
+            className="flex-1 h-12"
           >
               {t('common.cancel')}
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={isLoading} 
+            className="flex-1 h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
+          >
+            {isLoading ? <GradientLoader size="sm" className="mr-2"/> : null}
+            {t('common.save')}
           </Button>
       </div>
       </div>

@@ -8,7 +8,7 @@ import { Task, TasksByDate, TaskPriority } from "@/types/task.ts";
 import { Button } from "@/components/ui/button.tsx";
 import { PlusCircle } from 'lucide-react'; // Import PlusCircle icon
 import SearchInput from '@/components/ui/SearchInput.tsx'; // Import SearchInput
-import TaskFilter, { TaskFilterStatus, TaskFilterPriority } from '@/components/ui/TaskFilter.tsx'; // Import TaskFilter and types
+import TaskFilter, { TaskFilterStatus, TaskFilterPriority, TaskFilterCategory } from '@/components/ui/TaskFilter.tsx'; // Import TaskFilter and types
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,7 @@ const LOCAL_STORAGE_KEYS = {
   SEARCH_TERM: 'dashboardSearchTerm',
   FILTER_STATUS: 'dashboardFilterStatus',
   FILTER_PRIORITY: 'dashboardFilterPriority',
+  FILTER_CATEGORY: 'dashboardFilterCategory',
 };
 
 // const getCategoryTitle = (category: keyof TasksByDate): string => {
@@ -115,6 +116,9 @@ export default function Dashboard() {
   const [filterPriority, setFilterPriority] = useState<TaskFilterPriority>(() => {
     return (localStorage.getItem(LOCAL_STORAGE_KEYS.FILTER_PRIORITY) as TaskFilterPriority) || 'all';
   });
+  const [filterCategory, setFilterCategory] = useState<TaskFilterCategory>(() => {
+    return (localStorage.getItem(LOCAL_STORAGE_KEYS.FILTER_CATEGORY) as TaskFilterCategory) || 'all';
+  });
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
   const [showMobileActions, setShowMobileActions] = useState(true);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -131,6 +135,10 @@ export default function Dashboard() {
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEYS.FILTER_PRIORITY, filterPriority);
   }, [filterPriority]);
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.FILTER_CATEGORY, filterCategory);
+  }, [filterCategory]);
 
   // EFFECT MODIFIED: Manually block body scroll when NewTaskDialog is open
   useEffect(() => {
@@ -199,8 +207,12 @@ export default function Dashboard() {
           const matchesStatus = filterStatus === 'all' ||
             (filterStatus === 'completed' && task.status === 'done') ||
             (filterStatus === 'incomplete' && task.status !== 'done');
-          const matchesPriority = filterPriority === 'all' || task.priority === filterPriority;
-          return matchesSearch && matchesStatus && matchesPriority;
+          const matchesPriority = filterPriority === 'all' ||
+            task.priority === filterPriority;
+          const matchesCategory = filterCategory === 'all' ||
+            task.category === filterCategory;
+
+          return matchesSearch && matchesStatus && matchesPriority && matchesCategory;
         });
 
         filtered.sort(sortTasksByPriority);
@@ -208,15 +220,16 @@ export default function Dashboard() {
       }
     }
     return groups;
-  }, [rawTaskGroups, searchTerm, filterStatus, filterPriority]);
+  }, [rawTaskGroups, searchTerm, filterStatus, filterPriority, filterCategory]);
 
   const handleSearchChange = (newSearchTerm: string) => {
     setSearchTerm(newSearchTerm);
   };
 
-  const handleFilterChange = (status: TaskFilterStatus, priority: TaskFilterPriority) => {
+  const handleFilterChange = (status: TaskFilterStatus, priority: TaskFilterPriority, category: TaskFilterCategory) => {
     setFilterStatus(status);
     setFilterPriority(priority);
+    setFilterCategory(category);
   };
 
   // --- Create a flat list of filtered and sorted tasks for column distribution --- 
@@ -301,7 +314,7 @@ export default function Dashboard() {
   // Check if there are *any* tasks *after filtering* in *any* category
   const hasAnyFilteredTasks = (Object.values(filteredAndSortedTaskGroups) as Task[][]).some(group => group.length > 0);
 
-  if (!hasAnyFilteredTasks && (searchTerm !== '' || filterStatus !== 'all' || filterPriority !== 'all')) {
+  if (!hasAnyFilteredTasks && (searchTerm !== '' || filterStatus !== 'all' || filterPriority !== 'all' || filterCategory !== 'all')) {
     emptyStateMessage = <p className="text-muted-foreground mb-4">{t('dashboard.emptyState.noTasksAfterFilter')}</p>;
   } else if (!hasAnyFilteredTasks) { // If there are no tasks at all (even before filtering)
     emptyStateMessage = (

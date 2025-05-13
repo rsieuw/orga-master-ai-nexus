@@ -12,29 +12,37 @@ import {
 import { Check, Filter } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from 'react-i18next';
+import { TASK_CATEGORIES, TaskCategory } from "@/constants/categories.ts";
 
 // Match TaskStatus with your existing types if possible, or define as needed
 export type TaskFilterStatus = "all" | "completed" | "incomplete";
 // Match TaskPriority with your existing types if possible
 export type TaskFilterPriority = "all" | "high" | "medium" | "low" | "none"; // Added 'none' to match TaskPriority type
+export type TaskFilterCategory = "all" | TaskCategory;
 
 interface TaskFilterProps {
-  onFilterChange: (status: TaskFilterStatus, priority: TaskFilterPriority) => void;
+  onFilterChange: (status: TaskFilterStatus, priority: TaskFilterPriority, category: TaskFilterCategory) => void;
 }
 
 const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
   const { t } = useTranslation();
   const [status, setStatus] = useState<TaskFilterStatus>("all");
   const [priority, setPriority] = useState<TaskFilterPriority>("all");
+  const [category, setCategory] = useState<TaskFilterCategory>("all");
 
   const handleStatusChange = (newStatus: TaskFilterStatus) => {
     setStatus(newStatus);
-    onFilterChange(newStatus, priority);
+    onFilterChange(newStatus, priority, category);
   };
 
   const handlePriorityChange = (newPriority: TaskFilterPriority) => {
     setPriority(newPriority);
-    onFilterChange(status, newPriority);
+    onFilterChange(status, newPriority, category);
+  };
+
+  const handleCategoryChange = (newCategory: TaskFilterCategory) => {
+    setCategory(newCategory);
+    onFilterChange(status, priority, newCategory);
   };
 
   return (
@@ -50,7 +58,7 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent 
         align="end" 
-        className="w-48 glass-effect" // Use the same glass-effect class as the user menu
+        className="w-56 glass-effect" // Made wider to accommodate category names
       >
         <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
           {t('taskFilter.statusTitle')}
@@ -117,6 +125,32 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
           {t('taskFilter.low')}
           {priority === "low" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
+
+        <DropdownMenuSeparator />
+
+        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+          {t('taskFilter.categoryTitle', 'Categorie')}
+        </div>
+        <DropdownMenuCheckboxItem
+          className="cursor-pointer"
+          checked={category === "all"}
+          onCheckedChange={() => handleCategoryChange("all")}
+        >
+          {t('taskFilter.all')}
+          {category === "all" && <Check className="h-4 w-4 ml-auto" />}
+        </DropdownMenuCheckboxItem>
+        
+        {TASK_CATEGORIES.map((cat) => (
+          <DropdownMenuCheckboxItem
+            key={cat}
+            className="cursor-pointer"
+            checked={category === cat}
+            onCheckedChange={() => handleCategoryChange(cat as TaskFilterCategory)}
+          >
+            {cat}
+            {category === cat && <Check className="h-4 w-4 ml-auto" />}
+          </DropdownMenuCheckboxItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

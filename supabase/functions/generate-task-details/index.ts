@@ -13,6 +13,8 @@ import { OpenAI } from "https://deno.land/x/openai@v4.52.7/mod.ts";
 interface OpenAIResponse {
   title: string;
   description: string;
+  category: string; // Added: suggested category for the task
+  emoji: string;    // Added: representative emoji for the task
 }
 
 // console.log("Hello from generate-task-details Function!"); // Verwijderd
@@ -63,19 +65,40 @@ Deno.serve(async (req) => {
        );
     }
 
-    // 3. Construct the prompt for OpenAI
+    // 3. Construct the prompt for OpenAI - Enhanced with emoji and category generation
     // Adjust the system prompt based on language preference
     const systemPrompt = languagePreference === 'nl' 
-      ? `Je bent een assistent die helpt bij het formuleren van taken. Op basis van de input van de gebruiker, genereer je een beknopte, actie-gerichte taak 'title' (maximaal 10 woorden) en een iets gedetailleerdere 'description' (maximaal 3 zinnen). Het antwoord MOET een geldig JSON-object zijn met alleen de sleutels "title" en "description". Voorbeelden: { "title": "Teamlunch organiseren", "description": "Plan een teamlunch voor volgende vrijdag. Zoek een restaurant en stuur een uitnodiging." }`
-      : `You are an assistant that helps formulate tasks. Based on the user's input, generate a concise, action-oriented task 'title' (maximum 10 words) and a slightly more detailed 'description' (maximum 3 sentences). The response MUST be a valid JSON object with only the keys "title" and "description". Example: { "title": "Organize team lunch", "description": "Plan a team lunch for next Friday. Find a restaurant and send an invitation." }`;
+      ? `Je bent een assistent die helpt bij het formuleren van taken. Op basis van de input van de gebruiker:
+         1. Genereer een beknopte, actie-gerichte taak 'title' (maximaal 10 woorden)
+         2. Maak een gedetailleerdere 'description' (maximaal 2 zinnen)
+         3. Kies automatisch de meest toepasselijke 'category' uit ["Werk/Studie", "Persoonlijk", "Huishouden", "Familie", "Sociaal", "Gezondheid", "Financiën", "Projecten"]
+         4. Selecteer een passende 'emoji' die specifiek is voor de taak (kleurrijk en duidelijk zichtbaar)
+         
+         Het antwoord MOET een geldig JSON-object zijn met de sleutels "title", "description", "category" en "emoji".
+         
+         Voorbeelden:
+         - Voor een vergadering: { "title": "Kwartaal-vergadering voorbereiden", "description": "Maak slides en agenda voor de kwartaalvergadering van volgende week. Verzamel cijfers van alle afdelingen.", "category": "Werk/Studie", "emoji": "📊" }
+         - Voor een verjaardag: { "title": "Verjaardagscadeau voor mama kopen", "description": "Zoek een leuk boek of sieraad voor mama's verjaardag op 15 mei. Budget: €50.", "category": "Familie", "emoji": "🎁" }
+         - Voor sporten: { "title": "Sportschoolabonnement verlengen", "description": "Bezoek de sportschool om het jaarabonnement te verlengen. Vraag naar speciale acties.", "category": "Gezondheid", "emoji": "🏋️" }`
+      : `You are an assistant that helps formulate tasks. Based on the user's input:
+         1. Generate a concise, action-oriented task 'title' (maximum 10 words)
+         2. Create a more detailed 'description' (maximum 2 sentences)
+         3. Automatically select the most appropriate 'category' from ["Werk/Studie", "Persoonlijk", "Huishouden", "Familie", "Sociaal", "Gezondheid", "Financiën", "Projecten"]
+         4. Choose a fitting 'emoji' that is specific to the task (colorful and clearly visible)
+         
+         The response MUST be a valid JSON object with the keys "title", "description", "category", and "emoji".
+         
+         Examples:
+         - For a meeting: { "title": "Prepare quarterly meeting", "description": "Create slides and agenda for next week's quarterly meeting. Gather figures from all departments.", "category": "Werk/Studie", "emoji": "📊" }
+         - For a birthday: { "title": "Buy birthday gift for mom", "description": "Find a nice book or jewelry for mom's birthday on May 15th. Budget: €50.", "category": "Familie", "emoji": "🎁" }
+         - For exercise: { "title": "Renew gym membership", "description": "Visit the gym to renew the annual membership. Ask about special offers.", "category": "Gezondheid", "emoji": "🏋️" }`;
 
     const userPrompt = `User input: "${userInput}"`;
 
     // 4. Call OpenAI API (Chat Completions)
     const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
-    // console.log(`Calling OpenAI API for input: "${userInput}"`); // Verwijderd
     const chatCompletion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -93,12 +116,17 @@ Deno.serve(async (req) => {
       throw new Error("errors.ai.noUsableAnswer"); // Key as message
     }
 
-    // 5. Parse and validate the response
+    // 5. Parse and validate the response - Updated to include emoji and category
     let generatedData: OpenAIResponse;
     try {
       generatedData = JSON.parse(aiResponse);
-      // Basic validation
-      if (typeof generatedData.title !== 'string' || typeof generatedData.description !== 'string') {
+      // Enhanced validation for all fields
+      if (
+        typeof generatedData.title !== 'string' || 
+        typeof generatedData.description !== 'string' ||
+        typeof generatedData.category !== 'string' ||
+        typeof generatedData.emoji !== 'string'
+      ) {
           throw new Error("errors.ai.invalidJson"); // Key as message
       }
     } catch (e) {
@@ -109,16 +137,13 @@ Deno.serve(async (req) => {
       throw new Error(key); // Key as message
     }
 
-    // console.log(`OpenAI generated:`, generatedData); // Verwijderd
-
-    // 6. Return the generated title and description
+    // 6. Return the generated title, description, category and emoji
     return new Response(
       JSON.stringify(generatedData),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {
-    // console.error("Error in generate-task-details:", error); // Keep or remove server-side logging if necessary
     let errorKey = "errors.internal.generateTaskDetails"; // Default fallback key
     if (error instanceof Error) {
       // Check if the message is already one of our defined keys
@@ -131,7 +156,7 @@ Deno.serve(async (req) => {
       if (knownKeys.includes(error.message)) {
         errorKey = error.message;
       }
-      // Note: errors.api.configMissing and errors.request.invalidBody worden al direct met JSON.stringify({ errorKey: ... }) afgehandeld.
+      // Note: errors.api.configMissing and errors.request.invalidBody are already handled directly with JSON.stringify({ errorKey: ... }).
     }
     return new Response(JSON.stringify({ errorKey: errorKey }), {
       status: 500,

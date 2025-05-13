@@ -60,7 +60,7 @@ const chatModelProviders: { value: ChatModelProvider; labelKey: string; descript
 
 export default function SettingsPage() {
   const { t, i18n } = useTranslation();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { user, updateUser } = useAuth();
   const [aiLanguage, setAiLanguage] = useState<string>(user?.language_preference || "nl");
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -376,6 +376,11 @@ export default function SettingsPage() {
     }
   };
 
+  const handleThemeChange = async (newTheme: string) => {
+    // Cast string value to Theme type
+    setTheme(newTheme as "light" | "dark" | "custom-dark");
+  };
+
   return (
     <AppLayout>
       <div className="flex items-center justify-between mb-6">
@@ -422,12 +427,19 @@ export default function SettingsPage() {
                     {t('settings.theme.description')}
                   </p>
                 </div>
-                <Switch
-                  id="theme"
-                  checked={theme === "dark"}
-                  onCheckedChange={toggleTheme}
-                  aria-label={t('settings.theme.toggleAriaLabel')}
-                />
+                <Select
+                  value={theme}
+                  onValueChange={handleThemeChange}
+                >
+                  <SelectTrigger id="theme-select" className="w-40">
+                    <SelectValue placeholder={t('settings.theme.label')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">{t('settings.theme.options.light')}</SelectItem>
+                    <SelectItem value="dark">{t('settings.theme.options.dark')}</SelectItem>
+                    <SelectItem value="custom-dark">{t('settings.theme.options.customDark')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Desktop Layout Preference Section */}

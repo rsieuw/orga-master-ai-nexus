@@ -23,6 +23,8 @@ export interface Task {
   subtasks: SubTask[];
   aiSubtaskGenerationCount?: number; // Nieuw veld
   isNew?: boolean; // Geeft aan of de taak nieuw en nog niet geopend is
+  category?: string; // Nieuw veld voor categorie
+  emoji?: string; // Added field for task emoji representation
 }
 
 export interface AIResearchResult {

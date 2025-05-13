@@ -23,11 +23,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateUser_internal = useCallback(async (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference' | 'research_model_provider' | 'chat_model_provider' | 'layout_preference'>>) => {
     if (!session || !user) {
-      console.error("Update user failed: No session or user");
       throw new Error("User not logged in");
     }
-
-    console.log("updateUser_internal called with data:", data);
 
     const currentAiModePreference = data.ai_mode_preference || user.ai_mode_preference;
     if (user?.role === 'free' &&
@@ -70,24 +67,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.layout_preference !== undefined) profileUpdatePayload.layout_preference = data.layout_preference;
 
       if (Object.keys(profileUpdatePayload).length > 0) {
-        console.log("Updating profile with payload:", profileUpdatePayload);
-        
         const { error: updateProfileError } = await supabase
           .from('profiles')
           .update(profileUpdatePayload)
           .eq('id', user.id);
           
         if (updateProfileError) {
-          console.error("Profile update error:", updateProfileError);
           throw updateProfileError;
-        } else {
-          console.log("Profile update successful");
         }
       }
 
       setUser(prevUser => {
         const updatedUser = prevUser ? { ...prevUser, ...profileUpdatePayload } as UserProfile : null;
-        console.log("User state updated to:", updatedUser);
         return updatedUser;
       });
       
@@ -96,7 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
     } catch (error: unknown) {
-      console.error("Update user failed:", error);
       toast({
         title: t('auth.toast.updateFailed.title'),
         description: t('auth.toast.updateFailed.descriptionDefault'),
@@ -118,7 +108,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         await updateUser_internal({ ai_mode_preference: mode });
       } catch (error) {
-        console.error("Failed to persist aiMode preference:", error);
         // Optional: toast message for the user if saving fails
       }
     }
@@ -129,7 +118,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (error: unknown) {
-      console.error("Logout failed:", error);
       const message = error instanceof Error ? error.message : t('auth.toast.logoutFailed.descriptionDefault');
       toast({
         variant: "destructive",
@@ -162,20 +150,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (initialAuthCheckComplete && session?.user) {
         setIsLoading(true); 
         try {
-          console.log("Fetching user profile...");
           const { data: profileData, error } = await supabase
             .rpc('get_user_profile_with_permissions', { user_id: session.user.id })
             .single();
           
           if (error) {
-            console.error('Profile Effect: Error calling get_user_profile_with_permissions:', error);
             setUser(null);
           } else if (profileData) {
             const fullProfile = profileData as unknown as UserProfile;
-            console.log("Raw profile data:", fullProfile);
 
             if (fullProfile.status === 'inactive') {
-              console.warn('User is inactive, logging out.');
               toast({ 
                 variant: "destructive", 
                 title: t('auth.toast.accountDeactivated.title'), 
@@ -190,16 +174,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 layout_preference: fullProfile.layout_preference || '50-50',
                 ai_mode_preference: fullProfile.ai_mode_preference || 'default',
               } as UserProfile;
-              console.log("Setting user with layout_preference:", resolvedProfile.layout_preference);
               setUser(resolvedProfile);
               setAiModeState(resolvedProfile.ai_mode_preference); // Set aiMode state based on profile
             }
           } else {
-            console.warn('Profile Effect: Profile not found via function for user:', session.user?.id);
             setUser(null);
           }
         } catch (catchError: unknown) {
-          console.error('Profile Effect: CATCH block error calling function:', catchError);
           setUser(null);
         } finally {
           setIsLoading(false); 
@@ -224,7 +205,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       return;
     } catch (error: unknown) {
-      console.error("Login failed:", error);
       const specificMessage = (error instanceof Error && typeof error === 'object' && error !== null && 'status' in error && (error as { status: number }).status === 400)
                               ? error.message
                               : null;
@@ -249,21 +229,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
         options: {
           data: {
-            name: name,
+            name,
           },
         },
       });
       
       if (error) throw error;
       
-      toast({ 
-        title: t('auth.toast.registrationSuccess.title'), 
-        description: t('auth.toast.registrationSuccess.description') 
+      toast({
+        title: t('register.toast.success.title'),
+        description: t('register.toast.success.description'),
       });
-      return;
-
     } catch (error: unknown) {
-      console.error("Registration failed:", error);
       const message = error instanceof Error ? error.message : t('auth.toast.registrationFailed.descriptionDefault');
       toast({
         variant: "destructive",
@@ -274,19 +251,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${globalThis.location?.origin || 'https://uw-app-url.com'}/reset-password-confirm`,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: t('resetPassword.toast.success.title'),
+        description: t('resetPassword.toast.success.description'),
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : t('auth.toast.resetPasswordFailed.descriptionDefault');
+      toast({
+        variant: "destructive",
+        title: t('auth.toast.resetPasswordFailed.title'),
+        description: message,
+      });
+      throw error;
+    }
+  };
+
+  const updatePassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: t('updatePassword.toast.success.title'),
+        description: t('updatePassword.toast.success.description'),
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : t('auth.toast.updatePasswordFailed.descriptionDefault');
+      toast({
+        variant: "destructive",
+        title: t('auth.toast.updatePasswordFailed.title'),
+        description: message,
+      });
+      throw error;
+    }
+  };
+
+  const updateUser = async (data: Partial<Pick<UserProfile, 'name' | 'email' | 'language_preference' | 'email_notifications_enabled' | 'ai_mode_preference' | 'research_model_preference' | 'research_model_provider' | 'chat_model_provider' | 'layout_preference'>>) => {
+    await updateUser_internal(data);
+    toast({
+      title: t('profile.toast.profileUpdated'),
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{
-      isAuthenticated,
-      user,
-      session,
-      isLoading,
-      login,
-      logout: exportedLogout, // use renamed version for export
-      register,
-      updateUser: updateUser_internal, // use internal version
-      aiMode,
-      setAiMode 
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        isAuthenticated,
+        isLoading,
+        login,
+        logout: exportedLogout,
+        register,
+        resetPassword,
+        updatePassword,
+        updateUser,
+        aiMode,
+        setAiMode,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

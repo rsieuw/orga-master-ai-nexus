@@ -81,12 +81,11 @@ export function ChatControls({
                   variant={currentResearchMode === option.value ? "secondary" : "ghost"}
                   className="w-full justify-start space-x-2 h-auto whitespace-normal text-left"
                   onClick={() => {
-                    console.log("Klik op onderzoek modus:", option.value);
+                    console.log("Click on research mode:", option.value);
                     try {
                       onResearch(option.value);
-                      console.log("Na onResearch aanroep");
                     } catch (error) {
-                      console.error("Fout bij uitvoeren onResearch:", error);
+                      console.error("Error executing onResearch:", error);
                     }
                     setIsResearchPopoverOpen(false);
                   }}

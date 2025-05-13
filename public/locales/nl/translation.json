@@ -7,7 +7,8 @@
     "priorityTitle": "Prioriteit",
     "high": "Hoog",
     "medium": "Gemiddeld",
-    "low": "Laag"
+    "low": "Laag",
+    "categoryTitle": "Categorie"
   },
   "login": {
     "title": "OrgaMaster AI",
@@ -41,7 +42,12 @@
     "theme": {
       "label": "Thema modus",
       "description": "Selecteer licht of donker thema.",
-      "toggleAriaLabel": "Wissel thema"
+      "toggleAriaLabel": "Wissel thema",
+      "options": {
+        "light": "Licht",
+        "dark": "Donker",
+        "customDark": "Aangepast Donker"
+      }
     },
     "account": {
       "title": "Account",
@@ -532,6 +538,7 @@
   },
   "taskCard": {
     "invalidDate": "Ongeldige datum",
+    "new": "Nieuw",
     "tooltip": {
       "subtasksCompleted_singular": "{{completed}} van {{total}} subtaak voltooid",
       "subtasksCompleted_plural": "{{completed}} van {{total}} subtaken voltooid"
@@ -554,8 +561,8 @@
       "label": "Prioriteit"
     },
     "status": {
-      "todo": "To Do",
-      "inprogress": "In Uitvoering",
+      "todo": "Te doen",
+      "inprogress": "In uitvoering",
       "done": "Klaar",
       "label": "Status"
     },
@@ -649,36 +656,41 @@
     }
   },
   "common": {
-    "cancel": "Annuleren",
+    "add": "Toevoegen",
+    "edit": "Bewerken",
     "delete": "Verwijderen",
-    "settings": "Instellingen",
-    "description": "Beschrijving",
+    "cancel": "Annuleren",
+    "save": "Opslaan",
+    "confirm": "Bevestigen",
+    "create": "Aanmaken",
+    "update": "Bijwerken",
+    "loading": "Laden...",
+    "error": "Fout",
+    "success": "Succes",
+    "warning": "Waarschuwing",
+    "close": "Sluiten",
+    "search": "Zoeken",
+    "filter": "Filter",
+    "all": "Alle",
+    "yes": "Ja",
+    "no": "Nee",
+    "none": "Geen",
+    "noResults": "Geen resultaten",
+    "noTasks": "Geen taken",
+    "more": "Meer",
+    "less": "Minder",
+    "view": "Bekijken",
+    "next": "Volgende",
+    "previous": "Vorige",
+    "done": "Voltooid",
+    "new": "Nieuw",
+    "task": "Taak",
+    "name": "Naam",
     "status": "Status",
     "priority": "Prioriteit",
     "deadline": "Deadline",
     "overdue": "Te laat",
     "subtasks": "Subtaken",
-    "none": "Geen",
-    "add": "Toevoegen",
-    "save": "Opslaan",
-    "edit": "Bewerken",
-    "generate": "Genereren",
-    "title": "Titel",
-    "close": "Sluiten",
-    "yes": "Ja",
-    "no": "Nee",
-    "confirm": "Bevestigen",
-    "success": "Succes",
-    "error": "Fout",
-    "loading": "Laden...",
-    "actions": "Acties",
-    "all": "Alle",
-    "high": "Hoog",
-    "medium": "Gemiddeld",
-    "low": "Laag",
-    "todo": "Te doen",
-    "in_progress": "In uitvoering",
-    "done": "Voltooid",
     "back": "Terug",
     "backSR": "Ga terug",
     "closeSR": "Venster sluiten",
@@ -687,7 +699,10 @@
     "generateSubtasksDialogDescription": "Wil je de AI-assistent vragen om relevante subtaken voor \"{{taskTitle}}\" te suggereren op basis van de beschrijving?",
     "generatingText": "Genereren...",
     "information": "Informatie",
-    "notAuthenticated": "Je moet ingelogd zijn om deze actie uit te voeren."
+    "notAuthenticated": "Je moet ingelogd zijn om deze actie uit te voeren.",
+    "category": "Categorie",
+    "title": "Titel",
+    "description": "Beschrijving"
   },
   "pageTitles": {
     "home": "Home",
@@ -1038,7 +1053,10 @@
     "generateDetailsButton": "Taakdetails genereren",
     "generateSubtasksLabel": "Automatisch subtaken genereren (AI)",
     "createTaskButton": "Taak aanmaken",
-    "creatingButton": "Aanmaken..."
+    "creatingButton": "Aanmaken...",
+    "autoCategorizeLabel": "Automatisch categoriseren",
+    "selectCategoryPlaceholder": "Selecteer een categorie",
+    "aiSuggested": "AI-gesuggereerd"
   },
   "responses": {
     "defaultError": "Sorry, ik kon geen antwoord genereren.",

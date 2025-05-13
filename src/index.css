@@ -68,6 +68,38 @@
     --ring: 221 83% 53%;
   }
 
+  .custom-dark {
+    --background: 220 20% 18%;
+    --foreground: 0 0% 95%;
+
+    --card: 222 25% 12%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 222 20% 15%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 217 32% 20%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 32% 17%;
+    --accent-foreground: 0 0% 95%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 95%;
+
+    --border: 217 32% 22%;
+    --input: 217 32% 22%;
+    --ring: 224 76% 48%;
+
+    --radius: 0.5rem;
+  }
+
   html {
     @apply min-h-screen;
     background-color: hsl(var(--background));
@@ -205,7 +237,7 @@
 }
 
 .task-card {
-  @apply relative rounded-lg border p-3 shadow-sm transition-all hover:shadow-md hover:translate-y-[-2px] duration-200 glass-card overflow-hidden;
+  @apply relative rounded-xl border p-3 shadow-sm transition-all hover:shadow-md hover:translate-y-[-2px] duration-200 glass-card overflow-hidden;
 }
 
 .priority-high::before,
@@ -219,7 +251,7 @@
   bottom: 0;
   width: 4px; /* Breedte van de gradient-lijn */
   /* Expliciet afronden i.p.v. inherit */
-  @apply rounded-l-lg; /* Tailwind class for left-top and left-bottom radius matching rounded-lg */
+  @apply rounded-l-xl; /* Verhoog border-radius om te matchen met kaart */
   /* Verwijderd: border-top-left-radius: inherit; */
   /* Verwijderd: border-bottom-left-radius: inherit; */
 }
@@ -408,3 +440,311 @@ input[type="search"]::-webkit-search-results-decoration {
     pointer-events: none !important;
   }
 }
+
+/* Custom dark theme task cards - Neumorphism style */
+.custom-dark .task-card {
+  @apply h-52 border-purple-950/40 rounded-2xl shadow-md transition-all;
+  /* Verwijder de algemene background hier als die de specifieke prioriteit backgrounds overschrijft */
+  /* background: linear-gradient(165deg, rgba(45, 55, 75, 0.8) 0%, rgba(50, 35, 75, 0.8) 70%, rgba(40, 25, 60, 0.8) 100%); */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 0 30px rgba(30, 0, 60, 0.2);
+  position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  background-blend-mode: overlay;
+}
+
+.custom-dark .task-card:hover {
+  transform: translateY(-3px) scale(1.01);
+  /* De background voor hover wordt nu ook per prioriteit afgehandeld of hier algemeen als de afbeeldingen moeten blijven blenden */
+  box-shadow: 
+    10px 10px 20px rgba(5, 7, 12, 0.7),
+    -8px -8px 16px rgba(40, 50, 70, 0.2),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.07);
+}
+
+.custom-dark .task-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 70%);
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.custom-dark .task-card:hover::before {
+  opacity: 0.7;
+}
+
+.custom-dark .task-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  z-index: 1;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* Prioriteit-specifieke achtergronden voor de neumorphism style */
+.custom-dark .priority-high {
+  background: linear-gradient(165deg, rgba(220, 38, 38, 0.8) 0%, rgba(150, 25, 80, 0.75) 50%, rgba(70, 20, 90, 0.7) 100%);
+  background-blend-mode: overlay;
+  box-shadow: 
+    8px 8px 16px rgba(8, 4, 4, 0.7),
+    -8px -8px 16px rgba(80, 30, 30, 0.1),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(140, 25, 70, 0.2);
+}
+
+.custom-dark .priority-high:hover {
+  background: linear-gradient(165deg, rgba(239, 68, 68, 0.85) 0%, rgba(170, 35, 90, 0.8) 50%, rgba(90, 25, 100, 0.75) 100%);
+  background-blend-mode: overlay;
+  box-shadow: 
+    10px 10px 20px rgba(8, 4, 4, 0.7),
+    -8px -8px 16px rgba(80, 30, 30, 0.2),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.07);
+}
+
+.custom-dark .priority-high::after {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgb(255 102 102 / 80%) 50%, rgba(0, 0, 0, 0) 100%);
+}
+
+.custom-dark .priority-medium {
+  background: linear-gradient(165deg, rgba(255, 145, 0, 0.9) 0%, #650c4ed9 100%);
+  background-blend-mode: overlay;
+  box-shadow: 
+    8px 8px 16px rgba(10, 7, 3, 0.7),
+    -8px -8px 16px rgba(100, 60, 20, 0.1),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(155, 70, 35, 0.3);
+}
+
+.custom-dark .priority-medium:hover {
+  background: linear-gradient(165deg, rgba(255, 165, 0, 0.95) 0%, #6e2059d9 100%);
+  background-blend-mode: overlay;
+  box-shadow: 
+    10px 10px 20px rgba(10, 7, 3, 0.7),
+    -8px -8px 16px rgba(100, 60, 20, 0.2),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.12);
+}
+
+.custom-dark .priority-medium::after {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgb(255 231 150 / 70%) 50%, rgba(0, 0, 0, 0) 100%);
+}
+
+.custom-dark .priority-low {
+  background: linear-gradient(165deg, rgb(36, 74, 212) 0%, rgba(15, 168, 182, 0.75) 50%, rgba(16, 185, 129, 0.7) 100%);
+  background-blend-mode: overlay;
+  box-shadow: 
+    8px 8px 16px rgba(5, 10, 20, 0.7),
+    -8px -8px 16px rgba(40, 70, 120, 0.1),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(56, 160, 170, 0.2);
+}
+
+.custom-dark .priority-low:hover {
+  background: linear-gradient(165deg, rgb(36, 74, 212) 0%, rgba(79, 190, 200, 0.8) 50%, rgba(34, 211, 150, 0.75) 100%);
+  background-blend-mode: overlay;
+  box-shadow: 
+    10px 10px 20px rgba(5, 10, 20, 0.7),
+    -8px -8px 16px rgba(40, 100, 100, 0.2),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.07);
+}
+
+.custom-dark .priority-low::after {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgb(25 255 226 / 96%) 50%, rgba(0, 0, 0, 0) 100%);
+}
+
+.custom-dark .priority-none {
+  background: linear-gradient(165deg, rgba(100, 116, 139, 0.8) 0%, rgba(71, 85, 105, 0.75) 50%, rgba(51, 65, 85, 0.7) 100%);
+  background-blend-mode: overlay;
+  box-shadow: 
+    8px 8px 16px rgba(30, 41, 59, 0.7),
+    -8px -8px 16px rgba(100, 116, 139, 0.1),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(71, 85, 105, 0.2);
+}
+
+.custom-dark .priority-none:hover {
+  background: linear-gradient(165deg, rgba(148, 163, 184, 0.85) 0%, rgba(100, 116, 139, 0.8) 50%, rgba(71, 85, 105, 0.75) 100%);
+  background-blend-mode: overlay;
+  box-shadow: 
+    10px 10px 20px rgba(30, 41, 59, 0.7),
+    -8px -8px 16px rgba(100, 116, 139, 0.2),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.07);
+}
+
+.custom-dark .priority-none::after {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(148, 163, 184, 0.5) 50%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* Zorg dat de teksten goed leesbaar zijn in custom dark theme */
+.custom-dark .task-card h3 {
+  @apply text-white font-medium text-lg;
+}
+
+.custom-dark .task-card p,
+.custom-dark .task-card span:not(.task-emoji),
+.custom-dark .task-card div[class*="text-"]:not(.category-badge):not(.badge) {
+  --tw-text-opacity: 1;
+  color: rgb(243 244 246 / var(--tw-text-opacity, 1));
+  font-size: 0.875rem; /* text-sm */
+  line-height: 1.25rem;
+}
+
+/* Specifiek voor de beschrijving (nu met .text-sm class in HTML) */
+.custom-dark .task-card p.text-muted-foreground.text-sm.mt-1.line-clamp-1 { 
+  color: hsl(0, 0%, 80%); /* Tailwind's text-gray-200 */
+  /* font-size en line-height komen van de algemene p, span, div regel hierboven */
+}
+
+/* De uitgecommentarieerde .text-muted-foreground.text-sm regel kan nu definitief weg */
+
+/* Voor de datum en subtaak count, wellicht nog iets helderder */
+/* Deze worden nu gedekt door de algemene .custom-dark .task-card span regel hierboven */
+/* .custom-dark .task-card .task-meta span { 
+  @apply text-gray-50;
+} */
+
+/* Meer zichtbare status indicator in custom dark theme */
+.custom-dark .task-card .status-indicator {
+  width: 0.75rem; /* w-3 */
+  height: 0.75rem; /* h-3 */
+  border-radius: 9999px; /* rounded-full blijft behouden */
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1); /* ring-2 ring-white/10 */
+}
+
+/* Badge stijling */
+.custom-dark .task-card .badge, /* Algemene badge styling voor "Nieuw" */
+.custom-dark .task-card .category-badge /* Specifieke categorie badge */ {
+  @apply rounded-full text-xs px-3 py-1 bg-white/10 text-white;
+  /* Verhoog hoogte en pas padding aan voor de grotere tekst */
+  @apply h-6 px-2.5 py-0.5; /* Was h-5, px-3 py-1. px-2.5 en py-0.5 kunnen beter passen bij text-xs */
+  font-size: 0.75rem; /* Tailwind's text-xs */
+  line-height: 1rem; /* Tailwind's text-xs line-height */
+}
+
+/* Specifieke styling voor .category-badge als die afwijkt (bijv. andere achtergrond) */
+.custom-dark .category-badge {
+  @apply bg-purple-900/50 text-purple-200 border-white/10 backdrop-blur-sm;
+  /* font-size en line-height worden al hierboven gezet */
+}
+
+/* Icoontje in de categorie-aanduiding (naast de badge) */
+.custom-dark .task-card .mt-2.flex.items-center .lucide {
+  @apply h-3.5 w-3.5; /* Was h-3 w-3 */
+}
+
+/* Custom dark theme voortgangsbalk en bijbehorende iconen/tekst */
+.custom-dark .task-card .progress-bg {
+  @apply bg-white/20;
+}
+
+.custom-dark .task-card .progress-fill {
+  @apply bg-white/60;
+}
+
+/* De iconen in de onderste balk (CheckSquare, Hourglass) en bijbehorende tekst */
+.custom-dark .task-card .task-card-footer-icons .lucide { /* Selector aangepast naar unieke class */
+  /* @apply h-4 w-4; Was h-3.5 w-3.5 */
+  height: 1rem; /* Vervangt h-4 */
+  width: 1rem;  /* Vervangt w-4 */
+}
+
+/* De tekst zelf in de onderste balk is al meegenomen door de algemene text-sm aanpassing */
+
+/* Custom dark theme dashboard header */
+.custom-dark h1.text-3xl {
+  @apply text-white;
+}
+
+.custom-dark .bg-gradient-to-r.from-blue-500.to-purple-600.bg-clip-text.text-transparent {
+  @apply from-blue-400 to-indigo-500;
+}
+
+/* Custom search input in custom dark theme */
+.custom-dark [role="search"] {
+  @apply bg-opacity-50 backdrop-blur-sm border border-white/10;
+}
+
+/* Categorie achtergronden voor task cards in custom-dark thema */
+/* .custom-dark .task-card[data-category="Werk/Studie"] {
+  background-image: url('/assets/categories/work.png');
+} */
+
+/* .custom-dark .task-card[data-category="Persoonlijk"] {
+  background-image: url('/assets/categories/personal.png');
+}
+
+.custom-dark .task-card[data-category="Huishouden"] {
+  background-image: url('/assets/categories/home.png');
+}
+
+.custom-dark .task-card[data-category="Familie"] {
+  background-image: url('/assets/categories/family.png');
+}
+
+.custom-dark .task-card[data-category="Sociaal"] {
+  background-image: url('/assets/categories/social.png');
+}
+
+.custom-dark .task-card[data-category="Gezondheid"] {
+  background-image: url('/assets/categories/health.png');
+}
+
+.custom-dark .task-card[data-category="Financiën"] {
+  background-image: url('/assets/categories/finance.png');
+}
+
+.custom-dark .task-card[data-category="Projecten"] {
+  background-image: url('/assets/categories/projects.png');
+} */
+
+/* Iconen voor categorieën stylen in custom-dark theme */
+.custom-dark .task-card [class*="lucide-"] {
+  @apply text-gray-300;
+}
+
+.custom-dark .task-card:hover [class*="lucide-"] {
+  @apply text-white;
+}
+
+/* Specifieke categorie icoon kleuren in custom-dark theme *//*
+
+/* Styling voor het subtiele achtergrondicoon op taakkaarten */
+
+/* Custom achtergrondkleur voor iconen op rode (high priority) kaarten */
+.custom-dark .task-card.priority-high .category-background-icon {
+  color: rgb(175 36 42);
+}
+
+.custom-dark .task-card:hover.priority-high .category-background-icon {
+  color: rgb(196, 59, 68);
+}
+
+/* Custom achtergrondkleur voor iconen op rode (medium priority) kaarten */
+.custom-dark .task-card.priority-medium .category-background-icon {
+  color: rgb(227, 131, 6);
+}
+
+.custom-dark .task-card:hover.priority-medium .category-background-icon {
+  color: rgb(237, 153, 4);
+}
+
+/* Custom achtergrondkleur voor iconen op rode (low priority) kaarten */
+.custom-dark .task-card.priority-low .category-background-icon {
+  color: #c1ccf5;
+}
+
+.custom-dark .task-card:hover.priority-low .category-background-icon {
+  color: #d1d9f5;
+}
+
+
+
+

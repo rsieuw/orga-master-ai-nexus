@@ -21,13 +21,13 @@ const GradientProgress = React.forwardRef<HTMLDivElement, GradientProgressProps>
       <div
         ref={ref}
         className={cn(
-          'relative h-1.5 w-full overflow-hidden rounded-full bg-muted', // Track styles
+          'relative h-1.5 w-full overflow-hidden rounded-full bg-muted progress-bg', // Added progress-bg class
           className
         )}
         {...props}
       >
         <div
-          className="h-full w-full flex-1 transition-all duration-300 ease-out" // Removed fixed gradient class
+          className="h-full w-full flex-1 transition-all duration-300 ease-out progress-fill"
           style={{
             width: `${progress}%`, // Dynamic width
             backgroundImage: gradientStyle // Apply dynamic gradient

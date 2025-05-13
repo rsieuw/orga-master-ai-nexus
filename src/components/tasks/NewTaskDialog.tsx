@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast.ts";
 import { format } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
 import { TaskPriority, TaskStatus, Task } from "@/types/task.ts";
+import { TASK_CATEGORIES, TaskCategory } from "@/constants/categories.ts";
 import { supabase } from "@/integrations/supabase/client.ts";
 import { cn } from "@/lib/utils.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx";
@@ -40,14 +41,19 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
   // State specific to the new task form
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<TaskPriority>("medium");
+  const [priority, setPriority] = useState<TaskPriority>("low");
   const [status, setStatus] = useState<TaskStatus>("todo");
+  const [category, setCategory] = useState<TaskCategory | undefined>(undefined);
   const [deadline, setDeadline] = useState<Date | undefined>(undefined);
   const [initialInput, setInitialInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingTask, setIsGeneratingTask] = useState(false);
   const [detailsVisible, setDetailsVisible] = useState(false);
   const [generateSubtasks, setGenerateSubtasks] = useState(false);
+
+  // New state for emoji and auto-categorization
+  const [taskEmoji, setTaskEmoji] = useState<string>("");
+  const [autoCategorize, setAutoCategorize] = useState<boolean>(true); // Default to true
 
   // AI generation function - now calls the Edge Function
   const handleGenerateTaskDetails = async () => {
@@ -84,6 +90,17 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
       if (data && data.title && data.description) {
         setTitle(data.title);
         setDescription(data.description);
+        
+        // Set category if auto-categorization is enabled and category is available
+        if (autoCategorize && data.category) {
+          setCategory(data.category as TaskCategory);
+        }
+        
+        // Set emoji if available
+        if (data.emoji) {
+          setTaskEmoji(data.emoji);
+        }
+        
         toast({
           title: t('newTaskDialog.toast.detailsGeneratedTitle'),
           description: t('newTaskDialog.toast.detailsGeneratedDescription'),
@@ -112,12 +129,14 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
 
     try {
       const deadlineISO = deadline ? deadline.toISOString() : undefined;
-      const taskData: Omit<Task, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'subtasks' | 'aiSubtaskGenerationCount'> = {
+      const taskData: Omit<Task, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'subtasks' | 'aiSubtaskGenerationCount' | 'isNew'> & { category?: TaskCategory, emoji?: string } = {
         title,
         description,
         priority,
         status,
+        category,
         deadline: deadlineISO as string,
+        emoji: taskEmoji, // Include emoji in task data
       };
 
       const newTask = await addTask(taskData);
@@ -130,7 +149,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
             description: t('newTaskDialog.toast.subtasksGeneratedDescription'),
           });
         } catch (expandError) {
-          console.error("Fout bij genereren subtaken:", expandError);
+          console.error("Error generating subtasks:", expandError);
           toast({
             variant: "destructive",
             title: t('common.error'),
@@ -146,7 +165,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
 
       setOpen(false);
     } catch (error) {
-      console.error("Fout bij aanmaken taak:", error);
+      console.error("Error creating task:", error);
       toast({
         variant: "destructive",
         title: t('common.error'),
@@ -188,7 +207,15 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
             className="animated-border-textarea mb-6"
             onKeyDown={handleKeyDown}
           />
-          <div>
+          <div className="flex justify-between gap-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setOpen(false)} 
+              className="w-full h-12"
+            >
+              {t('common.cancel')}
+            </Button>
             <Button 
               type="button"
               onClick={handleGenerateTaskDetails}
@@ -207,6 +234,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
         <div className="mt-6 space-y-4 max-h-[60vh] overflow-y-auto lg:max-h-none lg:overflow-y-visible px-2 md:px-0 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">
           <div className="space-y-2">
             <Label htmlFor="title">{t('common.title')}</Label>
+            <div className="relative">
             <Input
               id="title"
               value={title}
@@ -214,7 +242,14 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
               placeholder={t('editTaskDialog.titlePlaceholder')}
               required
               onKeyDown={handleKeyDown}
-            />
+                className={taskEmoji ? "pl-10" : ""}
+              />
+              {taskEmoji && (
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none flex items-center">
+                  <span className="text-xl" style={{ marginTop: "-7px" }}>{taskEmoji}</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -228,21 +263,6 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
               onKeyDown={handleKeyDown}
             />
           </div>
-          
-          {/* Add subtask generation checkbox here */}
-          <div className="flex items-center space-x-2 pt-2">
-            <Checkbox 
-              id="generate-subtasks" 
-              checked={generateSubtasks} 
-              onCheckedChange={(checked: boolean | 'indeterminate') => setGenerateSubtasks(Boolean(checked))}
-            />
-            <Label
-              htmlFor="generate-subtasks"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              {t('newTaskDialog.generateSubtasksLabel')}
-            </Label>
-          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -251,7 +271,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
                 value={priority}
                 onValueChange={(value: string) => setPriority(value as TaskPriority)}
               >
-                <SelectTrigger id="priority">
+                <SelectTrigger id="priority" className="h-10">
                   <SelectValue placeholder={t('editTaskDialog.selectPriorityPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -268,7 +288,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
                 value={status}
                 onValueChange={(value: string) => setStatus(value as TaskStatus)}
               >
-                <SelectTrigger id="status">
+                <SelectTrigger id="status" className="h-10">
                   <SelectValue placeholder={t('editTaskDialog.selectStatusPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -281,13 +301,40 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
           </div>
 
           <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="category">{t('common.category')}</Label>
+              {autoCategorize && category && (
+                <span className="text-xs text-muted-foreground flex items-center">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  {t('newTaskDialog.aiSuggested')}
+                </span>
+              )}
+            </div>
+            <Select
+              value={category}
+              onValueChange={(value: string) => setCategory(value as TaskCategory)}
+            >
+              <SelectTrigger id="category" className="h-10">
+                <SelectValue placeholder={t('newTaskDialog.selectCategoryPlaceholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                {TASK_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="deadline">{t('common.deadline')}</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-start text-left font-normal",
+                    "w-full justify-start text-left font-normal h-10",
                     !deadline && "text-muted-foreground"
                   )}
                 >
@@ -312,8 +359,47 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
             </Popover>
           </div>
           
-          {/* Footer button here inside the form */}
-          <div className="flex justify-end pt-4">
+          {/* Checkboxes moved to the bottom */}
+          {/* Auto-categorize checkbox */}
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox 
+              id="auto-categorize" 
+              checked={autoCategorize} 
+              onCheckedChange={(checked: boolean | 'indeterminate') => setAutoCategorize(Boolean(checked))}
+            />
+            <Label
+              htmlFor="auto-categorize"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              {t('newTaskDialog.autoCategorizeLabel')}
+            </Label>
+          </div>
+          
+          {/* Generate subtasks checkbox */}
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox 
+              id="generate-subtasks" 
+              checked={generateSubtasks} 
+              onCheckedChange={(checked: boolean | 'indeterminate') => setGenerateSubtasks(Boolean(checked))}
+            />
+            <Label
+              htmlFor="generate-subtasks"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              {t('newTaskDialog.generateSubtasksLabel')}
+            </Label>
+          </div>
+          
+          {/* Footer buttons side by side */}
+          <div className="flex justify-between gap-4 pt-4">
+             <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setOpen(false)} 
+                className="w-full h-12"
+             >
+               {t('common.cancel')}
+             </Button>
              <Button 
                type="submit" 
                disabled={isLoading || isGeneratingTask || (detailsVisible && !title.trim())}
@@ -324,17 +410,6 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
           </div>
         </div>
       )}
-      
-      <div className="mt-4 space-y-3">
-        <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => setOpen(false)} 
-            className="w-full h-12"
-        >
-          {t('common.cancel')}
-        </Button>
-      </div>
     </form>
   );
 } 

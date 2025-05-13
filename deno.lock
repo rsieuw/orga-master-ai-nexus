@@ -11,6 +11,7 @@
     "npm:@capacitor/ios@^7.2.0": "7.2.0_@capacitor+core@7.2.0",
     "npm:@eslint/js@^9.9.0": "9.26.0",
     "npm:@hookform/resolvers@^3.9.0": "3.10.0_react-hook-form@7.56.2__react@18.3.1_react@18.3.1",
+    "npm:@lucide/lab@~0.1.2": "0.1.2",
     "npm:@radix-ui/react-accordion@^1.2.0": "1.2.8_@types+react@18.3.20_@types+react-dom@18.3.7__@types+react@18.3.20_react@18.3.1_react-dom@18.3.1__react@18.3.1",
     "npm:@radix-ui/react-alert-dialog@^1.1.1": "1.1.11_@types+react@18.3.20_@types+react-dom@18.3.7__@types+react@18.3.20_react@18.3.1_react-dom@18.3.1__react@18.3.1",
     "npm:@radix-ui/react-aspect-ratio@^1.1.0": "1.1.4_@types+react@18.3.20_@types+react-dom@18.3.7__@types+react@18.3.20_react@18.3.1_react-dom@18.3.1__react@18.3.1",
@@ -1225,6 +1226,9 @@
         "@jridgewell/resolve-uri",
         "@jridgewell/sourcemap-codec"
       ]
+    },
+    "@lucide/lab@0.1.2": {
+      "integrity": "sha512-VprF2BJa7ZuTGOhUd5cf8tHJXyL63wdxcGieAiVVoR9hO0YmPsnZO0AGqDiX2/br+/MC6n8BoJcmPilltOXIJA=="
     },
     "@modelcontextprotocol/sdk@1.11.0_express@5.1.0_zod@3.24.3": {
       "integrity": "sha512-k/1pb70eD638anoi0e8wUGAlbMJXyvdV4p62Ko+EZ7eBe1xMx8Uhak1R5DgfoofsK5IBBnRwsYGTaLZl+6/+RQ==",
@@ -11186,6 +11190,7 @@
         "npm:@capacitor/ios@^7.2.0",
         "npm:@eslint/js@^9.9.0",
         "npm:@hookform/resolvers@^3.9.0",
+        "npm:@lucide/lab@~0.1.2",
         "npm:@radix-ui/react-accordion@^1.2.0",
         "npm:@radix-ui/react-alert-dialog@^1.1.1",
         "npm:@radix-ui/react-aspect-ratio@^1.1.0",

@@ -1,13 +1,24 @@
 import { Task, SubTask } from "@/types/task.ts";
 import { Card } from "@/components/ui/card.tsx";
 import { Link } from "react-router-dom";
-import { GradientProgress } from "@/components/ui/GradientProgress.tsx";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip.tsx";
-import { CheckSquare, Hourglass } from "lucide-react";
+import { Icon } from "lucide-react";
+import { frogFace } from "@lucide/lab";
+import { 
+  CheckSquare, 
+  BriefcaseBusiness,
+  Home, 
+  Users,
+  GlassWater, 
+  Heart, 
+  Wallet, 
+  Sparkles
+} from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
 import { useTranslation } from 'react-i18next';
 import { Badge } from "@/components/ui/badge.tsx";
+import AnimatedBadge from "@/components/ui/AnimatedBadge.tsx";
 
 interface TaskCardProps {
   task: Task;
@@ -23,17 +34,51 @@ export default function TaskCard({ task }: TaskCardProps) {
     ? (completedSubtasks / totalSubtasks) * 100
     : 0;
 
-  const statusColor: Record<string, string> = {
-    todo: "bg-red-500",
-    in_progress: "bg-yellow-500",
-    done: "bg-green-500"
+  // Functie voor het achtergrondicoon met aanpassing voor elke prioriteitskleur
+  const getCategoryBackgroundIcon = (category?: string) => {
+    // Vaste opaciteit voor alle iconen
+    const getOpacityClass = () => {
+      return "opacity-40"; // Eén vaste opaciteit voor alle iconen (40%)
+    };
+
+    const iconProps = { 
+      className: `category-background-icon ${getOpacityClass()}`,
+      size: 72, 
+      strokeWidth: 0.6 
+    };
+    
+    switch(category) {
+      case "Werk/Studie":
+        return <BriefcaseBusiness {...iconProps} />;
+      case "Persoonlijk":
+        return <Icon iconNode={frogFace} {...iconProps} />;
+      case "Huishouden":
+        return <Home {...iconProps} />;
+      case "Familie":
+        return <Users {...iconProps} />;
+      case "Sociaal":
+        return <GlassWater {...iconProps} />;
+      case "Gezondheid":
+        return <Heart {...iconProps} />;
+      case "Financiën":
+        return <Wallet {...iconProps} />;
+      case "Projecten":
+        return <Sparkles {...iconProps} />;
+      default:
+        return null;
+    }
   };
 
   let deadlineText: string | null = null;
+  let deadlineDay: string | null = null;
+  let deadlineMonth: string | null = null;
+  
   if (task.deadline) {
     try {
       const locale = i18n.language === 'nl' ? nl : enUS;
       deadlineText = format(parseISO(task.deadline), "PPP", { locale });
+      deadlineDay = format(parseISO(task.deadline), "d", { locale });
+      deadlineMonth = format(parseISO(task.deadline), "MMM", { locale });
     } catch (e) {
       console.error("Invalid date format for deadline in TaskCard:", task.deadline);
       deadlineText = t('taskCard.invalidDate');
@@ -42,62 +87,122 @@ export default function TaskCard({ task }: TaskCardProps) {
 
   return (
     <Link to={`/task/${task.id}`}>
-      <Card className={`task-card ${priorityClass} h-full flex flex-col`}>
-        <div className="p-3 flex-grow">
-          <div className="flex justify-between items-start">
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium text-base line-clamp-1">{task.title}</h3>
-              {task.isNew === true && (
-                <Badge variant="default" className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white text-[10px] px-2 py-0 h-5 border-0">
-                  {t('taskCard.new', 'Nieuw')}
-                </Badge>
-              )}
-            </div>
-            <div className={`w-2 h-2 rounded-full ${statusColor[task.status]}`}></div>
+      <Card 
+        className={`task-card ${priorityClass} h-full flex flex-col relative overflow-hidden`}
+        data-category={task.category}
+      >
+        {task.category && (
+          <div className="absolute bottom-2 right-4 z-0 pointer-events-none">
+            {getCategoryBackgroundIcon(task.category)}
           </div>
-
-          {task.description && (
-            <p className="text-muted-foreground text-xs mt-1 line-clamp-1">
-              {task.description}
-            </p>
-          )}
-        </div>
-        {/* Conditionally render the entire bottom section */}
-        {(deadlineText || totalSubtasks > 0) && (
-          <div className="p-3 pt-1 mt-auto">
-            <div className="flex items-center text-xs min-h-[1rem]">
-              {/* Subtask info on the left */}
-              {totalSubtasks > 0 && (
+        )}
+        
+        <div className="p-3 flex flex-col h-full justify-between relative z-10">
+          <div>
+            <div className="flex justify-between items-start">
+              <h3 className="font-medium text-base line-clamp-1">
+                {task.emoji && <span className="mr-1.5 text-2xl task-emoji">{task.emoji}</span>}
+                {task.title}
+              </h3>
+              {/* Kalenderbadge */}
+              {deadlineDay && deadlineMonth && (
                 <TooltipProvider delayDuration={100}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="flex items-center cursor-default">
-                        <CheckSquare className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
-                          {completedSubtasks}/{totalSubtasks}
-                        </span>
-                        <GradientProgress value={progressValue} className="h-1 w-16 lg:w-32 ml-2" />
-                        <span className="text-xs text-muted-foreground/90 ml-2">
-                          ({Math.round(progressValue)}%)
-                        </span>
+                      <div className="flex items-center">
+                        <div className={`w-8 h-8 flex flex-col items-center justify-center rounded-full border border-white/10 overflow-hidden shadow-sm calendar-badge ${
+                          task.priority === 'high' ? 'bg-gradient-to-br from-red-600/90 to-rose-700/90' :
+                          task.priority === 'medium' ? 'bg-gradient-to-br from-amber-500/90 to-orange-600/90' :
+                          task.priority === 'low' ? 'bg-gradient-to-br from-blue-500/90 to-cyan-600/90' :
+                          'bg-gradient-to-br from-slate-500/90 to-slate-600/90'
+                        }`}>
+                          <div className="text-base font-bold text-white leading-none">
+                            {deadlineDay}
+                          </div>
+                          <div className="!text-[0.7rem] font-medium uppercase tracking-tight text-white/80 mt-[-8px] leading-none">
+                            {deadlineMonth.substring(0, 3)}
+                          </div>
+                        </div>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="bg-popover/90 backdrop-blur-lg">
-                      <p>{t('taskCard.tooltip.subtasksCompleted', { completed: completedSubtasks, total: totalSubtasks, context: totalSubtasks === 1 ? 'singular' : 'plural' })}</p>
+                    <TooltipContent 
+                      side="bottom" 
+                      align="end" 
+                      sideOffset={5} 
+                      alignOffset={5}
+                      avoidCollisions
+                      className="bg-popover/90 backdrop-blur-lg px-3 py-2 max-w-[200px] z-50 whitespace-normal break-words"
+                    >
+                      <p>{deadlineText}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
-              {/* Deadline info on the right (with ml-auto) */}
-              {deadlineText && (
-                <div className="ml-auto flex items-center text-muted-foreground">
-                  <Hourglass className="h-3.5 w-3.5 mr-1" />
-                  <span>{deadlineText}</span>
-                </div>
+            </div>
+            {task.description && (
+              <p className="text-muted-foreground text-sm mt-1 line-clamp-2">
+                {task.description}
+              </p>
+            )}
+            <div className="mt-2 flex flex-wrap gap-2">
+              {task.isNew && (
+                <AnimatedBadge 
+                  sparkleEffect
+                >
+                  {t('common.new')}
+                </AnimatedBadge>
+              )}
+              {task.category && (
+                <Badge variant="outline" className="text-[10px] px-2 py-0 h-5 category-badge">
+                  {task.category}
+                </Badge>
               )}
             </div>
           </div>
-        )}
+          {totalSubtasks > 0 && (
+            <div className="mt-4">
+              <div className="flex items-center text-xs min-h-[1rem]">
+                <TooltipProvider delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center cursor-default w-full">
+                        <CheckSquare className="h-3.5 w-3.5 mr-1 text-muted-foreground" strokeWidth={0.8} />
+                        <span className="text-xs text-muted-foreground">
+                          {completedSubtasks}/{totalSubtasks}
+                        </span>
+                        <div className="relative w-48 lg:w-64 h-3.5 bg-white/20 backdrop-blur-md rounded-full mx-2 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300
+                              ${task.priority === 'high' ? 'bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 shadow-[0_0_8px_2px_rgba(244,63,94,0.4)]' : ''}
+                              ${task.priority === 'medium' ? 'bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.4)]' : ''}
+                              ${task.priority === 'low' ? 'bg-gradient-to-r from-blue-500 via-cyan-400 to-teal-400 shadow-[0_0_8px_2px_rgba(34,211,238,0.4)]' : ''}
+                              ${task.priority !== 'high' && task.priority !== 'medium' && task.priority !== 'low' ? 'bg-gradient-to-r from-slate-400 to-slate-500 shadow-[0_0_8px_2px_rgba(100,116,139,0.3)]' : ''}
+                            `}
+                            style={{ width: `${progressValue}%` }}
+                          />
+                          {progressValue > 10 && (
+                            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] text-white font-bold select-none">
+                              {Math.round(progressValue)}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent 
+                      side="top" 
+                      align="center" 
+                      sideOffset={5} 
+                      avoidCollisions
+                      className="bg-popover/90 backdrop-blur-lg px-3 py-2 max-w-[250px] z-50 whitespace-normal break-words"
+                    >
+                      <p>{t('taskCard.tooltip.subtasksCompleted', { completed: completedSubtasks, total: totalSubtasks, context: totalSubtasks === 1 ? 'singular' : 'plural' })}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </div>
+          )}
+        </div>
       </Card>
     </Link>
   );

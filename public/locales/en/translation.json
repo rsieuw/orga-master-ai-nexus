@@ -7,7 +7,8 @@
     "priorityTitle": "Priority",
     "high": "High",
     "medium": "Medium",
-    "low": "Low"
+    "low": "Low",
+    "categoryTitle": "Category"
   },
   "messageItem": {
     "sources": "Sources",
@@ -29,7 +30,12 @@
     "theme": {
       "label": "Theme mode",
       "description": "Select light or dark theme.",
-      "toggleAriaLabel": "Toggle theme"
+      "toggleAriaLabel": "Toggle theme",
+      "options": {
+        "light": "Light",
+        "dark": "Dark",
+        "customDark": "Custom Dark"
+      }
     },
     "account": {
       "title": "Account",
@@ -494,6 +500,7 @@
   },
   "taskCard": {
     "invalidDate": "Invalid date",
+    "new": "New",
     "tooltip": {
       "subtasksCompleted_singular": "{{completed}} of {{total}} subtask completed",
       "subtasksCompleted_plural": "{{completed}} of {{total}} subtasks completed"
@@ -597,9 +604,10 @@
     "high": "High",
     "medium": "Medium",
     "low": "Low",
-    "todo": "To do",
+    "todo": "To Do",
     "in_progress": "In Progress",
     "done": "Done",
+    "new": "New",
     "back": "Back",
     "backSR": "Go back",
     "closeSR": "Close window",
@@ -608,7 +616,8 @@
     "generateSubtasksDialogDescription": "Would you like to ask the AI assistant to suggest relevant subtasks for \"{{taskTitle}}\" based on its description?",
     "generatingText": "Generating...",
     "information": "Information",
-    "notAuthenticated": "You must be logged in to perform this action."
+    "notAuthenticated": "You must be logged in to perform this action.",
+    "category": "Category"
   },
   "pageTitles": {
     "home": "Home",
@@ -938,7 +947,10 @@
       "missingTitleDescription": "Please enter a title for the task.",
       "subtasksGeneratedTitle": "Subtasks Generated",
       "subtasksGeneratedDescription": "The AI has successfully generated subtasks.",
-      "subtaskGenerationFailedDescription": "The AI could not generate subtasks. Please try again later."
+      "subtaskGenerationFailedDescription": "The AI could not generate subtasks. Please try again later.",
+      "autoCategorizeLabel": "Automatically categorize task",
+      "selectCategoryPlaceholder": "Select a category",
+      "aiSuggested": "AI-suggested"
     },
     "errors": {
       "unexpectedAIResponse": "Unexpected response from AI."
@@ -948,7 +960,10 @@
     "generateDetailsButton": "Generate Task Details",
     "generateSubtasksLabel": "Automatically generate subtasks (AI)",
     "createTaskButton": "Create Task",
-    "creatingButton": "Creating..."
+    "creatingButton": "Creating...",
+    "autoCategorizeLabel": "Automatically categorize task",
+    "selectCategoryPlaceholder": "Select a category",
+    "aiSuggested": "AI-suggested"
   },
   "errors": {
     "unauthorized": "Not authorized.",
