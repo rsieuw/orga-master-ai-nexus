@@ -43,7 +43,7 @@ export default function TaskCard({ task }: TaskCardProps) {
 
     const iconProps = { 
       className: `category-background-icon ${getOpacityClass()}`,
-      size: 72, 
+      size: 62, 
       strokeWidth: 0.6 
     };
     
@@ -170,7 +170,7 @@ export default function TaskCard({ task }: TaskCardProps) {
                         <span className="text-xs text-muted-foreground">
                           {completedSubtasks}/{totalSubtasks}
                         </span>
-                        <div className="relative w-[55%] md:w-[65%] h-3.5 bg-white/20 backdrop-blur-md rounded-full mx-2 overflow-hidden">
+                        <div className="relative w-full h-3.5 bg-white/20 backdrop-blur-md rounded-full mx-2 overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all duration-300
                               ${task.priority === 'high' ? 'bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 shadow-[0_0_8px_2px_rgba(244,63,94,0.4)]' : ''}
