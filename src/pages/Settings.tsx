@@ -60,8 +60,9 @@ const chatModelProviders: { value: ChatModelProvider; labelKey: string; descript
 
 export default function SettingsPage() {
   const { t, i18n } = useTranslation();
-  const { theme, setTheme } = useTheme();
+  const { toast } = useToast();
   const { user, updateUser } = useAuth();
+  const { theme, setTheme, availableThemes } = useTheme();
   const [aiLanguage, setAiLanguage] = useState<string>(user?.language_preference || "nl");
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [isSavingNotifications, setIsSavingNotifications] = useState(false);
@@ -72,7 +73,6 @@ export default function SettingsPage() {
   const [isSavingResearchModel, setIsSavingResearchModel] = useState(false);
   const [chatModelProvider, setChatModelProvider] = useState<ChatModelProvider>('gpt4o-mini');
   const [isSavingChatModel, setIsSavingChatModel] = useState(false);
-  const { toast } = useToast();
   const [layoutPreference, setLayoutPreference] = useState<LayoutPreference>('50-50');
 
   // State for account form
@@ -427,19 +427,27 @@ export default function SettingsPage() {
                     {t('settings.theme.description')}
                   </p>
                 </div>
-                <Select
-                  value={theme}
-                  onValueChange={handleThemeChange}
-                >
-                  <SelectTrigger id="theme-select" className="w-40">
-                    <SelectValue placeholder={t('settings.theme.label')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="light">{t('settings.theme.options.light')}</SelectItem>
-                    <SelectItem value="dark">{t('settings.theme.options.dark')}</SelectItem>
-                    <SelectItem value="custom-dark">{t('settings.theme.options.customDark')}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="relative z-10">
+                  <Select
+                    value={theme}
+                    onValueChange={handleThemeChange}
+                  >
+                    <SelectTrigger id="theme-select" className="w-40 relative z-10">
+                      <SelectValue placeholder={t('settings.theme.label')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableThemes.includes("light") && (
+                        <SelectItem value="light">{t('settings.theme.options.light')}</SelectItem>
+                      )}
+                      {availableThemes.includes("dark") && (
+                        <SelectItem value="dark">{t('settings.theme.options.dark')}</SelectItem>
+                      )}
+                      {availableThemes.includes("custom-dark") && (
+                        <SelectItem value="custom-dark">{t('settings.theme.options.customDark')}</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* Desktop Layout Preference Section */}
@@ -453,7 +461,7 @@ export default function SettingsPage() {
                   <div
                     onClick={() => handleLayoutPreferenceChange('50-50')}
                     className={cn(
-                      "cursor-pointer p-3 border-2 rounded-lg transition-all",
+                      "cursor-pointer p-3 border-2 rounded-lg transition-all relative z-10",
                       layoutPreference === '50-50' ? "border-primary bg-primary/10" : "border-border hover:border-muted-foreground/70"
                     )}
                   >
@@ -468,7 +476,7 @@ export default function SettingsPage() {
                   <div
                     onClick={() => handleLayoutPreferenceChange('33-67')}
                     className={cn(
-                      "cursor-pointer p-3 border-2 rounded-lg transition-all",
+                      "cursor-pointer p-3 border-2 rounded-lg transition-all relative z-10",
                       layoutPreference === '33-67' ? "border-primary bg-primary/10" : "border-border hover:border-muted-foreground/70"
                     )}
                   >
@@ -493,20 +501,26 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">{t('settings.account.nameLabel')}</Label>
-                <Input id="name" placeholder={t('settings.account.namePlaceholder')} className="bg-gray-700" value={name} onChange={(e) => setName(e.target.value)} />
+                <div className="relative z-10">
+                  <Input id="name" placeholder={t('settings.account.namePlaceholder')} className="bg-gray-700 relative z-10" value={name} onChange={(e) => setName(e.target.value)} />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">{t('settings.account.emailLabel')}</Label>
-                <Input id="email" type="email" placeholder={t('settings.account.emailPlaceholder')} className="bg-gray-700" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <div className="relative z-10">
+                  <Input id="email" type="email" placeholder={t('settings.account.emailPlaceholder')} className="bg-gray-700 relative z-10" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
               </div>
               <div className="flex justify-center pt-4"> 
-                <Button 
-                  variant="outline"
-                  className="w-full h-12"
-                  onClick={handleSaveAccount}
-                >
-                  {t('settings.account.saveButton')}
-                </Button>
+                <div className="relative z-10 w-full">
+                  <Button 
+                    variant="outline"
+                    className="w-full h-12 relative z-10"
+                    onClick={handleSaveAccount}
+                  >
+                    {t('settings.account.saveButton')}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -521,18 +535,20 @@ export default function SettingsPage() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="ui-language-select">{t('settings.uiLanguage.label')}</Label>
-                <Select
-                  value={i18n.language.split('-')[0]}
-                  onValueChange={handleUiLanguageChange}
-                >
-                  <SelectTrigger id="ui-language-select">
-                    <SelectValue placeholder={t('settings.uiLanguage.placeholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="nl">{t('settings.language.dutch')}</SelectItem>
-                    <SelectItem value="en">{t('settings.language.english')}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="relative z-10">
+                  <Select
+                    value={i18n.language.split('-')[0]}
+                    onValueChange={handleUiLanguageChange}
+                  >
+                    <SelectTrigger id="ui-language-select" className="relative z-10">
+                      <SelectValue placeholder={t('settings.uiLanguage.placeholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nl">{t('settings.language.dutch')}</SelectItem>
+                      <SelectItem value="en">{t('settings.language.english')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {t('settings.uiLanguage.description')}
                 </p>
@@ -540,18 +556,20 @@ export default function SettingsPage() {
               
               <div className="space-y-2">
                 <Label htmlFor="ai-language-select">{t('settings.aiLanguage.label')}</Label>
-                <Select
-                  value={aiLanguage}
-                  onValueChange={handleAiLanguageChange}
-                >
-                  <SelectTrigger id="ai-language-select">
-                    <SelectValue placeholder={t('settings.aiLanguage.placeholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="nl">{t('settings.language.dutch')}</SelectItem>
-                    <SelectItem value="en">{t('settings.language.english')}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="relative z-10">
+                  <Select
+                    value={aiLanguage}
+                    onValueChange={handleAiLanguageChange}
+                  >
+                    <SelectTrigger id="ai-language-select" className="relative z-10">
+                      <SelectValue placeholder={t('settings.aiLanguage.placeholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nl">{t('settings.language.dutch')}</SelectItem>
+                      <SelectItem value="en">{t('settings.language.english')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {t('settings.aiLanguage.description')}
                 </p>
@@ -576,13 +594,16 @@ export default function SettingsPage() {
                     {t('settings.notifications.emailNotificationsDescription')}
                   </p>
                 </div>
-                <Switch
-                  id="email-notifications"
-                  checked={emailNotifications}
-                  onCheckedChange={handleToggleNotifications}
-                  disabled={isSavingNotifications}
-                />
-                {isSavingNotifications && <Loader size="sm" className="ml-2" />}
+                <div className="relative z-10">
+                  <Switch
+                    id="email-notifications"
+                    checked={emailNotifications}
+                    onCheckedChange={handleToggleNotifications}
+                    disabled={isSavingNotifications}
+                    className="z-10 relative"
+                  />
+                  {isSavingNotifications && <Loader size="sm" className="ml-2" />}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -616,7 +637,7 @@ export default function SettingsPage() {
                           <div
                             key={provider.value}
                             className={cn(
-                              "p-4 rounded-lg border-2 transition-all cursor-pointer",
+                              "p-4 rounded-lg border-2 transition-all cursor-pointer relative z-10",
                               chatModelProvider === provider.value 
                                 ? "border-primary bg-primary/10" 
                                 : "border-border hover:border-border/80",
@@ -658,7 +679,7 @@ export default function SettingsPage() {
                             <div
                               key={option.value}
                               className={cn(
-                                "p-4 rounded-lg border-2 transition-all",
+                                "p-4 rounded-lg border-2 transition-all relative z-10",
                                 isSelected ? 'border-primary bg-primary/10' : 'border-border hover:border-border/80',
                                 disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                               )}
@@ -699,7 +720,7 @@ export default function SettingsPage() {
                           <div
                             key={provider.value}
                             className={cn(
-                              "p-4 rounded-lg border-2 transition-all cursor-pointer",
+                              "p-4 rounded-lg border-2 transition-all cursor-pointer relative z-10",
                               researchModelProvider === provider.value 
                                 ? "border-primary bg-primary/10" 
                                 : "border-border hover:border-border/80",
@@ -736,7 +757,7 @@ export default function SettingsPage() {
                           <div
                             key={option.value}
                             className={cn(
-                              "p-4 rounded-lg border-2 transition-all cursor-pointer",
+                              "p-4 rounded-lg border-2 transition-all cursor-pointer relative z-10",
                               researchModelPreference === option.value 
                                 ? "border-primary bg-primary/10" 
                                 : "border-border hover:border-border/80"
