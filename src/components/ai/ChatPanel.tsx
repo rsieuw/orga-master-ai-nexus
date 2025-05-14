@@ -439,8 +439,13 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         <div className="flex items-center gap-1 flex-shrink-0">
           <div className="flex items-center gap-1 mr-1">
             <div className="relative flex items-center">
+              <label htmlFor="chat-search-input" className="sr-only">
+                {t('chatPanel.searchPlaceholder', 'Zoek berichten of start onderzoek...')}
+              </label>
               <Input
-                type="search"
+                id="chat-search-input"
+                name="chat-search-input"
+                type="search" 
                 placeholder={isSearchingMessages ? t('chatPanel.searchMessagesPlaceholder') : t('chatPanel.searchPlaceholder')}
                 value={searchInputText}
                 onChange={handleSearchInputChange}

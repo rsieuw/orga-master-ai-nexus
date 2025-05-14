@@ -582,27 +582,20 @@
     "addSubtaskButton": "Subtaak toevoegen",
     "noSubtasks": "Nog geen subtaken.",
     "subtask": {
-      "editTitleAriaLabel": "Bewerk subtitel",
-      "editSubtaskSR": "Bewerk subtaak",
+      "editTitleAriaLabel": "Subtaak titel bewerken",
       "deleteSubtaskSR": "Verwijder subtaak",
+      "editSubtaskSR": "Bewerk subtaak",
       "deleteConfirmation": {
         "title": "Subtaak verwijderen?",
         "description": "Weet je zeker dat je de subtaak \"{{subtaskTitle}}\" wilt verwijderen?"
       }
     },
     "toast": {
-      "subtaskAdded": "Subtaak toegevoegd",
-      "subtaskAddedDescription": "Subtaak \"{{subtaskTitle}}\" is toegevoegd.",
-      "addFailed": "Toevoegen mislukt",
-      "subtaskAddFailedDescription": "De subtaak kon niet worden toegevoegd. Probeer het opnieuw.",
       "subtaskUpdated": "Subtaak bijgewerkt",
       "updateFailed": "Bijwerken mislukt",
-      "subtaskUpdateFailedDescription": "De subtaak kon niet worden bijgewerkt. Probeer het opnieuw.",
-      "subtaskStatusUpdateFailedDescription": "De status van de subtaak kon niet worden bijgewerkt. Probeer het opnieuw.",
-      "taskDeleted": "Taak verwijderd",
-      "taskDeletedDescription": "Taak \"{{taskTitle}}\" is verwijderd.",
+      "subtaskUpdateFailedDescription": "Kon de subtaak niet bijwerken.",
       "deleteFailed": "Verwijderen mislukt",
-      "taskDeleteFailedDescription": "De taak kon niet worden verwijderd. Probeer het opnieuw."
+      "taskDeleteFailedDescription": "Kon de subtaak niet verwijderen."
     },
     "editTaskDialog": {
       "title": "Taak bewerken",
@@ -636,7 +629,7 @@
       "confirmButton": "Ja, genereer subtaken"
     },
     "overdueSR": "(Verlopen)",
-    "collapseDescription": "Beschrijving inklappen",
+    "minimizeDescription": "Beschrijving minimaliseren/maximaliseren",
     "expandDescription": "Beschrijving uitklappen",
     "deleteTask": "Taak verwijderen",
     "deleteTaskSR": "Verwijder deze taak",
@@ -1012,7 +1005,7 @@
     "noteSavedTitle": "Notitie opgeslagen"
   },
   "chatInput": {
-    "placeholder": "Typ je bericht of / voor commando's...",
+    "messagePlaceholder": "Typ je bericht of / voor commando's...",
     "placeholderNote": "Typ je notitie...",
     "sendButton": "Versturen",
     "noteModeButton": "Opslaan als notitie",

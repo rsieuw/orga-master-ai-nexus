@@ -250,6 +250,7 @@ export default function SubtaskRow({
           ) : (
             <>
               <label
+                htmlFor={`subtask-${subtask.id}`}
                 className={cn(
                   "flex-grow text-sm cursor-pointer hover:text-primary transition-colors text-neutral-200",
                   subtask.completed && "text-gray-700 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-400 line-through"

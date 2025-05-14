@@ -44,15 +44,14 @@ import { useResizableLayout } from "@/hooks/useResizableLayout.ts";
 import TaskInfoDisplay from "@/components/task/TaskInfoDisplay.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { 
-  Icon, 
   BriefcaseBusiness,
   Home, 
   Users,
   GlassWater, 
   Heart, 
-  Wallet
+  Wallet,
+  User
 } from "lucide-react";
-import { frogFace } from "@lucide/lab";
 import { format, parseISO } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
 import EditTaskDialog from "@/components/tasks/EditTaskDialog.tsx";
@@ -288,7 +287,7 @@ export default function TaskDetail() {
       case "Werk/Studie":
         return <BriefcaseBusiness {...iconProps} />;
       case "Persoonlijk":
-        return <Icon iconNode={frogFace} {...iconProps} />;
+        return <User {...iconProps} />;
       case "Huishouden":
         return <Home {...iconProps} />;
       case "Familie":
@@ -698,11 +697,12 @@ export default function TaskDetail() {
                     <div className="flex items-center flex-wrap gap-3 justify-center mb-1">
                       {showAddSubtaskForm ? (
                         <form onSubmit={handleAddSubtask} className="flex items-center gap-3 flex-grow">
-                          <label htmlFor="new-subtask-title-desktop" className="sr-only">{t('taskDetail.addSubtask.titleDesktopSR')}</label>
+                          <label htmlFor="new-subtask-title-desktop" className="sr-only">{t('taskDetail.newSubtaskTitleLabel', 'Titel nieuwe subtaak')}</label>
                           <Input
                             id="new-subtask-title-desktop"
+                            name="new-subtask-title-desktop"
                             type="text"
-                            placeholder={t('taskDetail.addSubtask.placeholder')}
+                            placeholder={t('taskDetail.addSubtaskPlaceholder')}
                             value={newSubtaskTitle}
                             onChange={(e) => setNewSubtaskTitle(e.target.value)}
                             className="h-10 flex-grow"
@@ -811,26 +811,22 @@ export default function TaskDetail() {
           {/* Draggable divider - only visible on desktop */}
           <div
             className={cn(
-              "hidden lg:flex items-center justify-center w-px cursor-ew-resize bg-border hover:bg-primary/40 transition-all duration-300 relative z-30 mx-1 shrink-0 hover:shadow-[0_0_8px_rgba(var(--primary),.4)]",
-              "group"
+              "hidden lg:flex items-center justify-center cursor-ew-resize bg-transparent transition-all duration-300 relative z-30 mx-1 shrink-0",
+              "group w-2"
             )}
             onMouseDown={startResize}
           >
             <div 
               className={cn(
-                "absolute w-4 h-8 rounded-full bg-primary/25 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300",
-                isResizing ? "opacity-100 bg-primary/40 scale-110" : "",
-                "lg:group-hover:opacity-100"
+                "absolute h-8 w-1 rounded-full bg-transparent flex items-center justify-center transition-all duration-300",
+                isResizing ? "scale-y-125" : "hover:bg-primary/5",
+                "border-0"
               )}
             >
-              <div className="flex items-center justify-center flex-row gap-0.5">
-                <svg width="5" height="7" viewBox="0 0 6 8" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/80">
-                  <path d="M5 7L2 4L5 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <div className="w-px h-4 bg-white/60"></div>
-                <svg width="5" height="7" viewBox="0 0 6 8" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/80">
-                  <path d="M1 1L4 4L1 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+              <div className="flex flex-col items-center justify-center gap-2">
+                <div className="w-1 h-1 rounded-full bg-primary/20 transition-all duration-300 group-hover:bg-primary/30"></div>
+                <div className="w-1 h-1 rounded-full bg-primary/20 transition-all duration-300 group-hover:bg-primary/30"></div>
+                <div className="w-1 h-1 rounded-full bg-primary/20 transition-all duration-300 group-hover:bg-primary/30"></div>
               </div>
             </div>
           </div>

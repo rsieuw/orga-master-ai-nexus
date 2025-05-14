@@ -38,10 +38,15 @@ export function ChatInput({
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
-      <div className="relative flex items-end gap-2">
+      <div className="relative flex flex-grow items-end gap-2">
+        <label htmlFor="chat-message-input" className="sr-only">
+          {t('chatInput.messagePlaceholder', 'Type je bericht...')}
+        </label>
         <Textarea
+          id="chat-message-input"
+          name="chat-message-input"
           className="chat-input flex-grow resize-none p-1"
-          placeholder={isNoteMode ? t('chatPanel.notePlaceholder') : t('chatPanel.messagePlaceholder')}
+          placeholder={isNoteMode ? t('chatPanel.notePlaceholder') : t('chatInput.messagePlaceholder')}
           value={input}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
