@@ -58,6 +58,7 @@ export default function RegisterForm() {
               value={name}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
               required
+              autoComplete="name"
             />
           </div>
           <div className="space-y-2">
@@ -69,6 +70,7 @@ export default function RegisterForm() {
               value={email}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               required
+              autoComplete="email"
             />
           </div>
           <div className="space-y-2 relative">

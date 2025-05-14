@@ -527,8 +527,17 @@
       "tomorrow": "Morgen",
       "dayAfterTomorrow": "Overmorgen",
       "nextWeek": "Volgende week",
-      "later": "Binnenkort"
+      "later": "Binnenkort",
+      "workStudy": "Werk/Studie",
+      "personal": "Persoonlijk",
+      "household": "Huishouden",
+      "family": "Familie",
+      "social": "Sociaal",
+      "health": "Gezondheid",
+      "finances": "Financiën",
+      "projects": "Projecten"
     },
+    "addNewTaskPlaceholder": "Nieuwe taak toevoegen",
     "tooltips": {
       "addNewTask": "Nieuwe taak toevoegen"
     },
@@ -599,7 +608,20 @@
     },
     "editTaskDialog": {
       "title": "Taak bewerken",
-      "description": "Pas de details van je taak aan."
+      "description": "Pas de details van je taak aan.",
+      "selectStatusPlaceholder": "Selecteer een status",
+      "titlePlaceholder": "Voer hier een taaktitel in",
+      "descriptionPlaceholder": "Voeg optioneel een beschrijving toe...",
+      "selectPriorityPlaceholder": "Selecteer een prioriteit",
+      "selectCategoryPlaceholder": "Selecteer een categorie",
+      "chooseDate": "Kies een datum",
+      "clearDeadlineSR": "Deadline wissen",
+      "toast": {
+        "taskUpdatedTitle": "Taak bijgewerkt",
+        "taskUpdatedDescription": "De wijzigingen zijn opgeslagen.",
+        "updateErrorTitle": "Bijwerkfout",
+        "updateErrorDescription": "De taak kon niet worden bijgewerkt."
+      }
     },
     "aiChat": {
       "title": "AI Assistent",
@@ -699,7 +721,10 @@
     "title": "Titel",
     "description": "Beschrijving",
     "in_progress": "In uitvoering",
-    "todo": "Te doen"
+    "todo": "Te doen",
+    "high": "Hoog",
+    "medium": "Gemiddeld",
+    "low": "Laag"
   },
   "pageTitles": {
     "home": "Home",
@@ -1099,7 +1124,25 @@
       "aiSubtasksGeneratedSuccessfully": "AI-subtaken succesvol gegenereerd.",
       "errorUpdatingTaskGenerationCount": "Kon AI-generatietelling voor de taak niet bijwerken.",
       "addSubtasksFailed": "Kon nieuwe AI-subtaken niet opslaan in de database.",
-      "aiNoNewSubtasksGenerated": "AI heeft geen nieuwe unieke subtaken gegenereerd."
+      "aiNoNewSubtasksGenerated": "AI heeft geen nieuwe unieke subtaken gegenereerd.",
+      "taskDeleted": "Taak verwijderd",
+      "taskCreated": "Taak aangemaakt",
+      "taskUpdated": "Taak bijgewerkt",
+      "createTaskFailed": "Kon geen taak aanmaken",
+      "updateTaskFailed": "Kon de taak niet bijwerken",
+      "taskNotFound": "Taak niet gevonden",
+      "taskNotFoundToUpdateSubtask": "Taak niet gevonden om subtaak bij te werken",
+      "deleteTaskFailed": "Kon de taak niet verwijderen",
+      "markingTaskFailed": "Kon de taak status niet wijzigen",
+      "fetchTasksFailed": "Kon taken niet ophalen",
+      "autoCompleted": {
+        "title": "Taak automatisch voltooid",
+        "description": "Alle subtaken zijn voltooid, dus de taak is automatisch afgerond"
+      },
+      "priorityRestored": {
+        "title": "Taak opnieuw actief",
+        "description": "De taak is opnieuw actief gemaakt omdat niet alle subtaken voltooid zijn"
+      }
     },
     "errors": {
       "taskNotFoundToAddSubtask": "Taak niet gevonden om subtaak toe te voegen",

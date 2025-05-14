@@ -7,11 +7,13 @@ import { Label } from "@/components/ui/label.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { useToast } from "@/hooks/use-toast.ts"; // Import useToast for feedback
 import { supabase } from '@/integrations/supabase/client.ts'; // Import Supabase client - ADDED .ts extension
+import { useTranslation } from "react-i18next";
 
 const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
   // const navigate = useNavigate(); // Use navigate for redirection - Commented out
 
   const handlePasswordResetRequest = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -34,19 +36,19 @@ const ForgotPasswordPage: React.FC = () => {
       }
 
       toast({
-        title: "Instructies Verzonden",
-        description: "Als een account met dit e-mailadres bestaat, zijn er instructies voor wachtwoordherstel verzonden.", // Adjusted message to be more accurate
+        title: t('auth.resetPassword.success.title'),
+        description: t('auth.resetPassword.success.description'),
       });
       // Optionally navigate back to login or show a success message
       // navigate('/login'); 
     } catch (error) {
-       let errorMessage = "Er is iets misgegaan bij het versturen van de instructies.";
+       let errorMessage = t('auth.resetPassword.error.defaultMessage');
        if (error instanceof Error) {
             errorMessage = error.message; // Use error message if it's an Error instance
        }
        toast({
         variant: "destructive",
-        title: "Fout bij Wachtwoordherstel", // More specific title
+        title: t('auth.resetPassword.error.title'),
         description: errorMessage, // Use the potentially typed error message
       });
        console.error("Password Reset error:", error);
@@ -86,29 +88,30 @@ const ForgotPasswordPage: React.FC = () => {
          </h1>
          {/* Subtitle specific to this page */}
          <p className="mt-2 text-muted-foreground">
-           Wachtwoord vergeten? Geen probleem.
+           {t('auth.resetPassword.subtitle')}
          </p>
        </div>
 
       {/* Use Card component like LoginForm */}
       <Card className="w-full max-w-md mx-auto">
          <CardHeader>
-           <CardTitle className="text-2xl text-center">Wachtwoord Herstellen</CardTitle>
+           <CardTitle className="text-2xl text-center">{t('auth.resetPassword.title')}</CardTitle>
          </CardHeader>
          <CardContent>
            <p className="mb-6 text-center text-sm text-muted-foreground">
-             Voer uw e-mailadres in. We sturen u instructies om uw wachtwoord opnieuw in te stellen.
+             {t('auth.resetPassword.instructions')}
            </p>
            <form onSubmit={handlePasswordResetRequest} className="space-y-6">
              <div className="space-y-2">
-               <Label htmlFor="email">E-mailadres</Label>
+               <Label htmlFor="email">{t('auth.resetPassword.emailLabel')}</Label>
                <Input
                  id="email"
                  type="email"
-                 placeholder="uw.email@voorbeeld.com"
+                 placeholder={t('auth.resetPassword.emailPlaceholder')}
                  value={email}
                  onChange={(e) => setEmail(e.target.value)}
                  required
+                 autoComplete="email"
                  disabled={isLoading} // Disable input while loading
                />
              </div>
@@ -119,7 +122,7 @@ const ForgotPasswordPage: React.FC = () => {
                size="lg"
                disabled={isLoading}
              >
-               {isLoading ? "Versturen..." : "Verstuur Instructies"}
+               {isLoading ? t('auth.resetPassword.sending') : t('auth.resetPassword.submit')}
              </Button>
            </form>
          </CardContent>
@@ -128,9 +131,9 @@ const ForgotPasswordPage: React.FC = () => {
       {/* Match the link positioning of LoginPage */}
       <div className="mt-6 text-center">
         <p className="text-muted-foreground text-sm">
-          Terug naar{' '}
+          {t('auth.resetPassword.backToLogin.prefix')}{' '}
           <Link to="/login" className="text-primary hover:underline">
-            Inloggen
+            {t('auth.resetPassword.backToLogin.link')}
           </Link>
         </p>
       </div>

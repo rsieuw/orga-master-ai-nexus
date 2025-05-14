@@ -12,7 +12,7 @@ import {
 import { Check, Filter } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from 'react-i18next';
-import { TASK_CATEGORIES, TaskCategory } from "@/constants/categories.ts";
+import { TASK_CATEGORIES, TASK_CATEGORY_KEYS, TaskCategory } from "@/constants/categories.ts";
 
 // Match TaskStatus with your existing types if possible, or define as needed
 export type TaskFilterStatus = "all" | "completed" | "incomplete";
@@ -140,14 +140,14 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
           {category === "all" && <Check className="h-4 w-4 ml-auto" />}
         </DropdownMenuCheckboxItem>
         
-        {TASK_CATEGORIES.map((cat) => (
+        {TASK_CATEGORIES.map((cat, index) => (
           <DropdownMenuCheckboxItem
             key={cat}
             className="cursor-pointer"
             checked={category === cat}
             onCheckedChange={() => handleCategoryChange(cat as TaskFilterCategory)}
           >
-            {cat}
+            {t(TASK_CATEGORY_KEYS[index])}
             {category === cat && <Check className="h-4 w-4 ml-auto" />}
           </DropdownMenuCheckboxItem>
         ))}

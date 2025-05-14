@@ -496,8 +496,17 @@
       "tomorrow": "Tomorrow",
       "dayAfterTomorrow": "Day After Tomorrow",
       "nextWeek": "Next Week",
-      "later": "Later"
+      "later": "Later",
+      "workStudy": "Work/Study",
+      "personal": "Personal",
+      "household": "Household",
+      "family": "Family", 
+      "social": "Social",
+      "health": "Health",
+      "finances": "Finances",
+      "projects": "Projects"
     },
+    "addNewTaskPlaceholder": "Add new task",
     "emptyState": {
       "noTasksAfterFilter": "No tasks found matching the filters.",
       "noTasksAtAll": "You don't have any tasks yet.",
@@ -585,7 +594,25 @@
       "confirmButton": "Yes, generate subtasks"
     },
     "collapseDescription": "Collapse task details",
-    "expandDescription": "Expand task details"
+    "expandDescription": "Expand task details",
+    "backButton": "Back to dashboard",
+    "editButton": "Edit task",
+    "deleteButton": "Delete task",
+    "deleteConfirmation": {
+      "title": "Are you sure?",
+      "description": "This action cannot be undone. This will permanently delete the task.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    },
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "label": "Priority"
+    },
+    "minimizeDescription": "Minimize/maximize description",
+    "newSubtaskTitleLabel": "New subtask title",
+    "addSubtaskPlaceholder": "Add a new subtask..."
   },
   "common": {
     "add": "Add",
@@ -628,10 +655,19 @@
     "closeSR": "Close window",
     "cancelAriaLabel": "Cancel",
     "generateSubtasksDialogTitle": "Generate Subtasks",
-    "generateSubtasksDialogDescription": "Would you like to generate subtasks for '{{taskTitle}}'?",
+    "generateSubtasksDialogDescription": "Do you want to generate subtasks for '{{taskTitle}}'?",
     "generatingText": "Generating...",
     "deleting": "Deleting...",
-    "information": "Information"
+    "information": "Information",
+    "notAuthenticated": "You must be logged in to perform this action.",
+    "category": "Category",
+    "title": "Title",
+    "description": "Description",
+    "in_progress": "In progress",
+    "todo": "To do",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
   },
   "pageTitles": {
     "home": "Home",
@@ -922,15 +958,29 @@
     "newNoteButton": "New Note",
     "stopNoteButton": "Stop Note Mode",
     "deepResearchTooltip": "Perform Deep Research",
-    "settingsTooltip": "Chat Settings"
+    "settingsTooltip": "Chat Settings",
+    "loadingHistory": "Loading history...",
+    "sendMessageTooltip": "Send message",
+    "saveNoteTooltip": "Save note",
+    "selectModelAriaLabel": "Select AI research model",
+    "notePlaceholder": "Type your note here...",
+    "searchMessagesPlaceholder": "Search messages...",
+    "searchPlaceholder": "Type to research...",
+    "noSearchResults": "No messages found with this search term.",
+    "searchingMessages": "Searching messages",
+    "searchingResearch": "Researching",
+    "defaultTaskTitle": "this task",
+    "defaultUsername": "user",
+    "initialAssistantMessage": "Hello {{username}}! I'm ready to help you with your task: {{taskTitle}}. What can I do for you?",
+    "researchForSubtaskLabel": "Research for subtask: {{subtaskTitle}}",
+    "researchForPromptLabel": "Research for prompt: {{prompt}}"
   },
   "chatInput": {
-    "placeholder": "Type your message or / for commands...",
+    "messagePlaceholder": "Type your message...",
     "placeholderNote": "Type your note...",
     "sendButton": "Send",
-    "noteModeButton": "Save as Note",
-    "chatModeButton": "Back to Chat",
-    "stopNoteModeButton": "Stop Note Mode"
+    "noteModeButton": "Save as note",
+    "chatModeButton": "Back to chat"
   },
   "editTaskDialog": {
     "titlePlaceholder": "Enter task title here",
@@ -944,7 +994,8 @@
       "taskUpdatedDescription": "The changes have been saved.",
       "updateErrorTitle": "Update Error",
       "updateErrorDescription": "The task could not be updated."
-    }
+    },
+    "selectStatusPlaceholder": "Select a status"
   },
   "newTaskDialog": {
     "toast": {
@@ -1081,14 +1132,30 @@
       "generationFailedDescription": "Could not generate AI subtasks.",
       "taskNotFound": "Task with ID {{taskId}} not found.",
       "fetchError": "Error fetching tasks.",
-      "notAuthenticated": "You must be logged in to perform this action.",
+      "notAuthenticated": "You need to be signed in to use this feature",
       "updateTaskFailed": "Could not update the task",
       "aiSubtaskGenerationLimitReached": "AI subtask generation limit reached for this task ({{count}}/{{limit}}).",
       "aiSubtaskGenerationFailed": "Failed to generate AI subtasks.",
       "aiSubtasksGeneratedSuccessfully": "AI subtasks generated successfully.",
       "errorUpdatingTaskGenerationCount": "Failed to update AI generation count for the task.",
       "addSubtasksFailed": "Failed to save new AI subtasks to the database.",
-      "aiNoNewSubtasksGenerated": "AI did not generate any new unique subtasks."
+      "aiNoNewSubtasksGenerated": "AI did not generate any new unique subtasks.",
+      "alreadyGenerating": {
+        "title": "Already generating subtasks",
+        "description": "Please wait for current generation to complete"
+      },
+      "aiLimitReached": {
+        "title": "AI Generation Limit Reached",
+        "description": "You've reached the limit of {{maxGenerations}} AI expansions for {{userType}} users"
+      },
+      "autoCompleted": {
+        "title": "Task Automatically Completed",
+        "description": "All subtasks are done, so the task has been automatically marked as completed"
+      },
+      "priorityRestored": {
+        "title": "Task Reactivated",
+        "description": "The task has been reactivated because not all subtasks are completed"
+      }
     },
     "errors": {
       "taskNotFoundToAddSubtask": "Task not found to add subtask",
@@ -1130,6 +1197,47 @@
       "accountDeactivated": {
         "title": "Account Deactivated",
         "description": "This account is currently not active. Please contact support for more information."
+      }
+    },
+    "login": {
+      "title": "Log in",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "passwordLabel": "Password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "submit": "Log in",
+      "loading": "Logging in...",
+      "success": {
+        "title": "Login successful",
+        "description": "Welcome back to OrgaMaster AI!"
+      },
+      "error": {
+        "title": "Login failed",
+        "description": "Check your email and password."
+      }
+    },
+    "resetPassword": {
+      "title": "Reset Password",
+      "subtitle": "Forgot your password? No problem.",
+      "instructions": "Enter your email address. We'll send you instructions to reset your password.",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "your.email@example.com",
+      "submit": "Send Instructions",
+      "sending": "Sending...",
+      "backToLogin": {
+        "prefix": "Back to",
+        "link": "Log in"
+      },
+      "success": {
+        "title": "Instructions Sent",
+        "description": "If an account with this email exists, we've sent password reset instructions."
+      },
+      "error": {
+        "title": "Password Reset Error",
+        "defaultMessage": "Something went wrong sending the instructions."
       }
     }
   },
@@ -1264,5 +1372,15 @@
     "limitReachedTooltip": "You have used {count}/{limit} generations for this task.",
     "confirmButton": "Yes, generate subtasks",
     "fabText": "Generate"
+  },
+  "categories": {
+    "workStudy": "Work/Study",
+    "personal": "Personal",
+    "household": "Household",
+    "family": "Family",
+    "social": "Social",
+    "health": "Health",
+    "finances": "Finances",
+    "projects": "Projects"
   }
 }

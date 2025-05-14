@@ -55,6 +55,7 @@ import {
 import { format, parseISO } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
 import EditTaskDialog from "@/components/tasks/EditTaskDialog.tsx";
+import { TASK_CATEGORIES, TASK_CATEGORY_KEYS } from "@/constants/categories.ts";
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
@@ -259,18 +260,24 @@ export default function TaskDetail() {
     }
   }, [id, task, markTaskAsViewed]);
 
+  // Functie om de juiste vertaalsleutel voor een categorie te vinden
+  const getCategoryTranslationKey = (category: string) => {
+    const index = TASK_CATEGORIES.findIndex(cat => cat === category);
+    return index !== -1 ? TASK_CATEGORY_KEYS[index] : category;
+  };
+
   // Functie voor het achtergrondicoon met aanpassing voor elke prioriteitskleur
   const getCategoryBackgroundIcon = (category?: string) => {
     // Vaste opaciteit voor alle iconen (natuurlijke opacity via CSS styling)
     const getIconClass = (priority?: string) => {
       if (priority === 'high') {
-        return "text-[rgb(175,36,42)] opacity-20"; // Kleur voor hoge prioriteit
+        return "text-[rgb(175,36,42)] opacity-40"; // Kleur voor hoge prioriteit
       } else if (priority === 'medium') {
-        return "text-[rgb(227,131,6)] opacity-20"; // Kleur voor medium prioriteit
+        return "text-[rgb(227,131,6)] opacity-40"; // Kleur voor medium prioriteit
       } else if (priority === 'low') {
-        return "text-[#c1ccf5] opacity-20"; // Kleur voor lage prioriteit
+        return "text-[#c1ccf5] opacity-40"; // Kleur voor lage prioriteit
       } else {
-        return "text-gray-300 opacity-20"; // Standaard kleur
+        return "text-gray-300 opacity-40"; // Standaard kleur
       }
     };
 
@@ -283,6 +290,8 @@ export default function TaskDetail() {
     // Gebruik Sparkles component uit bestaande import
     const SparklesIcon = Sparkles;
     
+    // Gebruik de Nederlandse categorienamen voor de icons
+    // Dit is nodig omdat de database nog steeds de Nederlandse namen gebruikt
     switch(category) {
       case "Werk/Studie":
         return <BriefcaseBusiness {...iconProps} />;
@@ -403,7 +412,7 @@ export default function TaskDetail() {
                     isDescriptionMinimized ? "text-sm" : "text-xl",
                     "lg:text-xl"
                   )}>
-                    {task?.emoji && <span className="mr-1.5 text-2xl task-emoji">{task.emoji}</span>}
+                    {task?.emoji && <span className="mr-1.5 text-xl task-emoji">{task.emoji}</span>}
                     {task?.title}
                   </CardTitle>
                   
@@ -461,7 +470,7 @@ export default function TaskDetail() {
                     <div className="mt-4 flex flex-wrap items-center gap-2 relative z-10">
                       {task.category && (
                         <Badge variant="outline" className="text-xs h-6 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-sm text-white border-white/10 shadow-md">
-                          {task.category}
+                          {t(getCategoryTranslationKey(task.category))}
                         </Badge>
                       )}
                       <Button
@@ -563,7 +572,8 @@ export default function TaskDetail() {
                   "rounded-none border-none lg:rounded-lg lg:border lg:border-solid lg:border-white/5 flex-grow min-h-0 h-full", 
                   "backdrop-blur-md bg-card/80",
                   "transition-all duration-800 ease-in-out",
-                  priorityStyles.shadowClass
+                  priorityStyles.shadowClass,
+                  "lg:hover:border-white/5"
                 )}
               >
                 <CardHeader className="px-4 py-2 lg:px-4 lg:py-2 relative">
@@ -582,7 +592,8 @@ export default function TaskDetail() {
                   {/* Scrollbare container met flex-grow voor de subtaken */}
                   <div className={cn(
                     // Base padding
-                    "pl-4 pr-2 lg:pl-4 lg:pr-2 pt-1 pb-2",
+                    "pl-4 pt-1 pb-2", // Linker en verticale padding blijven constant
+                    task.subtasks.length > 9 ? "pr-2 lg:pr-2" : "pr-4 lg:pr-4", // Conditionele rechter padding
                     // Scrollbare container die automatisch groeit maar krimpt bij overflow
                     "flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-primary scrollbar-track-neutral-200 dark:scrollbar-track-neutral-800 scrollbar-thumb-rounded max-h-[calc(100%-80px)]",
                     // Conditonele styling
@@ -745,7 +756,7 @@ export default function TaskDetail() {
                                 <DialogTrigger asChild>
                                   <Button
                                     disabled={isGeneratingSubtasksForTask(task.id) || isAddingSubtask || isLimitReached}
-                                    className="h-10 p-[1px] rounded-md bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 relative transition-colors duration-200 mb-1"
+                                    className="h-10 p-[1px] rounded-md bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 relative transition-colors duration-200"
                                   >
                                     <div className="bg-card h-full w-full rounded-[5px] flex items-center justify-center px-4">
                                       <span className="flex items-center bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
@@ -839,7 +850,8 @@ export default function TaskDetail() {
               activeMobileView === 'chat' && 'h-full p-0',
               "lg:border lg:border-solid lg:border-white/10",
               priorityStyles.backgroundClass,
-              priorityStyles.shadowClass
+              priorityStyles.shadowClass,
+              "lg:hover:border-white/10"
             )}
             style={globalThis.innerWidth >= 1024 ? { width: `${columnSizes.right}%` } : { /* Do not explicitly set height here, let flexbox do the work */ }}
           >

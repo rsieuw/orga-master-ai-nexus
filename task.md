@@ -208,3 +208,58 @@
 - **"Magic Numbers/Strings":** Controleer op het gebruik van "magic numbers" (bijv. `globalThis.innerWidth < 1024` voor de lg breakpoint) of hardgecodeerde strings die beter als constanten gedefinieerd kunnen worden, mogelijk in een apart configuratiebestand of aan het begin van de module. Dit verhoogt de onderhoudbaarheid en maakt aanpassingen eenvoudiger. Voor breakpoints is het gebruik van Tailwind's themaconfiguratie via JavaScript vaak een best practice.
 - **Testbaarheid:** Gezien de complexiteit van de component, is het cruciaal om goede unit- en integratietesten te hebben. Het verder opsplitsen van de component in kleinere, meer gefocuste componenten kan ook de testbaarheid verbeteren, omdat elke kleinere component geïsoleerd getest kan worden.
 - **Toegankelijkheid (a11y):** Hoewel veel `shadcn/ui` componenten toegankelijkheid in gedachten hebben, is het goed om een handmatige controle of geautomatiseerde tests uit te voeren om te verzekeren dat alle interactieve elementen (zoals dropdowns, dialogen, custom checkboxes) volledig toetsenbord-navigeerbaar zijn en correct worden aangekondigd door schermlezers. Let specifiek op `aria-labels`, `sr-only` teksten en focus management.
+
+## Essentiële Verbeterpunten
+
+Na een grondige analyse van de codebase zijn de volgende verbeteringen essentieel voor de verdere ontwikkeling van het project:
+
+1. **Codebase Optimalisatie:**
+   - TaskDetail.tsx is 51KB met 1010 regels - dit bestand moet dringend worden opgesplitst in kleinere, beter beheersbare componenten.
+   - Een soortgelijk patroon is te zien bij ChatPanel.tsx (25KB), AdminUsersPage.tsx (25KB) en Dashboard.tsx (19KB).
+
+2. **Test Dekking:**
+   - De testdekking is duidelijk onvolledig. Er is een taak als "deels voltooid" gemarkeerd voor tests, maar het aantal testbestanden is beperkt.
+   - Een volledige suite van unit en integratietests zou stabiliteit en betrouwbaarheid garanderen.
+
+3. **Beveiligingsverbeteringen:**
+   - De Supabase credentials zijn hardgecodeerd in de client.ts - dit moet worden verplaatst naar omgevingsvariabelen.
+   - Frontend validatie alleen is niet voldoende - er moet serversijdige validatie worden toegevoegd.
+   - Een grondige beveiligingsaudit is nodig, vooral voor RLS (Row Level Security) in Supabase.
+
+4. **Betalingsintegratie afmaken:**
+   - De Stripe integratie is deels geïmplementeerd maar niet volledig afgerond.
+   - De webhook handler en volledige betalingsstroom moeten worden afgerond.
+
+5. **Performantie Analyse:**
+   - Er zijn geen performantie-analyse of optimalisaties gedocumenteerd.
+   - Bundle size analyse en code-splitting implementeren voor snellere laadtijden.
+
+6. **Mobiele Optimalisatie:**
+   - Hoewel er mobiele ondersteuning is, is waarschijnlijk meer aandacht nodig voor een volledig responsieve ervaring.
+
+7. **Documentatie:**
+   - JSDoc ontbreekt bij de meeste componenten.
+   - Geen gedetailleerde architectuurdocumentatie of handleidingen voor nieuwe ontwikkelaars.
+
+8. **Internationalisatie:**
+   - i18n is geïmplementeerd, maar mogelijk niet volledig ingezet over de gehele applicatie.
+
+9. **State Management:**
+   - De grote contextbestanden suggereren mogelijk een betere oplossing voor state management zoals Redux of Zustand.
+
+10. **API Beheer:**
+    - Er zijn geen limieten of gebruikersmonitoring voor API-verbruik geïmplementeerd.
+    - Dit is belangrijk voor het beheersen van kosten van externe AI-diensten.
+
+11. **Error Handling:**
+    - Consistente error handling en gebruikersfeedback bij fouten kunnen worden verbeterd.
+
+12. **DevOps Verbetering:**
+    - Geen CI/CD pipeline of geautomatiseerde tests zichtbaar.
+    - Logging en monitoring moeten worden geïmplementeerd.
+
+13. **Code Duplicatie:**
+    - Mogelijke duplicatie in componenten kan worden gerefactord naar herbruikbare elementen.
+
+14. **Deno Lint Fouten:**
+    - De hardnekkige Deno lint fouten moeten structureel worden opgelost.

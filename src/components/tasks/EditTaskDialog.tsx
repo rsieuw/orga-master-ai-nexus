@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast.ts";
 import { format, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Task, TaskPriority, TaskStatus } from "@/types/task.ts";
-import { TASK_CATEGORIES, TaskCategory } from "@/constants/categories.ts";
+import { TASK_CATEGORIES, TASK_CATEGORY_KEYS, TaskCategory } from "@/constants/categories.ts";
 import { cn } from "@/lib/utils.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx";
 import { Calendar } from "@/components/ui/calendar.tsx";
@@ -105,9 +105,9 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
               <SelectValue placeholder={t('editTaskDialog.selectCategoryPlaceholder', 'Selecteer een categorie')} />
             </SelectTrigger>
             <SelectContent>
-              {TASK_CATEGORIES.map((cat) => (
+              {TASK_CATEGORIES.map((cat, index) => (
                 <SelectItem key={cat} value={cat}>
-                  {cat}
+                  {t(TASK_CATEGORY_KEYS[index])}
                 </SelectItem>
               ))}
             </SelectContent>

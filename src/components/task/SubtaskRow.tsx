@@ -180,17 +180,12 @@ export default function SubtaskRow({
   };
 
   return (
-    <motion.div
+    <div
       ref={combinedRefCallback}
       key={subtask.id}
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
       {...eventHandlers}
       className={cn(
-        "group/row flex items-center justify-between space-x-3 rounded-md py-1 pl-2 lg:pl-0 pr-2 hover:bg-muted/50 overflow-hidden relative mt-0",
+        "group/row flex items-center justify-between space-x-3 rounded-md py-1 pl-2 lg:pl-2 pr-2 hover:bg-muted/50 overflow-hidden relative mt-0",
         "border border-white/5 shadow-sm mb-0.5 bg-white/5 backdrop-blur-sm",
         isEditing && "bg-muted/60"
       )}
@@ -211,7 +206,7 @@ export default function SubtaskRow({
       }}
     >
       <div className="flex items-center space-x-2 flex-grow min-w-0">
-        <div className="relative h-5 w-5 lg:h-4.5 lg:w-4.5 flex-shrink-0 ml-[9px] mt-0">
+        <div className="relative h-5 w-5 lg:h-4.5 lg:w-4.5 flex-shrink-0 mt-0">
           <Checkbox
             id={`subtask-${subtask.id}`}
             checked={subtask.completed}
@@ -354,6 +349,6 @@ export default function SubtaskRow({
           </DropdownMenuContent>
         </DropdownMenuPortal>
       )}
-    </motion.div>
+    </div>
   );
 } 

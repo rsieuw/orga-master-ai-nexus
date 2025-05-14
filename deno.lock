@@ -3,12 +3,14 @@
   "specifiers": {
     "jsr:@supabase/functions-js@*": "2.4.4",
     "npm:@capacitor/android@^7.2.0": "7.2.0_@capacitor+core@7.2.0",
+    "npm:@capacitor/app@^7.0.1": "7.0.1_@capacitor+core@7.2.0",
     "npm:@capacitor/assets@3.0.5": "3.0.5_@types+node@22.15.3_typescript@5.8.3",
     "npm:@capacitor/assets@^3.0.5": "3.0.5_@types+node@22.15.3_typescript@5.8.3",
     "npm:@capacitor/cli@7.2.0": "7.2.0",
     "npm:@capacitor/cli@^7.2.0": "7.2.0",
     "npm:@capacitor/core@^7.2.0": "7.2.0",
     "npm:@capacitor/ios@^7.2.0": "7.2.0_@capacitor+core@7.2.0",
+    "npm:@capacitor/splash-screen@^7.0.1": "7.0.1_@capacitor+core@7.2.0",
     "npm:@eslint/js@^9.9.0": "9.26.0",
     "npm:@hookform/resolvers@^3.9.0": "3.10.0_react-hook-form@7.56.2__react@18.3.1_react@18.3.1",
     "npm:@lucide/lab@~0.1.2": "0.1.2",
@@ -401,6 +403,12 @@
         "@capacitor/core"
       ]
     },
+    "@capacitor/app@7.0.1_@capacitor+core@7.2.0": {
+      "integrity": "sha512-ArlVZAAla4MwQoKh26x2AaTDOBh5Vhp1VhMKR3RwqZSsZnazKTFGNrPbr9Ez5r1knnEDfApyjwp1uZnXK1WTYQ==",
+      "dependencies": [
+        "@capacitor/core"
+      ]
+    },
     "@capacitor/assets@3.0.5_@types+node@22.15.3_typescript@5.8.3": {
       "integrity": "sha512-ohz/OUq61Y1Fc6aVSt0uDrUdeOA7oTH4pkWDbv/8I3UrPjH7oPkzYhShuDRUjekNp9RBi198VSFdt0CetpEOzw==",
       "dependencies": [
@@ -473,6 +481,12 @@
     },
     "@capacitor/ios@7.2.0_@capacitor+core@7.2.0": {
       "integrity": "sha512-MQgRZcXZpbpjN83bjkGrzQd7s3XeHBZplmWf38/msF/siMGJKLrXNmNzmmPIWA5Xpi/aH6UoJFk1wXuU2U+zMg==",
+      "dependencies": [
+        "@capacitor/core"
+      ]
+    },
+    "@capacitor/splash-screen@7.0.1_@capacitor+core@7.2.0": {
+      "integrity": "sha512-Nbqw9bEIe7uHj/HOT81mf4jT6uK1YykozpQw/uIKQDueMg6RJYaJK2/TMajIOohLk8fJF4TYIc1i9nGjNLnfGg==",
       "dependencies": [
         "@capacitor/core"
       ]
@@ -11185,10 +11199,12 @@
     "packageJson": {
       "dependencies": [
         "npm:@capacitor/android@^7.2.0",
+        "npm:@capacitor/app@^7.0.1",
         "npm:@capacitor/assets@^3.0.5",
         "npm:@capacitor/cli@^7.2.0",
         "npm:@capacitor/core@^7.2.0",
         "npm:@capacitor/ios@^7.2.0",
+        "npm:@capacitor/splash-screen@^7.0.1",
         "npm:@eslint/js@^9.9.0",
         "npm:@hookform/resolvers@^3.9.0",
         "npm:@lucide/lab@~0.1.2",

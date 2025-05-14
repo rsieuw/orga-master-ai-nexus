@@ -8,6 +8,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast.ts";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { Eye, EyeOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -18,6 +19,7 @@ export default function LoginForm() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,15 +28,15 @@ export default function LoginForm() {
     try {
       await login(email, password);
       toast({
-        title: "Inloggen geslaagd",
-        description: "Welkom terug bij OrgaMaster AI!",
+        title: t('auth.login.success.title'),
+        description: t('auth.login.success.description'),
       });
       navigate("/");
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Inloggen mislukt",
-        description: "Controleer je e-mail en wachtwoord.",
+        title: t('auth.login.error.title'),
+        description: t('auth.login.error.description'),
       });
       console.error("Login error:", error);
     } finally {
@@ -45,23 +47,24 @@ export default function LoginForm() {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="text-2xl text-center">Inloggen</CardTitle>
+        <CardTitle className="text-2xl text-center">{t('auth.login.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
+            <Label htmlFor="email">{t('auth.login.emailLabel')}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="jouw@email.com"
+              placeholder={t('auth.login.emailPlaceholder')}
               value={email}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               required
+              autoComplete="email"
             />
           </div>
           <div className="space-y-2 relative">
-            <Label htmlFor="password">Wachtwoord</Label>
+            <Label htmlFor="password">{t('auth.login.passwordLabel')}</Label>
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -84,7 +87,7 @@ export default function LoginForm() {
                 <Eye className="h-4 w-4" />
               )}
               <span className="sr-only">
-                {showPassword ? "Verberg" : "Toon"} wachtwoord
+                {showPassword ? t('auth.login.hidePassword') : t('auth.login.showPassword')}
               </span>
             </Button>
           </div>
@@ -92,18 +95,19 @@ export default function LoginForm() {
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="remember-me"
+                name="remember-me"
                 checked={rememberMe}
                 onCheckedChange={(checked: boolean | 'indeterminate') => setRememberMe(Boolean(checked))}
               />
               <Label htmlFor="remember-me" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Onthoud mij
+                {t('auth.login.rememberMe')}
               </Label>
             </div>
             <Link
               to="/forgot-password"
               className="text-sm text-primary hover:underline"
             >
-              Wachtwoord vergeten?
+              {t('auth.login.forgotPassword')}
             </Link>
           </div>
           <Button
@@ -112,7 +116,7 @@ export default function LoginForm() {
             size="lg"
             disabled={isLoading}
           >
-            {isLoading ? "Inloggen..." : "Inloggen"}
+            {isLoading ? t('auth.login.loading') : t('auth.login.submit')}
           </Button>
         </form>
       </CardContent>

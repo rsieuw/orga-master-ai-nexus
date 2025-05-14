@@ -20,9 +20,10 @@ import {
   DialogOverlay,
 } from "@/components/ui/dialog.tsx";
 import NewTaskDialog from "@/components/tasks/NewTaskDialog.tsx";
-import { TypeAnimation } from 'react-type-animation'; // Import the component
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence, Variants } from 'framer-motion'; // Framer Motion import and Variants
+import { Card } from "@/components/ui/card.tsx";
+import { TypedGreeting } from "@/components/ui/TypedGreeting.tsx";
 
 const LOCAL_STORAGE_KEYS = {
   SEARCH_TERM: 'dashboardSearchTerm',
@@ -89,47 +90,18 @@ const cardVariants: Variants = {
   },
 };
 
-// Define the gradient values for the animation
-const priorityGradients = [
-  '#b12429', // Rood
-  '#8112a9', // Paars
-  '#690365', // Donkerpaars
-  '#db7b0b', // Oranje
-  '#9e4829', // Bruinrood
-  '#651945', // Donkerrood
-  '#3b82f6', // Blauw
-  '#22d3ee', // Cyaan
-  '#14b8a6', // Teal
-  '#2563eb', // Donkerblauw
-  '#a78bfa', // Lichtpaars
-  '#7e22ce', // Paars
-  '#b12429'  // Terug naar begin voor een naadloze cyclus
-];
+// Nieuwe gradient kleuren voor de begroeting - nu exact als de Nieuwe Taak knop
+const greetingGradientStart = '#1D4ED8'; // Tailwind Blue-700
+const greetingGradientEnd = '#6B21A8';   // Tailwind Purple-800
 
-// CSS Animation style voor een perfect vloeiende gradient animatie
+// CSS Animation style voor de begroetingstekst gradient
 const gradientAnimationStyle = `
   .animated-gradient-text {
-    background: linear-gradient(
-      to right,
-      ${priorityGradients.join(', ')}
-    );
-    background-size: 400% 100%;
-    animation: gradientFlow 45s ease-in-out infinite;
+    background: linear-gradient(to right, ${greetingGradientStart}, ${greetingGradientEnd});
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-  }
-  
-  @keyframes gradientFlow {
-    0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0% 50%;
-    }
+    position: relative;
   }
 `;
 
@@ -321,6 +293,38 @@ export default function Dashboard() {
                   <TaskCard task={task} />
                 </motion.div>
               ))}
+              {/* Aangepaste conditie voor de placeholder kaart */}
+              {category === 'today' && (tasksInCategory.length === 0 || tasksInCategory.length % 4 !== 0) && (
+                <motion.div
+                  key="add-new-task-placeholder"
+                  variants={cardVariants}
+                  layout="position"
+                  className="mb-2"
+                >
+                  <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+                    <DialogTrigger asChild>
+                      <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10">
+                        <PlusCircle className="h-10 w-10 text-muted-foreground/70 group-hover:text-primary transition-colors" />
+                        <span className="mt-2 text-sm text-muted-foreground/90 group-hover:text-primary transition-colors">
+                          {t('dashboard.addNewTaskPlaceholder')}
+                        </span>
+                      </Card>
+                    </DialogTrigger>
+                    <DialogPortal>
+                      <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                      <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card/90 backdrop-blur-md border-white/10 p-6 shadow-lg sm:rounded-lg z-50 sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle className="text-2xl">{t('appLayout.newTaskDialog.title')}</DialogTitle>
+                          <DialogDescription>
+                            {t('appLayout.newTaskDialog.description')}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <NewTaskDialog setOpen={setIsNewTaskOpen} />
+                      </DialogContent>
+                    </DialogPortal>
+                  </Dialog>
+                </motion.div>
+              )}
             </div>
           </div>
         );
@@ -328,7 +332,7 @@ export default function Dashboard() {
     });
     
     return sections;
-  }, [filteredAndSortedTaskGroups, t]);
+  }, [filteredAndSortedTaskGroups, t, isNewTaskOpen]);
   // --- EINDE NIEUWE HORIZONTALE DISTRIBUTIE ---
 
   // Construct the greeting text using user?.name
@@ -396,16 +400,15 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 md:space-x-4">
           {/* Wrapper div for Greeting and Subtitle */}
           <div> 
-            <h1 className="text-3xl md:text-3xl lg:text-4xl font-bold"> 
-              <span className="animated-gradient-text">
-                <TypeAnimation
-                  sequence={[
-                    100, 
-                    greeting,
-                  ]}
-                  wrapper="span"
+            <h1 className="text-3xl md:text-3xl lg:text-4xl font-bold relative overflow-visible">
+              <span className="animated-gradient-text block">
+                <TypedGreeting 
+                  text={greeting}
                   speed={50}
-                  cursor
+                  gradientColors={{
+                    start: greetingGradientStart,
+                    end: greetingGradientEnd
+                  }}
                 />
               </span>
             </h1>
@@ -475,18 +478,6 @@ export default function Dashboard() {
                     <span className="text-xs text-muted-foreground">{t('navbar.newTaskButton.text')}</span>
                   </div>
                 </DialogTrigger>
-                <DialogPortal>
-                  <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-                  <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card/90 backdrop-blur-md border-white/10 p-6 shadow-lg sm:rounded-lg z-[70] sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle className="text-2xl">{t('appLayout.newTaskDialog.title')}</DialogTitle>
-                      <DialogDescription>
-                        {t('appLayout.newTaskDialog.description')}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <NewTaskDialog setOpen={setIsNewTaskOpen} />
-                  </DialogContent>
-                </DialogPortal>
               </Dialog>
             </motion.div>
           )}

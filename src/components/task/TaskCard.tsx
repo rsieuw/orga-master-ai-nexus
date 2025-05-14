@@ -2,8 +2,6 @@ import { Task, SubTask } from "@/types/task.ts";
 import { Card } from "@/components/ui/card.tsx";
 import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip.tsx";
-import { Icon } from "lucide-react";
-import { frogFace } from "@lucide/lab";
 import { 
   BriefcaseBusiness,
   Home, 
@@ -11,7 +9,8 @@ import {
   GlassWater, 
   Heart, 
   Wallet, 
-  Sparkles
+  Sparkles,
+  User
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
@@ -20,12 +19,13 @@ import { Badge } from "@/components/ui/badge.tsx";
 import AnimatedBadge from "@/components/ui/AnimatedBadge.tsx";
 import { cn } from "@/lib/utils.ts";
 import { motion } from "framer-motion";
+import { TASK_CATEGORIES, TASK_CATEGORY_KEYS } from "@/constants/categories.ts";
 
 interface TaskCardProps {
   task: Task;
 }
 
-// Functie om de prioriteitskleur te bepalen (gekopieerd van TaskDetail.tsx)
+// Function to determine the priority color (copied from TaskDetail.tsx)
 const getPriorityClass = (priority: string = 'none'): { backgroundClass: string; shadowClass: string } => {
   let backgroundClass = '';
   let shadowClass = '';
@@ -61,11 +61,17 @@ export default function TaskCard({ task }: TaskCardProps) {
     ? (completedSubtasks / totalSubtasks) * 100
     : 0;
 
-  // Functie voor het achtergrondicoon met aanpassing voor elke prioriteitskleur
+  // Functie om de juiste vertaalsleutel voor een categorie te vinden
+  const getCategoryTranslationKey = (category: string) => {
+    const index = TASK_CATEGORIES.findIndex(cat => cat === category);
+    return index !== -1 ? TASK_CATEGORY_KEYS[index] : category;
+  };
+
+  // Function for the background icon with adjustment for each priority color
   const getCategoryBackgroundIcon = (category?: string) => {
-    // Vaste opaciteit voor alle iconen
+    // Fixed opacity for all icons
     const getOpacityClass = () => {
-      return "opacity-40"; // Eén vaste opaciteit voor alle iconen (40%)
+      return "opacity-40"; // One fixed opacity for all icons (40%)
     };
 
     const iconProps = { 
@@ -74,11 +80,13 @@ export default function TaskCard({ task }: TaskCardProps) {
       strokeWidth: 0.6 
     };
     
+    // Gebruik de Nederlandse categorienamen voor de icons
+    // Dit is nodig omdat de database nog steeds de Nederlandse namen gebruikt
     switch(category) {
       case "Werk/Studie":
         return <BriefcaseBusiness {...iconProps} />;
       case "Persoonlijk":
-        return <Icon iconNode={frogFace} {...iconProps} />;
+        return <User {...iconProps} />;
       case "Huishouden":
         return <Home {...iconProps} />;
       case "Familie":
@@ -119,11 +127,12 @@ export default function TaskCard({ task }: TaskCardProps) {
           "task-card h-full flex flex-col relative overflow-hidden",
           `priority-${task.priority}`,
           priorityStyles.backgroundClass,
-          priorityStyles.shadowClass
+          priorityStyles.shadowClass,
+          (completedSubtasks === totalSubtasks && totalSubtasks > 0 && task.status === 'done') ? 'auto-completed' : ''
         )}
         data-category={task.category}
       >
-        {/* Behoud alleen het gleam-effect */}
+        {/* Keep only the gleam effect */}
         {task.isNew && (
           <motion.div
             className="absolute inset-0 z-1 pointer-events-none overflow-hidden rounded-xl"
@@ -160,7 +169,7 @@ export default function TaskCard({ task }: TaskCardProps) {
                 {task.emoji && <span className="mr-1.5 text-xl task-emoji">{task.emoji}</span>}
                 {task.title}
               </h3>
-              {/* Kalenderbadge */}
+              {/* Calendar badge */}
               {deadlineDay && deadlineMonth && (
                 <TooltipProvider delayDuration={100}>
                   <Tooltip>
@@ -210,7 +219,7 @@ export default function TaskCard({ task }: TaskCardProps) {
               )}
               {task.category && (
                 <Badge variant="outline" className="text-[10px] px-2 py-0 h-5 category-badge shadow-md rounded-full bg-white/10 backdrop-blur-sm text-white border-white/10">
-                  {task.category}
+                  {t(getCategoryTranslationKey(task.category))}
                 </Badge>
               )}
             </div>
@@ -222,8 +231,8 @@ export default function TaskCard({ task }: TaskCardProps) {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center cursor-default w-full">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" 
-                          className={`mr-1
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" 
+                          className={`mr-1.5
                             ${task.priority === 'high' ? 'text-red-400' : ''}
                             ${task.priority === 'medium' ? 'text-amber-400' : ''}
                             ${task.priority === 'low' ? 'text-cyan-400' : ''}
@@ -232,7 +241,7 @@ export default function TaskCard({ task }: TaskCardProps) {
                             <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
                             <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
-                        <span className={`text-xs font-medium mr-2
+                        <span className={`text-sm font-medium mr-2
                           ${task.priority === 'high' ? '!text-red-400' : ''}
                           ${task.priority === 'medium' ? '!text-amber-400' : ''}
                           ${task.priority === 'low' ? '!text-cyan-400' : ''}

@@ -8,6 +8,8 @@ import { TaskProvider } from "@/contexts/TaskContext.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { GradientLoader } from "@/components/ui/loader.tsx";
+import { useEffect } from "react";
+import { initCapacitor } from "./capacitorApp.ts";
 
 // Pages
 import Dashboard from "./pages/Dashboard.tsx";
@@ -23,6 +25,7 @@ import ContactPage from "./pages/ContactPage.tsx";
 import PricingPage from "./pages/Pricing.tsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.tsx";
 import UpdatePasswordPage from "./pages/UpdatePasswordPage.tsx";
+import TypedGreetingTest from "./pages/TypedGreetingTest.tsx";
 
 // Import the new admin components
 import AdminRouteGuard from "./components/auth/AdminRouteGuard.tsx";
@@ -33,6 +36,19 @@ const queryClient = new QueryClient();
 // New component to handle conditional rendering based on auth loading state
 const AppContent = () => {
   const { isLoading } = useAuth();
+
+  // Initialiseer Capacitor functionaliteit wanneer de component wordt gemount
+  useEffect(() => {
+    const initApp = async () => {
+      try {
+        await initCapacitor();
+      } catch (error) {
+        console.error("Fout bij initialiseren van Capacitor:", error);
+      }
+    };
+
+    initApp();
+  }, []);
 
   if (isLoading) {
     // Show loader while AuthProvider is initializing
@@ -64,6 +80,7 @@ const AppContent = () => {
             <Route path="/support" element={<SupportPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/typed-greeting-test" element={<TypedGreetingTest />} />
             
             {/* Admin Routes */}
             <Route element={<AdminRouteGuard />}>

@@ -284,6 +284,40 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     );
     
     await updateTask(taskId, { subtasks: updatedSubtasks });
+
+    // Controleer of alle subtaken zijn voltooid
+    if (updatedSubtasks.length > 0) {
+      const allSubtasksCompleted = updatedSubtasks.every(subtask => subtask.completed);
+      
+      // Als alle subtaken zijn voltooid en de taak zelf nog niet is voltooid
+      if (allSubtasksCompleted && task.status !== 'done') {
+        // Markeer de taak als voltooid en zet prioriteit op 'none'
+        await updateTask(taskId, {
+          status: 'done',
+          priority: 'none'
+        });
+
+        // Toon een bevestigingsbericht
+        toast({
+          title: t('taskContext.toast.autoCompleted.title'),
+          description: t('taskContext.toast.autoCompleted.description')
+        });
+      } 
+      // Als NIET alle subtaken voltooid zijn en de taak was automatisch voltooid (dus status=done en priority=none)
+      else if (!allSubtasksCompleted && task.status === 'done' && task.priority === 'none') {
+        // Herstel de taak naar 'in_progress' status met 'medium' prioriteit
+        await updateTask(taskId, {
+          status: 'in_progress',
+          priority: 'medium'
+        });
+
+        // Toon een bevestigingsbericht
+        toast({
+          title: t('taskContext.toast.priorityRestored.title', 'Taak opnieuw actief'),
+          description: t('taskContext.toast.priorityRestored.description', 'De taak is opnieuw actief gemaakt omdat niet alle subtaken voltooid zijn')
+        });
+      }
+    }
   };
 
   // Delete a subtask

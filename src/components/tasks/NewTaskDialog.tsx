@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast.ts";
 import { format } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
 import { TaskPriority, TaskStatus, Task } from "@/types/task.ts";
-import { TASK_CATEGORIES, TaskCategory } from "@/constants/categories.ts";
+import { TASK_CATEGORIES, TASK_CATEGORY_KEYS, TaskCategory } from "@/constants/categories.ts";
 import { supabase } from "@/integrations/supabase/client.ts";
 import { cn } from "@/lib/utils.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx";
@@ -230,7 +230,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
 
       {/* Show task details form only if details are visible */}
       {detailsVisible && (
-        <div className="mt-6 space-y-4 max-h-[60vh] overflow-y-auto lg:max-h-none lg:overflow-y-visible px-2 md:px-0 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">
+        <div className="mt-2 space-y-4 max-h-[60vh] overflow-y-auto lg:max-h-none lg:overflow-y-visible px-2 md:px-0 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">
           <div className="space-y-2">
             <Label htmlFor="title">{t('common.title')}</Label>
             <div className="relative">
@@ -317,9 +317,9 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
                 <SelectValue placeholder={t('newTaskDialog.selectCategoryPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
-                {TASK_CATEGORIES.map((cat) => (
+                {TASK_CATEGORIES.map((cat, index) => (
                   <SelectItem key={cat} value={cat}>
-                    {cat}
+                    {t(TASK_CATEGORY_KEYS[index])}
                   </SelectItem>
                 ))}
               </SelectContent>
