@@ -3,10 +3,11 @@ import { cn } from '@/lib/utils.ts';
 
 interface GradientProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   value?: number;
+  showPercentage?: boolean;
 }
 
 const GradientProgress = React.forwardRef<HTMLDivElement, GradientProgressProps>(
-  ({ className, value, ...props }, ref) => {
+  ({ className, value, showPercentage = false, ...props }, ref) => {
     const progress = Math.max(0, Math.min(100, value || 0)); // Clamp value between 0 and 100
     
     // Calculate end hue based on progress (0=red, 60=yellow, 120=green)
@@ -33,6 +34,11 @@ const GradientProgress = React.forwardRef<HTMLDivElement, GradientProgressProps>
             backgroundImage: gradientStyle // Apply dynamic gradient
           }}
         />
+        {showPercentage && progress > 10 && (
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] text-white font-bold select-none">
+            {Math.round(progress)}%
+          </span>
+        )}
       </div>
     );
   }

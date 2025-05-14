@@ -5,7 +5,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Icon } from "lucide-react";
 import { frogFace } from "@lucide/lab";
 import { 
-  CheckSquare, 
   BriefcaseBusiness,
   Home, 
   Users,
@@ -19,14 +18,42 @@ import { nl, enUS } from "date-fns/locale";
 import { useTranslation } from 'react-i18next';
 import { Badge } from "@/components/ui/badge.tsx";
 import AnimatedBadge from "@/components/ui/AnimatedBadge.tsx";
+import { cn } from "@/lib/utils.ts";
+import { motion } from "framer-motion";
 
 interface TaskCardProps {
   task: Task;
 }
 
+// Functie om de prioriteitskleur te bepalen (gekopieerd van TaskDetail.tsx)
+const getPriorityClass = (priority: string = 'none'): { backgroundClass: string; shadowClass: string } => {
+  let backgroundClass = '';
+  let shadowClass = '';
+
+  switch(priority) {
+    case 'high':
+      backgroundClass = 'bg-gradient-to-br from-[#b12429]/30 via-[#8112a9]/30 to-[#690365]/30 dark:bg-gradient-to-br dark:from-[rgba(220,38,38,0.8)] dark:via-[rgba(150,25,80,0.75)] dark:to-[rgba(70,20,90,0.7)]';
+      shadowClass = 'neumorphic-shadow-high';
+      break;
+    case 'medium':
+      backgroundClass = 'bg-gradient-to-br from-[#db7b0b]/30 via-[#9e4829]/30 to-[#651945]/30 dark:bg-gradient-to-br dark:from-[rgba(255,145,0,0.9)] dark:to-[rgba(101,12,78,0.85)]';
+      shadowClass = 'neumorphic-shadow-medium';
+      break;
+    case 'low':
+      backgroundClass = 'bg-gradient-to-br from-blue-500/30 via-cyan-400/30 to-teal-400/30 dark:bg-gradient-to-br dark:from-[rgb(36,74,212)] dark:via-[rgba(15,168,182,0.75)] dark:to-[rgba(16,185,129,0.7)]';
+      shadowClass = 'neumorphic-shadow-low';
+      break;
+    default: // none
+      backgroundClass = 'bg-gradient-to-br from-blue-600/30 to-purple-700/30 dark:bg-gradient-to-br dark:from-[rgba(100,116,139,0.8)] dark:via-[rgba(71,85,105,0.75)] dark:to-[rgba(51,65,85,0.7)]';
+      shadowClass = 'neumorphic-shadow-none';
+      break;
+  }
+  return { backgroundClass, shadowClass };
+};
+
 export default function TaskCard({ task }: TaskCardProps) {
   const { i18n, t } = useTranslation();
-  const priorityClass = `priority-${task.priority}`;
+  const priorityStyles = getPriorityClass(task.priority);
   const completedSubtasks = task.subtasks.filter((st: SubTask) => st.completed).length;
   const totalSubtasks = task.subtasks.length;
 
@@ -88,11 +115,40 @@ export default function TaskCard({ task }: TaskCardProps) {
   return (
     <Link to={`/task/${task.id}`}>
       <Card 
-        className={`task-card ${priorityClass} h-full flex flex-col relative overflow-hidden`}
+        className={cn(
+          "task-card h-full flex flex-col relative overflow-hidden",
+          `priority-${task.priority}`,
+          priorityStyles.backgroundClass,
+          priorityStyles.shadowClass
+        )}
         data-category={task.category}
       >
+        {/* Behoud alleen het gleam-effect */}
+        {task.isNew && (
+          <motion.div
+            className="absolute inset-0 z-1 pointer-events-none overflow-hidden rounded-xl"
+          >
+            <motion.div
+              className="absolute -inset-[100%] bg-gradient-to-r from-transparent via-white/25 to-transparent"
+              style={{
+                width: "200%",
+                boxShadow: "0 0 15px 5px rgba(255, 255, 255, 0.1)"
+              }}
+              animate={{
+                x: ["100%", "-100%"]
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                repeatDelay: 3,
+                ease: "easeInOut"
+              }}
+            />
+          </motion.div>
+        )}
+        
         {task.category && (
-          <div className={`absolute ${totalSubtasks > 0 ? 'bottom-[3rem]' : 'bottom-6'} right-4 z-0 pointer-events-none`}>
+          <div className={`absolute ${totalSubtasks > 0 ? 'bottom-[2.7rem]' : 'bottom-6'} right-4 z-0 pointer-events-none`}>
             {getCategoryBackgroundIcon(task.category)}
           </div>
         )}
@@ -110,7 +166,7 @@ export default function TaskCard({ task }: TaskCardProps) {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center">
-                        <div className={`w-8 h-8 flex flex-col items-center justify-center rounded-full border border-white/10 overflow-hidden shadow-sm calendar-badge ${
+                        <div className={`w-8 h-8 flex flex-col items-center justify-center rounded-full border border-white/10 overflow-hidden shadow-md calendar-badge ${
                           task.priority === 'high' ? 'bg-gradient-to-br from-red-600/90 to-rose-700/90' :
                           task.priority === 'medium' ? 'bg-gradient-to-br from-amber-500/90 to-orange-600/90' :
                           task.priority === 'low' ? 'bg-gradient-to-br from-blue-500/90 to-cyan-600/90' :
@@ -153,7 +209,7 @@ export default function TaskCard({ task }: TaskCardProps) {
                 </AnimatedBadge>
               )}
               {task.category && (
-                <Badge variant="outline" className="text-[10px] px-2 py-0 h-5 category-badge">
+                <Badge variant="outline" className="text-[10px] px-2 py-0 h-5 category-badge shadow-md rounded-full bg-white/10 backdrop-blur-sm text-white border-white/10">
                   {task.category}
                 </Badge>
               )}
@@ -166,11 +222,25 @@ export default function TaskCard({ task }: TaskCardProps) {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center cursor-default w-full">
-                        <CheckSquare className="h-3.5 w-3.5 mr-1 text-muted-foreground" strokeWidth={0.8} />
-                        <span className="text-xs text-muted-foreground">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" 
+                          className={`mr-1
+                            ${task.priority === 'high' ? 'text-red-400' : ''}
+                            ${task.priority === 'medium' ? 'text-amber-400' : ''}
+                            ${task.priority === 'low' ? 'text-cyan-400' : ''}
+                            ${task.priority !== 'high' && task.priority !== 'medium' && task.priority !== 'low' ? 'text-slate-400' : ''}
+                          `}>
+                            <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+                            <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span className={`text-xs font-medium mr-2
+                          ${task.priority === 'high' ? '!text-red-400' : ''}
+                          ${task.priority === 'medium' ? '!text-amber-400' : ''}
+                          ${task.priority === 'low' ? '!text-cyan-400' : ''}
+                          ${task.priority !== 'high' && task.priority !== 'medium' && task.priority !== 'low' ? '!text-slate-400' : ''}
+                        `}>
                           {completedSubtasks}/{totalSubtasks}
                         </span>
-                        <div className="relative w-full h-3.5 bg-white/20 backdrop-blur-md rounded-full mx-2 overflow-hidden">
+                        <div className="relative w-full h-3.5 bg-white/20 backdrop-blur-md rounded-full overflow-hidden shadow-md">
                           <div
                             className={`h-full rounded-full transition-all duration-300
                               ${task.priority === 'high' ? 'bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 shadow-[0_0_8px_2px_rgba(244,63,94,0.4)]' : ''}
@@ -181,7 +251,7 @@ export default function TaskCard({ task }: TaskCardProps) {
                             style={{ width: `${progressValue}%` }}
                           />
                           {progressValue > 10 && (
-                            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] text-white font-bold select-none">
+                            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold select-none">
                               {Math.round(progressValue)}%
                             </span>
                           )}

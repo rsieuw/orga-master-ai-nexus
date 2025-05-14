@@ -36,6 +36,8 @@
     --ring: 224 76% 48%;
 
     --radius: 0.5rem;
+
+    --card-hue: 220; /* Neutrale donkere kaart kleur */
   }
 
   .light {
@@ -98,6 +100,12 @@
     --ring: 224 76% 48%;
 
     --radius: 0.5rem;
+
+    /* Variabelen voor de dynamische subtaak gloed */
+    --subtask-glow-h: 221; /* Hue van --primary */
+    --subtask-glow-s: 83%; /* Saturation van --primary */
+    --subtask-glow-l: 53%; /* Lightness van --primary */
+    --subtask-glow-a: 0.1; /* Alpha/dekking */
   }
 
   html {
@@ -125,7 +133,7 @@
   }
   
   .glass-card {
-    @apply bg-card/80 backdrop-blur-md border border-white/5 shadow-md hover:shadow-lg transition-all duration-300;
+    @apply bg-card/80 backdrop-blur-md border border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.05)] hover:shadow-[0_3px_10px_rgba(0,0,0,0.07)] transition-all duration-300;
   }
   
   .glass-nav {
@@ -237,7 +245,7 @@
 }
 
 .task-card {
-  @apply relative rounded-xl border p-3 shadow-sm transition-all hover:shadow-md hover:translate-y-[-2px] duration-200 glass-card overflow-hidden;
+  @apply relative rounded-xl border p-3 transition-all hover:translate-y-[-2px] duration-200 glass-card overflow-hidden;
 }
 
 .priority-high::before,
@@ -290,7 +298,34 @@
 
 /* Firebase Studio inspired styles */
 .firebase-card {
-  @apply bg-card/80 backdrop-blur-md rounded-lg border border-white/5 shadow-md transition-all duration-200 hover:shadow-lg hover:border-primary/30;
+  @apply bg-card/80 backdrop-blur-md rounded-lg border border-white/5 shadow-[0_2px_10px_rgba(0,0,0,0.1)] transition-all duration-200 hover:border-primary/30;
+}
+
+.firebase-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  z-index: 1;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(0, 0, 0, 0) 100%);
+}
+
+.firebase-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 70%);
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.firebase-card:hover::before {
+  opacity: 0.7;
 }
 
 .firebase-btn {
@@ -311,7 +346,19 @@
 }
 
 .chat-message {
-  @apply p-3 rounded-lg max-w-[75%] break-words relative transition-colors duration-300 ease-in-out;
+  @apply p-3 rounded-lg max-w-[75%] break-words relative transition-colors duration-300 ease-in-out shadow-md;
+}
+
+.chat-message::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px; /* Iets subtieler dan de 4px van de cards */
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.07) 50%, rgba(0, 0, 0, 0) 100%); /* Lichte, gecentreerde gloed */
+  /* stylelint-disable-next-line at-rule-no-unknown */
+  @apply rounded-b-lg; /* Zorgt ervoor dat de gloed de onderste afronding van de chatballon volgt */
 }
 
 .chat-message-user {
@@ -323,7 +370,7 @@
 }
 
 .chat-message-research {
-  @apply bg-gradient-to-br from-indigo-900/80 via-blue-800/80 to-blue-900/80 text-blue-50 border border-blue-600/40 shadow-md;
+  @apply bg-gradient-to-br from-blue-900/80 via-blue-800/80 to-indigo-900/80 text-blue-50 border border-blue-600/40 shadow-md; /* Gradient colors reversed */
 }
 
 .chat-message-notes {
@@ -336,7 +383,7 @@
 
 /* Style voor opgeslagen onderzoek, iets lichter dan normale onderzoeksballonnen */
 .chat-message-saved-research {
-  @apply bg-gradient-to-br from-indigo-800/70 via-indigo-700/70 to-blue-800/70 text-blue-50 border border-indigo-500/50 shadow-sm;
+  @apply bg-gradient-to-br from-blue-800/70 via-indigo-700/70 to-indigo-800/70 text-blue-50 border border-indigo-500/50 shadow-sm; /* Gradient colors reversed */
 }
 
 .chat-input {
@@ -454,6 +501,70 @@ input[type="search"]::-webkit-search-results-decoration {
   background-blend-mode: overlay;
 }
 
+/* Nieuw shine-effect voor de achtergrond van nieuwe kaarten */
+.shine-effect {
+  position: relative;
+  isolation: isolate; /* Creëert een nieuwe stacking context */
+  overflow: hidden; /* Zorgt dat het effect binnen de kaart blijft */
+}
+
+/* Voeg een overlay toe die pulseert */
+.shine-effect::before {
+  content: '';
+  position: absolute;
+  inset: 0; /* Top, right, bottom, left allemaal op 0 (vult hele element) */
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 215, 0, 0.15) 75%, /* Subtiele gouden tint */
+    rgba(255, 255, 255, 0) 100%
+  );
+  z-index: 1;
+  animation: backgroundPulse 3s ease-in-out infinite;
+  pointer-events: none; /* Zodat het de interactie met de kaart niet beïnvloedt */
+}
+
+/* Specifiek knipperende glow langs de randen */
+.shine-effect::after {
+  content: '';
+  position: absolute;
+  inset: 0; /* Vult hele element */
+  background: radial-gradient(
+    circle at center,
+    transparent 50%,
+    rgba(255, 215, 0, 0.15) 80%, /* Gouden glow aan de randen */
+    rgba(255, 215, 0, 0.25) 100%
+  );
+  z-index: 1;
+  opacity: 0;
+  animation: glowPulse 4s ease infinite;
+  pointer-events: none;
+}
+
+@keyframes backgroundPulse {
+  0%, 100% {
+    opacity: 0.3;
+    background-position: 0% 0%;
+  }
+  50% {
+    opacity: 0.8;
+    background-position: 100% 100%;
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
 .custom-dark .task-card:hover {
   transform: translateY(-3px) scale(1.01);
   /* De background voor hover wordt nu ook per prioriteit afgehandeld of hier algemeen als de afbeeldingen moeten blijven blenden */
@@ -558,6 +669,14 @@ input[type="search"]::-webkit-search-results-decoration {
 
 .custom-dark .priority-low::after {
   background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgb(25 255 226 / 96%) 50%, rgba(0, 0, 0, 0) 100%);
+  opacity: 1;
+  animation: none;
+  transform: none;
+  width: 100%;
+  height: 4px;
+  top: auto;
+  bottom: 0;
+  left: 0;
 }
 
 .custom-dark .priority-none {
@@ -581,6 +700,47 @@ input[type="search"]::-webkit-search-results-decoration {
 
 .custom-dark .priority-none::after {
   background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(148, 163, 184, 0.5) 50%, rgba(0, 0, 0, 0) 100%);
+  opacity: 1;
+  animation: none;
+  transform: none;
+  width: 100%;
+  height: 4px;
+  top: auto;
+  bottom: 0;
+  left: 0;
+}
+
+/* Prioriteit-specifieke shine effecten voor firebase-card */
+.custom-dark .firebase-card.priority-high::after {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgb(255 102 102 / 80%) 50%, rgba(0, 0, 0, 0) 100%);
+}
+
+.custom-dark .firebase-card.priority-medium::after {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgb(255 231 150 / 70%) 50%, rgba(0, 0, 0, 0) 100%);
+}
+
+.custom-dark .firebase-card.priority-low::after {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgb(25 255 226 / 96%) 50%, rgba(0, 0, 0, 0) 100%);
+  opacity: 1;
+  animation: none;
+  transform: none;
+  width: 100%;
+  height: 4px;
+  top: auto;
+  bottom: 0;
+  left: 0;
+}
+
+.custom-dark .firebase-card.priority-none::after {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(148, 163, 184, 0.5) 50%, rgba(0, 0, 0, 0) 100%);
+  opacity: 1;
+  animation: none;
+  transform: none;
+  width: 100%;
+  height: 4px;
+  top: auto;
+  bottom: 0;
+  left: 0;
 }
 
 /* Zorg dat de teksten goed leesbaar zijn in custom dark theme */
@@ -745,6 +905,171 @@ input[type="search"]::-webkit-search-results-decoration {
   color: #d1d9f5;
 }
 
+/* Specific min-height for the subtask card's ::before element glow */
+.subtask-card-glow-target.firebase-card::before {
+  min-height: 400px;
+}
 
+/* Specific min-height for the chat card's ::before element glow */
+.chat-card-glow-target.firebase-card::before {
+  min-height: 400px;
+}
 
+.firebase-card:hover::before {
+  opacity: 0.7;
+}
 
+/* ZEER OPVALLEND nieuw effect voor nieuwe taakkaarten */
+.task-card.new-task-highlight {
+  position: relative;
+  overflow: hidden; /* Houdt het patroon binnen de kaart */
+  isolation: isolate; /* Toegevoegd voor stacking context */
+}
+
+/* Hersteld naar shine-effect stijl voor ::before, met correcte z-index en selector */
+.task-card.new-task-highlight::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 215, 0, 0.6) 75%, /* Subtiele gouden tint uit shine-effect - OPACITEIT VERHOOGD */
+    rgba(255, 255, 255, 0) 100%
+  );
+  z-index: 1; /* Gecorrigeerde z-index: achter content (10), boven categorie-icoon (0) */
+  pointer-events: none;
+  animation: backgroundPulse 3s ease-in-out infinite; /* Animatie van shine-effect */
+}
+
+/* De patternMove keyframes zijn niet nodig, backgroundPulse en glowPulse zijn elders gedefinieerd */
+
+/* De regels voor .new-task-highlight.priority-X::after zijn al eerder verwijderd en blijven weg */
+
+/* Hersteld en aangepast naar shine-effect stijl voor ::after, met correcte z-index en selector */
+.task-card.new-task-highlight::after {
+  content: '';
+  position: absolute;
+  inset: 0; /* Om het hele element te vullen, van shine-effect */
+  background: radial-gradient(
+    circle at center,
+    transparent 50%,
+    rgba(255, 215, 0, 0.6) 80%, /* Gouden glow van shine-effect - OPACITEIT VERHOOGD */
+    rgba(255, 215, 0, 0.8) 100%  /* Gouden glow van shine-effect - OPACITEIT VERHOOGD */
+  );
+  z-index: 1; /* Gecorrigeerde z-index: achter content (10), boven categorie-icoon (0) */
+  opacity: 0; /* Initiele opacity voor glowPulse animatie, van shine-effect */
+  pointer-events: none;
+  animation: glowPulse 4s ease infinite; /* Animatie van shine-effect */
+}
+
+/* De lightSweep keyframes zijn niet nodig, backgroundPulse en glowPulse zijn elders gedefinieerd */
+
+.subtask-card-glow-target.firebase-card {
+  position: relative; /* Zorgt voor juiste positionering van absolute elementen */
+  isolation: isolate; /* Creeert een nieuwe stacking context */
+  overflow: hidden; /* Zorgt ervoor dat de gloed niet buiten de kaart uitsteekt */
+}
+
+.subtask-card-glow-target.firebase-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  border-radius: inherit;
+  pointer-events: none;
+  /* Eenvoudige gradiënt zoals in het chatvenster, nu met dezelfde positie */
+  background-image: radial-gradient(
+    circle at 50% 0%,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+  /* min-height niet nodig bij vaste hoogte van 80px */
+}
+
+.subtask-card-glow-target.firebase-card:hover::before {
+  opacity: 0.7;
+}
+
+/* Specifieke min-height voor .chat-card-glow-target.firebase-card::before */
+.chat-card-glow-target.firebase-card::before {
+  min-height: 400px;
+}
+
+/* Regenboog rand glow animatie voor nieuwe taken */
+@keyframes rainbowBorderGlow {
+  0% {
+    box-shadow: 0 0 5px 2px rgba(138, 43, 226, 0.5), 0 0 10px 4px rgba(138, 43, 226, 0.3);
+  }
+  25% {
+    box-shadow: 0 0 5px 2px rgba(70, 130, 180, 0.5), 0 0 10px 4px rgba(70, 130, 180, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 5px 2px rgba(72, 209, 204, 0.5), 0 0 10px 4px rgba(72, 209, 204, 0.3);
+  }
+  75% {
+    box-shadow: 0 0 5px 2px rgba(255, 105, 180, 0.5), 0 0 10px 4px rgba(255, 105, 180, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 5px 2px rgba(138, 43, 226, 0.5), 0 0 10px 4px rgba(138, 43, 226, 0.3);
+  }
+}
+
+/* Aangepast effect voor nieuwe taakkaarten: regenboog rand-gloed */
+.task-card.new-task-highlight {
+  position: relative;
+  overflow: visible !important; /* Belangrijk: laat de gloed buiten de kaart zichtbaar zijn */
+  animation: rainbowBorderGlow 4s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+/* Verwijder het ::before effect voor nieuwe taakkaarten */
+.task-card.new-task-highlight::before {
+  content: none;
+}
+
+/* Neumorfische schaduwklassen voor detailpagina */
+.neumorphic-shadow-high {
+  box-shadow: 5px 5px 12px rgba(8, 4, 4, 0.4), -5px -5px 12px rgba(80, 30, 30, 0.07), inset 1px 1px 0px rgba(255, 255, 255, 0.03);
+  transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+.neumorphic-shadow-high:hover {
+  box-shadow: 7px 7px 15px rgba(8, 4, 4, 0.5), -7px -7px 15px rgba(80, 30, 30, 0.09), inset 1px 1px 1px rgba(255, 255, 255, 0.04);
+  border-color: hsl(var(--destructive) / 0.5); /* Rode tint voor high priority */
+}
+
+.neumorphic-shadow-medium {
+  box-shadow: 5px 5px 12px rgba(10, 7, 3, 0.4), -5px -5px 12px rgba(100, 60, 20, 0.07), inset 1px 1px 0px rgba(255, 255, 255, 0.03);
+  transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+.neumorphic-shadow-medium:hover {
+  box-shadow: 7px 7px 15px rgba(10, 7, 3, 0.5), -7px -7px 15px rgba(100, 60, 20, 0.09), inset 1px 1px 1px rgba(255, 255, 255, 0.04);
+  border-color: hsl(30 90% 50% / 0.5); /* Directe oranje tint voor medium priority */
+}
+
+.neumorphic-shadow-low {
+  box-shadow: 5px 5px 12px rgba(5, 10, 20, 0.4), -5px -5px 12px rgba(40, 70, 120, 0.07), inset 1px 1px 0px rgba(255, 255, 255, 0.03);
+  transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+.neumorphic-shadow-low:hover {
+  box-shadow: 7px 7px 15px rgba(5, 10, 20, 0.5), -7px -7px 15px rgba(40, 70, 120, 0.09), inset 1px 1px 1px rgba(255, 255, 255, 0.04);
+  border-color: hsl(200 90% 50% / 0.5); /* Directe blauwe tint voor low priority */
+}
+
+.neumorphic-shadow-none {
+  box-shadow: 5px 5px 12px rgba(30, 41, 59, 0.4), -5px -5px 12px rgba(100, 116, 139, 0.07), inset 1px 1px 0px rgba(255, 255, 255, 0.03);
+  transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+.neumorphic-shadow-none:hover {
+  box-shadow: 7px 7px 15px rgba(30, 41, 59, 0.5), -7px -7px 15px rgba(100, 116, 139, 0.09), inset 1px 1px 1px rgba(255, 255, 255, 0.04);
+  border-color: hsl(var(--muted-foreground) / 0.3); /* Grijze tint voor none priority */
+}
+
+/* Einde van CSS */

@@ -1,14 +1,5 @@
-import { createContext, useContext, useEffect, useState } from "react";
-
-type Theme = "dark" | "light" | "custom-dark";
-
-interface ThemeContextProps {
-  theme: Theme;
-  toggleTheme: () => void;
-  setTheme: (theme: Theme) => void;
-}
-
-const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
+import { useEffect, useState } from "react";
+import { type Theme, ThemeContext } from "./theme.definition.ts";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
@@ -30,28 +21,28 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // Update document class for tailwind dark mode
     const root = document.documentElement;
     
-    // Verwijder alle thema-klassen
+    // Remove all theme classes
     root.classList.remove("dark", "light", "custom-dark");
     
-    // Voeg de juiste thema-klasse toe
+    // Add the correct theme class
     root.classList.add(theme);
     
-    // Voor custom-dark willen we ook de dark mode van Tailwind behouden
+    // For custom-dark, we also want to keep Tailwind's dark mode
     if (theme === "custom-dark") {
       root.classList.add("dark");
     }
   }, [theme]);
 
   const toggleTheme = () => {
-    setThemeState((prevTheme) => {
-      // Wissel tussen de drie beschikbare thema's
+    setThemeState((prevTheme: Theme) => {
+      // Toggle between the three available themes
       if (prevTheme === "light") return "dark";
       if (prevTheme === "dark") return "custom-dark";
       return "light";
     });
   };
 
-  // Functie om expliciet een thema in te stellen
+  // Function to explicitly set a theme
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
   };
@@ -62,11 +53,3 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     </ThemeContext.Provider>
   );
 }
-
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider");
-  }
-  return context;
-};

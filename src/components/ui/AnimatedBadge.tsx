@@ -41,8 +41,12 @@ export function AnimatedBadge({
           duration: 0.5
         }}
       >
-        <Badge className={`text-white border border-white/20 badge ${className}`} 
-               style={{ backgroundColor: 'rgb(8 8 8 / 28%)' }}>
+        <Badge className={`text-white border-0 badge text-[10px] px-2 py-0 h-5 rounded-full backdrop-blur-sm shadow-md ${className}`} 
+               style={{ 
+                 background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.7), rgba(79, 70, 229, 0.7))',
+                 fontWeight: '600',
+                 backdropFilter: 'blur(4px)'
+               }}>
           {children}
         </Badge>
       </motion.div>

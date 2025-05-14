@@ -4,8 +4,6 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
-import { format, parseISO } from "date-fns";
-import { nl, enUS } from "date-fns/locale";
 import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, MessageSquareText, Loader2, ChevronUp, ChevronDown } from "lucide-react";
 import {
   AlertDialog,
@@ -36,16 +34,28 @@ import TaskAIChat from "@/components/ai/TaskAIChat.tsx";
 import { GradientLoader } from "@/components/ui/loader.tsx";
 import { cn } from "@/lib/utils.ts";
 import { Input } from "@/components/ui/input.tsx";
-import { Task, SubTask, TaskPriority, TaskStatus } from "@/types/task.ts";
-import { GradientProgress } from "@/components/ui/GradientProgress.tsx";
-import { Tooltip, TooltipContent, TooltipProvider } from "@/components/ui/tooltip.tsx";
+import { Task, SubTask } from "@/types/task.ts";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip.tsx";
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from "@/hooks/useAuth.ts";
 import SubtaskRow from "@/components/task/SubtaskRow.tsx";
 import { useResizableLayout } from "@/hooks/useResizableLayout.ts";
 import TaskInfoDisplay from "@/components/task/TaskInfoDisplay.tsx";
-import TaskActions from "@/components/task/TaskActions.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
+import { 
+  Icon, 
+  BriefcaseBusiness,
+  Home, 
+  Users,
+  GlassWater, 
+  Heart, 
+  Wallet
+} from "lucide-react";
+import { frogFace } from "@lucide/lab";
+import { format, parseISO } from "date-fns";
+import { nl, enUS } from "date-fns/locale";
+import EditTaskDialog from "@/components/tasks/EditTaskDialog.tsx";
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
@@ -57,8 +67,6 @@ export default function TaskDetail() {
     addSubtask,
     expandTask,
     deleteSubtask: deleteSubtaskFromContext, 
-    toggleTaskCompletion, 
-    updateTask, 
     isGeneratingSubtasksForTask,
     getMaxAiGenerationsForUser,
     isAiGenerationLimitReached,
@@ -71,7 +79,6 @@ export default function TaskDetail() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [activeMobileView, setActiveMobileView] = useState(location.hash === '#chat' ? 'chat' : 'details');
   const [selectedSubtaskTitle, setSelectedSubtaskTitle] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [showAddSubtaskForm, setShowAddSubtaskForm] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
@@ -81,7 +88,9 @@ export default function TaskDetail() {
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [longPressedSubtaskId, setLongPressedSubtaskId] = useState<string | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState<{ top: number, left: number } | null>(null);
-  const [isInfoCollapsed, setIsInfoCollapsed] = useState(false);
+  const [isInfoCollapsed] = useState(false);
+  const [isDescriptionMinimized, setIsDescriptionMinimized] = useState(false);
+  const subtaskCardRef = useRef<HTMLDivElement>(null);
 
   const { user } = useAuth();
 
@@ -95,6 +104,51 @@ export default function TaskDetail() {
   const task: Task | undefined = getTaskById(id || "");
   const currentAiGenerationCount = task?.aiSubtaskGenerationCount || 0;
   
+  // Deadline formatting
+  let deadlineText: string | null = null;
+  let deadlineDay: string | null = null;
+  let deadlineMonth: string | null = null;
+  
+  if (task && task.deadline) {
+    try {
+      const locale = i18n.language === 'nl' ? nl : enUS;
+      deadlineText = format(parseISO(task.deadline), "PPP", { locale });
+      deadlineDay = format(parseISO(task.deadline), "d", { locale });
+      deadlineMonth = format(parseISO(task.deadline), "MMM", { locale });
+    } catch (e) {
+      console.error("Invalid date format for deadline in TaskDetail:", task.deadline);
+      deadlineText = t('taskCard.invalidDate');
+    }
+  }
+
+  // Functie om de prioriteitskleur te bepalen voor de achtergrond zonder de lijn
+  const getPriorityClass = (priority: string = 'none'): { backgroundClass: string; shadowClass: string } => {
+    let backgroundClass = '';
+    let shadowClass = '';
+
+    switch(priority) {
+      case 'high':
+        backgroundClass = 'bg-gradient-to-br from-[#b12429]/30 via-[#8112a9]/30 to-[#690365]/30 dark:bg-gradient-to-br dark:from-[rgba(220,38,38,0.8)] dark:via-[rgba(150,25,80,0.75)] dark:to-[rgba(70,20,90,0.7)]';
+        shadowClass = 'neumorphic-shadow-high'; // Verwijst naar de aangepaste CSS klasse
+        break;
+      case 'medium':
+        backgroundClass = 'bg-gradient-to-br from-[#db7b0b]/30 via-[#9e4829]/30 to-[#651945]/30 dark:bg-gradient-to-br dark:from-[rgba(255,145,0,0.9)] dark:to-[rgba(101,12,78,0.85)]';
+        shadowClass = 'neumorphic-shadow-medium'; // Verwijst naar de aangepaste CSS klasse
+        break;
+      case 'low':
+        backgroundClass = 'bg-gradient-to-br from-blue-500/30 via-cyan-400/30 to-teal-400/30 dark:bg-gradient-to-br dark:from-[rgb(36,74,212)] dark:via-[rgba(15,168,182,0.75)] dark:to-[rgba(16,185,129,0.7)]';
+        shadowClass = 'neumorphic-shadow-low'; // Verwijst naar de aangepaste CSS klasse
+        break;
+      default:
+        backgroundClass = 'bg-gradient-to-br from-blue-600/30 to-purple-700/30 dark:bg-gradient-to-br dark:from-[rgba(100,116,139,0.8)] dark:via-[rgba(71,85,105,0.75)] dark:to-[rgba(51,65,85,0.7)]';
+        shadowClass = 'neumorphic-shadow-none'; // Verwijst naar de aangepaste CSS klasse
+        break;
+    }
+    return { backgroundClass, shadowClass };
+  };
+
+  const priorityStyles = task ? getPriorityClass(task.priority) : getPriorityClass();
+
   const maxGenerations = getMaxAiGenerationsForUser();
   const isLimitReached = task ? isAiGenerationLimitReached(task) : false;
   
@@ -181,69 +235,15 @@ export default function TaskDetail() {
     };
   }, []);
 
+  const handleSubtaskLabelClick = (title: string) => {
+    setSelectedSubtaskTitle(title);
+  };
+
   const totalSubtasks = task?.subtasks.length ?? 0;
   const completedSubtasks = task?.subtasks.filter(st => st.completed).length ?? 0;
   const progressValue = totalSubtasks > 0
     ? (completedSubtasks / totalSubtasks) * 100
     : 0;
-
-  const handleSubtaskLabelClick = (title: string) => {
-    setSelectedSubtaskTitle(title);
-  };
-
-  const handleStatusChange = (newStatus: string) => {
-    if (!newStatus || !task || newStatus === task.status) return;
-    if (newStatus === 'done') {
-      toggleTaskCompletion(task.id, true);
-    } else if (task.status === 'done' && (newStatus === 'in_progress' || newStatus === 'todo')) {
-      toggleTaskCompletion(task.id, false);
-    } else if (task.status !== 'done' && (newStatus === 'in_progress' || newStatus === 'todo')) {
-      updateTask(task.id, { status: newStatus as TaskStatus });
-    }
-  };
-
-  const handlePriorityChange = (newPriority: string) => {
-    if (!newPriority || !task || newPriority === task.priority) return;
-    updateTask(task.id, { priority: newPriority as TaskPriority });
-  };
-
-  const priorityBadgeColor: Record<TaskPriority, string> = {
-    high: "border-red-400 text-red-400",
-    medium: "border-orange-400 text-orange-400",
-    low: "border-blue-400 text-blue-400",
-    none: "border-green-400 text-green-400",
-  };
-
-  let deadlineText = t('taskDetail.noDeadline');
-  let deadlineColor = "border-gray-400 text-gray-400";
-  let isOverdue = false;
-
-  const currentLocale = i18n.language.startsWith('en') ? enUS : nl;
-
-  if (task && task.deadline) {
-    try {
-      const parsedDeadline = parseISO(task.deadline);
-      const now = new Date();
-      isOverdue = parsedDeadline < now && task.status !== 'done';
-      deadlineText = format(parsedDeadline, "PPP", { locale: currentLocale });
-      if (isOverdue) {
-        deadlineColor = "border-red-400 text-red-400";
-      } else if (task.status === 'done') {
-        deadlineColor = "border-green-400 text-green-400";
-      } else {
-        deadlineColor = "border-blue-400 text-blue-400";
-      }
-    } catch (e) {
-      deadlineText = t('taskDetail.invalidDate');
-      deadlineColor = "border-red-400 text-red-400";
-    }
-  }
-
-  const statusColor: Record<string, string> = {
-    todo: "border-red-400 text-red-400",
-    in_progress: "border-yellow-400 text-yellow-400",
-    done: "border-green-400 text-green-400",
-  };
 
   const closeSubtaskContextMenu = () => {
     setLongPressedSubtaskId(null);
@@ -260,18 +260,70 @@ export default function TaskDetail() {
     }
   }, [id, task, markTaskAsViewed]);
 
-  if (tasksLoading) {
-    return null;
+  // Functie voor het achtergrondicoon met aanpassing voor elke prioriteitskleur
+  const getCategoryBackgroundIcon = (category?: string) => {
+    // Vaste opaciteit voor alle iconen (natuurlijke opacity via CSS styling)
+    const getIconClass = (priority?: string) => {
+      if (priority === 'high') {
+        return "text-[rgb(175,36,42)] opacity-20"; // Kleur voor hoge prioriteit
+      } else if (priority === 'medium') {
+        return "text-[rgb(227,131,6)] opacity-20"; // Kleur voor medium prioriteit
+      } else if (priority === 'low') {
+        return "text-[#c1ccf5] opacity-20"; // Kleur voor lage prioriteit
+      } else {
+        return "text-gray-300 opacity-20"; // Standaard kleur
+      }
+    };
+
+    const iconProps = { 
+      className: `category-background-icon ${getIconClass(task?.priority)}`,
+      size: 62, 
+      strokeWidth: 0.6 
+    };
+    
+    // Gebruik Sparkles component uit bestaande import
+    const SparklesIcon = Sparkles;
+    
+    switch(category) {
+      case "Werk/Studie":
+        return <BriefcaseBusiness {...iconProps} />;
+      case "Persoonlijk":
+        return <Icon iconNode={frogFace} {...iconProps} />;
+      case "Huishouden":
+        return <Home {...iconProps} />;
+      case "Familie":
+        return <Users {...iconProps} />;
+      case "Sociaal":
+        return <GlassWater {...iconProps} />;
+      case "Gezondheid":
+        return <Heart {...iconProps} />;
+      case "Financiën":
+        return <Wallet {...iconProps} />;
+      case "Projecten":
+        return <SparklesIcon {...iconProps} />;
+      default:
+        return null;
+    }
+  };
+
+  if (tasksLoading && !task) {
+    return (
+      <AppLayout noPadding>
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)]">
+          <GradientLoader />
+        </div>
+      </AppLayout>
+    );
   }
 
   if (!task) {
     return (
       <AppLayout>
-        <div className="flex flex-col items-center justify-center h-64">
-          <h1 className="text-2xl font-bold mb-2">{t('taskDetail.notFound.title')}</h1>
-          <Button onClick={() => navigate(-1)} className="bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900">
+        <div className="flex flex-col items-center justify-center h-full text-center">
+          <p className="text-xl text-muted-foreground">{t('taskContext.taskNotFound', { taskId: id })}</p>
+          <Button onClick={() => navigate(-1)} className="mt-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            {t('common.back')}
+            {t('taskDetail.backButton')}
           </Button>
         </div>
       </AppLayout>
@@ -279,7 +331,6 @@ export default function TaskDetail() {
   }
 
   const handleDelete = async () => {
-    setIsDeleting(true);
     try {
       await deleteTask(task.id);
       toast({
@@ -293,13 +344,11 @@ export default function TaskDetail() {
         title: t('taskDetail.toast.deleteFailed'),
         description: t('taskDetail.toast.taskDeleteFailedDescription'),
       });
-    } finally {
-      setIsDeleting(false);
     }
   };
 
   return (
-    <AppLayout noPadding={globalThis.innerWidth < 1024}>
+    <AppLayout>
       <div className="relative">
         <Button
           variant="ghost"
@@ -315,91 +364,234 @@ export default function TaskDetail() {
           ref={containerRef} 
           className="flex flex-col lg:flex-row h-[calc(100vh-8rem)] lg:h-[calc(100vh-12rem)] relative z-0 lg:gap-2"
         >
-          <Card 
+          <div 
             className={cn(
-              "firebase-card flex-col relative overflow-hidden z-10",
-              "rounded-none border-none",
-              "lg:rounded-lg lg:border",
+              "flex flex-col h-full",
               "lg:flex-[0_0_auto]",
               activeMobileView === 'chat' ? 'hidden lg:flex' : 'flex w-full'
             )}
             style={globalThis.innerWidth >= 1024 ? { width: `${columnSizes.left}%` } : {}}
           >
-            <CardHeader className={cn(
-              "transition-all duration-300 ease-in-out",
-              "px-4",
-              isInfoCollapsed ? "pt-4 pb-0" : "pt-6 pb-3",
-              "lg:p-6 lg:pb-3"
-            )}>
-              <div className="flex items-center">
-                <CardTitle className={cn(
-                  "font-semibold",
-                  "transition-all duration-300 ease-in-out",
-                  isInfoCollapsed ? "text-lg" : "text-xl",
-                  "lg:text-xl"
-                )}>{task?.title}</CardTitle>
-              </div>
-            </CardHeader>
-            <TaskActions 
-              task={task}
-              isEditDialogOpen={isEditDialogOpen}
-              setIsEditDialogOpen={setIsEditDialogOpen}
-              handleDelete={handleDelete}
-              isDeleting={isDeleting}
-              isInfoCollapsed={isInfoCollapsed} 
-              t={t}
-            />
+            <Card 
+              className={cn(
+                "firebase-card flex-col relative overflow-hidden z-10",
+                "rounded-none border-none lg:rounded-lg lg:border lg:border-solid lg:border-white/10",
+                "flex-shrink-0 mb-4 bg-card/80 backdrop-blur-md",
+                isDescriptionMinimized ? "max-h-[68px]" : "",
+                priorityStyles.backgroundClass,
+                priorityStyles.shadowClass
+              )}
+            >
+              {task?.category && (
+                <div className={cn(
+                  `absolute right-4 z-0 pointer-events-none`,
+                  isDescriptionMinimized ? "opacity-0 transform scale-90" : "opacity-100 transform scale-100",
+                  "transition-all duration-800 ease-in-out",
+                  task.subtasks && task.subtasks.length > 0 ? 'bottom-10' : 'bottom-4'
+                )}>
+                  {getCategoryBackgroundIcon(task.category)}
+                </div>
+              )}
+              <CardHeader className={cn(
+                "px-4",
+                "!pt-3", isDescriptionMinimized ? "pb-2" : "pb-3",
+                "lg:px-6",
+                "lg:!pt-3", isDescriptionMinimized ? "lg:pb-2" : "lg:pb-3"
+              )}>
+                <div className="flex items-center justify-between">
+                  <CardTitle className={cn(
+                    "font-semibold",
+                    isDescriptionMinimized ? "text-sm" : "text-xl",
+                    "lg:text-xl"
+                  )}>
+                    {task?.emoji && <span className="mr-1.5 text-2xl task-emoji">{task.emoji}</span>}
+                    {task?.title}
+                  </CardTitle>
+                  
+                  {/* Deadline calendar badge */}
+                  {deadlineDay && deadlineMonth && (
+                    <div className="transition-all duration-500 ease-in-out">
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center">
+                              <div className={`w-8 h-8 flex flex-col items-center justify-center gap-[6px] rounded-full border border-white/10 overflow-hidden shadow-md calendar-badge ${
+                                task?.priority === 'high' ? 'bg-gradient-to-br from-red-600/90 to-rose-700/90' :
+                                task?.priority === 'medium' ? 'bg-gradient-to-br from-amber-500/90 to-orange-600/90' :
+                                task?.priority === 'low' ? 'bg-gradient-to-br from-blue-500/90 to-cyan-600/90' :
+                                'bg-gradient-to-br from-slate-500/90 to-slate-600/90'
+                              }`}>
+                                <div className="text-[0.875rem] font-bold text-white leading-none">
+                                  {deadlineDay}
+                                </div>
+                                <div className="!text-[0.7rem] font-medium uppercase tracking-tight text-white/80 mt-[-8px] leading-none">
+                                  {deadlineMonth.substring(0, 3)}
+                                </div>
+                              </div>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent 
+                            side="bottom" 
+                            align="end" 
+                            sideOffset={5} 
+                            alignOffset={5}
+                            avoidCollisions
+                            className="bg-popover/90 backdrop-blur-lg px-3 py-2 max-w-[200px] z-50 whitespace-normal break-words"
+                          >
+                            <p>{deadlineText}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              {task && (
+                <CardContent className={cn(
+                  "p-0 flex flex-col flex-grow min-h-0",
+                  "transition-all duration-800 ease-in-out",
+                  isDescriptionMinimized 
+                    ? "opacity-0 max-h-0 transform translate-y-[-10px] overflow-hidden" 
+                    : "opacity-100 transform translate-y-0"
+                )}>
+                  <div className="p-6 pt-0 flex flex-col flex-grow min-h-0 px-0 pb-0 lg:p-6 lg:pt-0">
+                    <TaskInfoDisplay
+                      task={task}
+                      isInfoCollapsed={isInfoCollapsed}
+                    />
+                    <div className="mt-4 flex flex-wrap items-center gap-2 relative z-10">
+                      {task.category && (
+                        <Badge variant="outline" className="text-xs h-6 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-sm text-white border-white/10 shadow-md">
+                          {task.category}
+                        </Badge>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-6 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-sm text-white border-white/10 shadow-md flex items-center gap-1"
+                        onClick={() => setIsEditDialogOpen(true)}
+                      >
+                        <Edit className="h-3 w-3" />
+                        {t('common.edit')}
+                      </Button>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-6 px-2.5 py-0.5 rounded-full bg-red-500/10 backdrop-blur-sm text-red-300 border-red-500/20 shadow-md flex items-center gap-1"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            {t('common.delete')}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogPortal>
+                          <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                          <AlertDialogContent className="bg-card/90 backdrop-blur-md border-white/10 z-[90]">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{t('taskDetail.deleteConfirmation.title')}</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t('taskDetail.deleteConfirmation.description')}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={handleDelete}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                {t('common.delete')}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialogPortal>
+                      </AlertDialog>
+                    </div>
+                    {totalSubtasks > 0 && (
+                      <div className="flex items-center gap-2 mt-4 w-full">
+                        <div className="flex items-center gap-1.5">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" 
+                            className={`
+                              ${task?.priority === 'high' ? 'text-red-400' : ''}
+                              ${task?.priority === 'medium' ? 'text-amber-400' : ''}
+                              ${task?.priority === 'low' ? 'text-cyan-400' : ''}
+                              ${task?.priority !== 'high' && task?.priority !== 'medium' && task?.priority !== 'low' ? 'text-slate-400' : ''}
+                            `}>
+                              <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+                              <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            <span className={`text-xs flex-shrink-0 mr-2
+                                ${task?.priority === 'high' ? 'text-red-400' : ''}
+                                ${task?.priority === 'medium' ? 'text-amber-400' : ''}
+                                ${task?.priority === 'low' ? 'text-cyan-400' : ''}
+                                ${task?.priority !== 'high' && task?.priority !== 'medium' && task?.priority !== 'low' ? 'text-slate-400' : ''}
+                              `}>
+                              {completedSubtasks}/{totalSubtasks}
+                            </span>
+                          </div>
+                          <div className="relative w-full h-3.5 bg-white/20 backdrop-blur-md rounded-full overflow-hidden flex-grow shadow-md">
+                            <div
+                              className={`h-full rounded-full transition-all duration-300
+                                ${task?.priority === 'high' ? 'bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 shadow-[0_0_8px_2px_rgba(244,63,94,0.4)]' : ''}
+                                ${task?.priority === 'medium' ? 'bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.4)]' : ''}
+                                ${task?.priority === 'low' ? 'bg-gradient-to-r from-blue-500 via-cyan-400 to-teal-400 shadow-[0_0_8px_2px_rgba(34,211,238,0.4)]' : ''}
+                                ${task?.priority !== 'high' && task?.priority !== 'medium' && task?.priority !== 'low' ? 'bg-gradient-to-r from-slate-400 to-slate-500 shadow-[0_0_8px_2px_rgba(100,116,139,0.3)]' : ''}
+                              `}
+                              style={{ width: `${progressValue}%` }}
+                            />
+                            {progressValue > 10 && (
+                              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold select-none">
+                                {Math.round(progressValue)}%
+                              </span>
+                            )}
+                          </div>
+                          <span className="sr-only">
+                            ({Math.round(progressValue)}%)
+                          </span>
+                        </div>
+                      )}
+                  </div>
+                </CardContent>
+              )}
+            </Card>
 
             {task && (
-              <CardContent className="p-0 flex flex-col flex-grow min-h-0">
-                <div className="p-6 pt-0 flex flex-col flex-grow min-h-0 px-0 pb-0 lg:p-6 lg:pt-0">
-                  <TaskInfoDisplay
-                    task={task}
-                    isInfoCollapsed={isInfoCollapsed}
-                    statusColor={statusColor}
-                    priorityBadgeColor={priorityBadgeColor}
-                    deadlineText={deadlineText}
-                    deadlineColor={deadlineColor}
-                    isOverdue={isOverdue}
-                    onStatusChange={handleStatusChange}
-                    onPriorityChange={handlePriorityChange}
-                  />
-                  <div className="px-4 lg:px-0">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3 flex-grow">
-                          <h3 className="font-medium flex-shrink-0">{t('common.subtasks')}</h3>
-                          {totalSubtasks > 0 && (
-                            <div className="flex items-center gap-2 flex-grow">
-                              <span className="text-xs text-muted-foreground flex-shrink-0">
-                                {completedSubtasks}/{totalSubtasks}
-                              </span>
-                              <GradientProgress value={progressValue} className="h-1.5 flex-grow lg:w-40 lg:flex-grow-0" /> 
-                              <span className="text-xs font-medium text-muted-foreground/90 flex-shrink-0">
-                                ({Math.round(progressValue)}%)
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => setIsInfoCollapsed(!isInfoCollapsed)}
-                          className="h-7 w-7 text-muted-foreground flex-shrink-0 ml-2"
-                          aria-label={isInfoCollapsed ? t('taskDetail.expandDescription') : t('taskDetail.collapseDescription')}
-                        >
-                          {isInfoCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+              <Card 
+                ref={subtaskCardRef}
+                className={cn(
+                  "firebase-card subtask-card-glow-target flex-col relative overflow-hidden z-10",
+                  "rounded-none border-none lg:rounded-lg lg:border lg:border-solid lg:border-white/5 flex-grow min-h-0 h-full", 
+                  "backdrop-blur-md bg-card/80",
+                  "transition-all duration-800 ease-in-out",
+                  priorityStyles.shadowClass
+                )}
+              >
+                <CardHeader className="px-4 py-2 lg:px-4 lg:py-2 relative">
+                  <h3 className="text-xs font-medium text-white/60 uppercase tracking-wider text-center">{t('common.subtasks')}</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 absolute right-3 top-[-2px] rounded-full text-white/70 hover:text-white hover:bg-white/10 z-30 flex items-center justify-center"
+                    onClick={() => setIsDescriptionMinimized(!isDescriptionMinimized)}
+                    aria-label={isDescriptionMinimized ? t('taskDetail.expandDescription') : t('taskDetail.minimizeDescription')}
+                  >
+                    {isDescriptionMinimized ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                  </Button>
+                </CardHeader>
+                <CardContent className="p-0 flex flex-col flex-grow h-full overflow-hidden relative max-h-[calc(100%-25px)]">
+                  {/* Scrollbare container met flex-grow voor de subtaken */}
                   <div className={cn(
-                    "flex-grow overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded space-y-1 lg:space-y-1.5 divide-y divide-border/60 lg:divide-y-0",
-                    (longPressedSubtaskId || contextMenuPosition) ? "pb-12" : "pb-2"
+                    // Base padding
+                    "pl-4 pr-2 lg:pl-4 lg:pr-2 pt-1 pb-2",
+                    // Scrollbare container die automatisch groeit maar krimpt bij overflow
+                    "flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-primary scrollbar-track-neutral-200 dark:scrollbar-track-neutral-800 scrollbar-thumb-rounded max-h-[calc(100%-80px)]",
+                    // Conditonele styling
+                    task.subtasks.length === 0 && "flex items-center justify-center"
                   )}>
                     <AnimatePresence mode='wait'>
                       {task.subtasks.length > 0 ? (
-                        <motion.div key="subtask-list" layout>
+                        <motion.div key="subtask-list" layout className="w-full">
                           {task.subtasks.map((subtaskItem: SubTask, index: number) => (
                             <div key={`subtask-wrapper-${subtaskItem.id}`} className="relative">
                               <SubtaskRow 
@@ -493,15 +685,17 @@ export default function TaskDetail() {
                           initial={{ opacity: 0 }} 
                           animate={{ opacity: 1 }} 
                           exit={{ opacity: 0 }}
-                          className="text-muted-foreground text-sm px-4 lg:px-0"
+                          className="text-muted-foreground text-sm text-center"
                         >
                           {t('taskDetail.noSubtasks')}
                         </motion.p>
                       )}
                     </AnimatePresence>
                   </div>
-                  <div className="px-4 lg:px-0">
-                    <div className="hidden lg:flex lg:items-center lg:gap-2 lg:px-1 border-t border-border pt-3 mt-auto">
+                  
+                  {/* Knoppenbalk als aparte flex-item zodat deze onderaan blijft en niet scroll */}
+                  <div className="flex-shrink-0 px-4 pt-2 pb-3 lg:px-6 lg:pt-3 lg:pb-3 border-t border-border bg-card/80 backdrop-blur-md">
+                    <div className="flex items-center flex-wrap gap-3 justify-center mb-1">
                       {showAddSubtaskForm ? (
                         <form onSubmit={handleAddSubtask} className="flex items-center gap-3 flex-grow">
                           <label htmlFor="new-subtask-title-desktop" className="sr-only">{t('taskDetail.addSubtask.titleDesktopSR')}</label>
@@ -537,7 +731,7 @@ export default function TaskDetail() {
                         </form>
                       ) : (
                         <Dialog open={isGenerateSubtasksDialogOpen} onOpenChange={setIsGenerateSubtasksDialogOpen}>
-                          <div className="flex flex-wrap items-center gap-2 h-10">
+                          <div className="flex flex-wrap items-center gap-3 justify-center w-full">
                             <Button 
                               variant="default"
                               onClick={() => setShowAddSubtaskForm(true)} 
@@ -551,7 +745,7 @@ export default function TaskDetail() {
                                 <DialogTrigger asChild>
                                   <Button
                                     disabled={isGeneratingSubtasksForTask(task.id) || isAddingSubtask || isLimitReached}
-                                    className="h-10 p-[1px] rounded-md bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 relative transition-colors duration-200"
+                                    className="h-10 p-[1px] rounded-md bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 relative transition-colors duration-200 mb-1"
                                   >
                                     <div className="bg-card h-full w-full rounded-[5px] flex items-center justify-center px-4">
                                       <span className="flex items-center bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
@@ -609,25 +803,24 @@ export default function TaskDetail() {
                       )}
                     </div>
                   </div>
-                </div>
-              </CardContent>
+                </CardContent>
+              </Card>
             )}
-          </Card>
+          </div>
 
           {/* Draggable divider - only visible on desktop */}
           <div
             className={cn(
               "hidden lg:flex items-center justify-center w-px cursor-ew-resize bg-border hover:bg-primary/40 transition-all duration-300 relative z-30 mx-1 shrink-0 hover:shadow-[0_0_8px_rgba(var(--primary),.4)]",
-              "group" // Added group for potential hover effects on children
+              "group"
             )}
-            onMouseDown={startResize} // Ensured startResize is used
+            onMouseDown={startResize}
           >
-            {/* Stylish arrow handle */}
             <div 
               className={cn(
                 "absolute w-4 h-8 rounded-full bg-primary/25 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300",
-                isResizing ? "opacity-100 bg-primary/40 scale-110" : "", // Ensured isResizing is used
-                "lg:group-hover:opacity-100" // Made consistent with parent group hover
+                isResizing ? "opacity-100 bg-primary/40 scale-110" : "",
+                "lg:group-hover:opacity-100"
               )}
             >
               <div className="flex items-center justify-center flex-row gap-0.5">
@@ -644,10 +837,13 @@ export default function TaskDetail() {
 
           <Card 
             className={cn(
-              "firebase-card overflow-hidden flex flex-col flex-grow min-h-0",
+              "firebase-card chat-card-glow-target overflow-hidden flex flex-col flex-grow min-h-0",
               "lg:flex-[1_1_auto]",
               activeMobileView === 'details' ? 'hidden lg:flex' : 'flex w-full lg:w-auto',
-              activeMobileView === 'chat' && 'h-full p-0'
+              activeMobileView === 'chat' && 'h-full p-0',
+              "lg:border lg:border-solid lg:border-white/10",
+              priorityStyles.backgroundClass,
+              priorityStyles.shadowClass
             )}
             style={globalThis.innerWidth >= 1024 ? { width: `${columnSizes.right}%` } : { /* Do not explicitly set height here, let flexbox do the work */ }}
           >
@@ -780,6 +976,27 @@ export default function TaskDetail() {
           </AlertDialogContent>
         </AlertDialogPortal>
       </AlertDialog>
+
+      {isEditDialogOpen && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogPortal>
+            <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+            <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card/90 backdrop-blur-md border-white/10 p-6 shadow-lg sm:rounded-lg z-50 sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle className="text-2xl">{t('taskDetail.editTaskDialog.title')}</DialogTitle>
+                <DialogDescription>
+                  {t('taskDetail.editTaskDialog.description')}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                <X className="h-4 w-4" />
+                <span className="sr-only">{t('common.closeSR')}</span>
+              </DialogClose>
+              {task && <EditTaskDialog task={task} setOpen={setIsEditDialogOpen} />}
+            </DialogContent>
+          </DialogPortal>
+        </Dialog>
+      )}
     </AppLayout>
   );
 }

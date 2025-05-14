@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card.tsx";
-import { useTheme } from "@/contexts/ThemeContext.tsx";
+import { useTheme } from "@/contexts/useTheme.ts";
 import { useAuth } from "@/hooks/useAuth.ts";
 import {
   AiChatMode,
@@ -376,7 +376,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleThemeChange = async (newTheme: string) => {
+  const handleThemeChange = (newTheme: string) => {
     // Cast string value to Theme type
     setTheme(newTheme as "light" | "dark" | "custom-dark");
   };

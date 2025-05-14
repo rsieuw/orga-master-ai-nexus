@@ -56,14 +56,14 @@ export function ChatInput({
                 onClick={onSubmit}
                 size="icon"
                 disabled={isLoading || !input.trim()}
-                className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
+                className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
               >
                 {isLoading ? (
                   <GradientLoader size="sm" />
                 ) : isNoteMode ? (
-                  <Save className="h-6 w-6" />
+                  <Save className="h-5 w-5" />
                 ) : (
-                  <Send className="h-6 w-6" />
+                  <Send className="h-5 w-5" />
                 )}
               </Button>
             </TooltipTrigger>

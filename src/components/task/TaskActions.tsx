@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/dialog.tsx";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu.tsx";
 import EditTaskDialog from "@/components/tasks/EditTaskDialog.tsx";
-import { GradientLoader } from "@/components/ui/loader.tsx";
 import { cn } from "@/lib/utils.ts";
 import { TFunction } from "i18next";
 
@@ -36,7 +35,6 @@ interface TaskActionsProps {
   isEditDialogOpen: boolean;
   setIsEditDialogOpen: (isOpen: boolean) => void;
   handleDelete: () => void;
-  isDeleting: boolean;
   isInfoCollapsed?: boolean; // Optional, for mobile layout adjustments
   t: TFunction;
 }
@@ -46,7 +44,6 @@ export default function TaskActions({
   isEditDialogOpen,
   setIsEditDialogOpen,
   handleDelete,
-  isDeleting,
   isInfoCollapsed,
   t,
 }: TaskActionsProps) {
@@ -98,11 +95,7 @@ export default function TaskActions({
                 <AlertDialogAction
                   onClick={handleDelete}
                   className="bg-destructive hover:bg-destructive/90"
-                  disabled={isDeleting}
                 >
-                  {isDeleting ? (
-                    <GradientLoader size="sm" className="mr-2" />
-                  ) : null}
                   {t('common.delete')}
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -154,11 +147,7 @@ export default function TaskActions({
                     <AlertDialogAction
                       onClick={handleDelete}
                       className="bg-destructive hover:bg-destructive/90"
-                      disabled={isDeleting}
                     >
-                      {isDeleting ? (
-                        <GradientLoader size="sm" className="mr-2" />
-                      ) : null}
                       {t('common.delete')}
                     </AlertDialogAction>
                   </AlertDialogFooter>

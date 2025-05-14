@@ -89,37 +89,54 @@ const cardVariants: Variants = {
   },
 };
 
-// Define the gradient classes for each priority
+// Define the gradient values for the animation
 const priorityGradients = [
-  'bg-gradient-to-r from-[#b12429] via-[#8112a9] to-[#690365]', // High (custom hex)
-  'bg-gradient-to-r from-[#db7b0b] via-[#9e4829] to-[#651945]', // Medium (custom hex)
-  'bg-gradient-to-r from-blue-500 via-cyan-400 to-teal-400', // Low
-  'bg-gradient-to-r from-blue-600 to-purple-700' // Original blue-purple (lighter)
+  '#b12429', // Rood
+  '#8112a9', // Paars
+  '#690365', // Donkerpaars
+  '#db7b0b', // Oranje
+  '#9e4829', // Bruinrood
+  '#651945', // Donkerrood
+  '#3b82f6', // Blauw
+  '#22d3ee', // Cyaan
+  '#14b8a6', // Teal
+  '#2563eb', // Donkerblauw
+  '#a78bfa', // Lichtpaars
+  '#7e22ce', // Paars
+  '#b12429'  // Terug naar begin voor een naadloze cyclus
 ];
+
+// CSS Animation style voor een perfect vloeiende gradient animatie
+const gradientAnimationStyle = `
+  .animated-gradient-text {
+    background: linear-gradient(
+      to right,
+      ${priorityGradients.join(', ')}
+    );
+    background-size: 400% 100%;
+    animation: gradientFlow 45s ease-in-out infinite;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  
+  @keyframes gradientFlow {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+`;
 
 export default function Dashboard() {
   const { isLoading, groupTasksByDate } = useTask();
   const { user } = useAuth();
   const { t } = useTranslation();
-  const [greetingGradient, setGreetingGradient] = useState(''); // State for the gradient class
-
-  // Select a random gradient when the component mounts
-  useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * priorityGradients.length);
-    setGreetingGradient(priorityGradients[randomIndex]);
-  }, []); // Empty dependency array ensures this runs only once on mount
-
-  const getCategoryTitle = (category: keyof TasksByDate): string => {
-    switch (category) {
-      case 'overdue': return t('dashboard.categories.overdue');
-      case 'today': return t('dashboard.categories.today');
-      case 'tomorrow': return t('dashboard.categories.tomorrow');
-      case 'dayAfterTomorrow': return t('dashboard.categories.dayAfterTomorrow');
-      case 'nextWeek': return t('dashboard.categories.nextWeek');
-      case 'later': return t('dashboard.categories.later');
-      default: return '';
-    }
-  };
 
   // Initialize state from Local Storage or defaults
   const [searchTerm, setSearchTerm] = useState<string>(() => {
@@ -198,6 +215,19 @@ export default function Dashboard() {
     };
   }, []);
 
+  // Effect om de gradient animatiestijl in te voegen in het document
+  useEffect(() => {
+    // Voeg de stijl toe aan het document
+    const styleElement = document.createElement('style');
+    styleElement.textContent = gradientAnimationStyle;
+    document.head.appendChild(styleElement);
+
+    // Opruimfunctie om de stijl te verwijderen als de component unmounts
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+
   const rawTaskGroups = groupTasksByDate();
 
   const filteredAndSortedTaskGroups = useMemo(() => {
@@ -252,6 +282,19 @@ export default function Dashboard() {
   const taskCategorySections = useMemo(() => {
     const sections: React.ReactNode[] = [];
     
+    // Functie binnen useMemo geplaatst om onnodige re-renders te voorkomen
+    const getCategoryTitle = (category: keyof TasksByDate): string => {
+      switch (category) {
+        case 'overdue': return t('dashboard.categories.overdue');
+        case 'today': return t('dashboard.categories.today');
+        case 'tomorrow': return t('dashboard.categories.tomorrow');
+        case 'dayAfterTomorrow': return t('dashboard.categories.dayAfterTomorrow');
+        case 'nextWeek': return t('dashboard.categories.nextWeek');
+        case 'later': return t('dashboard.categories.later');
+        default: return '';
+      }
+    };
+    
     // Loop door elke categorie (overdue, today, etc.)
     (Object.keys(filteredAndSortedTaskGroups) as Array<keyof TasksByDate>).forEach(category => {
       const tasksInCategory = filteredAndSortedTaskGroups[category];
@@ -285,7 +328,7 @@ export default function Dashboard() {
     });
     
     return sections;
-  }, [filteredAndSortedTaskGroups, getCategoryTitle]);
+  }, [filteredAndSortedTaskGroups, t]);
   // --- EINDE NIEUWE HORIZONTALE DISTRIBUTIE ---
 
   // Construct the greeting text using user?.name
@@ -353,8 +396,8 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 md:space-x-4">
           {/* Wrapper div for Greeting and Subtitle */}
           <div> 
-            <h1 className={`text-3xl md:text-3xl lg:text-4xl font-bold`}> 
-              <span className={`bg-clip-text text-transparent ${greetingGradient}`}>
+            <h1 className="text-3xl md:text-3xl lg:text-4xl font-bold"> 
+              <span className="animated-gradient-text">
                 <TypeAnimation
                   sequence={[
                     100, 

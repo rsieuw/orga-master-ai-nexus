@@ -190,7 +190,8 @@ export default function SubtaskRow({
       transition={{ duration: 0.3, ease: "easeInOut" }}
       {...eventHandlers}
       className={cn(
-        "group/row flex items-start justify-between space-x-3 rounded-md py-2 pl-2 lg:pl-0 pr-2 hover:bg-muted/50 overflow-hidden relative",
+        "group/row flex items-center justify-between space-x-3 rounded-md py-1 pl-2 lg:pl-0 pr-2 hover:bg-muted/50 overflow-hidden relative mt-0",
+        "border border-white/5 shadow-sm mb-0.5 bg-white/5 backdrop-blur-sm",
         isEditing && "bg-muted/60"
       )}
       onTouchStart={handlePressStart}
@@ -209,26 +210,27 @@ export default function SubtaskRow({
           e.preventDefault();
       }}
     >
-      <div className="flex items-start space-x-2 flex-grow min-w-0">
-        <div className="relative h-7 w-7 lg:h-5 lg:w-5 flex-shrink-0 ml-[9px] mt-[2px]">
+      <div className="flex items-center space-x-2 flex-grow min-w-0">
+        <div className="relative h-5 w-5 lg:h-4.5 lg:w-4.5 flex-shrink-0 ml-[9px] mt-0">
           <Checkbox
             id={`subtask-${subtask.id}`}
             checked={subtask.completed}
             onCheckedChange={(checked) => !isEditing && handleSubtaskToggle(subtask.id, !!checked)}
             className={cn(
               "absolute inset-0 h-full w-full border-primary data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600",
+              "shadow-md rounded-md"
             )}
             disabled={isEditing}
           />
           <span className={cn(
             "absolute inset-0 flex items-center justify-center text-xs font-medium pointer-events-none",
             subtask.completed ? "hidden" : "text-muted-foreground/70",
-            "lg:text-[10px]"
+            "lg:text-[9px]"
           )}>
             {index + 1}
           </span>
         </div>
-        <div className="flex-grow pt-[1px]">
+        <div className="flex-grow leading-none">
           {isEditing ? (
             <div className="flex items-center space-x-1">
               <Input
@@ -238,18 +240,18 @@ export default function SubtaskRow({
                 value={currentEditTitle}
                 onChange={(e) => setCurrentEditTitle(e.target.value)}
                 onKeyDown={handleEditKeyDown}
-                className="h-7 text-sm flex-grow"
+                className="h-6 text-xs flex-grow"
                 autoFocus
                 onFocus={(e) => e.target.select()}
               />
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-green-600 hover:text-green-500" onClick={handleSaveEdit}><Save className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={handleCancelEdit}><X className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-green-600 hover:text-green-500" onClick={handleSaveEdit}><Save className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={handleCancelEdit}><X className="h-4 w-4" /></Button>
             </div>
           ) : (
             <>
               <label
                 className={cn(
-                  "flex-grow text-sm font-normal leading-snug cursor-pointer hover:text-primary transition-colors",
+                  "flex-grow text-sm cursor-pointer hover:text-primary transition-colors text-neutral-200",
                   subtask.completed && "text-gray-700 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-400 line-through"
                 )}
                 onClick={() => {
@@ -266,10 +268,10 @@ export default function SubtaskRow({
                 {isDescriptionVisible && subtask.description && (
                   <motion.div
                     initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                    animate={{ opacity: 1, height: 'auto', marginTop: '0.25rem' }}
+                    animate={{ opacity: 1, height: 'auto', marginTop: '0' }}
                     exit={{ opacity: 0, height: 0, marginTop: 0 }}
                     transition={{ duration: 0.2, ease: "easeInOut" }}
-                    className="text-xs text-muted-foreground pl-1 pr-2 whitespace-pre-wrap pb-2"
+                    className="text-[9px] text-muted-foreground pl-1 pr-2 whitespace-pre-wrap pb-0.5"
                   >
                     {subtask.description}
                   </motion.div>

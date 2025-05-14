@@ -431,9 +431,9 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
   
   return (
     <div className="flex flex-col h-full bg-card border-l border-border overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border flex-shrink-0 relative z-20 bg-card">
         <div className="flex items-center gap-2 min-w-0">
-          <MessageCircleMore className="h-4 w-4 text-primary flex-shrink-0" /> 
+          <MessageCircleMore className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           <h2 className="text-base font-semibold truncate" title={task.title ?? ''}>{t('chatPanel.titleWithTask', { taskTitle: task.title ?? '' })}</h2>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">

@@ -699,6 +699,7 @@
     "generateSubtasksDialogTitle": "Genereer Subtaken",
     "generateSubtasksDialogDescription": "Wil je subtaken genereren voor '{{taskTitle}}'?",
     "generatingText": "Genereren...",
+    "deleting": "Bezig met verwijderen...",
     "information": "Informatie",
     "notAuthenticated": "Je moet ingelogd zijn om deze actie uit te voeren.",
     "category": "Categorie",
