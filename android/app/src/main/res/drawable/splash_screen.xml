@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@color/colorPrimary"/>
+    <!-- Radiale gradient achtergrond -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="50%p"
+                android:startColor="@color/splash_gradient_center_color"
+                android:endColor="@color/splash_background_color" />
+        </shape>
+    </item>
+    <!-- Nieuwe splash afbeelding -->
     <item>
         <bitmap
             android:gravity="center"
-            android:src="@drawable/splash"/>
+            android:src="@drawable/splash_new"/>
     </item>
 </layer-list> 

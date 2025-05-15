@@ -4,4 +4,6 @@
     <color name="colorPrimaryDark">#000000</color>
     <color name="colorAccent">#4285F4</color>
     <color name="ic_launcher_background">#000000</color> <!-- Adaptive icon background, can be transparent if foreground has a background -->
+    <color name="splash_background_color">#121212</color>
+    <color name="splash_gradient_center_color">#2C2C2C</color>
 </resources> 

@@ -130,7 +130,7 @@
 - ❌ **[PERF] Optimalisaties:**
   - Analyseer bundle size en laadtijden. Voer performance profiling uit.
 - ❌ **[DOCS] Documentatie:**
-  - Voeg JSDoc toe aan componenten en functies. Breid `README.md` uit.
+  - ✅ Voeg JSDoc toe aan componenten en functies. Breid README.md uit.
   - ❌ **[NIEUW]** Vul de inhoud van de Support en Documentatie pagina's aan.
   - ❌ **[NIEUW]** Maak een 3-minuten YouTube handleiding/demo video voor de Perplexity Hackathon.
 - ❌ **[STATE] State Management Evaluatie:**
@@ -238,7 +238,7 @@ Na een grondige analyse van de codebase zijn de volgende verbeteringen essentiee
    - Hoewel er mobiele ondersteuning is, is waarschijnlijk meer aandacht nodig voor een volledig responsieve ervaring.
 
 7. **Documentatie:**
-   - JSDoc ontbreekt bij de meeste componenten.
+   - ✅ JSDoc ontbreekt bij de meeste componenten.
    - Geen gedetailleerde architectuurdocumentatie of handleidingen voor nieuwe ontwikkelaars.
 
 8. **Internationalisatie:**
