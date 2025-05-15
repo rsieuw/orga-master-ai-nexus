@@ -22,7 +22,15 @@ import { TaskContext, TaskContextType } from "./TaskContext.context.ts";
 // Define Context here
 // export const TaskContext = createContext<TaskContextProps | undefined>(undefined);
 
-// Custom hook to use the TaskContext
+/**
+ * Custom hook to access the TaskContext.
+ *
+ * Provides access to task data and functions for managing tasks,
+ * such as creating, updating, deleting, and grouping tasks.
+ *
+ * @throws {Error} If used outside of a TaskProvider.
+ * @returns {TaskContextType} The task context, providing task state and actions.
+ */
 export const useTask = (): TaskContextType => {
   const context = useContext(TaskContext);
   if (context === undefined) {

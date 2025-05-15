@@ -1,25 +1,27 @@
 {
+  // @fileoverview Configuration file for Deno, specifying tasks, formatting options,
+  // linting rules, import aliases, and compiler options for the project.
   "tasks": {
-    // Voeg hier eventuele Deno taken toe, bijv. "dev": "deno run --watch src/main.ts"
+    // Add any Deno tasks here, e.g., "dev": "deno run --watch src/main.ts"
   },
   "fmt": {
-    // Formatteringsopties (standaard Deno-instellingen zijn meestal goed)
+    // Formatting options (default Deno settings are usually good)
     "options": {
       "useTabs": false,
       "lineWidth": 100,
       "indentWidth": 2,
-      "singleQuote": false // Gebruik dubbele quotes zoals in je bestaande code
+      "singleQuote": false // Use double quotes as in your existing code
     }
   },
   "lint": {
-    // Linting regels (standaard Deno-set is een goed begin)
+    // Linting rules (default Deno set is a good start)
     "rules": {
       "tags": ["recommended"],
-      "exclude": ["no-unused-vars"] // We kunnen ongebruikte vars negeren als de TS config dat ook doet
+      "exclude": ["no-unused-vars"] // We can ignore unused vars if the TS config also does
     }
   },
   "imports": {
-    // Definieer hier je pad-aliassen
+    // Define your path aliases here
     "@/": "./src/",
     "shared/": "./supabase/functions/_shared/"
   },
@@ -35,12 +37,12 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  // Optioneel: Als je wilt dat Deno de compiler opties van tsconfig.json respecteert
+  // Optional: If you want Deno to respect compiler options from tsconfig.json
   // "compilerOptions": {
   //   "jsx": "react-jsx",
   //   "lib": ["dom", "dom.iterable", "esnext"]
   // }
-  // Als je expliciet wilt zijn over de tsconfig locatie:
+  // If you want to be explicit about the tsconfig location:
   // "config": "./tsconfig.json"
   "nodeModulesDir": "auto" // Instruct Deno to manage a node_modules directory
 } 

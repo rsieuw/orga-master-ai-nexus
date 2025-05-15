@@ -10,11 +10,24 @@ import { Button } from "@/components/ui/button.tsx";
 import { Link } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 
+/**
+ * `Profile` page component displays user-specific information and task statistics.
+ * It shows the user's name, email, account type (with a badge),
+ * and provides a button to upgrade for free users.
+ * It also displays task statistics: total tasks, completed, to-do, and in-progress.
+ * Shows skeleton loaders while task data is being fetched.
+ */
 export default function Profile() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { tasks, isLoading: isLoadingTasks } = useTask();
 
+  /**
+   * Calculates task statistics based on the current tasks list.
+   * This hook is memoized with `useMemo` to recompute only when the `tasks` array changes.
+   * @returns {object} An object containing total, completed, todo, and inProgress task counts.
+   *                   Returns zero for all counts if tasks are not yet loaded.
+   */
   const statistics = useMemo(() => {
     if (!tasks) return { total: 0, completed: 0, todo: 0, inProgress: 0 };
 

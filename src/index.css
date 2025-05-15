@@ -1,8 +1,8 @@
-/* stylelint-disable-next-line at-rule-no-unknown */
+/* stylelint-disable @tailwind */
 @tailwind base;
-/* stylelint-disable-next-line at-rule-no-unknown */
+/* stylelint-disable @tailwind */
 @tailwind components;
-/* stylelint-disable-next-line at-rule-no-unknown */
+/* stylelint-disable @tailwind */
 @tailwind utilities;
 
 @layer base {
@@ -37,7 +37,7 @@
 
     --radius: 0.5rem;
 
-    --card-hue: 220; /* Neutrale donkere kaart kleur */
+    --card-hue: 220; /* Neutral dark card color */
   }
 
   .light {
@@ -101,11 +101,11 @@
 
     --radius: 0.5rem;
 
-    /* Variabelen voor de dynamische subtaak gloed */
-    --subtask-glow-h: 221; /* Hue van --primary */
-    --subtask-glow-s: 83%; /* Saturation van --primary */
-    --subtask-glow-l: 53%; /* Lightness van --primary */
-    --subtask-glow-a: 0.1; /* Alpha/dekking */
+    /* Variables for the dynamic subtask glow */
+    --subtask-glow-h: 221; /* Hue from --primary */
+    --subtask-glow-s: 83%; /* Saturation from --primary */
+    --subtask-glow-l: 53%; /* Lightness from --primary */
+    --subtask-glow-a: 0.1; /* Alpha/opacity */
   }
 
   html {
@@ -129,7 +129,7 @@
 
 @layer utilities {
   .glass-effect {
-    @apply bg-black/20 backdrop-blur-lg border border-white/10 shadow-lg;
+    @apply bg-black/70 backdrop-blur-lg border border-white/10 shadow-lg;
   }
   
   .glass-card {
@@ -202,7 +202,7 @@
 
   /* End Custom Scrollbar */
 
-  /* Extra opvallende scrollbar voor chatvensters */
+  /* Extra prominent scrollbar for chat windows */
   .chat-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: rgba(120, 120, 180, 0.6) transparent;
@@ -228,18 +228,18 @@
   .chat-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: rgba(120, 120, 180, 0.8);
   }
-  /* Einde extra opvallende scrollbar */
+  /* End extra prominent scrollbar */
 
-  /* Forceer de scrollbar track kleur voor WebKit browsers */
+  /* Force scrollbar track color for WebKit browsers */
   .scrollbar-track-blue-200::-webkit-scrollbar-track {
     background-color: #bfdbfe; /* Tailwind blue-200 */
   }
 
-  /* Optioneel: Voor Firefox, als je daar ook problemen ziet */
+  /* Optional: For Firefox, if you also see issues there */
   .scrollbar-track-blue-200 {
-    /* De thumb kleur wordt door tailwind-scrollbar via --scrollbar-thumb gezet */
-    /* We stellen hier alleen de track kleur expliciet in als fallback */
-    /* Als --scrollbar-thumb niet werkt, kun je hier ook een vaste kleur invullen */
+    /* The thumb color is set by tailwind-scrollbar via --scrollbar-thumb */
+    /* We only set the track color explicitly here as a fallback */
+    /* If --scrollbar-thumb doesn't work, you can also enter a fixed color here */
     scrollbar-color: var(--scrollbar-thumb, #60a5fa) #bfdbfe; /* default thumb blue-400, track blue-200 */
   }
 }
@@ -257,11 +257,9 @@
   left: 0;
   top: 0;
   bottom: 0;
-  width: 4px; /* Breedte van de gradient-lijn */
-  /* Expliciet afronden i.p.v. inherit */
-  @apply rounded-l-xl; /* Verhoog border-radius om te matchen met kaart */
-  /* Verwijderd: border-top-left-radius: inherit; */
-  /* Verwijderd: border-bottom-left-radius: inherit; */
+  width: 4px; /* Width of the gradient line */
+  /* Explicitly round instead of inherit */
+  @apply rounded-l-xl; /* Increase border-radius to match card */
 }
 
 .priority-high::before {
@@ -355,10 +353,10 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 3px; /* Iets subtieler dan de 4px van de cards */
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.07) 50%, rgba(0, 0, 0, 0) 100%); /* Lichte, gecentreerde gloed */
+  height: 3px; /* Slightly more subtle than the 4px of the cards */
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.07) 50%, rgba(0, 0, 0, 0) 100%); /* Light, centered glow */
   /* stylelint-disable-next-line at-rule-no-unknown */
-  @apply rounded-b-lg; /* Zorgt ervoor dat de gloed de onderste afronding van de chatballon volgt */
+  @apply rounded-b-lg; /* Ensures the glow follows the bottom rounding of the chat bubble */
 }
 
 .chat-message-user {
@@ -523,7 +521,7 @@ input[type="search"]::-webkit-search-results-decoration {
   );
   z-index: 1;
   animation: backgroundPulse 3s ease-in-out infinite;
-  pointer-events: none; /* Zodat het de interactie met de kaart niet beïnvloedt */
+  pointer-events: none; /* Zodat het de interactie met the kaart niet beïnvloedt */
 }
 
 /* Specifiek knipperende glow langs de randen */
@@ -601,7 +599,7 @@ input[type="search"]::-webkit-search-results-decoration {
   background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(0, 0, 0, 0) 100%);
 }
 
-/* Prioriteit-specifieke achtergronden voor de neumorphism style */
+/* Prioriteit-specifieke achtergronden voor the neumorphism style */
 .custom-dark .priority-high {
   background: linear-gradient(165deg, rgba(220, 38, 38, 0.8) 0%, rgba(150, 25, 80, 0.75) 50%, rgba(70, 20, 90, 0.7) 100%);
   background-blend-mode: overlay;
@@ -779,9 +777,9 @@ input[type="search"]::-webkit-search-results-decoration {
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1); /* ring-2 ring-white/10 */
 }
 
-/* Badge stijling */
-.custom-dark .task-card .badge, /* Algemene badge styling voor "Nieuw" */
-.custom-dark .task-card .category-badge /* Specifieke categorie badge */ {
+/* Badge styling */
+.custom-dark .task-card .badge, /* General badge styling for "New" */
+.custom-dark .task-card .category-badge /* Specific category badge */ {
   @apply rounded-full text-xs px-3 py-1 bg-white/10 text-white;
   /* Verhoog hoogte en pas padding aan voor de grotere tekst */
   @apply h-6 px-2.5 py-0.5; /* Was h-5, px-3 py-1. px-2.5 en py-0.5 kunnen beter passen bij text-xs */
@@ -809,14 +807,12 @@ input[type="search"]::-webkit-search-results-decoration {
   @apply bg-white/60;
 }
 
-/* De iconen in de onderste balk (CheckSquare, Hourglass) en bijbehorende tekst */
-.custom-dark .task-card .task-card-footer-icons .lucide { /* Selector aangepast naar unieke class */
+/* The icons in the bottom bar (CheckSquare, Hourglass) and accompanying text */
+.custom-dark .task-card .task-card-footer-icons .lucide { /* Selector adjusted to unique class */
   /* @apply h-4 w-4; Was h-3.5 w-3.5 */
   height: 1rem; /* Vervangt h-4 */
   width: 1rem;  /* Vervangt w-4 */
 }
-
-/* De tekst zelf in de onderste balk is al meegenomen door de algemene text-sm aanpassing */
 
 /* Custom dark theme dashboard header */
 .custom-dark h1.text-3xl {
@@ -1096,4 +1092,39 @@ input[type="search"]::-webkit-search-results-decoration {
 
 .task-card.auto-completed::after {
   background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(139, 92, 246, 0.7) 50%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* Verbeterde z-index voor dropdown menus en popovers */
+.SelectContent,
+[role="combobox"],
+[role="listbox"],
+[data-radix-popper-content-wrapper],
+[data-state="open"] {
+  z-index: 100 !important; /* Zeer hoge z-index om boven alle elementen te komen */
+}
+
+/* Select items en dropdowns extra prioriteit geven */
+.custom-dark .select-item,
+.select-trigger,
+.select-content {
+  z-index: 100 !important;
+  position: relative !important;
+}
+
+/* Hersteld naar shine-effect stijl voor ::before, met correcte z-index en selector */
+.task-card.new-task-highlight::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 215, 0, 0.6) 75%, /* Subtiele gouden tint uit shine-effect - OPACITEIT VERHOOGD */
+    rgba(255, 255, 255, 0) 100%
+  );
+  z-index: 1; /* Gecorrigeerde z-index: achter content (10), boven categorie-icoon (0) */
+  pointer-events: none;
+  animation: backgroundPulse 3s ease-in-out infinite; /* Animatie van shine-effect */
 }

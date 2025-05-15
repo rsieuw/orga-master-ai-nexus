@@ -9,16 +9,37 @@ import { format } from 'date-fns';
 import { nl, enUS } from 'date-fns/locale';
 import { cn } from '@/lib/utils.ts';
 
+/**
+ * Props for the UserCard component.
+ */
 interface UserCardProps {
+  /** The user profile data to display. */
   user: UserProfile;
+  /** Function to call when a user's role is changed. Currently not used directly but kept for potential future use. */
   onRoleChange: (userId: string, newRole: UserRole) => void;
+  /** Function to call when a user is deactivated. Currently not used directly but kept for potential future use. */
   onDeactivateUser: (userId: string) => void;
+  /** Function to call when a user is activated. Currently not used directly but kept for potential future use. */
   onActivateUser: (userId: string) => void;
+  /** Function to open the dialog for changing a user's role. */
   openChangeRoleDialog: (userId: string) => void;
+  /** Function to open the dialog for deactivating a user. */
   openDeactivateDialog: (userId: string) => void;
+  /** Function to open the dialog for activating a user. */
   openActivateDialog: (userId: string) => void;
 }
 
+/**
+ * A card component that displays user information and provides actions for user management.
+ * 
+ * This component is used in the admin interface to display a user's details
+ * and provide actions like changing the user's role or activating/deactivating the user.
+ * The actual actions are performed through confirmation dialogs that are opened via
+ * the `openChangeRoleDialog`, `openDeactivateDialog`, and `openActivateDialog` functions.
+ *
+ * @param {UserCardProps} props - The props for the UserCard component.
+ * @returns {JSX.Element} The UserCard component.
+ */
 const UserCard: React.FC<UserCardProps> = ({ 
   user, 
   // onRoleChange, // Kept for potential direct actions if dialogs are bypassed later
@@ -31,6 +52,12 @@ const UserCard: React.FC<UserCardProps> = ({
   const { t, i18n } = useTranslation();
   const currentLocale = i18n.language === 'nl' ? nl : enUS;
 
+  /**
+   * Determines the variant of the badge to use for a given role.
+   * 
+   * @param {string} role - The user's role.
+   * @returns {string} The badge variant to use ('default', 'outline', or 'secondary').
+   */
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'admin': return 'default';
@@ -39,6 +66,12 @@ const UserCard: React.FC<UserCardProps> = ({
     }
   };
 
+  /**
+   * Formats a date string according to the current locale.
+   * 
+   * @param {string | null | undefined} dateString - The date string to format.
+   * @returns {string} The formatted date or a default value if the date is invalid.
+   */
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '-';
     try {

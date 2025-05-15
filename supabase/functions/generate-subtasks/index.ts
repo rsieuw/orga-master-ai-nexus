@@ -1,5 +1,13 @@
+/**
+ * @fileoverview Supabase Edge Function to generate subtasks for a given task using OpenAI.
+ * This function takes task details (title, description, priority, deadline), language preference,
+ * existing subtasks, and optionally chat history, notes, and research results as context.
+ * It then calls the OpenAI API to generate a list of new, unique, and complementary subtasks.
+ * The response is a JSON object containing an array of subtask suggestions.
+ */
+
 /// <reference lib="deno.ns" />
-/// <reference types="jsr:@supabase/functions-js/edge-runtime" />
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 // import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Verwijderd of uitgecommentarieerd
@@ -15,7 +23,12 @@ import OpenAI from 'https://esm.sh/openai@^4.26.0';
 // };
 // --- End CORS Headers ---
 
-// --- Interfaces ---
+/**
+ * Interface for a suggested subtask.
+ * @interface SubtaskSuggestion
+ * @property {string} title - The action-oriented title of the subtask.
+ * @property {string} [description] - An optional 1-2 sentence description for clarification.
+ */
 interface SubtaskSuggestion {
   title: string;
   description?: string;
@@ -30,6 +43,20 @@ interface SubtaskSuggestion {
 
 // console.log("generate-subtasks function started - v2 (with context)");
 
+/**
+ * Interface for the request body of the generate-subtasks function.
+ * @interface RequestBody
+ * @property {string} taskId - The ID of the main task.
+ * @property {string} taskTitle - The title of the main task.
+ * @property {string} [taskDescription] - Optional description of the main task.
+ * @property {string} [taskPriority] - Optional priority of the main task.
+ * @property {string} [taskDeadline] - Optional deadline of the main task (ISO string format).
+ * @property {string} languagePreference - The preferred language for the subtasks (e.g., 'en', 'nl').
+ * @property {string[]} [existingSubtaskTitles] - Optional array of titles of already existing subtasks.
+ * @property {Array<{role: string, content: string, created_at: string, message_type?: string}>} [chatMessages] - Optional chat history for context.
+ * @property {Array<{content: string, created_at: string}>} [notes] - Optional notes for context.
+ * @property {Array<{research_content: string, created_at: string}>} [researchResults] - Optional research results for context.
+ */
 interface RequestBody {
   taskId: string;
   taskTitle: string;
@@ -75,15 +102,39 @@ const errorMessages = {
   }
 };
 
+/**
+ * Interface for a successful response from the generate-subtasks function.
+ * @interface FunctionSuccessResponse
+ * @property {SubtaskSuggestion[]} subtasks - An array of generated subtask suggestions.
+ */
 interface FunctionSuccessResponse {
   subtasks: SubtaskSuggestion[];
 }
 
+/**
+ * Interface for an error response from the generate-subtasks function.
+ * @interface FunctionErrorResponse
+ * @property {string} error - The main error message.
+ * @property {string} [details] - Optional details about the error (e.g., stack trace).
+ */
 interface FunctionErrorResponse {
   error: string;
   details?: string;
 }
 
+/**
+ * Main Deno server function that handles incoming HTTP requests for generating subtasks.
+ * - Handles CORS preflight requests.
+ * - Parses and validates the request body for necessary parameters.
+ * - Retrieves the OpenAI API key from environment variables.
+ * - Constructs a detailed system prompt for OpenAI based on task details, existing subtasks, language, and provided context (chat, notes, research).
+ * - Calls the OpenAI Chat Completions API (gpt-4-turbo-preview by default) with a JSON response format.
+ * - Parses the AI's response, expecting a JSON object with a "subtasks" array.
+ * - Validates the structure and content of the generated subtasks.
+ * - Returns a successful response with the array of subtask suggestions or an error response.
+ * @param {Request} req - The incoming HTTP request object.
+ * @returns {Promise<Response>} A promise that resolves to an HTTP response object.
+ */
 serve(async (req) => {
   // console.log("generate-subtasks function invoked at: ", new Date().toISOString()); // Remove this line
   if (req.method === 'OPTIONS') {

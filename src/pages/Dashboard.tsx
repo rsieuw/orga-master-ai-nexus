@@ -53,11 +53,18 @@ const priorityOrder: Record<TaskPriority, number> = {
 };
 
 // Sort function for tasks by priority (descending)
+/**
+ * Sorts tasks by priority in descending order.
+ * High > Medium > Low > None.
+ * @param {Task} a - The first task to compare.
+ * @param {Task} b - The second task to compare.
+ * @returns {number} Returns -1 if b > a, 1 if a > b, 0 if equal.
+ */
 const sortTasksByPriority = (a: Task, b: Task): number => {
   return priorityOrder[b.priority] - priorityOrder[a.priority];
 };
 
-// Variants voor animaties
+// Variants for animations
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
@@ -90,11 +97,11 @@ const cardVariants: Variants = {
   },
 };
 
-// Nieuwe gradient kleuren voor de begroeting - nu exact als de Nieuwe Taak knop
+// New gradient colors for the greeting - now exactly the same as the New Task button
 const greetingGradientStart = '#1D4ED8'; // Tailwind Blue-700
 const greetingGradientEnd = '#6B21A8';   // Tailwind Purple-800
 
-// CSS Animation style voor de begroetingstekst gradient
+// CSS Animation style for the greeting text gradient
 const gradientAnimationStyle = `
   .animated-gradient-text {
     background: linear-gradient(to right, ${greetingGradientStart}, ${greetingGradientEnd});
@@ -105,6 +112,21 @@ const gradientAnimationStyle = `
   }
 `;
 
+/**
+ * Dashboard component to display and manage tasks.
+ *
+ * Features:
+ * - Displays tasks grouped by date categories (Overdue, Today, Tomorrow, etc.).
+ * - Allows searching and filtering tasks by status, priority, and category.
+ * - Persists search and filter settings in Local Storage.
+ * - Provides a dialog to create new tasks.
+ * - Responsive design with different layouts for desktop and mobile.
+ * - Animated transitions for task cards and sections.
+ * - Shows a greeting message with a typed animation.
+ * - Handles empty states (no tasks, no tasks after filtering).
+ * - Floating Action Button (FAB) for creating new tasks on mobile, which hides on inactivity.
+ * @returns {JSX.Element} The rendered Dashboard component.
+ */
 export default function Dashboard() {
   const { isLoading, groupTasksByDate } = useTask();
   const { user } = useAuth();
@@ -187,14 +209,25 @@ export default function Dashboard() {
     };
   }, []);
 
-  // Effect om de gradient animatiestijl in te voegen in het document
+  // Effect to add the gradient animation style to the document
   useEffect(() => {
-    // Voeg de stijl toe aan het document
+    // Add the style to the document
     const styleElement = document.createElement('style');
-    styleElement.textContent = gradientAnimationStyle;
+    styleElement.textContent = gradientAnimationStyle + `
+      /* Verberg scrollbars op mobiel maar behoud functionaliteit */
+      @media (max-width: 640px) {
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      }
+    `;
     document.head.appendChild(styleElement);
 
-    // Opruimfunctie om de stijl te verwijderen als de component unmounts
+    // Cleanup function to remove the style when the component unmounts
     return () => {
       document.head.removeChild(styleElement);
     };
@@ -239,22 +272,34 @@ export default function Dashboard() {
     return groups;
   }, [rawTaskGroups, searchTerm, filterStatus, filterPriority, filterCategory]);
 
+  /**
+   * Handles changes in the search input.
+   * Updates the searchTerm state.
+   * @param {string} newSearchTerm - The new search term.
+   */
   const handleSearchChange = (newSearchTerm: string) => {
     setSearchTerm(newSearchTerm);
   };
 
+  /**
+   * Handles changes in the filter controls.
+   * Updates filterStatus, filterPriority, and filterCategory states.
+   * @param {TaskFilterStatus} status - The new filter status.
+   * @param {TaskFilterPriority} priority - The new filter priority.
+   * @param {TaskFilterCategory} category - The new filter category.
+   */
   const handleFilterChange = (status: TaskFilterStatus, priority: TaskFilterPriority, category: TaskFilterCategory) => {
     setFilterStatus(status);
     setFilterPriority(priority);
     setFilterCategory(category);
   };
   
-  // --- NIEUWE CATEGORIE-GEBASEERDE HORIZONTALE DISTRIBUTIE ---
-  // Genereer categorie secties met taken in horizontale rijen
+  // --- NEW CATEGORY-BASED HORIZONTAL DISTRIBUTION ---
+  // Generate category sections with tasks in horizontal rows
   const taskCategorySections = useMemo(() => {
     const sections: React.ReactNode[] = [];
     
-    // Functie binnen useMemo geplaatst om onnodige re-renders te voorkomen
+    // Function placed inside useMemo to prevent unnecessary re-renders
     const getCategoryTitle = (category: keyof TasksByDate): string => {
       switch (category) {
         case 'overdue': return t('dashboard.categories.overdue');
@@ -267,22 +312,31 @@ export default function Dashboard() {
       }
     };
     
-    // Loop door elke categorie (overdue, today, etc.)
+    // Loop through each category (overdue, today, etc.)
     (Object.keys(filteredAndSortedTaskGroups) as Array<keyof TasksByDate>).forEach(category => {
       const tasksInCategory = filteredAndSortedTaskGroups[category];
       
-      // Alleen categorieën met taken tonen
+      // Only show categories with tasks
       if (tasksInCategory.length > 0) {
-        // Voeg categorie titel toe
+        // Add category title
         sections.push(
           <div key={`category-${category}`} className="mt-8 first:mt-0">
-            <h2 className="text-lg font-semibold mb-3">
-              {getCategoryTitle(category)}{' '}
-              <span className="text-sm font-normal text-muted-foreground">({tasksInCategory.length})</span>
+            <h2 className="text-lg sm:text-lg text-xl md:text-lg font-bold sm:font-semibold mb-4 sm:mb-3 text-center md:text-left relative pb-2 sm:pb-0">
+              <span className="relative z-10">
+                {getCategoryTitle(category)}{' '}
+                <span className="text-sm font-normal text-muted-foreground">({tasksInCategory.length})</span>
+              </span>
+              {/* Decoratieve lijn onder categorie titel - alleen op mobiel */}
+              <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-0.5 bg-gradient-to-r from-blue-700 to-purple-800 rounded sm:hidden"></span>
             </h2>
             
-            {/* Grid container voor de taken - responsief met 1, 2 of 4 kolommen */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            {/* Grid container for tasks - responsive with 1, 2 or 4 columns */}
+            <motion.div
+              className="sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 hidden"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
               {tasksInCategory.map(task => (
                 <motion.div
                   key={task.id}
@@ -293,7 +347,7 @@ export default function Dashboard() {
                   <TaskCard task={task} />
                 </motion.div>
               ))}
-              {/* Aangepaste conditie voor de placeholder kaart */}
+              {/* Custom condition for the placeholder card */}
               {category === 'today' && (tasksInCategory.length === 0 || tasksInCategory.length % 4 !== 0) && (
                 <motion.div
                   key="add-new-task-placeholder"
@@ -325,6 +379,58 @@ export default function Dashboard() {
                   </Dialog>
                 </motion.div>
               )}
+            </motion.div>
+
+            {/* Horizontal scrollable container for mobile */}
+            <div className="flex flex-col space-y-1 sm:hidden">
+              {/* Verdeel taken in groepen van 3 voor betere mobiele weergave */}
+              {Array.from({ length: Math.ceil(tasksInCategory.length / 3) }).map((_, rowIndex) => (
+                <motion.div
+                  key={`row-${category}-${rowIndex}`}
+                  className="flex overflow-x-auto pb-2 px-4 -mx-4 gap-3 snap-x snap-mandatory hide-scrollbar"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {/* Lege ruimte aan het begin voor center-snap effect */}
+                  <div className="flex-shrink-0 min-w-[8%]"></div>
+                  
+                  {tasksInCategory.slice(rowIndex * 3, rowIndex * 3 + 3).map(task => (
+                    <motion.div
+                      key={task.id}
+                      variants={cardVariants}
+                      layout="position"
+                      className="flex-shrink-0 w-[85vw] max-w-[300px] snap-center shadow-md mt-0.5 mb-1 mx-1"
+                    >
+                      <TaskCard task={task} />
+                    </motion.div>
+                  ))}
+                  
+                  {/* Voeg de placeholder alleen toe aan de eerste rij als het category 'today' is */}
+                  {category === 'today' && rowIndex === 0 && (tasksInCategory.length === 0 || tasksInCategory.length % 3 !== 0) && (
+                    <motion.div
+                      key="add-new-task-placeholder-mobile"
+                      variants={cardVariants}
+                      layout="position"
+                      className="flex-shrink-0 w-[85vw] max-w-[300px] snap-center shadow-md mt-0.5 mb-1 mx-1"
+                    >
+                      <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+                        <DialogTrigger asChild>
+                          <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10">
+                            <PlusCircle className="h-10 w-10 text-muted-foreground/70 group-hover:text-primary transition-colors" />
+                            <span className="mt-2 text-sm text-muted-foreground/90 group-hover:text-primary transition-colors">
+                              {t('dashboard.addNewTaskPlaceholder')}
+                            </span>
+                          </Card>
+                        </DialogTrigger>
+                      </Dialog>
+                    </motion.div>
+                  )}
+                  
+                  {/* Lege ruimte aan het einde voor center-snap effect */}
+                  <div className="flex-shrink-0 min-w-[8%]"></div>
+                </motion.div>
+              ))}
             </div>
           </div>
         );
@@ -333,7 +439,7 @@ export default function Dashboard() {
     
     return sections;
   }, [filteredAndSortedTaskGroups, t, isNewTaskOpen]);
-  // --- EINDE NIEUWE HORIZONTALE DISTRIBUTIE ---
+  // --- END NEW HORIZONTAL DISTRIBUTION ---
 
   // Construct the greeting text using user?.name
   const greeting = t('dashboard.greeting', { name: user?.name || user?.email || t('common.guest') });
@@ -399,7 +505,7 @@ export default function Dashboard() {
         {/* Greeting and Search/Filter Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 md:space-x-4">
           {/* Wrapper div for Greeting and Subtitle */}
-          <div> 
+          <div className="w-full md:w-auto text-center md:text-left"> 
             <h1 className="text-3xl md:text-3xl lg:text-4xl font-bold relative overflow-visible">
               <span className="animated-gradient-text block">
                 <TypedGreeting 
@@ -429,7 +535,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Nieuwe taak categorieweergave - horizontale rijen per categorie */}
+        {/* New task category view - horizontal rows per category */}
         <AnimatePresence mode="sync">
           {hasAnyFilteredTasks ? (
             <motion.div

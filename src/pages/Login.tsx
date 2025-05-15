@@ -4,6 +4,12 @@ import LoginForm from "@/components/auth/LoginForm.tsx";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
+/**
+ * `Login` page component.
+ * This page displays the login form for existing users.
+ * If the user is already authenticated, it redirects them to the homepage.
+ * It uses the `LoginForm` component to handle the actual login logic.
+ */
 export default function Login() {
   const { isAuthenticated } = useAuth();
   const { t } = useTranslation();

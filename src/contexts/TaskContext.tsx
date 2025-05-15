@@ -17,37 +17,79 @@ import {
 import { TaskContext } from './TaskContext.context.ts';
 import { useAuth } from '@/hooks/useAuth.ts';
 
+/**
+ * Represents a task as it is stored in the database.
+ * @interface DbTask
+ */
 interface DbTask {
+  /** The unique identifier for the task. */
   id: string;
+  /** The ID of the user who owns the task. */
   user_id: string;
+  /** The title of the task. */
   title: string;
+  /** The description of the task, can be null. */
   description: string | null;
+  /** The priority of the task, can be null. */
   priority: string | null;
+  /** The status of the task, can be null. */
   status: string | null;
+  /** The deadline of the task, can be null. */
   deadline: string | null;
+  /** The category of the task, can be null. */
   category: string | null;
+  /** The creation timestamp of the task. */
   created_at: string;
+  /** The last update timestamp of the task, can be null. */
   updated_at: string | null;
+  /** Subtasks associated with the task, stored as JSON. */
   subtasks: Json;
+  /** The count of AI-generated subtasks for this task, can be null. */
   ai_subtask_generation_count: number | null;
+  /** The timestamp when the task was last viewed, can be null. */
   last_viewed_at: string | null;
+  /** An optional emoji for the task. */
   emoji: string | null;
 }
 
+/**
+ * Represents the structure for updating a task in the database.
+ * All fields are optional.
+ * @interface DbTaskUpdate
+ */
 interface DbTaskUpdate {
+  /** The new title for the task. */
   title?: string;
+  /** The new description for the task. */
   description?: string;
+  /** The new priority for the task. */
   priority?: string;
+  /** The new status for the task. */
   status?: string;
+  /** The new category for the task, can be null. */
   category?: string | null;
+  /** The new deadline for the task, can be null. */
   deadline?: string | null;
+  /** The updated subtasks, stored as JSON. */
   subtasks?: Json;
+  /** The new update timestamp. */
   updated_at?: string;
+  /** The updated count of AI-generated subtasks. */
   ai_subtask_generation_count?: number;
+  /** The new timestamp for when the task was last viewed, can be null. */
   last_viewed_at?: string | null;
+  /** The new emoji for the task. */
   emoji?: string | null;
 }
 
+/**
+ * Provides task management functionality to its children components.
+ * Handles fetching, creating, updating, and deleting tasks and subtasks.
+ *
+ * @param {{ children: React.ReactNode }} props - The props for the component.
+ * @param {React.ReactNode} props.children - The child components that will have access to the task context.
+ * @returns {JSX.Element} The TaskProvider component.
+ */
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const { t } = useTranslation(); 
@@ -56,18 +98,37 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isGeneratingAISubtasksMap, setIsGeneratingAISubtasksMap] = useState<Record<string, boolean>>({});
 
+  /**
+   * Sets the AI subtask generation status for a specific task to true.
+   * @param {string} taskId - The ID of the task.
+   */
   const setIsGeneratingAISubtasks = (taskId: string) => {
     setIsGeneratingAISubtasksMap(prev => ({ ...prev, [taskId]: true }));
   };
 
+  /**
+   * Clears the AI subtask generation status for a specific task (sets to false).
+   * @param {string} taskId - The ID of the task.
+   */
   const clearIsGeneratingAISubtasks = (taskId: string) => {
     setIsGeneratingAISubtasksMap(prev => ({ ...prev, [taskId]: false }));
   };
 
+  /**
+   * Checks if AI subtasks are currently being generated for a specific task.
+   * @param {string} taskId - The ID of the task.
+   * @returns {boolean} True if AI subtasks are being generated, false otherwise.
+   */
   const isGeneratingSubtasksForTask = (taskId: string): boolean => {
     return !!isGeneratingAISubtasksMap[taskId];
   };
 
+  /**
+   * Maps a database task object (DbTask) to a client-side Task object.
+   * Handles parsing of subtasks and determining if a task is new.
+   * @param {DbTask} dbTask - The database task object.
+   * @returns {Task} The mapped client-side Task object.
+   */
   const mapDbTaskToTask = (dbTask: DbTask): Task => {
     let parsedSubtasks: SubTask[] = [];
     
@@ -119,6 +180,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
+  /**
+   * Fetches tasks from the Supabase database for the authenticated user.
+   * Sets the loading state and updates the tasks state.
+   * Displays a toast notification on error.
+   * This function is memoized using useCallback.
+   */
   const fetchTasks = useCallback(async () => {
     setIsLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
@@ -145,6 +212,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, [toast, t]);
 
+  /**
+   * useEffect hook to perform initial task fetching when the component mounts
+   * or when `fetchTasks` changes. It also sets up a Supabase real-time subscription
+   * to listen for changes in the 'tasks' table and re-fetches tasks if changes occur.
+   * Cleans up the subscription when the component unmounts.
+   */
   useEffect(() => {
     fetchTasks();
     const subscription = supabase
@@ -161,10 +234,21 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fetchTasks]);
 
+  /**
+   * Retrieves a specific task by its ID from the local state.
+   * @param {string} id - The ID of the task to retrieve.
+   * @returns {Task | undefined} The task object if found, otherwise undefined.
+   */
   const getTaskById = (id: string): Task | undefined => {
     return tasks.find((task: Task) => task.id === id);
   };
 
+  /**
+   * Adds a new task to the database and updates the local state.
+   * @param {Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'subtasks' | 'userId' | 'aiSubtaskGenerationCount' | 'isNew'> & { category?: string, emoji?: string }} task - The task object to add, omitting fields generated by the backend or context.
+   * @returns {Promise<Task | undefined>} A promise that resolves with the newly created Task object or undefined if an error occurs.
+   * @throws {Error} If the user is not authenticated or if a database error occurs.
+   */
   const addTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'subtasks' | 'userId' | 'aiSubtaskGenerationCount' | 'isNew'> & { category?: string, emoji?: string }) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) throw new Error(t('taskContext.toast.notAuthenticated'));
@@ -193,6 +277,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     return undefined;
   };
 
+  /**
+   * Maps a client-side Task update object to a database-compatible update object (DbTaskUpdate).
+   * @param {Partial<Task>} taskUpdates - The partial task object containing updates.
+   * @returns {DbTaskUpdate} The database-compatible update object.
+   */
   const mapTaskToDbUpdate = (taskUpdates: Partial<Task>): DbTaskUpdate => {
     const dbRecord: DbTaskUpdate = {};
     if (taskUpdates.title !== undefined) dbRecord.title = taskUpdates.title;
@@ -218,6 +307,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     return dbRecord;
   };
 
+  /**
+   * Updates an existing task in the database and updates the local state.
+   * Displays toast notifications for success or failure.
+   * @param {string} id - The ID of the task to update.
+   * @param {Partial<Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId'>>} updates - An object containing the properties to update.
+   * @throws {Error} If the task is not found or if a database error occurs.
+   */
   const updateTask = async (id: string, updates: Partial<Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId'>>) => {
     const taskIndex = tasks.findIndex(t => t.id === id);
     if (taskIndex === -1) {
@@ -240,15 +336,21 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         .select('*');
 
       if (error) {
-        toast({ variant: "destructive", title: t('common.error'), description: t('taskContext.toast.updateTaskFailed') });
+        toast({ variant: "destructive", title: t('common.error'), description: t('taskContext.toast.updateTaskFailedSimple') });
         throw error;
       }
     } catch (exception) {
-      toast({ variant: "destructive", title: t('common.error'), description: t('taskContext.toast.updateTaskFailed') });
+      toast({ variant: "destructive", title: t('common.error'), description: t('taskContext.toast.updateTaskFailedGeneral') });
       throw exception;
     }
   };
 
+  /**
+   * Deletes a task from the database and updates the local state.
+   * Displays toast notifications for success or failure.
+   * @param {string} id - The ID of the task to delete.
+   * @throws {Error} If a database error occurs.
+   */
   const deleteTask = async (id: string) => {
     const { error } = await supabase.from('tasks').delete().eq('id', id);
     if (error) throw error;
@@ -256,7 +358,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
   };
   
-  // Add a new subtask
+  /**
+   * Adds a subtask to a specified task in the database and updates the local state.
+   * @param {string} taskId - The ID of the parent task.
+   * @param {string} subtaskTitle - The title of the new subtask.
+   * @param {string} [subtaskDescription] - Optional description for the new subtask.
+   * @throws {Error} If the parent task is not found or if a database error occurs.
+   */
   const addSubtask = async (taskId: string, subtaskTitle: string, subtaskDescription?: string) => {
     const task = getTaskById(taskId);
     if (!task) throw new Error(`Task with id ${taskId} not found.`);
@@ -274,7 +382,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     await updateTask(taskId, { subtasks: updatedSubtasks });
   };
   
-  // Update a subtask
+  /**
+   * Updates an existing subtask for a specified task in the database and local state.
+   * @param {string} taskId - The ID of the parent task.
+   * @param {string} subtaskId - The ID of the subtask to update.
+   * @param {Partial<Omit<SubTask, 'id' | 'taskId' | 'createdAt'>>} updates - An object containing the properties to update on the subtask.
+   * @throws {Error} If the parent task or subtask is not found, or if a database error occurs.
+   */
   const updateSubtask = async (taskId: string, subtaskId: string, updates: Partial<Omit<SubTask, 'id' | 'taskId' | 'createdAt'>>) => {
     const task = getTaskById(taskId);
     if (!task) throw new Error(`Task with id ${taskId} not found.`);
@@ -320,7 +434,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Delete a subtask
+  /**
+   * Deletes a subtask from a specified task in the database and updates the local state.
+   * @param {string} taskId - The ID of the parent task.
+   * @param {string} subtaskId - The ID of the subtask to delete.
+   * @throws {Error} If the parent task is not found or if a database error occurs.
+   */
   const deleteSubtask = async (taskId: string, subtaskId: string) => {
     const task = getTaskById(taskId);
     if (!task) throw new Error(`Task with id ${taskId} not found.`);
@@ -329,16 +448,31 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     await updateTask(taskId, { subtasks: updatedSubtasks });
   };
   
-  // Delete all subtasks
+  /**
+   * Deletes all subtasks associated with a specific task from the database and updates local state.
+   * @param {string} taskId - The ID of the task whose subtasks are to be deleted.
+   * @throws {Error} If the task is not found or if a database error occurs.
+   */
   const deleteAllSubtasks = async (taskId: string) => {
     await updateTask(taskId, { subtasks: [] });
   };
   
-  // Mark a task as completed/incomplete
+  /**
+   * Toggles the completion status of a task.
+   * @param {string} taskId - The ID of the task.
+   * @param {boolean} completed - The new completion status (true for completed, false for incomplete).
+   */
   const toggleTaskCompletion = async (taskId: string, completed: boolean) => {
     await updateTask(taskId, { status: completed ? 'done' : 'todo' });
   };
   
+  /**
+   * Expands a task by generating subtasks using an AI model.
+   * Updates the task with the generated subtasks and increments the AI generation count.
+   * Handles loading states and displays toast notifications for success, failure, or limits.
+   * @param {string} taskId - The ID of the task to expand with AI-generated subtasks.
+   * @throws {Error} If the task is not found, user is not authenticated, or an API error occurs.
+   */
   const expandTask = async (taskId: string) => {
     if (!user) {
       toast({ 
@@ -474,7 +608,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Group tasks based on deadline
+  /**
+   * Groups tasks based on their deadline into categories: overdue, today, tomorrow, upcoming, and someday.
+   * @returns {TasksByDate} An object where keys are date categories and values are arrays of tasks.
+   */
   const groupTasksByDate = (): TasksByDate => {
     const today = startOfDay(new Date());
     
@@ -521,7 +658,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     return grouped;
   };
 
-  // Mark that a task has been viewed
+  /**
+   * Marks a task as viewed by setting its `last_viewed_at` timestamp.
+   * This also updates the task in the local state to reflect that it's no longer "new".
+   * @param {string} id - The ID of the task to mark as viewed.
+   */
   const markTaskAsViewed = (id: string) => {
     const taskIndex = tasks.findIndex(t => t.id === id);
     if (taskIndex === -1) {
@@ -552,40 +693,49 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     // will be updated to correctly support the last_viewed_at field.
   };
   
-  // Functions that help manage AI generation limits
+  /**
+   * Retrieves the maximum number of AI subtask generations allowed for the current user.
+   * Differentiates between free and paid users.
+   * @returns {number} The maximum number of AI generations.
+   */
   const getMaxAiGenerationsForUser = (): number => {
     const isPaidUser = user?.role === 'paid' || user?.role === 'admin';
     return isPaidUser ? MAX_PAID_USER_AI_SUBTASK_GENERATIONS : MAX_FREE_USER_AI_SUBTASK_GENERATIONS;
   };
 
+  /**
+   * Checks if the AI generation limit for subtasks has been reached for a given task.
+   * @param {Task} task - The task object to check.
+   * @returns {boolean} True if the limit has been reached, false otherwise.
+   */
   const isAiGenerationLimitReached = (task: Task): boolean => {
     const currentCount = task.aiSubtaskGenerationCount || 0;
     return currentCount >= getMaxAiGenerationsForUser();
   };
 
-  return (
-    <TaskContext.Provider
-      value={{
-        tasks,
-        isLoading,
-        addTask,
-        updateTask,
-        deleteTask,
-        getTaskById,
-        addSubtask,
-        updateSubtask,
-        deleteSubtask,
-        deleteAllSubtasks,
-        toggleTaskCompletion,
-        expandTask,
-        isGeneratingSubtasksForTask,
-        groupTasksByDate,
-        getMaxAiGenerationsForUser,
-        isAiGenerationLimitReached,
-        markTaskAsViewed,
-      }}
-    >
-      {children}
-    </TaskContext.Provider>
-  );
+  /**
+   * The value provided to the TaskContext.
+   * Includes the task list, loading state, and functions to manage tasks.
+   */
+  const contextValue = {
+    tasks,
+    isLoading,
+    addTask,
+    updateTask,
+    deleteTask,
+    getTaskById,
+    addSubtask,
+    updateSubtask,
+    deleteSubtask,
+    deleteAllSubtasks,
+    toggleTaskCompletion,
+    expandTask,
+    isGeneratingSubtasksForTask,
+    groupTasksByDate,
+    getMaxAiGenerationsForUser,
+    isAiGenerationLimitReached,
+    markTaskAsViewed,
+  };
+
+  return <TaskContext.Provider value={contextValue}>{children}</TaskContext.Provider>;
 }

@@ -18,25 +18,50 @@ import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { ChevronDown, ChevronRight, ArrowUpDown } from 'lucide-react';
 
+/**
+ * Interface representing a feedback entry as stored in the database and displayed in the admin panel.
+ * @interface FeedbackEntry
+ */
 interface FeedbackEntry {
+  /** The unique identifier for the feedback entry. */
   id: string;
+  /** The ID of the user who submitted the feedback. Can be null if submitted by an unauthenticated user or system. */
   user_id: string | null;
+  /** The email address of the user who submitted the feedback. Can be null. */
   user_email: string | null;
+  /** The subject of the feedback. Can be null. */
   subject: string | null;
+  /** The main content of the feedback message. */
   message: string;
+  /** The timestamp when the feedback was created. */
   created_at: string;
+  /** The current status of the feedback (e.g., 'new', 'read', 'resolved'). Can be null. */
   status: string | null;
+  /** A boolean flag indicating if the feedback is marked as important. Can be null. */
   important: boolean | null;
 }
 
 // Type for sort configuration
 type SortDirection = 'asc' | 'desc';
-type SortableFeedbackKeys = 'created_at' | 'subject' | 'status' | 'important' | 'user_email'; // Added user_email
+/** Type alias for keys of `FeedbackEntry` that can be used for sorting. */
+type SortableFeedbackKeys = 'created_at' | 'subject' | 'status' | 'important' | 'user_email'; 
+/**
+ * Configuration for sorting the feedback entries table.
+ * @type SortConfig
+ * @property {SortableFeedbackKeys} key - The key of `FeedbackEntry` to sort by.
+ * @property {'asc' | 'desc'} direction - The sort direction.
+ */
 type SortConfig = {
   key: SortableFeedbackKeys;
   direction: SortDirection;
 } | null;
 
+/**
+ * `AdminFeedbackPage` component displays feedback entries submitted by users.
+ * It allows administrators to view, sort, mark as important, change status, and delete feedback.
+ * Feedback is fetched from the Supabase 'feedback' table.
+ * Provides an expandable view for long messages and uses toast notifications for actions.
+ */
 const AdminFeedbackPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const [feedbackEntries, setFeedbackEntries] = useState<FeedbackEntry[]>([]);
@@ -48,6 +73,12 @@ const AdminFeedbackPage: React.FC = () => {
 
   const currentLocale = i18n.language === 'nl' ? nl : enUS;
 
+  /**
+   * Fetches feedback entries from the Supabase 'feedback' table.
+   * Orders entries by creation date by default.
+   * Sets loading states and handles errors, displaying toast notifications for failures.
+   * This function is memoized using `useCallback`.
+   */
   const fetchFeedback = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -75,10 +106,19 @@ const AdminFeedbackPage: React.FC = () => {
     }
   }, [toast, t]);
 
+  /**
+   * useEffect hook to call `fetchFeedback` when the component mounts or `fetchFeedback` itself changes.
+   */
   useEffect(() => {
     fetchFeedback();
   }, [fetchFeedback]);
 
+  /**
+   * Memoized value for sorted feedback entries.
+   * Sorts the `feedbackEntries` based on the current `sortConfig` (key and direction).
+   * Handles sorting for date, boolean, and string types, considering null/undefined values.
+   * Uses locale-specific string comparison.
+   */
   const sortedFeedbackEntries = React.useMemo(() => {
     const sortableItems = [...feedbackEntries];
     if (sortConfig !== null) {
@@ -115,6 +155,12 @@ const AdminFeedbackPage: React.FC = () => {
     return sortableItems;
   }, [feedbackEntries, sortConfig, i18n.language]);
 
+  /**
+   * Updates the sort configuration for the feedback table.
+   * If the specified key is already the sort key, it toggles the direction.
+   * Otherwise, it sets the new key with ascending direction.
+   * @param {SortableFeedbackKeys} key - The key from `FeedbackEntry` to sort by.
+   */
   const requestSort = (key: SortableFeedbackKeys) => {
     let direction: SortDirection = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -123,6 +169,11 @@ const AdminFeedbackPage: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
+  /**
+   * Returns the appropriate sort indicator icon based on the current sort configuration for a column.
+   * @param {SortableFeedbackKeys} columnKey - The key of the column to get the sort icon for.
+   * @returns {JSX.Element} A Lucide icon component representing the sort state.
+   */
   const getSortIcon = (columnKey: SortableFeedbackKeys) => {
     if (!sortConfig || sortConfig.key !== columnKey) {
       return <ArrowUpDown className="ml-2 h-3 w-3 text-muted-foreground/50" />;
@@ -133,6 +184,12 @@ const AdminFeedbackPage: React.FC = () => {
     return <ArrowUpDown className="ml-2 h-3 w-3" />; // Simplified, use ArrowDown if available and preferred
   };
 
+  /**
+   * Formats a date string into a localized, human-readable format (e.g., 'Pp').
+   * Uses the current i18next language to select the appropriate date-fns locale.
+   * @param {string} dateString - The date string to format.
+   * @returns {string} The formatted date string, or the original string if formatting fails.
+   */
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'Pp', { locale: currentLocale });
@@ -141,6 +198,13 @@ const AdminFeedbackPage: React.FC = () => {
     }
   };
 
+  /**
+   * Handles changing the status of a feedback entry.
+   * Updates the 'status' field in the Supabase 'feedback' table for the given ID.
+   * Refetches feedback entries on success to update the UI.
+   * @param {string} id - The ID of the feedback entry to update.
+   * @param {string} newStatus - The new status to set.
+   */
   const handleStatusChange = async (id: string, newStatus: string) => {
     const { error } = await supabase
       .from('feedback')
@@ -149,6 +213,13 @@ const AdminFeedbackPage: React.FC = () => {
     if (!error) fetchFeedback();
   };
 
+  /**
+   * Handles toggling the 'important' flag for a feedback entry.
+   * Updates the 'important' field in the Supabase 'feedback' table for the given ID.
+   * Refetches feedback entries on success to update the UI.
+   * @param {string} id - The ID of the feedback entry to update.
+   * @param {boolean | null} current - The current 'important' status of the feedback entry.
+   */
   const handleToggleImportant = async (id: string, current: boolean | null) => {
     const { error } = await supabase
       .from('feedback')
@@ -157,6 +228,13 @@ const AdminFeedbackPage: React.FC = () => {
     if (!error) fetchFeedback();
   };
 
+  /**
+   * Handles the deletion of a feedback entry.
+   * Deletes the entry from the Supabase 'feedback' table.
+   * Optimistically removes the entry from the local state on successful deletion.
+   * Shows a success toast or an error toast if deletion fails.
+   * @param {string} id - The ID of the feedback entry to delete.
+   */
   const handleDelete = async (id: string) => {
     const { error } = await supabase
       .from('feedback')

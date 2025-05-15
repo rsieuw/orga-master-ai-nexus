@@ -1,7 +1,20 @@
+/**
+ * @fileoverview Supabase Edge Function to handle Stripe webhooks.
+ * This function listens for relevant Stripe events (e.g., checkout.session.completed,
+ * customer.subscription.updated) and updates subscription data in the Supabase database accordingly.
+ * It also optionally updates the user's role in the `profiles` table based on subscription status.
+ */
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Stripe from 'https://esm.sh/stripe@11.1.0?target=deno&no-check'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { Database } from '../../../src/types/supabase.ts' // Adjust this path to your type generation location if necessary
+
+/**
+ * @typedef {Database['public']['Tables']['subscriptions']['Row']} SubscriptionRow
+ * @typedef {Database['public']['Tables']['customers']['Row']} CustomerRow
+ * @typedef {Database['public']['Tables']['prices']['Row']} PriceRow
+ */
 
 // Type alias for convenience
 type Subscription = Database['public']['Tables']['subscriptions']['Row']
@@ -20,8 +33,15 @@ const supabaseAdmin = createClient<Database>(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
-// --- Helper functies ---
+// --- Helper functions ---
 
+/**
+ * Upserts a subscription record in the Supabase `subscriptions` table.
+ * Also updates the user's role in the `profiles` table based on the subscription status.
+ * @async
+ * @param {Stripe.Subscription} subscription - The Stripe Subscription object.
+ * @throws Will throw an error if the Supabase upsert operation fails.
+ */
 const upsertSubscriptionRecord = async (subscription: Stripe.Subscription) => {
   console.log(`Upserting subscription [${subscription.id}] for user [${subscription.customer}]`)
   const subscriptionData: Partial<Subscription> = {
@@ -55,7 +75,7 @@ const upsertSubscriptionRecord = async (subscription: Stripe.Subscription) => {
   // Update user role based on subscription status (optional, but often useful)
   // Only update if status is active or trial, otherwise revert to 'free'
   const userId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
-  const newRole = (subscription.status === 'active' || subscription.status === 'trialing') ? 'paid' : 'free'; // Pas 'paid' aan indien nodig
+  const newRole = (subscription.status === 'active' || subscription.status === 'trialing') ? 'paid' : 'free'; // Adjust 'paid' role name if needed
 
   const { error: profileError } = await supabaseAdmin
     .from('profiles')
@@ -70,6 +90,13 @@ const upsertSubscriptionRecord = async (subscription: Stripe.Subscription) => {
    }
 }
 
+/**
+ * Manages subscription status changes by retrieving the latest subscription details
+ * from Stripe and then calling `upsertSubscriptionRecord`.
+ * @async
+ * @param {string} subscriptionId - The ID of the Stripe subscription.
+ * @param {string} customerId - The ID of the Stripe customer.
+ */
 const manageSubscriptionStatusChange = async (
   subscriptionId: string,
   customerId: string,
@@ -93,6 +120,16 @@ const relevantEvents = new Set([
   'invoice.payment_failed',
 ])
 
+/**
+ * Main Deno server function that handles incoming Stripe webhook requests.
+ * - Verifies the Stripe webhook signature.
+ * - Processes relevant events (checkout completion, subscription updates, invoice payments).
+ * - Calls helper functions to update subscription data and user roles in Supabase.
+ * - Returns appropriate HTTP responses to Stripe.
+ * This function requires the `STRIPE_WEBHOOK_SIGNING_SECRET` to be set for signature verification.
+ * @param {Request} req - The incoming HTTP request object from Stripe.
+ * @returns {Promise<Response>} A promise that resolves to an HTTP response object.
+ */
 serve(async (req) => {
   const signature = req.headers.get('stripe-signature')
   const body = await req.text()
@@ -179,9 +216,9 @@ serve(async (req) => {
 /* --- TODO & Notes ---
 - **Deployment:** Deploy this function using `supabase functions deploy stripe-webhooks --no-verify-jwt`.
 - **Environment Variables:** Set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SIGNING_SECRET`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` in your Supabase project secrets.
-- **Stripe Configuration:** Create a webhook endpoint in your Stripe Dashboard pointing to the URL of this deployed function. Select the relevant events (listed in `relevantEvents`).
+- **Stripe Configuration:** Create a webhook endpoint in your Stripe Dashboard pointing to the URL of this deployed function. Select the relevant events (listed in `relevantEvents` Set).
 - **Error Handling:** Add more robust error handling and potentially notifications for failures.
 - **Database Types:** Ensure the path to your Supabase database types (`../../../src/types/supabase.ts`) is correct. Generate types if you haven't: `supabase gen types typescript --project-id <your-project-id> --schema public > src/types/supabase.ts`.
-- **Role Management:** Adjust the role name ('paid') in `upsertSubscriptionRecord` if you use different role names.
-- **Security:** Review and potentially refine the Supabase RLS policies for the `customers` and `subscriptions` tables.
+- **Role Management:** Adjust the role name (e.g., 'paid') in `upsertSubscriptionRecord` if you use different role names in your application.
+- **Security:** Review and potentially refine the Supabase RLS policies for the `customers`, `subscriptions`, and `profiles` tables to ensure this function has the necessary permissions.
 */ 

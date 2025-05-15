@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Supabase Edge Function to generate chat responses using OpenAI.
+ * This function handles user queries related to tasks, including managing subtasks
+ * and the main task itself. It supports different modes (precise, creative, research, instruction)
+ * and language preferences. It interacts with the Supabase database to fetch task details
+ * and then calls the OpenAI API to generate a response, potentially including actions
+ * to be performed by the client.
+ */
+
 /// <reference lib="deno.ns" />
 /// <reference types="jsr:@supabase/functions-js/edge-runtime.d.ts" />
 
@@ -15,15 +24,30 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Import
 //   // Add other fields if necessary
 // }
 
-// --- Define expected AI Response structure ---
+/**
+ * Interface defining the expected structure for an AI-generated response.
+ * @interface AIResponse
+ * @property {string} response - The natural language response to the user.
+ * @property {string} [action] - An optional action string (e.g., 'ADD_SUBTASK') if the AI determines an action is needed.
+ * @property {Record<string, unknown>} [payload] - An optional payload for the action, containing necessary data (e.g., { title: "New Subtask Title" }).
+ */
 interface AIResponse {
   response: string; 
   action?: string;  
   payload?: Record<string, unknown>; // Use Record<string, unknown> instead of any
 }
-// --- End AI Response structure definition ---
 
-// Expected structure from OpenAI API after JSON.parse(rawData)
+/**
+ * Interface defining the expected structure of a chat completion response from the OpenAI API.
+ * @interface OpenAIChatCompletion
+ * @property {string} [id] - The ID of the completion.
+ * @property {string} [object] - The type of object (e.g., 'chat.completion').
+ * @property {number} [created] - Timestamp of creation.
+ * @property {string} [model] - The model used for the completion.
+ * @property {Array<{index?: number, message?: {role?: string, content?: string}, finish_reason?: string}>} [choices] - An array of choices, typically one.
+ * @property {{prompt_tokens?: number, completion_tokens?: number, total_tokens?: number}} [usage] - Token usage information.
+ * @property {string} [system_fingerprint] - System fingerprint.
+ */
 interface OpenAIChatCompletion {
   id?: string;
   object?: string;
@@ -101,6 +125,15 @@ const translations = {
   }
 };
 
+/**
+ * Simple translation function to retrieve localized strings.
+ * It navigates a nested translation object based on a dot-separated key.
+ * Falls back to English if a key is not found in the specified language.
+ * 
+ * @param {string} key - The dot-separated key for the translation string (e.g., "errors.chatResponse.queryRequired").
+ * @param {'en' | 'nl'} [lang='en'] - The target language code ('en' or 'nl').
+ * @returns {string} The translated string, or the key itself if not found after fallbacks.
+ */
 // Translation function
 function t(key: string, lang = 'en'): string {
   const langKey = lang === 'nl' ? 'nl' : 'en';
@@ -128,6 +161,30 @@ function t(key: string, lang = 'en'): string {
 
 // console.log("generate-chat-response function started V2");
 
+/**
+ * @typedef {Object} GenerateChatRequestBody
+ * @property {string} query - The user's query or message.
+ * @property {'precise' | 'creative' | 'research' | 'instruction' | string} mode - The desired mode for the AI response.
+ * @property {string} taskId - The ID of the current task to which the chat pertains.
+ * @property {Array<{role: 'user' | 'assistant', content: string}>} [chatHistory] - Optional previous chat messages for context.
+ * @property {'en' | 'nl'} [languagePreference='en'] - The preferred language for the AI's response.
+ */
+
+/**
+ * Main Deno server function that handles incoming HTTP requests for generating chat responses.
+ * - Handles CORS preflight requests.
+ * - Extracts and validates parameters from the request body (query, mode, taskId, languagePreference, chatHistory).
+ * - Retrieves necessary API keys and Supabase configuration from environment variables.
+ * - Initializes a Supabase client with user authentication context.
+ * - Fetches current subtasks for the given taskId to provide context to the AI.
+ * - Constructs a detailed system prompt for OpenAI based on the mode, task context, subtasks, and language preference.
+ * - Calls the OpenAI Chat Completions API.
+ * - Parses the AI's response, expecting a JSON string that conforms to the AIResponse interface.
+ * - Formats and returns the AI-generated response, including any actions and payload if specified by the AI.
+ * - Handles errors gracefully, returning appropriate error messages and status codes.
+ * @param {Request} req - The incoming HTTP request object.
+ * @returns {Promise<Response>} A promise that resolves to an HTTP response object.
+ */
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {

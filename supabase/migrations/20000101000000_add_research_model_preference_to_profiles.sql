@@ -1,3 +1,6 @@
+-- @fileoverview Adds a research_model_preference column to the public.profiles table.
+-- This migration allows users to store their preferred AI model for the 'Deep Research' feature.
+
 -- Add research_model_preference column to profiles table
 -- This column stores the user's preferred AI model for the 'Deep Research' feature.
 

@@ -6,14 +6,35 @@ import { GradientLoader } from "@/components/ui/loader.tsx";
 import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip.tsx";
 
+/**
+ * Props for the ChatInput component.
+ */
 interface ChatInputProps {
+  /** Function to call when the user submits a message or saves a note. */
   onSubmit: () => void;
+  /** Whether the component is in a loading state (disables input). */
   isLoading: boolean;
+  /** Whether the component is in note-taking mode. */
   isNoteMode: boolean;
+  /** The current input text value. */
   input: string;
+  /** Function to update the input text value. */
   setInput: (input: string) => void;
 }
 
+/**
+ * Input component for the chat interface that handles both message input and note-taking.
+ *
+ * Features:
+ * - Adapts UI and behavior based on note-taking or chat messaging mode
+ * - Shows different icon (Save/Send) based on the current mode
+ * - Supports keyboard shortcuts (Ctrl+Enter) for submission
+ * - Shows tooltips explaining the action
+ * - Disables input during loading states
+ * 
+ * @param {ChatInputProps} props - The props for the ChatInput component.
+ * @returns {JSX.Element} The ChatInput component.
+ */
 export function ChatInput({ 
   onSubmit, 
   isLoading, 
@@ -23,7 +44,11 @@ export function ChatInput({
 }: ChatInputProps) {
   const { t } = useTranslation();
 
-  // Handle key presses like Ctrl+Enter to submit
+  /**
+   * Handles keyboard events, allowing submission via Ctrl+Enter.
+   *
+   * @param {KeyboardEvent<HTMLTextAreaElement>} e - The keyboard event.
+   */
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && e.ctrlKey) {
       e.preventDefault(); 
@@ -31,7 +56,11 @@ export function ChatInput({
     }
   };
 
-  // Handle input changes
+  /**
+   * Updates the input state when the textarea content changes.
+   *
+   * @param {ChangeEvent<HTMLTextAreaElement>} e - The change event.
+   */
   const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
   };

@@ -31,19 +31,33 @@ import TypedGreetingTest from "./pages/TypedGreetingTest.tsx";
 import AdminRouteGuard from "./components/auth/AdminRouteGuard.tsx";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage.tsx";
 
+/**
+ * React Query client instance for managing server state, caching, and data fetching.
+ * @constant
+ * @type {QueryClient}
+ */
 const queryClient = new QueryClient();
 
-// New component to handle conditional rendering based on auth loading state
+/**
+ * `AppContent` component handles the conditional rendering based on the authentication loading state.
+ * It initializes Capacitor functionalities and renders the main application structure (routes and providers)
+ * once the authentication status is determined.
+ * If authentication is loading, it displays a loading spinner.
+ * @returns {JSX.Element} The main application content or a loader.
+ */
 const AppContent = () => {
   const { isLoading } = useAuth();
 
-  // Initialiseer Capacitor functionaliteit wanneer de component wordt gemount
+  /**
+   * useEffect hook to initialize Capacitor functionalities when the component mounts.
+   * Logs an error if Capacitor initialization fails.
+   */
   useEffect(() => {
     const initApp = async () => {
       try {
         await initCapacitor();
       } catch (error) {
-        console.error("Fout bij initialiseren van Capacitor:", error);
+        console.error("Error initializing Capacitor:", error);
       }
     };
 
@@ -95,14 +109,19 @@ const AppContent = () => {
   );
 };
 
+/**
+ * The main `App` component that sets up the root providers for the application.
+ * It wraps the `AppContent` with `QueryClientProvider`, `AuthProvider`, and `ThemeProvider`.
+ * @returns {JSX.Element} The root application component.
+ */
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <ThemeProvider>
         {/* Render AppContent which handles auth loading state */}
         <AppContent />
-      </AuthProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

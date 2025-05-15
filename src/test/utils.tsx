@@ -1,13 +1,21 @@
-import React, { ReactElement } from 'react';
-import { render, RenderOptions } from '@testing-library/react';
+import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext.tsx';
 import { TaskProvider } from '@/contexts/TaskContext.tsx';
 import { ThemeProvider } from '@/contexts/ThemeContext.tsx';
-import { vi } from 'vitest';
 
-// Maak een nieuwe QueryClient voor elke test
+/**
+ * @fileoverview Provides utility functions and components for testing React components.
+ * Includes a custom render function that wraps components with necessary providers
+ * (Router, QueryClient, Theme, Auth, Task) and a mock for the Supabase client.
+ */
+
+/**
+ * Creates a new `QueryClient` instance specifically configured for testing.
+ * Disables retries for queries by default to make tests more predictable.
+ * @returns {QueryClient} A new QueryClient instance for tests.
+ */
 const createTestQueryClient = () => new QueryClient({
   defaultOptions: {
     queries: {
@@ -16,11 +24,23 @@ const createTestQueryClient = () => new QueryClient({
   },
 });
 
-// Wrapper met alle providers die nodig zijn voor de applicatie
+/**
+ * Props for the `AllTheProviders` wrapper component.
+ * @interface AllTheProvidersProps
+ */
 interface AllTheProvidersProps {
+  /** The child components to be wrapped by the providers. */
   children: React.ReactNode;
 }
 
+/**
+ * A React functional component that wraps its children with all the necessary context providers
+ * used in the application. This is used as a wrapper in `renderWithProviders` to ensure
+ * components have access to contexts like Router, QueryClient, Theme, Auth, and Task.
+ *
+ * @param {AllTheProvidersProps} props - The props for the component.
+ * @returns {JSX.Element} The children wrapped with all providers.
+ */
 export const AllTheProviders = ({ children }: AllTheProvidersProps) => {
   const queryClient = createTestQueryClient();
   
@@ -39,29 +59,6 @@ export const AllTheProviders = ({ children }: AllTheProvidersProps) => {
   );
 };
 
-// Aangepaste render functie met alle providers
-export const renderWithProviders = (
-  ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>,
-) => {
-  return render(ui, { wrapper: AllTheProviders, ...options });
-};
+// renderWithProviders functie is verplaatst naar src/test/test-helpers.ts
 
-// Mock voor de Supabase client
-export const mockSupabaseClient = {
-  auth: {
-    getSession: vi.fn(),
-    signInWithPassword: vi.fn(),
-    signOut: vi.fn(),
-    onAuthStateChange: vi.fn(),
-  },
-  from: vi.fn(() => ({
-    select: vi.fn(() => ({
-      eq: vi.fn(),
-      order: vi.fn(),
-    })),
-    insert: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  })),
-}; 
+// mockSupabaseClient object is verplaatst naar src/test/test-helpers.ts 

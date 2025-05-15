@@ -10,6 +10,16 @@ import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+/**
+ * A login form component that handles user authentication.
+ * 
+ * This component provides a form with email and password inputs,
+ * "remember me" functionality, password visibility toggle,
+ * and links to the forgot password page.
+ * It uses the authentication context to handle the login process.
+ * 
+ * @returns {JSX.Element} The login form component.
+ */
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,6 +31,17 @@ export default function LoginForm() {
   const { toast } = useToast();
   const { t } = useTranslation();
 
+  /**
+   * Handles the login form submission.
+   * 
+   * This function prevents the default form submission behavior,
+   * attempts to authenticate the user with the provided credentials,
+   * displays appropriate toast notifications based on the result,
+   * and navigates to the home page on successful login.
+   * 
+   * @param {React.FormEvent} e - The form submission event.
+   * @returns {Promise<void>} A promise that resolves when the login process is complete.
+   */
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);

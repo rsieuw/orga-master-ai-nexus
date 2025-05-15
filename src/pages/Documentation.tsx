@@ -2,6 +2,11 @@ import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { useTranslation } from 'react-i18next';
 
+/**
+ * `DocumentationPage` component displays general documentation or information about the application.
+ * Currently, it serves as a placeholder for more detailed documentation.
+ * This is a simple informational page using the `AppLayout`.
+ */
 export default function DocumentationPage() {
   const { t } = useTranslation();
 

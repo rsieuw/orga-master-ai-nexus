@@ -1,3 +1,12 @@
+-- @fileoverview Initial database schema setup.
+-- This migration creates the core tables for the application:
+-- - public.profiles: Stores user profile information, extending auth.users.
+-- - public.chat_messages: Stores chat messages related to tasks.
+-- - public.task_notes: Stores notes associated with tasks.
+-- - public.saved_research: Stores research content saved by users for tasks.
+-- It also sets up Row Level Security (RLS) policies for these tables and
+-- a trigger (handle_new_user) to automatically create a profile when a new user signs up.
+
 -- Create a table for public profiles
 create table public.profiles (
   id uuid references auth.users not null primary key,

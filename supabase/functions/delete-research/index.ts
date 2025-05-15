@@ -1,11 +1,32 @@
+/**
+ * @fileoverview Supabase Edge Function to delete a saved research item.
+ * This function authenticates the user, verifies the research item belongs to them,
+ * and then deletes it from the `saved_research` table.
+ */
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
-// import { supabaseAdmin } from "../_shared/supabaseAdmin.ts"
+// import { supabaseAdmin } from "../_shared/supabaseAdmin.ts" // Not used in this version
 
 // console.log(`Function 'delete-research' booting up.`);
 
+/**
+ * @typedef {Object} DeleteResearchRequestBody
+ * @property {string} researchId - The ID of the research item to be deleted.
+ */
+
+/**
+ * Main Deno server function that handles incoming HTTP requests to delete research.
+ * - Handles CORS preflight requests.
+ * - Authenticates the user using the Authorization header.
+ * - Parses the request body to get the `researchId`.
+ * - Deletes the specified research item from the `saved_research` table,
+ *   ensuring it belongs to the authenticated user.
+ * - Returns a success message or an error response.
+ * @param {Request} req - The incoming HTTP request object.
+ * @returns {Promise<Response>} A promise that resolves to an HTTP response object.
+ */
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -25,7 +46,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
       // console.error("User authentication error:", userError);
-      return new Response(JSON.stringify({ error: 'Niet geautoriseerd' }), {
+      return new Response(JSON.stringify({ error: 'Not authorized' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
       });
@@ -50,9 +71,9 @@ Deno.serve(async (req) => {
       .eq('id', researchId)
       .eq('user_id', user.id); // Extra check: only delete if it belongs to the user
 
-    // ---> NIEUW: Log het resultaat van de delete operatie <---
+    // ---> NEW: Log the result of the delete operation <---
     console.log(`[delete-research] Attempted delete for researchId: ${researchId}, userId: ${user.id}. Result count: ${count}`);
-    // ---> EINDE NIEUW <---
+    // ---> END NEW <---
 
     if (deleteError) {
       // console.error("Error deleting saved research:", deleteError);
@@ -61,30 +82,30 @@ Deno.serve(async (req) => {
       throw new Error(`Database error: ${deleteError.message}`);
     }
 
-    // ---> NIEUW: Check of er daadwerkelijk iets is verwijderd <---
+    // ---> NEW: Check if anything was actually deleted <---
     if (count === 0) {
       console.warn(`[delete-research] No research found with id ${researchId} for user ${user.id}, or deletion prevented (e.g., RLS).`);
-      // Besluit of je hier een fout wilt teruggeven of succes (als 'niet gevonden' ook ok is)
-      // Voor nu geven we een mildere foutmelding terug
+      // Decide whether to return an error here or success (if 'not found' is also ok)
+      // For now, we return a milder error message
       return new Response(JSON.stringify({ 
-        warning: `Onderzoek met ID ${researchId} niet gevonden of kon niet worden verwijderd.` 
+        warning: `Research with ID ${researchId} not found or could not be deleted.` 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 404, // Of 403 als RLS waarschijnlijker is
+        status: 404, // Or 403 if RLS is more likely
       });
     }
-    // ---> EINDE NIEUW <---
+    // ---> END NEW <---
 
     // 5. Return success response
     // console.log(`Research with ID ${researchId} deleted successfully.`);
-    return new Response(JSON.stringify({ message: "Onderzoek succesvol verwijderd!" }), {
+    return new Response(JSON.stringify({ message: "Research successfully deleted!" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
 
   } catch (error) {
     // console.error("Error in delete-research function:", error);
-    const errorMessage = error instanceof Error ? error.message : "Interne serverfout bij verwijderen onderzoek.";
+    const errorMessage = error instanceof Error ? error.message : "Internal server error while deleting research.";
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

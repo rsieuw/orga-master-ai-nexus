@@ -27,15 +27,15 @@ export default function RegisterForm() {
     try {
       await register(email, password, name);
       toast({
-        title: t('registerForm.toast.successTitle'),
-        description: t('registerForm.toast.successDescription'),
+        title: t('auth.toast.registrationSuccess.title'),
+        description: t('auth.toast.registrationSuccess.description'),
       });
       navigate("/");
     } catch (error) {
       toast({
         variant: "destructive",
-        title: t('registerForm.toast.errorTitle'),
-        description: t('registerForm.toast.errorDescription'),
+        title: t('auth.toast.registrationFailed.title'),
+        description: t('auth.toast.registrationFailed.descriptionDefault'),
       });
       console.error("Registration error:", error);
     } finally {
@@ -46,15 +46,15 @@ export default function RegisterForm() {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="text-2xl text-center">{t('registerForm.title')}</CardTitle>
+        <CardTitle className="text-2xl text-center">{t('auth.register.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleRegister} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">{t('registerForm.nameLabel')}</Label>
+            <Label htmlFor="name">{t('auth.register.nameLabel')}</Label>
             <Input
               id="name"
-              placeholder={t('registerForm.namePlaceholder')}
+              placeholder={t('auth.register.namePlaceholder')}
               value={name}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
               required
@@ -62,11 +62,11 @@ export default function RegisterForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">{t('registerForm.emailLabel')}</Label>
+            <Label htmlFor="email">{t('auth.register.emailLabel')}</Label>
             <Input
               id="email"
               type="email"
-              placeholder={t('registerForm.emailPlaceholder')}
+              placeholder={t('auth.register.emailPlaceholder')}
               value={email}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               required
@@ -74,7 +74,7 @@ export default function RegisterForm() {
             />
           </div>
           <div className="space-y-2 relative">
-            <Label htmlFor="password">{t('registerForm.passwordLabel')}</Label>
+            <Label htmlFor="password">{t('auth.register.passwordLabel')}</Label>
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -97,7 +97,7 @@ export default function RegisterForm() {
                 <Eye className="h-4 w-4" />
               )}
               <span className="sr-only">
-                {showPassword ? t('registerForm.hidePassword') : t('registerForm.showPassword')}
+                {showPassword ? t('auth.register.hidePassword') : t('auth.register.showPassword')}
               </span>
             </Button>
           </div>
@@ -107,7 +107,7 @@ export default function RegisterForm() {
               className="w-full bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
               disabled={isLoading}
             >
-            {isLoading ? t('registerForm.submitButtonLoading') : t('registerForm.submitButton')}
+            {isLoading ? t('auth.register.submitButtonLoading') : t('auth.register.submitButton')}
           </Button>
           </div>
         </form>

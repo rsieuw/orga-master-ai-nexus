@@ -12,6 +12,13 @@ import { Loader2, ArrowLeft } from 'lucide-react'; // Import ArrowLeft icon
 import { useNavigate } from 'react-router-dom'; // Initialize useNavigate hook
 import { useTranslation } from 'react-i18next';
 
+/**
+ * `ContactPage` provides a form for users to send feedback, suggestions, or report issues.
+ * It requires the user to be authenticated. The form includes fields for subject and message.
+ * On submission, it sends the data to the 'feedback' table in Supabase.
+ * It displays loading states and provides toast notifications for success or failure.
+ * Includes a back button for navigation.
+ */
 const ContactPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -21,6 +28,14 @@ const ContactPage: React.FC = () => {
   const [message, setMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  /**
+   * Handles the submission of the contact/feedback form.
+   * Prevents default form submission and validates user authentication, subject, and message.
+   * If valid, it inserts the feedback into the Supabase 'feedback' table.
+   * Shows appropriate toast notifications for success or errors.
+   * Resets the form on successful submission.
+   * @param {React.FormEvent<HTMLFormElement>} event - The form submission event.
+   */
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 

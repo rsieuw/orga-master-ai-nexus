@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Tailwind CSS configuration file for the project.
+ * This configuration defines the dark mode strategy, content paths for purging unused styles,
+ * custom theme extensions (colors, border radius, keyframes, animations, background images),
+ * and includes plugins like `tailwindcss-animate` and `tailwind-scrollbar`.
+ */
 import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
 import tailwindScrollbar from "tailwind-scrollbar";

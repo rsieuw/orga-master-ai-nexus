@@ -10,17 +10,136 @@
     "low": "Laag",
     "categoryTitle": "Categorie"
   },
+  "categories": {
+    "workStudy": "Werk/Studie",
+    "personal": "Persoonlijk",
+    "household": "Huishouden",
+    "family": "Familie",
+    "social": "Sociaal",
+    "health": "Gezondheid",
+    "finances": "Financiën",
+    "projects": "Projecten",
+    "overdue": "Verlopen",
+    "later": "Binnenkort"
+  },
+  "auth": {
+    "login": {
+      "title": "Log in",
+      "emailLabel": "E-mail",
+      "emailPlaceholder": "jouw@email.com",
+      "passwordLabel": "Wachtwoord",
+      "showPassword": "Toon wachtwoord",
+      "hidePassword": "Verberg wachtwoord",
+      "rememberMe": "Onthoud mij",
+      "forgotPassword": "Wachtwoord vergeten?",
+      "submit": "Log in",
+      "loading": "Inloggen...",
+      "success": {
+        "title": "Inloggen geslaagd",
+        "description": "Welkom terug bij OrgaMaster AI!"
+      },
+      "error": {
+        "title": "Inloggen mislukt",
+        "description": "Controleer je e-mail en wachtwoord."
+      }
+    },
+    "resetPassword": {
+      "title": "Wachtwoord herstellen",
+      "subtitle": "Wachtwoord vergeten? Geen probleem.",
+      "instructions": "Voer je e-mailadres in. We sturen je instructies om je wachtwoord te herstellen.",
+      "emailLabel": "E-mailadres",
+      "emailPlaceholder": "jouw.email@voorbeeld.com",
+      "submit": "Instructies versturen",
+      "sending": "Versturen...",
+      "backToLogin": {
+        "prefix": "Terug naar",
+        "link": "Log in"
+      },
+      "success": {
+        "title": "Instructies verstuurd",
+        "description": "Als er een account met dit e-mailadres bestaat, hebben we instructies voor wachtwoordherstel verstuurd."
+      },
+      "error": {
+        "title": "Fout bij wachtwoordherstel",
+        "defaultMessage": "Er is iets misgegaan bij het versturen van de instructies."
+      }
+    },
+    "updatePassword": {
+      "title": "Nieuw wachtwoord instellen",
+      "subtitle": "Stel een nieuw wachtwoord in",
+      "validatingLink": "Link valideren...",
+      "newPasswordLabel": "Nieuw wachtwoord",
+      "confirmPasswordLabel": "Bevestig nieuw wachtwoord",
+      "showPassword": "Toon wachtwoord",
+      "hidePassword": "Verberg wachtwoord",
+      "updateButton": "Wachtwoord bijwerken",
+      "updatingButton": "Bijwerken...",
+      "invalidLinkError": "Ongeldige of verlopen link. Vraag opnieuw wachtwoordherstel aan.",
+      "passwordsMismatchError": "Wachtwoorden komen niet overeen.",
+      "passwordTooShortError": "Wachtwoord moet minimaal 6 tekens lang zijn.",
+      "success": {
+        "title": "Wachtwoord bijgewerkt",
+        "description": "Je wachtwoord is succesvol bijgewerkt. Je kunt nu inloggen."
+      },
+      "error": {
+        "title": "Fout bij bijwerken",
+        "defaultMessage": "Er is een fout opgetreden bij het bijwerken van het wachtwoord."
+      }
+    },
+    "register": {
+      "title": "Registreren",
+      "nameLabel": "Naam",
+      "namePlaceholder": "Jouw naam",
+      "emailLabel": "E-mail",
+      "emailPlaceholder": "jouw@email.com",
+      "passwordLabel": "Wachtwoord",
+      "showPassword": "Toon wachtwoord",
+      "hidePassword": "Verberg wachtwoord",
+      "submitButton": "Registreren",
+      "submitButtonLoading": "Registreren..."
+    },
+    "toast": {
+      "logoutFailed": {
+        "title": "Uitloggen mislukt",
+        "descriptionDefault": "Er is iets misgegaan bij het uitloggen. Probeer het opnieuw."
+      },
+      "loginFailed": {
+        "title": "Inloggen mislukt",
+        "descriptionDefault": "Controleer je e-mailadres en wachtwoord en probeer het opnieuw."
+      },
+      "registrationSuccess": {
+        "title": "Registratie succesvol",
+        "description": "Controleer je e-mail om je account te bevestigen."
+      },
+      "registrationFailed": {
+        "title": "Registratie mislukt",
+        "descriptionDefault": "Er is iets misgegaan bij het registreren. Probeer het later opnieuw."
+      },
+      "updateForbidden": {
+        "title": "Update niet toegestaan",
+        "descriptionFreeUserAIMode": "Gratis gebruikers kunnen alleen de 'GPT-4o (Gebalanceerd)' modus gebruiken."
+      },
+      "updateFailed": {
+        "title": "Account bijwerken mislukt",
+        "descriptionDefault": "Er is iets misgegaan bij het bijwerken van je account. Probeer het opnieuw."
+      },
+      "accountDeactivated": {
+        "title": "Account gedeactiveerd",
+        "description": "Dit account is momenteel niet actief. Neem contact op met support voor meer informatie."
+      }
+    }
+  },
   "login": {
     "title": "OrgaMaster AI",
     "subtitle": "Log in om je taken te beheren",
-    "noAccount": "Nog geen account?",
+    "noAccount": "Heb je nog geen account?",
     "registerHere": "Registreer hier"
   },
   "register": {
     "title": "OrgaMaster AI",
-    "subtitle": "Registreer om aan de slag te gaan",
+    "subtitle": "Registreer om te beginnen",
     "haveAccount": "Heb je al een account?",
-    "loginHere": "Log in hier"
+    "loginHere": "Log hier in"
   },
   "messageItem": {
     "sources": "Bronnen",
@@ -63,12 +182,12 @@
       "description": "Kies je voorkeurstalen."
     },
     "uiLanguage": {
-      "label": "Interface Taal",
+      "label": "Interface taal",
       "placeholder": "Selecteer interfacetaal",
       "description": "Kies de taal voor de applicatie-interface."
     },
     "aiLanguage": {
-      "label": "AI Interactietaal",
+      "label": "AI interactietaal",
       "placeholder": "Selecteer taal voor AI",
       "description": "Kies de taal voor interactie met de AI-assistent."
     },
@@ -119,7 +238,7 @@
       "gpt4oMiniDescription": "Gebruikt GPT-4o Mini voor snelle, betrouwbare antwoorden op basis van eerdere training."
     },
     "chatModel": {
-      "label": "Chat Model Provider",
+      "label": "Chat model provider",
       "description": "Kies welk model gebruikt wordt voor de standaard chat functionaliteit.",
       "perplexitySonarDescription": "Gebruikt Perplexity Sonar voor uitgebreide en contextuele antwoorden.",
       "gpt4oMiniDescription": "Gebruikt GPT-4o Mini voor efficiënte en evenwichtige antwoorden (standaard)."
@@ -241,20 +360,21 @@
     "tabs": {
       "users": "Gebruikers",
       "permissions": "Machtigingen",
+      "themes": "Thema's",
       "feedback": "Berichten"
     },
     "users": {
       "title": "Gebruikersbeheer",
-      "description": "Bekijk en beheer alle geregistreerde gebruikers.",
-      "searchPlaceholder": "Zoeken...",
-      "filterRolePlaceholder": "Filter rol",
+      "description": "Bekijk en beheer alle gebruikers van het systeem.",
+      "searchPlaceholder": "Zoek gebruikers...",
+      "filterRolePlaceholder": "Filter op rol",
+      "filterStatusPlaceholder": "Filter op status",
       "roles": {
         "all": "Alle rollen",
         "admin": "Beheerder",
         "paid": "Betaald",
         "free": "Gratis"
       },
-      "filterStatusPlaceholder": "Filter status",
       "statuses": {
         "all": "Alle statussen",
         "active": "Actief",
@@ -262,8 +382,12 @@
       }
     },
     "permissions": {
-      "title": "Beheer rolmachtigingen",
-      "description": "Schakel functies in of uit per gebruikersrol."
+      "title": "Toegangsbeheer",
+      "description": "Beheer welke functies beschikbaar zijn voor elke gebruikersrol."
+    },
+    "themes": {
+      "title": "Thema-instellingen",
+      "description": "Beheer welke thema's beschikbaar zijn voor elke gebruikersrol."
     }
   },
   "adminUsersPage": {
@@ -425,6 +549,49 @@
       "saveChanges": "Wijzigingen opslaan"
     }
   },
+  "adminThemeSettings": {
+    "loading": "Thema-instellingen laden...",
+    "noSettings": "Geen thema-instellingen gevonden",
+    "pageTitle": "Thema-instellingen",
+    "pageDescription": "Beheer welke thema's beschikbaar zijn voor elke gebruikersrol.",
+    "tableHeaders": {
+      "role": "Rol",
+      "theme": "Thema",
+      "defaultTheme": "Standaard thema"
+    },
+    "themeNames": {
+      "light": "Licht",
+      "dark": "Donker",
+      "customdark": "Aangepast donker"
+    },
+    "placeholders": {
+      "selectDefault": "Kies standaard"
+    },
+    "buttons": {
+      "saveChanges": "Wijzigingen opslaan"
+    },
+    "ariaLabels": {
+      "themeSwitch": "Schakel beschikbaarheid van {{themeName}} voor {{roleName}}"
+    },
+    "toastTitles": {
+      "loadFailed": "Laden mislukt",
+      "saveFailed": "Opslaan mislukt",
+      "saveSuccess": "Instellingen opgeslagen",
+      "themeRequired": "Thema vereist",
+      "defaultThemeError": "Standaard thema fout"
+    },
+    "toastMessages": {
+      "saveSuccess": "Thema-instellingen succesvol opgeslagen",
+      "themeRequired": "Er moet altijd minstens één thema beschikbaar zijn. Aangepast donker is ingesteld als standaard.",
+      "defaultThemeNotAvailable": "Het gekozen standaard thema is niet beschikbaar voor deze rol."
+    },
+    "errors": {
+      "loadError": "Fout bij het laden van thema-instellingen: {{message}}",
+      "saveError": "Fout bij het opslaan van thema-instellingen: {{message}}",
+      "emptyThemeList": "Er moet minstens één thema beschikbaar zijn voor rol {{role}}",
+      "defaultNotAvailable": "Het standaard thema voor rol {{role}} is niet in de lijst met beschikbare thema's"
+    }
+  },
   "navbar": {
     "newTaskButton": {
       "ariaLabel": "Nieuwe taak aanmaken",
@@ -521,23 +688,25 @@
     "allTasksCompleted": "Goed bezig! Alle taken zijn voltooid.",
     "clearFiltersButton": "Filters wissen",
     "addNewTaskMobile": "Nieuwe taak",
+    "overdue": "Verlopen",
+    "today": "Vandaag",
+    "tomorrow": "Morgen",
+    "dayAfterTomorrow": "Overmorgen",
+    "nextWeek": "Volgende week",
+    "later": "Binnenkort",
+    "workStudy": "Werk/Studie",
+    "personal": "Persoonlijk",
+    "household": "Huishouden",
+    "family": "Familie",
+    "social": "Sociaal",
+    "health": "Gezondheid",
+    "finances": "Financiën",
+    "projects": "Projecten",
+    "addNewTaskPlaceholder": "Nieuwe taak toevoegen",
     "categories": {
       "overdue": "Verlopen",
-      "today": "Vandaag",
-      "tomorrow": "Morgen",
-      "dayAfterTomorrow": "Overmorgen",
-      "nextWeek": "Volgende week",
-      "later": "Binnenkort",
-      "workStudy": "Werk/Studie",
-      "personal": "Persoonlijk",
-      "household": "Huishouden",
-      "family": "Familie",
-      "social": "Sociaal",
-      "health": "Gezondheid",
-      "finances": "Financiën",
-      "projects": "Projecten"
+      "later": "Binnenkort"
     },
-    "addNewTaskPlaceholder": "Nieuwe taak toevoegen",
     "tooltips": {
       "addNewTask": "Nieuwe taak toevoegen"
     },
@@ -591,9 +760,9 @@
     "addSubtaskButton": "Subtaak toevoegen",
     "noSubtasks": "Nog geen subtaken.",
     "subtask": {
-      "editTitleAriaLabel": "Subtaak titel bewerken",
-      "deleteSubtaskSR": "Verwijder subtaak",
+      "editTitleAriaLabel": "Bewerk subtitel",
       "editSubtaskSR": "Bewerk subtaak",
+      "deleteSubtaskSR": "Verwijder subtaak",
       "deleteConfirmation": {
         "title": "Subtaak verwijderen?",
         "description": "Weet je zeker dat je de subtaak \"{{subtaskTitle}}\" wilt verwijderen?"
@@ -605,6 +774,11 @@
       "subtaskUpdateFailedDescription": "Kon de subtaak niet bijwerken.",
       "deleteFailed": "Verwijderen mislukt",
       "taskDeleteFailedDescription": "Kon de subtaak niet verwijderen."
+    },
+    "subtasksTitle": "Subtaken",
+    "sortSubtasksAriaLabel": "Sorteer subtaken",
+    "sort": {
+      "currentSortDefault": "Huidige sortering: Standaard"
     },
     "editTaskDialog": {
       "title": "Taak bewerken",
@@ -624,11 +798,11 @@
       }
     },
     "aiChat": {
-      "title": "AI Assistent",
+      "title": "AI assistent",
       "inputPlaceholder": "Stel een vraag over deze taak...",
       "sendCommand": "Verstuur (Cmd+Enter)",
-      "showChat": "Toon AI Chat",
-      "hideChat": "Verberg AI Chat",
+      "showChat": "Toon AI chat",
+      "hideChat": "Verberg AI chat",
       "generatingResponse": "AI genereert antwoord...",
       "errorResponse": "Fout bij het ophalen van AI-antwoord.",
       "suggestion": {
@@ -866,7 +1040,7 @@
         "description": "Kon de layoutvoorkeur niet opslaan. Probeer het opnieuw."
       },
       "aiModeSaved": {
-        "title": "AI Modus Opgeslagen",
+        "title": "AI-modus opgeslagen",
         "description": "Standaard AI-modus ingesteld op: {modeLabel}."
       },
       "errorSavingAiMode": {
@@ -962,7 +1136,7 @@
       "errorMessage": "Er is een fout opgetreden tijdens het onderzoek. Probeer het later opnieuw."
     },
     "researchModePopover": {
-      "title": "Kies Onderzoeksmodus",
+      "title": "Kies onderzoeksmodus",
       "researchMode": "Onderzoek",
       "instructionMode": "Instructie",
       "creativeMode": "Creatief",
@@ -1118,7 +1292,7 @@
       "taskNotFound": "Taak met ID {{taskId}} niet gevonden.",
       "fetchError": "Fout bij ophalen taken.",
       "notAuthenticated": "Je moet ingelogd zijn om deze actie uit te voeren.",
-      "updateTaskFailed": "Kon de taak niet bijwerken",
+      "updateTaskFailedSimple": "Kon de taak niet bijwerken",
       "aiSubtaskGenerationLimitReached": "AI-subtaakgeneratielimiet bereikt voor deze taak ({{count}}/{{limit}}).",
       "aiSubtaskGenerationFailed": "Kon geen AI-subtaken genereren.",
       "aiSubtasksGeneratedSuccessfully": "AI-subtaken succesvol gegenereerd.",
@@ -1129,8 +1303,8 @@
       "taskCreated": "Taak aangemaakt",
       "taskUpdated": "Taak bijgewerkt",
       "createTaskFailed": "Kon geen taak aanmaken",
-      "updateTaskFailed": "Kon de taak niet bijwerken",
-      "taskNotFound": "Taak niet gevonden",
+      "updateTaskFailedGeneral": "Kon de taak niet bijwerken",
+      "taskNotFoundSimple": "Taak niet gevonden",
       "taskNotFoundToUpdateSubtask": "Taak niet gevonden om subtaak bij te werken",
       "deleteTaskFailed": "Kon de taak niet verwijderen",
       "markingTaskFailed": "Kon de taak status niet wijzigen",
@@ -1149,7 +1323,7 @@
       "taskNotFoundToUpdateSubtask": "Taak niet gevonden om subtaak bij te werken",
       "taskNotFoundToDeleteSubtask": "Taak niet gevonden om subtaak te verwijderen"
     },
-    "taskNotFound": "Taak met ID {taskId} niet gevonden",
+    "taskNotFoundWithNoQuotes": "Taak met ID {taskId} niet gevonden",
     "aiSubtaskGenerationLimitReached": "Je hebt de limiet van {limit} AI-subtaakgeneraties bereikt voor deze taak (huidige: {count})",
     "aiSubtaskGenerationFailed": "Kon geen AI-subtaken genereren.",
     "aiSubtasksGeneratedSuccessfully": "AI-subtaken succesvol gegenereerd.",
@@ -1184,47 +1358,36 @@
       "deleteError": "Kon bericht niet verwijderen: {error}"
     }
   },
-  "auth": {
+  "registerForm": {
     "toast": {
-      "logoutFailed": {
-        "title": "Uitloggen mislukt",
-        "descriptionDefault": "Er is iets misgegaan bij het uitloggen. Probeer het opnieuw."
-      },
-      "loginFailed": {
-        "title": "Inloggen mislukt",
-        "descriptionDefault": "Controleer je e-mailadres en wachtwoord en probeer het opnieuw."
-      },
-      "registrationSuccess": {
-        "title": "Registratie succesvol",
-        "description": "Controleer je e-mail om je account te bevestigen."
-      },
-      "registrationFailed": {
-        "title": "Registratie mislukt",
-        "descriptionDefault": "Er is iets misgegaan bij het registreren. Probeer het later opnieuw."
-      },
-      "updateForbidden": {
-        "title": "Update niet toegestaan",
-        "descriptionFreeUserAIMode": "Gratis gebruikers kunnen alleen de 'GPT-4o (Gebalanceerd)' modus gebruiken."
-      },
-      "updateFailed": {
-        "title": "Account bijwerken mislukt",
-        "descriptionDefault": "Er is iets misgegaan bij het bijwerken van je account. Probeer het opnieuw."
-      },
-      "accountDeactivated": {
-        "title": "Account gedeactiveerd",
-        "description": "Dit account is momenteel niet actief. Neem contact op met support voor meer informatie."
-      }
-    }
+      "successTitle": "Registratie geslaagd",
+      "successDescription": "Welkom bij OrgaMaster AI!",
+      "errorTitle": "Registratie mislukt",
+      "errorDescription": "Er is iets misgegaan bij het registreren."
+    },
+    "title": "Registreren",
+    "nameLabel": "Naam",
+    "namePlaceholder": "Jouw naam",
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "jouw@email.com",
+    "passwordLabel": "Wachtwoord",
+    "showPassword": "Toon wachtwoord",
+    "hidePassword": "Verberg wachtwoord",
+    "submitButton": "Registreren",
+    "submitButtonLoading": "Registreren..."
   },
+  "maxAiGenerationsReached": "Maximale AI-generaties bereikt",
+  "maxAiGenerationsReachedDescription": "Je hebt de limiet voor het aantal AI-gegenereerde taken/subtaken bereikt.",
+  
   "taskForm": {
     "title": "Taak bewerken",
     "backButton": "Terug",
     "labels": {
-        "title": "Titel",
-        "description": "Beschrijving",
-        "priority": "Prioriteit",
-        "status": "Status",
-        "deadline": "Deadline"
+      "title": "Titel",
+      "description": "Beschrijving",
+      "priority": "Prioriteit",
+      "status": "Status",
+      "deadline": "Deadline"
     },
     "placeholders": {
       "title": "Taaktitel",
@@ -1233,7 +1396,7 @@
       "selectStatus": "Selecteer status"
     },
     "buttons": {
-      "aiSuggestion": "AI Suggestie",
+      "aiSuggestion": "AI suggestie",
       "updateTask": "Taak bijwerken",
       "updating": "Bijwerken..."
     },
@@ -1247,7 +1410,7 @@
         "description": "Vul eerst een titel in voor een AI-prioriteitssuggestie."
       },
       "aiSuggestion": {
-        "title": "AI Suggestie",
+        "title": "AI suggestie",
         "description": "De AI stelt voor om prioriteit \"{{priorityName}}\" toe te kennen."
       },
       "aiSuggestionFailed": {
@@ -1284,42 +1447,6 @@
     "instruction": {
       "name": "Instructie modus",
       "description": "Stapsgewijze gidsen en gestructureerde instructies voor praktische taken."
-    }
-  },
-  "registerForm": {
-    "toast": {
-      "successTitle": "Registratie geslaagd",
-      "successDescription": "Welkom bij OrgaMaster AI!",
-      "errorTitle": "Registratie mislukt",
-      "errorDescription": "Er is iets misgegaan bij het registreren."
-    },
-    "title": "Registreren",
-    "nameLabel": "Naam",
-    "namePlaceholder": "Jouw naam",
-    "emailLabel": "E-mail",
-    "emailPlaceholder": "jouw@email.com",
-    "passwordLabel": "Wachtwoord",
-    "showPassword": "Toon wachtwoord",
-    "hidePassword": "Verberg wachtwoord",
-    "submitButton": "Registreren",
-    "submitButtonLoading": "Registreren..."
-  },
-  "maxAiGenerationsReached": "Maximale AI-generaties bereikt",
-  "maxAiGenerationsReachedDescription": "Je hebt de limiet voor het aantal AI-gegenereerde taken/subtaken bereikt.",
-  "generateSubtasks": {
-    "buttonText": "Genereer Subtaken",
-    "buttonAriaLabel": "Genereer subtaken",
-    "limitReachedTooltip": "Je hebt {count}/{limit} generaties voor deze taak gebruikt.",
-    "confirmButton": "Ja, genereer subtaken",
-    "fabText": "Genereer"
-  },
-  "subtask": {
-    "editTitleAriaLabel": "Bewerk subtitel",
-    "editSubtaskSR": "Bewerk subtaak",
-    "deleteSubtaskSR": "Verwijder subtaak",
-    "deleteConfirmation": {
-      "title": "Subtaak verwijderen?",
-      "description": "Weet je zeker dat je de subtaak \"{{subtaskTitle}}\" wilt verwijderen?"
     }
   }
 }

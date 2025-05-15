@@ -24,26 +24,47 @@ import { format } from 'date-fns';
 import { nl, enUS } from 'date-fns/locale';
 import { cn } from '@/lib/utils.ts';
 
-// Define the expected structure of the data returned by the Edge Function
-// This should now also include the email address
+/**
+ * Interface representing the structure of user data fetched from the 'get-all-users' Edge Function.
+ * This includes user profile information and their email address.
+ * @interface FetchedUserData
+ */
 interface FetchedUserData {
+    /** The unique identifier of the user. */
     id: string;
-    email: string | null; // Email now comes directly from the function
+    /** The email address of the user. Can be null if not available. */
+    email: string | null; 
+    /** The name of the user. Can be null. */
     name: string | null;
+    /** The role of the user (e.g., 'admin', 'paid', 'free'). Can be null. */
     role: string | null;
+    /** The URL of the user's avatar image. Can be null. */
     avatar_url: string | null;
+    /** The user's preferred language code (e.g., 'en', 'nl'). */
     language_preference: string | null;
+    /** The timestamp of when the user account was created. */
     created_at: string;
+    /** The timestamp of the last update to the user account. */
     updated_at: string;
+    /** The status of the user account (e.g., 'active', 'inactive'). Optional. */
     status?: string;
+    /** Indicates if email notifications are enabled for the user. Optional, can be null. */
     email_notifications_enabled?: boolean | null;
+    /** The user's preferred AI interaction mode. Optional. */
     ai_mode_preference?: string | null;
 }
 
-// Define the props that the table component now expects
+/**
+ * Props for the `UsersManagementTable` component.
+ * Defines the filter criteria applied to the users list.
+ * @interface UsersManagementTableProps
+ */
 interface UsersManagementTableProps {
+  /** The search term to filter users by (e.g., name, email). */
   searchTerm: string;
+  /** The selected role to filter users by. 'all' means no role filter. */
   selectedRole: UserRole | 'all';
+  /** The selected status to filter users by (e.g., 'active', 'inactive'). 'all' means no status filter. */
   selectedStatus: string;
 }
 
@@ -55,6 +76,14 @@ type SortConfig = {
 } | null;
 
 // Component for user management table
+/**
+ * `UsersManagementTable` component displays a table of users with management functionalities.
+ * It allows sorting, filtering by search term, role, and status.
+ * Admins can change user roles, and activate/deactivate user accounts.
+ * It fetches user data from a Supabase Edge Function and handles UI updates and notifications.
+ * The table is responsive and adapts to mobile view by showing `UserCard` components.
+ * @param {UsersManagementTableProps} props - The props for configuring the table filters.
+ */
 export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({ 
   searchTerm,
   selectedRole,
@@ -76,6 +105,10 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
   const currentLocale = i18n.language === 'nl' ? nl : enUS;
 
   // Callback functions for dialogs
+  /**
+   * Opens the dialog to change a user's role.
+   * @param {string} userId - The ID of the user whose role is to be changed.
+   */
   const openChangeRoleDialog = (userId: string) => {
     setSelectedUserIdForAction(userId);
     const user = users.find(u => u.id === userId);
@@ -83,16 +116,30 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
     setIsChangeRoleDialogOpen(true);
   };
 
+  /**
+   * Opens the dialog to confirm deactivation of a user account.
+   * @param {string} userId - The ID of the user to be deactivated.
+   */
   const openDeactivateDialog = (userId: string) => {
     setSelectedUserIdForAction(userId);
     setIsDeactivateDialogOpen(true);
   };
 
+  /**
+   * Opens the dialog to confirm activation of a user account.
+   * @param {string} userId - The ID of the user to be activated.
+   */
   const openActivateDialog = (userId: string) => {
     setSelectedUserIdForAction(userId);
     setIsActivateDialogOpen(true);
   };
 
+  /**
+   * Fetches the list of users from the 'get-all-users' Supabase Edge Function.
+   * Maps the fetched data to the `UserProfile` interface.
+   * Handles loading states, error reporting via toasts, and updates the component's user state.
+   * This function is memoized using `useCallback` to prevent unnecessary re-renders.
+   */
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -147,6 +194,9 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
     }
   }, [toast, t]);
 
+  /**
+   * useEffect hook to call `fetchUsers` when the component mounts or `fetchUsers` itself changes.
+   */
   useEffect(() => {
     fetchUsers(); 
   }, [fetchUsers]);
@@ -159,6 +209,14 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
     }
   };
   
+  /**
+   * Handles the change of a user's role.
+   * Updates the user's role in the Supabase 'profiles' table and optimistically updates the local state.
+   * Shows success or error toast notifications.
+   * Closes the role change dialog on success.
+   * @param {string} userId - The ID of the user whose role is to be changed.
+   * @param {'free' | 'paid' | 'admin'} newRole - The new role to assign to the user.
+   */
   const handleRoleChange = async (userId: string, newRole: 'free' | 'paid' | 'admin') => {
      const userToUpdate = users.find(u => u.id === userId);
      const userName = userToUpdate?.name || userToUpdate?.email || userId;
@@ -191,6 +249,13 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
      }
   };
 
+  /**
+   * Handles the deactivation of a user account.
+   * Updates the user's status to 'inactive' in the Supabase 'profiles' table and optimistically updates local state.
+   * Shows success or error toast notifications.
+   * Closes the deactivation confirmation dialog on success.
+   * @param {string} userId - The ID of the user to be deactivated.
+   */
   const handleDeactivateUser = async (userId: string) => {
     const userToUpdate = users.find(u => u.id === userId);
     const userName = userToUpdate?.name || userToUpdate?.email || userId;
@@ -218,6 +283,13 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
   };
 
   // New function to activate user
+  /**
+   * Handles the activation of a user account.
+   * Updates the user's status to 'active' in the Supabase 'profiles' table and optimistically updates local state.
+   * Shows success or error toast notifications.
+   * Closes the activation confirmation dialog on success.
+   * @param {string} userId - The ID of the user to be activated.
+   */
   const handleActivateUser = async (userId: string) => {
     const userToUpdate = users.find(u => u.id === userId);
     const userName = userToUpdate?.name || userToUpdate?.email || userId;
@@ -297,6 +369,12 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
     });
   }, [sortedUsers, searchTerm, selectedRole, selectedStatus]);
 
+  /**
+   * Requests a sort configuration change for a specific column.
+   * If the column is already being sorted, it toggles the sort direction.
+   * Otherwise, it sets the new column to be sorted in ascending order.
+   * @param {keyof UserProfile} key - The key of the `UserProfile` object to sort by.
+   */
   const requestSort = (key: keyof UserProfile) => {
     let direction: SortDirection = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -509,8 +587,12 @@ export const UsersManagementTable: React.FC<UsersManagementTableProps> = ({
   );
 };
 
-// Main page component remains largely the same, it just uses UsersManagementTable
-// ... (rest of the AdminUsersPage component)
+/**
+ * `AdminUsersPage` is a simple wrapper component that renders the `UsersManagementTable`.
+ * It provides default filter values (show all users) to the table.
+ * This component might be used if navigating directly to a users management page
+ * separate from the main admin dashboard tabs.
+ */
 const AdminUsersPage: React.FC = () => {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');

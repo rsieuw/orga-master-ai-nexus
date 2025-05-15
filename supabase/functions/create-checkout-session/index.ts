@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Supabase Edge Function to create a Stripe Checkout Session.
+ * This function handles user authentication, retrieves or creates a Stripe customer,
+ * and then creates a Stripe Checkout session for a given price ID.
+ * It returns the session URL for the client to redirect the user to Stripe.
+ */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Stripe from 'https://esm.sh/stripe@11.1.0?target=deno&no-check'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -7,18 +13,37 @@ import { Database } from '@/types/supabase.ts' // Using alias defined in deno.js
 // Type alias
 // type Customer = Database['public']['Tables']['customers']['Row'] // Verwijderd want ongebruikt
 
-// Initialize Stripe client
+/**
+ * Stripe client instance initialized with the secret key and API version.
+ * @constant
+ * @type {Stripe}
+ */
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
   httpClient: Stripe.createFetchHttpClient(),
   apiVersion: '2023-10-16',
 })
 
-// Initialize Supabase Admin client (needed to create/get Stripe customer mapping)
+/**
+ * Supabase admin client instance initialized with URL and service role key.
+ * This client is used for operations requiring admin privileges, such as managing the customers table.
+ * @constant
+ * @type {SupabaseClient<Database>}
+ */
 const supabaseAdmin = createClient<Database>(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
+/**
+ * Main Deno server function that handles incoming HTTP requests.
+ * - Handles CORS preflight requests.
+ * - Authenticates the user using the Authorization header.
+ * - Retrieves or creates a Stripe customer ID for the user.
+ * - Creates a Stripe Checkout Session with the provided price ID.
+ * - Returns the session URL or an error response.
+ * @param {Request} req - The incoming HTTP request object.
+ * @returns {Promise<Response>} A promise that resolves to an HTTP response object.
+ */
 serve(async (req) => {
   // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
@@ -114,6 +139,7 @@ serve(async (req) => {
     })
 
     if (!session.url) {
+       /** @type {Error} */
        throw new Error('Failed to create checkout session URL')
     }
     console.log(`Created checkout session [${session.id}] for customer [${customerId}]`);
@@ -167,10 +193,10 @@ serve(async (req) => {
 
 /* --- TODO & Notes ---
 - **Deployment:** Deploy this function: `supabase functions deploy create-checkout-session --project-ref <your-project-id>`.
-- **Environment Variables:** Ensure `STRIPE_SECRET_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` and `SITE_URL` are set.
-- **CORS Helper:** Make sure the `../_shared/cors.ts` file exists and contains the correct CORS headers.
-- **Database Types:** Verify the path to `Database` types.
-- **Frontend Integration:** Call this function from your UI (e.g., on button click), passing the selected `priceId`. Use the returned `url` to redirect the user: `window.location.href = session.url`.
-- **Success/Cancel URLs:** Update the `success_url` and `cancel_url` to point to the correct pages in your application.
-- **RLS:** Ensure RLS policies on the `customers` table allow the admin client (service_role) to read/write.
+- **Environment Variables:** Ensure `STRIPE_SECRET_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` and `SITE_URL` are set in your Supabase project.
+- **CORS Helper:** Make sure the `../_shared/cors.ts` file exists and contains the correct CORS headers for your deployment.
+- **Database Types:** Verify the path to `Database` types (e.g., using alias `@/types/supabase.ts`).
+- **Frontend Integration:** Call this function from your UI (e.g., on a button click), passing the selected `priceId` in the request body. Use the returned `session.url` to redirect the user to Stripe's checkout page: `window.location.href = session.url`.
+- **Success/Cancel URLs:** Update the `success_url` and `cancel_url` in `stripe.checkout.sessions.create` to point to the appropriate pages in your application that will handle the checkout outcome.
+- **RLS (Row Level Security):** Ensure RLS policies on the `customers` table allow the admin client (using `service_role`) to read and write customer data as needed by this function.
 */ 

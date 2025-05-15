@@ -3,6 +3,12 @@ import { useAuth } from "@/hooks/useAuth.ts";
 import RegisterForm from "@/components/auth/RegisterForm.tsx";
 import { useTranslation } from "react-i18next";
 
+/**
+ * `Register` page component.
+ * This page displays the registration form for new users.
+ * If the user is already authenticated, it redirects them to the homepage.
+ * It uses the `RegisterForm` component to handle the actual registration logic.
+ */
 export default function Register() {
   const { isAuthenticated } = useAuth();
   const { t } = useTranslation();

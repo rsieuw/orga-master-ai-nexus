@@ -3,12 +3,29 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Task } from "@/types/task.ts";
 
+/**
+ * Props for the TaskInfoDisplay component.
+ * 
+ * @interface TaskInfoDisplayProps
+ */
 export interface TaskInfoDisplayProps {
+  /** The task whose information is being displayed */
   task: Task;
+  /** Whether the task information is collapsed or not */
   isInfoCollapsed: boolean;
+  /** Optional CSS class to add to the component */
   className?: string;
 }
 
+/**
+ * Component that displays the description of a task with animation effects.
+ * 
+ * This component shows or hides the task description based on the 'isInfoCollapsed' prop
+ * and applies smooth animations when collapsing or expanding the information.
+ * 
+ * @param {TaskInfoDisplayProps} props - The properties for the TaskInfoDisplay component
+ * @returns {JSX.Element} - The rendered TaskInfoDisplay component
+ */
 export default function TaskInfoDisplay({
   task,
   isInfoCollapsed,

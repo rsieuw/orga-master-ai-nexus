@@ -1,12 +1,28 @@
 import { cn } from "@/lib/utils.ts";
 
-interface LoaderProps {
-  size?: "sm" | "md" | "lg";
+/**
+ * Defines the possible sizes for the loader.
+ */
+export type LoaderSize = "sm" | "md" | "lg";
+
+/**
+ * Props for the Loader and GradientLoader components.
+ */
+export interface LoaderProps {
+  /** The size of the loader. Defaults to "md". */
+  size?: LoaderSize;
+  /** Optional additional CSS classes to apply to the loader container. */
   className?: string;
 }
 
+/**
+ * A simple spinning loader component.
+ *
+ * @param {LoaderProps} props - The props for the Loader component.
+ * @returns {JSX.Element} The Loader component.
+ */
 export function Loader({ size = "md", className }: LoaderProps) {
-  const sizeClasses = {
+  const sizeClasses: Record<LoaderSize, string> = {
     sm: "h-4 w-4",
     md: "h-8 w-8",
     lg: "h-12 w-12",
@@ -40,8 +56,14 @@ export function Loader({ size = "md", className }: LoaderProps) {
   );
 }
 
+/**
+ * A spinning loader component with a gradient effect.
+ *
+ * @param {LoaderProps} props - The props for the GradientLoader component.
+ * @returns {JSX.Element} The GradientLoader component.
+ */
 export function GradientLoader({ size = "md", className }: LoaderProps) {
-  const sizeClasses = {
+  const sizeClasses: Record<LoaderSize, string> = {
     sm: "h-4 w-4",
     md: "h-8 w-8",
     lg: "h-12 w-12",

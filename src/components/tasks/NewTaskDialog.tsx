@@ -25,10 +25,30 @@ import { Calendar } from "@/components/ui/calendar.tsx";
 import { useTranslation } from 'react-i18next';
 import { useAuth } from "@/hooks/useAuth.ts";
 
+/**
+ * Props for the NewTaskDialog component.
+ *
+ * @interface NewTaskDialogProps
+ */
 interface NewTaskDialogProps {
+  /** Function to control the open/closed state of the dialog. */
   setOpen: (open: boolean) => void;
 }
 
+/**
+ * NewTaskDialog component for creating new tasks.
+ *
+ * This component provides a form for users to input task details.
+ * It includes functionality for:
+ * - AI-powered generation of task title and description from an initial input.
+ * - Manual input of title, description, priority, status, category, and deadline.
+ * - Optional automatic generation of subtasks for the new task.
+ * - Saving the new task to the database.
+ * - User interface feedback via toasts.
+ *
+ * @param {NewTaskDialogProps} props - The props for the component.
+ * @returns {JSX.Element} The rendered NewTaskDialog component.
+ */
 export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
   const { addTask, expandTask } = useTask();
   const { toast } = useToast();
@@ -55,6 +75,13 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
   const [taskEmoji, setTaskEmoji] = useState<string>("");
 
   // AI generation function - now calls the Edge Function
+  /**
+   * Handles the AI generation of task details (title, description, category, emoji)
+   * based on the initial user input.
+   * It calls a Supabase Edge Function to perform the generation.
+   * Updates the form fields with the generated details.
+   * @async
+   */
   const handleGenerateTaskDetails = async () => {
     if (!initialInput) {
       toast({
@@ -122,6 +149,12 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
   };
 
   // Custom submit handler for creation only
+  /**
+   * Handles the submission of the new task form.
+   * Creates a new task with the provided details and optionally generates subtasks.
+   * @async
+   * @param {React.FormEvent} [e] - The form event, if submitted via a form element.
+   */
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsLoading(true);
@@ -175,6 +208,12 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
     }
   };
 
+  /**
+   * Handles the Ctrl+Enter keydown event in input fields to submit the form
+   * for creating a task and generating subtasks.
+   * @async
+   * @param {React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>} event - The keyboard event.
+   */
   const handleKeyDown = async (event: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     if (event.ctrlKey && event.key === 'Enter') {
       event.preventDefault();
@@ -189,6 +228,18 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
       setGenerateSubtasks(true);
       await handleSubmit();
     }
+  };
+
+  // Functie om de juiste vertaalsleutel voor een categorie te vinden
+  const getCategoryTranslationKey = (category: string) => {
+    const index = TASK_CATEGORIES.findIndex(cat => cat === category);
+    return index !== -1 ? TASK_CATEGORY_KEYS[index] : category;
+  };
+
+  // Vertaalde categorienaam ophalen
+  const getTranslatedCategory = (category: string) => {
+    const translationKey = getCategoryTranslationKey(category);
+    return t(translationKey);
   };
 
   // Form JSX (without Card, CardHeader etc.)
@@ -317,9 +368,9 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
                 <SelectValue placeholder={t('newTaskDialog.selectCategoryPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
-                {TASK_CATEGORIES.map((cat, index) => (
+                {TASK_CATEGORIES.map((cat) => (
                   <SelectItem key={cat} value={cat}>
-                    {t(TASK_CATEGORY_KEYS[index])}
+                    {getTranslatedCategory(cat)}
                   </SelectItem>
                 ))}
               </SelectContent>

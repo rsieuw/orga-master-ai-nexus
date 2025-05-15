@@ -3,13 +3,29 @@ import { type Theme, ThemeContext } from "./theme.definition.ts";
 import { useAuth } from "@/hooks/useAuth.ts";
 import { supabase } from "@/integrations/supabase/client.ts";
 
-// Interface voor thema instellingen zoals ze uit de DB komen
+/**
+ * Interface for theme settings as they come from the database.
+ *
+ * @interface ThemeSetting
+ */
 interface ThemeSetting {
+  /** The role to which these theme settings apply. */
   role: string;
+  /** List of available themes for this role. */
   available_themes: Theme[];
+  /** The default theme for this role. */
   default_theme: Theme;
 }
 
+/**
+ * Provides theme management functionality to its children components.
+ *
+ * Fetches theme settings based on user roles, allows users to toggle themes,
+ * and persists the selected theme in local storage and applies it to the document root.
+ *
+ * @param {{ children: React.ReactNode }} props - The props for the component.
+ * @returns {JSX.Element} The ThemeProvider component.
+ */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [themeSettings, setThemeSettings] = useState<Record<string, ThemeSetting>>({});
@@ -23,17 +39,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchThemeSettings = async () => {
       try {
-        // Haal sessie op van de gebruiker
+        // Get user session
         const { data: sessionData } = await supabase.auth.getSession();
         const accessToken = sessionData.session?.access_token;
         
-        // API URL van de Supabase edge function
+        // API URL of the Supabase edge function
         const url = 'https://wzoeijpdtpysbkmxbcld.supabase.co/functions/v1/get-theme-settings';
         
-        // Gebruik de anonieme key uit de client.ts file
+        // Use the anonymous key from the client.ts file
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6b2VpanBkdHB5c2JrbXhiY2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwNTg0NzcsImV4cCI6MjA2MTYzNDQ3N30.BuqUr8eTib3tC42OEkH4K7gYhWIATvuLwdGak5MZEC4";
         
-        // Maak de request met de juiste authorization header
+        // Create the request with the correct authorization header
         const headers: HeadersInit = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken || SUPABASE_ANON_KEY}`
@@ -50,7 +66,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         // Create a lookup object for quick access by role
         const settings: Record<string, ThemeSetting> = {};
         
-        // Valideer de data voor we het gebruiken
+        // Validate the data before using it
         if (Array.isArray(data)) {
           data.forEach((item: {
             role?: string;
@@ -67,7 +83,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           });
         }
         
-        // Als de settings leeg zijn, gebruik standaard waarden
+        // If settings are empty, use default values
         if (Object.keys(settings).length === 0) {
           throw new Error("No valid theme settings found");
         }
@@ -87,44 +103,53 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     fetchThemeSettings();
   }, []);
 
-  // Lijst met beschikbare thema's per rol
-  const getAvailableThemesForUser = (): Theme[] => {
-    if (!user) return ['custom-dark']; // Default thema voor niet-ingelogde gebruikers
+  /**
+   * Gets the list of available themes for the current user based on their role.
+   * Falls back to default themes if settings are not fetched or user is not logged in.
+   * @returns {Theme[]} An array of available themes.
+   */
+  const getAvailableThemesForUser = useCallback((): Theme[] => {
+    if (!user) return ['custom-dark']; // Default theme for non-logged-in users
     
-    // Als we thema-instellingen hebben voor deze rol, gebruik die
+    // If we have theme settings for this role, use them
     if (user.role && themeSettings[user.role]) {
       return themeSettings[user.role].available_themes;
     }
     
-    // Fallback naar standaard thema's per rol (als DB fetch mislukt is)
+    // Fallback to default themes per role (if DB fetch failed)
     const defaultThemes: Record<string, Theme[]> = {
-      admin: ["light", "dark", "custom-dark"], // Admins hebben toegang tot alle thema's
-      paid: ["light", "dark", "custom-dark"],  // Betaalde gebruikers hebben toegang tot alle thema's
-      free: ["custom-dark"]                   // Gratis gebruikers hebben alleen toegang tot custom-dark
+      admin: ["light", "dark", "custom-dark"], // Admins have access to all themes
+      paid: ["light", "dark", "custom-dark"],  // Paid users have access to all themes
+      free: ["custom-dark"]                   // Free users only have access to custom-dark
     };
     
     return defaultThemes[user.role] || ["custom-dark"];
-  };
+  }, [user, themeSettings]);
 
-  // Krijg het standaard thema voor een rol
+  /**
+   * Gets the default theme for a given user role.
+   * Uses fetched theme settings or falls back to a default.
+   * @param {string} role - The user role.
+   * @returns {Theme} The default theme for the role.
+   */
   const getDefaultThemeForRole = useCallback((role: string): Theme => {
     if (themeSettings[role]) {
       return themeSettings[role].default_theme;
     }
-    return "custom-dark"; // Standaard fallback
+    return "custom-dark"; // Default fallback
   }, [themeSettings]);
 
   useEffect(() => {
-    // Wanneer de gebruiker aanmeldt/verandert, controleer of hun huidige thema beschikbaar is
-    // en update indien nodig naar een beschikbaar thema
+    // When the user logs in/changes, check if their current theme is available
+    // and update to an available theme if necessary
     if (user) {
       const userThemes = getAvailableThemesForUser();
       if (!userThemes.includes(theme)) {
-        // Als het huidige thema niet beschikbaar is, stel het standaard thema in
+        // If the current theme is not available, set the default theme
         setThemeState(getDefaultThemeForRole(user.role));
       }
     }
-  }, [user, themeSettings, theme, getDefaultThemeForRole]); // Reageert op veranderingen in user, themeSettings of thema
+  }, [user, themeSettings, theme, getDefaultThemeForRole, getAvailableThemesForUser]); // Reacts to changes in user, themeSettings, or theme
 
   useEffect(() => {
     // Update localStorage when theme changes
@@ -145,32 +170,40 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [theme]);
 
+  /**
+   * Toggles to the next available theme for the current user.
+   * If the user has only one theme, it remains active.
+   */
   const toggleTheme = () => {
     setThemeState((prevTheme: Theme) => {
-      // Zoek de beschikbare thema's voor de gebruiker
+      // Get available themes for the user
       const userThemes = getAvailableThemesForUser();
       
-      // Als de gebruiker maar één thema heeft, blijft dat actief
+      // If the user has only one theme, it remains active
       if (userThemes.length <= 1) return userThemes[0] || "custom-dark";
       
-      // Anders, vind het huidige thema en ga naar het volgende
+      // Otherwise, find the current theme and go to the next one
       const currentIndex = userThemes.indexOf(prevTheme);
       const nextIndex = (currentIndex + 1) % userThemes.length;
       return userThemes[nextIndex];
     });
   };
 
-  // Function to explicitly set a theme
+  /**
+   * Sets a new theme if it is available for the current user or if the user is an admin.
+   * If the theme is not available, it sets the default theme for the user's role.
+   * @param {Theme} newTheme - The theme to set.
+   */
   const setTheme = (newTheme: Theme) => {
-    // Controleer of het nieuwe thema beschikbaar is voor de gebruiker
+    // Check if the new theme is available for the user
     const userThemes = getAvailableThemesForUser();
     
     if (userThemes.includes(newTheme) || 
-        // Admin kan elk thema instellen
+        // Admin can set any theme
         (user && user.role === 'admin')) {
       setThemeState(newTheme);
     } else {
-      // Als het thema niet beschikbaar is, stel dan het standaard thema in
+      // If the theme is not available, set the default theme
       if (user && themeSettings[user.role]) {
         setThemeState(themeSettings[user.role].default_theme);
       } else {

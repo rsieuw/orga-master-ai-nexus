@@ -26,6 +26,13 @@ import { format } from "date-fns";
 import { TaskPriority, TaskStatus } from "@/types/task.ts";
 import { useTranslation } from 'react-i18next';
 
+/**
+ * `TaskForm` component provides a form to edit an existing task.
+ * It fetches the task details based on the ID from the URL parameters.
+ * Allows users to update title, description, priority, status, and deadline.
+ * On submission, it calls the `updateTask` function from `TaskContext`.
+ * Provides navigation, loading states, and toast notifications.
+ */
 export default function TaskForm() {
   const { id } = useParams<{ id: string }>();
   const { getTaskById, updateTask } = useTask();
@@ -42,6 +49,13 @@ export default function TaskForm() {
   );
   const [isLoading, setIsLoading] = useState(false);
 
+  /**
+   * useEffect hook to fetch and populate task data when the component mounts or `id` changes.
+   * If no `id` is present or the task is not found, it navigates the user to the homepage
+   * and displays an error toast.
+   * Populates form fields with the task's current data.
+   * Sets a default deadline if the task doesn't have one.
+   */
   useEffect(() => {
     if (!id) {
       navigate("/");
@@ -68,6 +82,14 @@ export default function TaskForm() {
     }
   }, [id, getTaskById, navigate, toast, t]);
 
+  /**
+   * Handles the submission of the task update form.
+   * Prevents default form submission and validates the task `id`.
+   * Constructs the task data object and calls `updateTask` from `TaskContext`.
+   * Navigates to the homepage on successful update.
+   * Displays loading states and appropriate success or error toast notifications.
+   * @param {React.FormEvent} e - The form submission event.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) {

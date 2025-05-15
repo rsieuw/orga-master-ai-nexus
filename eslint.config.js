@@ -1,3 +1,9 @@
+/**
+ * @fileoverview ESLint configuration file for the project.
+ * This configuration sets up ESLint for TypeScript and React projects, including recommended rules,
+ * browser globals, and plugins for React Hooks and React Refresh.
+ * It ignores the `dist` directory.
+ */
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";

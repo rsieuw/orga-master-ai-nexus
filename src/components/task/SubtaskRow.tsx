@@ -29,15 +29,37 @@ import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { useToast } from "@/hooks/use-toast.ts";
 import { Task, SubTask } from "@/types/task.ts";
 
-// --- SubtaskRow Component ---
+/**
+ * Props voor het SubtaskRow component.
+ * 
+ * @interface SubtaskRowProps
+ */
 export interface SubtaskRowProps {
+  /** De taak waartoe de subtaak behoort */
   task: Task;
+  /** De subtaak die wordt weergegeven */
   subtask: SubTask;
+  /** De index van de subtaak binnen de lijst met subtaken */
   index: number;
+  /** Functie om de voltooiingsstatus van een subtaak te wisselen */
   handleSubtaskToggle: (subtaskId: string, completed: boolean) => void;
+  /** Functie die wordt aangeroepen wanneer op het label van de subtaak wordt geklikt */
   handleSubtaskLabelClick: (title: string) => void;
 }
 
+/**
+ * Component dat een enkele subtaak weergeeft in een rij met interactiemogelijkheden.
+ * 
+ * Biedt functies voor:
+ * - Het bekijken en bewerken van een subtaak
+ * - Het markeren van een subtaak als voltooid/onvoltooid
+ * - Het verwijderen van een subtaak
+ * - Contextmenu via lang indrukken (mobiel) of rechtsmuisklik
+ * - Swipe-interactie voor het voltooien van subtaken
+ * 
+ * @param {SubtaskRowProps} props - De eigenschappen voor het SubtaskRow component
+ * @returns {JSX.Element} - Het SubtaskRow component
+ */
 export default function SubtaskRow({
   task,
   subtask,
@@ -59,12 +81,20 @@ export default function SubtaskRow({
   const pressThreshold = 500;
   const subtaskRowRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * Hook voor swipe-interacties die rechtse swipes omzet naar het togglen van de voltooiingsstatus
+   */
   const { ref: swipeableGeneratedRef, ...eventHandlers } = useSwipeable({
     onSwipedRight: () => !isEditing && handleSubtaskToggle(subtask.id, !subtask.completed),
     trackMouse: true,
     preventScrollOnSwipe: true,
   });
 
+  /**
+   * Combineert de swipeable ref met onze lokale ref voor subtaskRow
+   * 
+   * @param {HTMLDivElement | null} node - Het DOM-element om aan de refs te koppelen
+   */
   const combinedRefCallback = useCallback(
     (node: HTMLDivElement | null) => {
       if (typeof swipeableGeneratedRef === 'function') {
@@ -75,12 +105,20 @@ export default function SubtaskRow({
     [swipeableGeneratedRef]
   );
 
+  /**
+   * Effect om de bewerkingstitel te resetten als isEditing verandert of de subtaaknaam verandert
+   */
   useEffect(() => {
     if (!isEditing) {
       setCurrentEditTitle(subtask.title);
     }
   }, [subtask.title, isEditing]);
 
+  /**
+   * Schakelt de bewerkingsmodus in voor de subtaak titel
+   * 
+   * @param {React.MouseEvent} [event] - De muisgebeurtenis die de bewerking activeerde
+   */
   const handleStartEditing = (event?: React.MouseEvent) => {
     event?.stopPropagation();
     setIsEditing(true);
@@ -88,11 +126,19 @@ export default function SubtaskRow({
     setIsContextMenuOpen(false);
   };
 
+  /**
+   * Annuleert de bewerking van de subtaak titel
+   */
   const handleCancelEdit = () => {
     setIsEditing(false);
     setCurrentEditTitle(subtask.title);
   };
 
+  /**
+   * Slaat de bewerkte subtaaknaam op
+   * 
+   * @returns {Promise<void>} Een promise die voltooit wanneer de update is verwerkt
+   */
   const handleSaveEdit = async () => {
     if (!isEditing) return;
     const trimmedTitle = currentEditTitle.trim();
@@ -108,6 +154,11 @@ export default function SubtaskRow({
     setIsEditing(false);
   };
 
+  /**
+   * Afhandeling van toetsenbordinvoer tijdens het bewerken
+   * 
+   * @param {React.KeyboardEvent<HTMLInputElement>} event - De toetsenbordgebeurtenis
+   */
   const handleEditKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       handleSaveEdit();
@@ -116,6 +167,11 @@ export default function SubtaskRow({
     }
   };
 
+  /**
+   * Verwijdert de subtaak na bevestiging
+   * 
+   * @returns {Promise<void>} Een promise die voltooit wanneer de verwijdering is verwerkt
+   */
   const handleDeleteSubtask = async () => {
     try {
       await deleteSubtaskFromContext(task.id, subtask.id);
@@ -125,6 +181,11 @@ export default function SubtaskRow({
     setIsContextMenuOpen(false);
   };
 
+  /**
+   * Toont het contextmenu op de juiste positie na lang indrukken of rechtermuisklik
+   * 
+   * @param {React.TouchEvent | React.MouseEvent} event - De gebeurtenis die het contextmenu activeert
+   */
   const handleLongPress = (event: React.TouchEvent | React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
@@ -160,6 +221,11 @@ export default function SubtaskRow({
     }
   };
 
+  /**
+   * Start het lang-indrukken proces met een timer
+   * 
+   * @param {React.TouchEvent | React.MouseEvent} event - De gebeurtenis die de langdruk initieert
+   */
   const handlePressStart = (event: React.TouchEvent | React.MouseEvent) => {
     if (isEditing) return;
     if ('button' in event && event.button === 2 && !isContextMenuOpen) return;
@@ -172,6 +238,9 @@ export default function SubtaskRow({
     }, pressThreshold);
   };
 
+  /**
+   * Maakt de lang-indrukken timer schoon
+   */
   const handlePressEnd = () => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);

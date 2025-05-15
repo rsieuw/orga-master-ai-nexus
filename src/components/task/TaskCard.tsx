@@ -21,11 +21,20 @@ import { cn } from "@/lib/utils.ts";
 import { motion } from "framer-motion";
 import { TASK_CATEGORIES, TASK_CATEGORY_KEYS } from "@/constants/categories.ts";
 
+/**
+ * Props for the TaskCard component.
+ */
 interface TaskCardProps {
+  /** The task data to display in the card. */
   task: Task;
 }
 
-// Function to determine the priority color (copied from TaskDetail.tsx)
+/**
+ * Determines the CSS classes for styling a task card based on its priority.
+ * 
+ * @param {string} priority - The priority level of the task ('high', 'medium', 'low', or 'none').
+ * @returns {{ backgroundClass: string; shadowClass: string }} An object containing the CSS classes for background and shadow effects.
+ */
 const getPriorityClass = (priority: string = 'none'): { backgroundClass: string; shadowClass: string } => {
   let backgroundClass = '';
   let shadowClass = '';
@@ -51,6 +60,16 @@ const getPriorityClass = (priority: string = 'none'): { backgroundClass: string;
   return { backgroundClass, shadowClass };
 };
 
+/**
+ * A card component that displays a task with its details and visual styling based on priority.
+ * 
+ * This component shows task information including title, description, deadline, category,
+ * and subtask progress. It includes visual enhancements like animations for new tasks,
+ * category icons, and progress bars styled according to the task's priority.
+ *
+ * @param {TaskCardProps} props - The props for the TaskCard component.
+ * @returns {JSX.Element} The TaskCard component wrapped in a Link to the task detail page.
+ */
 export default function TaskCard({ task }: TaskCardProps) {
   const { i18n, t } = useTranslation();
   const priorityStyles = getPriorityClass(task.priority);
@@ -61,13 +80,35 @@ export default function TaskCard({ task }: TaskCardProps) {
     ? (completedSubtasks / totalSubtasks) * 100
     : 0;
 
-  // Functie om de juiste vertaalsleutel voor een categorie te vinden
+  /**
+   * Finds the correct translation key for a category.
+   * 
+   * @param {string} category - The category name to translate.
+   * @returns {string} The translation key for the category.
+   */
   const getCategoryTranslationKey = (category: string) => {
     const index = TASK_CATEGORIES.findIndex(cat => cat === category);
     return index !== -1 ? TASK_CATEGORY_KEYS[index] : category;
   };
 
-  // Function for the background icon with adjustment for each priority color
+  /**
+   * Gets the translated name of a category.
+   * 
+   * @param {string | undefined} category - The category name to translate.
+   * @returns {string} The translated category name or an empty string if undefined.
+   */
+  const getTranslatedCategory = (category?: string) => {
+    if (!category) return "";
+    const translationKey = getCategoryTranslationKey(category);
+    return t(translationKey);
+  };
+
+  /**
+   * Returns the appropriate icon component for a task category.
+   * 
+   * @param {string | undefined} category - The category to get an icon for.
+   * @returns {JSX.Element | null} The icon component or null if no matching category.
+   */
   const getCategoryBackgroundIcon = (category?: string) => {
     // Fixed opacity for all icons
     const getOpacityClass = () => {
@@ -219,7 +260,7 @@ export default function TaskCard({ task }: TaskCardProps) {
               )}
               {task.category && (
                 <Badge variant="outline" className="text-[10px] px-2 py-0 h-5 category-badge shadow-md rounded-full bg-white/10 backdrop-blur-sm text-white border-white/10">
-                  {t(getCategoryTranslationKey(task.category))}
+                  {getTranslatedCategory(task.category)}
                 </Badge>
               )}
             </div>
@@ -260,7 +301,10 @@ export default function TaskCard({ task }: TaskCardProps) {
                             style={{ width: `${progressValue}%` }}
                           />
                           {progressValue > 10 && (
-                            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold select-none">
+                            <span 
+                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold select-none"
+                              style={{ textShadow: '0px 0px 5px rgba(0,0,0,0.6)' }}
+                            >
                               {Math.round(progressValue)}%
                             </span>
                           )}

@@ -1,8 +1,22 @@
+/**
+ * @fileoverview Supabase Edge Function to save research content associated with a task.
+ * This function authenticates the user, validates the input (taskId, researchContent),
+ * and inserts the research data into the `saved_research` table.
+ * It returns the ID of the newly saved research item.
+ */
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 import { corsHeaders } from "../_shared/cors.ts";
 
+/**
+ * @typedef {Object} SaveResearchRequestBody
+ * @property {string} taskId - The ID of the task to which this research is related.
+ * @property {string} researchContent - The main content of the research.
+ * @property {Array<Object>} [citations] - Optional array of citation objects (structure depends on DB schema).
+ * @property {string} [subtaskTitle] - Optional title of a specific subtask this research might be for.
+ * @property {string} [prompt] - Optional original prompt that led to this research.
+ */
 
 // Define CORS headers directly for simplicity
 // const corsHeaders = {
@@ -10,6 +24,17 @@ import { corsHeaders } from "../_shared/cors.ts";
 //   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 // };
 
+/**
+ * Main Deno server function that handles incoming HTTP requests to save research.
+ * - Handles CORS preflight requests.
+ * - Authenticates the user using the Authorization header.
+ * - Parses the request body for `taskId`, `researchContent`, and optional `citations`, `subtaskTitle`, `prompt`.
+ * - Validates that `taskId` and `researchContent` are provided and are strings.
+ * - Inserts the research data into the `saved_research` table, associated with the user and task.
+ * - Returns a success response with a messageKey and the `savedResearchId` or an error response with an errorKey.
+ * @param {Request} req - The incoming HTTP request object.
+ * @returns {Promise<Response>} A promise that resolves to an HTTP response object.
+ */
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -19,7 +44,7 @@ Deno.serve(async (req) => {
   try {
     // 1. Create Supabase client with Auth context
     const authHeader = req.headers.get('Authorization')!;
-    const supabaseClient = createClient(
+    const supabaseClient: SupabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: authHeader } } }

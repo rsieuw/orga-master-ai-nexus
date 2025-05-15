@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Supabase Edge Function to generate task details (title, description, category, emoji)
+ * based on user input using the OpenAI API.
+ * It takes a simple user idea or query and a language preference, then prompts OpenAI
+ * to return a structured JSON object with the generated task details.
+ */
+
 // Follow this setup guide to integrate the Deno language server with your editor:
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
@@ -9,7 +16,14 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { corsHeaders } from "../_shared/cors.ts"; // Keep CORS headers import
 import { OpenAI } from "https://deno.land/x/openai@v4.52.7/mod.ts";
 
-// Interface for the expected JSON response from OpenAI
+/**
+ * Interface for the expected JSON response structure from the OpenAI API.
+ * @interface OpenAIResponse
+ * @property {string} title - The generated, concise, action-oriented task title.
+ * @property {string} description - A more detailed description of the task.
+ * @property {string} category - The suggested category for the task (e.g., "Werk/Studie", "Persoonlijk").
+ * @property {string} emoji - A representative emoji for the task.
+ */
 interface OpenAIResponse {
   title: string;
   description: string;
@@ -17,8 +31,25 @@ interface OpenAIResponse {
   emoji: string;    // Added: representative emoji for the task
 }
 
-// console.log("Hello from generate-task-details Function!"); // Verwijderd
+/**
+ * @typedef {Object} GenerateTaskDetailsRequestBody
+ * @property {string} input - The user's raw idea or query for the task.
+ * @property {'en' | 'nl'} [languagePreference='en'] - The preferred language for the generated task details.
+ */
 
+/**
+ * Main Deno server function that handles incoming HTTP requests for generating task details.
+ * - Handles CORS preflight requests.
+ * - Retrieves the OpenAI API key from environment variables.
+ * - Parses the request body for user input and language preference.
+ * - Constructs a system prompt for OpenAI based on the language preference, instructing it to generate
+ *   a title, description, category, and emoji for the task, and to respond in JSON format.
+ * - Calls the OpenAI Chat Completions API (gpt-4o-mini by default) with the user input.
+ * - Parses and validates the JSON response from OpenAI.
+ * - Returns the generated task details (title, description, category, emoji) or an error response with an errorKey.
+ * @param {Request} req - The incoming HTTP request object.
+ * @returns {Promise<Response>} A promise that resolves to an HTTP response object.
+ */
 // Use Deno.serve directly as in the original boilerplate
 Deno.serve(async (req) => {
   // Handle CORS preflight requests

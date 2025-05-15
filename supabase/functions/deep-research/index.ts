@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Supabase Edge Function for performing deep research and content generation.
+ * This function supports multiple modes (research, instruction, creative) and can use
+ * different AI model providers (Perplexity, OpenAI).
+ * It takes a user query, description, context, language preference, task ID, mode, and model provider
+ * as input, and returns a structured research result or generated content.
+ */
+
 // Follow this setup guide to integrate the Deno language server with your editor:
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
@@ -8,6 +16,31 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 // Import standard libraries if needed (e.g., for CORS)
 import { corsHeaders } from "../_shared/cors.ts"
 
+/**
+ * @typedef {Object} RequestBody
+ * @property {string} [query="Geen onderzoeksvraag opgegeven"] - The main research query or task.
+ * @property {string} [description=""] - Additional specific requirements or description for the task.
+ * @property {string} [contextQuery=""] - Contextual information for the main task.
+ * @property {'nl' | 'en'} [languagePreference='nl'] - The preferred language for the response.
+ * @property {string} [taskId="none"] - The ID of the task associated with this research.
+ * @property {'research' | 'instruction' | 'creative'} [mode='research'] - The mode of operation.
+ * @property {'perplexity-sonar' | 'openai-gpt4o'} [modelProvider='perplexity-sonar'] - The AI model provider to use.
+ * @property {string} [testParam] - Optional parameter for testing purposes.
+ */
+
+/**
+ * Main Deno server function that handles incoming HTTP requests for deep research.
+ * - Handles CORS preflight requests.
+ * - Parses the request body for parameters.
+ * - Validates required parameters (query, taskId).
+ * - Checks for and retrieves necessary API keys (Perplexity, OpenAI).
+ * - Constructs the appropriate system prompt based on the selected mode and language.
+ * - Calls the selected AI model provider's API.
+ * - Formats the response, including citations if applicable (for Perplexity).
+ * - Returns the research result or an error.
+ * @param {Request} req - The incoming HTTP request object.
+ * @returns {Promise<Response>} A promise that resolves to an HTTP response object.
+ */
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -70,6 +103,7 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({ 
           errorKey: "deepResearch.error.missingQueryOrTaskId",
+          /** @type {{query: boolean, taskId: boolean}} */
           missingParams: { 
             query: !query, 
             taskId: !taskId || taskId === "none" 
@@ -361,6 +395,15 @@ Respond in ${reqLanguagePreference === 'nl' ? 'Dutch' : 'English'}.`;
   }
 });
 
+/**
+ * Generates a mock response for testing or fallback purposes when the primary AI API call fails
+ * due to authentication errors (401/403).
+ * The content of the mock response varies based on the provided mode.
+ * 
+ * @param {string} query - The original user query.
+ * @param {string} mode - The research mode ('research', 'instruction', 'creative').
+ * @returns {Response} A Deno Response object containing the mock research result.
+ */
 // Hulpfunctie voor het genereren van mock responses als fallback
 function generateMockResponse(query: string, mode: string) {
   let responseContent = "";

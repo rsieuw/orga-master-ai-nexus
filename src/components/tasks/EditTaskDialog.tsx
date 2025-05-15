@@ -23,11 +23,33 @@ import { Calendar } from "@/components/ui/calendar.tsx";
 import { GradientLoader } from "@/components/ui/loader.tsx";
 import { useTranslation } from 'react-i18next';
 
+/**
+ * Props for the EditTaskDialog component.
+ *
+ * @interface EditTaskDialogProps
+ */
 interface EditTaskDialogProps {
+  /** The task to be edited */
   task: Task;
+  /** Function to open/close the dialog */
   setOpen: (open: boolean) => void;
 }
 
+/**
+ * Component for editing an existing task.
+ *
+ * Provides a form that allows users to modify all aspects of a task:
+ * - Title and description
+ * - Category
+ * - Priority
+ * - Status
+ * - Deadline
+ *
+ * Changes are sent to the database when 'Save' is clicked.
+ *
+ * @param {EditTaskDialogProps} props - The properties for the EditTaskDialog component
+ * @returns {JSX.Element} The rendered EditTaskDialog component
+ */
 export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
   const { updateTask } = useTask(); 
   const { toast } = useToast();
@@ -48,6 +70,12 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
   });
   const [isLoading, setIsLoading] = useState(false);
 
+  /**
+   * Handles form submission and saves task changes.
+   *
+   * @param {React.FormEvent} e - The form submit event
+   * @returns {Promise<void>} A promise that resolves when the task is updated
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -81,6 +109,28 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
     }
   };
 
+  /**
+   * Finds the correct translation key for a category name.
+   *
+   * @param {string} category - The category name to translate
+   * @returns {string} The translation key for the category
+   */
+  const getCategoryTranslationKey = (category: string) => {
+    const index = TASK_CATEGORIES.findIndex(cat => cat === category);
+    return index !== -1 ? TASK_CATEGORY_KEYS[index] : category;
+  };
+
+  /**
+   * Retrieves the translated name of a category.
+   *
+   * @param {string} category - The category name to translate
+   * @returns {string} The translated name of the category
+   */
+  const getTranslatedCategory = (category: string) => {
+    const translationKey = getCategoryTranslationKey(category);
+    return t(translationKey);
+  };
+
   return (
     <form onSubmit={handleSubmit} className="mt-4">
       <div className="space-y-6 px-2 max-h-[80vh] overflow-y-auto lg:max-h-none lg:overflow-y-visible scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">
@@ -105,9 +155,9 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
               <SelectValue placeholder={t('editTaskDialog.selectCategoryPlaceholder', 'Selecteer een categorie')} />
             </SelectTrigger>
             <SelectContent>
-              {TASK_CATEGORIES.map((cat, index) => (
+              {TASK_CATEGORIES.map((cat) => (
                 <SelectItem key={cat} value={cat}>
-                  {t(TASK_CATEGORY_KEYS[index])}
+                  {getTranslatedCategory(cat)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -151,7 +201,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
            >
              <SelectTrigger id="edit-status">
                <SelectValue>
-                 {t(status === 'todo' ? 'common.todo' : status === 'in_progress' ? 'common.in_progress' : 'common.done')}
+                 {status === 'todo' ? t('common.todo') : status === 'in_progress' ? t('common.in_progress') : t('common.done')}
                </SelectValue>
              </SelectTrigger>
              <SelectContent>

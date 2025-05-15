@@ -10,6 +10,16 @@
     "low": "Low",
     "categoryTitle": "Category"
   },
+  "categories": {
+    "workStudy": "Work/Study",
+    "personal": "Personal",
+    "household": "Household",
+    "family": "Family",
+    "social": "Social",
+    "health": "Health",
+    "finances": "Finances",
+    "projects": "Projects"
+  },
   "messageItem": {
     "sources": "Sources",
     "source": "Source"
@@ -77,11 +87,11 @@
     "freeUserPremiumFeature": "This feature is only available for paid users. Please upgrade your account to access premium AI modes.",
     "freeUserPremiumFeatureChat": "Upgrade to Premium to access 'Creative' and 'Precise' modes.",
     "aiMode": {
-      "label": "Default AI Mode",
+      "label": "Default AI mode",
       "description": "Choose the behavior for AI interactions.",
       "freeUserLimitation": "('Creative' and 'Precise' modes only for paid users)",
       "placeholder": "Select mode",
-      "chatAiSettings": "Chat AI Settings",
+      "chatAiSettings": "Chat AI settings",
       "chatAiSettingsDescription": "Configure AI for daily conversations and task suggestions.",
       "options": {
         "gpt4oBalanced": "Standard mode",
@@ -91,15 +101,15 @@
       }
     },
     "researchModel": {
-      "label": "Research Model",
+      "label": "Research model",
       "description": "Choose the AI model for 'Deep Research' functionality.",
       "freeUserLimitation": "(Available for paid users)",
       "placeholder": "Select model",
       "perplexitySonar": "Perplexity Sonar",
       "gpt4oMini": "GPT-4o Mini",
-      "research": "Research Mode (default)",
-      "instruction": "Instruction Mode",
-      "creative": "Creative Mode",
+      "research": "Research mode (default)",
+      "instruction": "Instruction mode",
+      "creative": "Creative mode",
       "researchDescription": "Provides factual answers with citations and maximum depth.",
       "instructionDescription": "Follows instructions precisely and is ideal for directed tasks.",
       "creativeDescription": "Offers innovative ideas and original perspectives with enhanced creativity.",
@@ -107,82 +117,82 @@
       "gpt4oMiniDescription": "Uses GPT-4o Mini for quick, reliable answers based on previous training."
     },
     "chatModel": {
-      "label": "Chat Model Provider",
+      "label": "Chat model provider",
       "description": "Choose which model is used for standard chat functionality.",
       "perplexitySonarDescription": "Uses Perplexity Sonar for comprehensive and contextual responses.",
       "gpt4oMiniDescription": "Uses GPT-4o Mini for efficient and balanced responses (default)."
     },
     "aiModelConfig": {
-      "button": "AI Model Configuration",
-      "drawerTitle": "AI Model Configuration",
+      "button": "AI model configuration",
+      "drawerTitle": "AI model configuration",
       "drawerDescription": "Adjust settings for the AI models.",
-      "defaultModelLabel": "AI Model (Default)",
+      "defaultModelLabel": "AI model (Default)",
       "defaultModelPlaceholder": "Select model",
       "defaultModelDescription": "Select the default AI model for general use. Paid users can choose more advanced options via Developer Mode.",
-      "systemPromptLabel": "System Prompt",
+      "systemPromptLabel": "System prompt",
       "systemPromptPlaceholder": "You are an AI assistant that helps with tasks...",
       "systemPromptDefaultValue": "You are a helpful AI assistant that helps users manage and understand their tasks.",
       "saveButton": "Save",
       "cancelButton": "Cancel"
     },
     "desktopLayout": {
-      "label": "Interface Layout (Desktop)",
+      "label": "Interface layout (Desktop)",
       "description": "Choose the default arrangement for the task detail and chat window on desktop.",
       "option5050": "Balanced (50% / 50%)",
-      "option3367": "Chat Focused (33% / 67%)"
+      "option3367": "Chat focused (33% / 67%)"
     },
     "toast": {
       "aiLanguageChanged": {
-        "title": "AI Language Changed",
+        "title": "AI language changed",
         "toDutch": "AI language has been changed to Dutch",
         "toEnglish": "AI language has been changed to English"
       },
       "errorSavingAiLanguage": {
-        "title": "Error Saving AI Language",
+        "title": "Error saving AI language",
         "description": "Could not save AI language preference."
       },
       "uiLanguageChanged": {
-        "title": "Interface Language Changed",
+        "title": "Interface language changed",
         "description": "Interface language has been set to {language}."
       },
       "accountUpdated": {
-        "title": "Account Updated",
+        "title": "Account updated",
         "description": "Your account details have been successfully saved."
       },
       "errorUpdatingAccount": {
-        "title": "Error Updating Account",
+        "title": "Error updating account",
         "description": "Could not save account details."
       },
       "notificationsSaved": {
-        "title": "Notification Preference Saved",
+        "title": "Notification preference saved",
         "descriptionEnabled": "Email notifications have been enabled.",
         "descriptionDisabled": "Email notifications have been disabled."
       },
       "errorSavingNotifications": {
-        "title": "Error Saving Notifications",
+        "title": "Error saving notifications",
         "description": "Could not save notification preferences."
       },
       "aiModeSaved": {
-        "title": "AI Mode Saved",
+        "title": "AI mode saved",
         "description": "Default AI mode set to: {modeLabel}."
       },
       "errorSavingAiMode": {
-        "title": "Error Saving AI Mode",
+        "title": "Error saving AI mode",
         "description": "Could not save AI mode preference."
       },
       "researchModelSaved": {
-        "title": "Research Model Saved",
+        "title": "Research model saved",
         "description": "Default research model set to: {modeLabel}."
       },
       "errorSavingResearchModel": {
-        "title": "Error Saving Research Model",
+        "title": "Error saving research model",
         "description": "Could not save research model preference."
       },
       "copiedToClipboard": "Copied to clipboard!",
       "genericErrorTitle": "Error",
       "genericErrorDescription": "Something went wrong. Please try again later.",
       "layoutPreferenceSaved": {
-        "title": "Layout Preference Saved",
+        "title": "Layout preference saved",
         "description": "Your interface layout preference has been saved."
       }
     }
@@ -191,68 +201,73 @@
     "title": "Profile",
     "toast": {
       "profileUpdated": {
-        "title": "Profile Updated",
+        "title": "Profile updated",
         "description": "Your profile details have been successfully saved."
       }
     },
     "userInfo": {
-      "title": "User Information",
+      "title": "User information",
       "nameLabel": "Name",
       "emailLabel": "Email",
-      "accountTypeLabel": "Account Type",
+      "accountTypeLabel": "Account type",
       "upgradeButton": "Upgrade to Premium",
       "upgradeDescription": "Get access to all premium features."
     },
     "role": {
       "administrator": "Administrator",
-      "premiumUser": "Premium User",
-      "freeUser": "Free User"
+      "premiumUser": "Premium user",
+      "freeUser": "Free user"
     },
     "stats": {
-      "title": "User Statistics",
-      "totalTasks": "Total Tasks",
+      "title": "User statistics",
+      "totalTasks": "Total tasks",
       "completed": "Completed",
       "todo": "To do",
-      "in_progress": "In Progress"
+      "in_progress": "In progress"
     }
   },
   "adminDashboard": {
-    "title": "Admin Dashboard",
+    "title": "Admin dashboard",
     "tabs": {
       "users": "Users",
       "permissions": "Permissions",
+      "themes": "Themes",
       "feedback": "Feedback"
     },
     "users": {
-      "title": "User Management",
+      "title": "User management",
       "description": "View and manage all registered users.",
       "searchPlaceholder": "Search...",
-      "filterRolePlaceholder": "Filter Role",
+      "filterRolePlaceholder": "Filter role",
       "roles": {
-        "all": "All Roles",
+        "all": "All roles",
         "admin": "Admin",
         "paid": "Paid",
         "free": "Free"
       },
-      "filterStatusPlaceholder": "Filter Status",
+      "filterStatusPlaceholder": "Filter status",
       "statuses": {
-        "all": "All Statuses",
+        "all": "All statuses",
         "active": "Active",
         "inactive": "Inactive"
       }
     },
     "permissions": {
-      "title": "Manage Role Permissions",
+      "title": "Role permissions management",
       "description": "Enable or disable features per user role."
+    },
+    "themes": {
+      "title": "Theme settings",
+      "description": "Manage which themes are available to each user role."
     }
   },
   "adminUsersPage": {
-    "title": "User Management",
+    "title": "User management",
     "description": "View, edit, and manage all user accounts.",
     "searchPlaceholder": "Search by name or email...",
-    "addUserButton": "Add User",
+    "addUserButton": "Add user",
     "errors": {
-      "edgeFunctionNotFound": "Edge Function 'get-all-users' not found. Please deploy the function first.",
+      "edgeFunctionNotFound": "Edge function 'get-all-users' not found. Please deploy the function first.",
       "fetchUsersError": "Could not fetch users. Check RLS policies and network.",
       "unknownFetchError": "An unknown error occurred while fetching users.",
       "roleUpdateError": "Could not update role.",
@@ -260,13 +275,13 @@
       "activateError": "Could not activate user."
     },
     "toastTitles": {
-      "fetchError": "Error Fetching Users",
-      "roleChangeSuccess": "Role Changed Successfully",
-      "roleChangeError": "Error Changing Role",
-      "deactivateSuccess": "User Deactivated",
-      "deactivateError": "Error Deactivating User",
-      "activateSuccess": "User Activated",
-      "activateError": "Error Activating User"
+      "fetchError": "Error fetching users",
+      "roleChangeSuccess": "Role changed successfully",
+      "roleChangeError": "Error changing role",
+      "deactivateSuccess": "User deactivated",
+      "deactivateError": "Error deactivating user",
+      "activateSuccess": "User activated",
+      "activateError": "Error activating user"
     },
     "toastMessages": {
       "roleChangeSuccess": "User {{userName}} is now a {{newRole}}.",
@@ -281,7 +296,7 @@
       "email": "Email",
       "role": "Role",
       "status": "Status",
-      "created_at": "Registered At",
+      "created_at": "Registered at",
       "actions": "Actions"
     },
     "table": {
@@ -370,16 +385,16 @@
   },
   "adminPermissionsPage": {
     "features": {
-      "deepResearch": "Deep Research",
-      "exportChat": "Export Chat",
-      "adminPanel": "Admin Panel",
-      "chooseResearchModel": "Choose Research Model",
-      "chatModes": "Chat Modes"
+      "deepResearch": "Deep research",
+      "exportChat": "Export chat",
+      "adminPanel": "Admin panel",
+      "chooseResearchModel": "Choose research model",
+      "chatModes": "Chat modes"
     },
     "toastTitles": {
       "saveSuccess": "Saved",
-      "saveFailed": "Save Failed",
-      "loadFailed": "Load Failed"
+      "saveFailed": "Save failed",
+      "loadFailed": "Load failed"
     },
     "toastMessages": {
       "saveSuccess": "Permissions updated successfully."
@@ -394,15 +409,56 @@
       "feature": "Feature"
     },
     "roles": {
-      "admin": "Admin",
-      "paid": "Paid User",
-      "free": "Free User"
+      "admin": "Administrator",
+      "paid": "Paid user",
+      "free": "Free user"
     },
     "ariaLabels": {
-      "switchPermission": "Permission {{featureName}} for role {{roleName}}"
+      "switchPermission": "Toggle permission {{featureName}} for role {{roleName}}"
     },
     "buttons": {
-      "saveChanges": "Save Changes"
+      "saveChanges": "Save changes"
+    }
+  },
+  "adminThemeSettings": {
+    "loading": "Loading theme settings...",
+    "noSettings": "No theme settings found",
+    "tableHeaders": {
+      "role": "Role",
+      "theme": "Theme",
+      "defaultTheme": "Default theme"
+    },
+    "themeNames": {
+      "light": "Light",
+      "dark": "Dark",
+      "customdark": "Custom dark"
+    },
+    "placeholders": {
+      "selectDefault": "Select default"
+    },
+    "buttons": {
+      "saveChanges": "Save changes"
+    },
+    "ariaLabels": {
+      "themeSwitch": "Toggle availability of {{themeName}} for {{roleName}}"
+    },
+    "toastTitles": {
+      "loadFailed": "Load failed",
+      "saveFailed": "Save failed",
+      "saveSuccess": "Settings saved",
+      "themeRequired": "Theme required",
+      "defaultThemeError": "Default theme error"
+    },
+    "toastMessages": {
+      "saveSuccess": "Theme settings saved successfully",
+      "themeRequired": "At least one theme must always be available. Custom dark has been set as default.",
+      "defaultThemeNotAvailable": "The selected default theme is not available for this role."
+    },
+    "errors": {
+      "loadError": "Error loading theme settings: {{message}}",
+      "saveError": "Error saving theme settings: {{message}}",
+      "emptyThemeList": "At least one theme must be available for role {{role}}",
+      "defaultNotAvailable": "The default theme for role {{role}} is not in the list of available themes"
     }
   },
   "navbar": {
@@ -490,22 +546,20 @@
     "defaultUser": "User",
     "tasksOverview": "Here is an overview of your tasks",
     "searchPlaceholder": "Search tasks...",
-    "categories": {
-      "overdue": "Overdue",
-      "today": "Today",
-      "tomorrow": "Tomorrow",
-      "dayAfterTomorrow": "Day After Tomorrow",
-      "nextWeek": "Next Week",
-      "later": "Later",
-      "workStudy": "Work/Study",
-      "personal": "Personal",
-      "household": "Household",
-      "family": "Family", 
-      "social": "Social",
-      "health": "Health",
-      "finances": "Finances",
-      "projects": "Projects"
-    },
+    "overdue": "Overdue",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "dayAfterTomorrow": "Day After Tomorrow",
+    "nextWeek": "Next Week",
+    "later": "Later",
+    "workStudy": "Work/Study",
+    "personal": "Personal",
+    "household": "Household",
+    "family": "Family", 
+    "social": "Social",
+    "health": "Health",
+    "finances": "Finances",
+    "projects": "Projects",
     "addNewTaskPlaceholder": "Add new task",
     "emptyState": {
       "noTasksAfterFilter": "No tasks found matching the filters.",
@@ -555,13 +609,18 @@
     "invalidDate": "Invalid date",
     "editTaskSR": "Edit task",
     "editTaskDialog": {
-      "title": "Edit Task",
+      "title": "Edit task",
       "description": "Adjust the details of your task."
     },
     "deleteTaskSR": "Delete task",
     "deleteTaskConfirmation": {
       "title": "Delete task?",
       "description": "Are you sure you want to delete this task? This action cannot be undone."
+    },
+    "subtasksTitle": "Subtasks",
+    "sortSubtasksAriaLabel": "Sort subtasks",
+    "sort": {
+      "currentSortDefault": "Current sort: Default"
     },
     "taskOptionsSR": "Task options",
     "editTask": "Edit task",
@@ -591,7 +650,8 @@
       "addSelectedButton": "Add Selected",
       "buttonAriaLabel": "Generate subtasks",
       "fabText": "Generate Subtasks",
-      "confirmButton": "Yes, generate subtasks"
+      "confirmButton": "Yes, generate subtasks",
+      "limitReachedTooltip": "You have used {count}/{limit} generations for this task."
     },
     "collapseDescription": "Collapse task details",
     "expandDescription": "Expand task details",
@@ -818,7 +878,7 @@
       "inAppNotifications": "In-App Notifications"
     },
     "aiModelConfig": {
-      "drawerTitle": "AI Model Configuration",
+      "drawerTitle": "AI model configuration",
       "drawerDescription": "Configure the parameters for the AI model here.",
       "modelSelectionTitle": "AI Model Selection",
       "selectModel": "Select an AI Model",
@@ -959,18 +1019,7 @@
     "stopNoteButton": "Stop Note Mode",
     "deepResearchTooltip": "Perform Deep Research",
     "settingsTooltip": "Chat Settings",
-    "loadingHistory": "Loading history...",
-    "sendMessageTooltip": "Send message",
-    "saveNoteTooltip": "Save note",
     "selectModelAriaLabel": "Select AI research model",
-    "notePlaceholder": "Type your note here...",
-    "searchMessagesPlaceholder": "Search messages...",
-    "searchPlaceholder": "Type to research...",
-    "noSearchResults": "No messages found with this search term.",
-    "searchingMessages": "Searching messages",
-    "searchingResearch": "Researching",
-    "defaultTaskTitle": "this task",
-    "defaultUsername": "user",
     "initialAssistantMessage": "Hello {{username}}! I'm ready to help you with your task: {{taskTitle}}. What can I do for you?",
     "researchForSubtaskLabel": "Research for subtask: {{subtaskTitle}}",
     "researchForPromptLabel": "Research for prompt: {{prompt}}"
@@ -999,23 +1048,20 @@
   },
   "newTaskDialog": {
     "toast": {
-      "missingInputTitle": "Input Required",
+      "missingInputTitle": "Input required",
       "missingInputDescription": "Please enter an idea or task description to generate details.",
-      "generationFailedTitle": "Generation Failed",
+      "generationFailedTitle": "Generation failed",
       "generationFailedDescriptionDefault": "An unknown error occurred during generation.",
-      "detailsGeneratedTitle": "Details Generated",
+      "detailsGeneratedTitle": "Details generated",
       "detailsGeneratedDescription": "The AI has filled in the task details. Review and adjust as needed.",
-      "taskCreatedTitle": "Task Created",
+      "taskCreatedTitle": "Task created",
       "taskCreatedDescription": "The new task has been successfully created.",
       "createTaskFailedDescription": "There was an error creating the task. Please try again later.",
-      "missingTitleTitle": "Title Missing",
+      "missingTitleTitle": "Title missing",
       "missingTitleDescription": "Please enter a title for the task.",
-      "subtasksGeneratedTitle": "Subtasks Generated",
+      "subtasksGeneratedTitle": "Subtasks generated",
       "subtasksGeneratedDescription": "The AI has successfully generated subtasks.",
-      "subtaskGenerationFailedDescription": "The AI could not generate subtasks. Please try again later.",
-      "autoCategorizeLabel": "Automatically categorize task",
-      "selectCategoryPlaceholder": "Select a category",
-      "aiSuggested": "AI-suggested"
+      "subtaskGenerationFailedDescription": "The AI could not generate subtasks. Please try again later."
     },
     "errors": {
       "unexpectedAIResponse": "Unexpected response from AI."
@@ -1171,31 +1217,31 @@
   "auth": {
     "toast": {
       "logoutFailed": {
-        "title": "Logout Failed",
+        "title": "Logout failed",
         "descriptionDefault": "Something went wrong during logout. Please try again."
       },
       "loginFailed": {
-        "title": "Login Failed",
+        "title": "Login failed",
         "descriptionDefault": "Please check your email and password and try again."
       },
       "registrationSuccess": {
-        "title": "Registration Successful",
+        "title": "Registration successful",
         "description": "Please check your email to confirm your account."
       },
       "registrationFailed": {
-        "title": "Registration Failed",
+        "title": "Registration failed",
         "descriptionDefault": "Something went wrong during registration. Please try again later."
       },
       "updateForbidden": {
-        "title": "Update Not Allowed",
+        "title": "Update not allowed",
         "descriptionFreeUserAIMode": "Free users can only use the 'GPT-4o (Balanced)' mode."
       },
       "updateFailed": {
-        "title": "Account Update Failed",
+        "title": "Account update failed",
         "descriptionDefault": "Something went wrong while updating your account. Please try again."
       },
       "accountDeactivated": {
-        "title": "Account Deactivated",
+        "title": "Account deactivated",
         "description": "This account is currently not active. Please contact support for more information."
       }
     },
@@ -1220,25 +1266,59 @@
       }
     },
     "resetPassword": {
-      "title": "Reset Password",
+      "title": "Reset password",
       "subtitle": "Forgot your password? No problem.",
       "instructions": "Enter your email address. We'll send you instructions to reset your password.",
       "emailLabel": "Email address",
       "emailPlaceholder": "your.email@example.com",
-      "submit": "Send Instructions",
+      "submit": "Send instructions",
       "sending": "Sending...",
       "backToLogin": {
         "prefix": "Back to",
         "link": "Log in"
       },
       "success": {
-        "title": "Instructions Sent",
+        "title": "Instructions sent",
         "description": "If an account with this email exists, we've sent password reset instructions."
       },
       "error": {
-        "title": "Password Reset Error",
+        "title": "Password reset error",
         "defaultMessage": "Something went wrong sending the instructions."
       }
+    },
+    "updatePassword": {
+      "title": "Set new password",
+      "subtitle": "Set a new password",
+      "validatingLink": "Validating link...",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "updateButton": "Update password",
+      "updatingButton": "Updating...",
+      "invalidLinkError": "Invalid or expired link. Please request a new password reset.",
+      "passwordsMismatchError": "Passwords do not match.",
+      "passwordTooShortError": "Password must be at least 6 characters long.",
+      "success": {
+        "title": "Password updated",
+        "description": "Your password has been successfully updated. You can now log in."
+      },
+      "error": {
+        "title": "Update error",
+        "defaultMessage": "An error occurred while updating your password."
+      }
+    },
+    "register": {
+      "title": "Register",
+      "nameLabel": "Name",
+      "namePlaceholder": "Your name",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "passwordLabel": "Password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "submitButton": "Register",
+      "submitButtonLoading": "Registering..."
     }
   },
   "adminFeedbackPage": {
@@ -1267,14 +1347,14 @@
     }
   },
   "taskForm": {
-    "title": "Edit Task",
+    "title": "Edit task",
     "backButton": "Back",
     "labels": {
-        "title": "Title",
-        "description": "Description",
-        "priority": "Priority",
-        "status": "Status",
-        "deadline": "Deadline"
+      "title": "Title",
+      "description": "Description",
+      "priority": "Priority",
+      "status": "Status",
+      "deadline": "Deadline"
     },
     "placeholders": {
       "title": "Task title",
@@ -1283,8 +1363,8 @@
       "selectStatus": "Select status"
     },
     "buttons": {
-      "aiSuggestion": "AI Suggestion",
-      "updateTask": "Update Task",
+      "aiSuggestion": "AI suggestion",
+      "updateTask": "Update task",
       "updating": "Updating..."
     },
     "toast": {
@@ -1293,15 +1373,15 @@
         "description": "Task not found. You will be redirected."
       },
       "titleMissingForAISuggestion": {
-        "title": "Title Missing",
+        "title": "Title missing",
         "description": "Please enter a title first for an AI priority suggestion."
       },
       "aiSuggestion": {
-        "title": "AI Suggestion",
+        "title": "AI suggestion",
         "description": "The AI suggests assigning priority \"{{priorityName}}\"."
       },
       "aiSuggestionFailed": {
-        "title": "Suggestion Failed",
+        "title": "Suggestion failed",
         "description": "Could not generate priority suggestion."
       },
       "invalidTaskId": {
@@ -1365,22 +1445,5 @@
     "hidePassword": "Hide password",
     "submitButton": "Register",
     "submitButtonLoading": "Registering..."
-  },
-  "generateSubtasks": {
-    "buttonText": "Generate Subtasks",
-    "buttonAriaLabel": "Generate subtasks",
-    "limitReachedTooltip": "You have used {count}/{limit} generations for this task.",
-    "confirmButton": "Yes, generate subtasks",
-    "fabText": "Generate"
-  },
-  "categories": {
-    "workStudy": "Work/Study",
-    "personal": "Personal",
-    "household": "Household",
-    "family": "Family",
-    "social": "Social",
-    "health": "Health",
-    "finances": "Finances",
-    "projects": "Projects"
   }
 }

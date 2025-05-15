@@ -1,16 +1,38 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
+/**
+ * Props for the TypedGreeting component.
+ *
+ * @interface TypedGreetingProps
+ */
 interface TypedGreetingProps {
+  /** The text to be displayed with a typing animation. */
   text: string;
+  /** The speed of the typing animation in milliseconds per character. Defaults to 50. */
   speed?: number;
+  /** Additional CSS class names for the component. */
   className?: string;
+  /** 
+   * Object containing start and end colors for the text gradient.
+   * Defaults to blue and purple.
+   */
   gradientColors?: {
     start: string;
     end: string;
   };
 }
 
+/**
+ * TypedGreeting component.
+ *
+ * Displays text with a typing animation and an animated gradient effect.
+ * Includes a blinking cursor during the typing animation.
+ * Uses Framer Motion for animations.
+ *
+ * @param {TypedGreetingProps} props - The props for the component.
+ * @returns {JSX.Element} The rendered TypedGreeting component.
+ */
 export function TypedGreeting({ 
   text, 
   speed = 50, 

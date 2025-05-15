@@ -1,7 +1,12 @@
+/**
+ * @fileoverview Unit tests for the EditTaskDialog component.
+ * These tests cover rendering the dialog with pre-filled data, form submission,
+ * task update functionality, and dialog closure.
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { renderWithProviders } from '@/test/utils.tsx';
+import { renderWithProviders } from '@/test/test-helpers.ts';
 import EditTaskDialog from './EditTaskDialog.tsx';
 import { useTask } from '@/contexts/TaskContext.hooks.ts';
 import { useToast } from '@/hooks/use-toast.ts';
@@ -12,7 +17,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog.tsx";
 vi.mock('@/contexts/TaskContext.tsx');
 vi.mock('@/hooks/use-toast.tsx');
 
-// Helper renders the dialog open directly
+// Helper to render the dialog open directly
 const renderEditDialog = (task: Task) => {
   const user = userEvent.setup();
   const mockSetOpen = vi.fn(); 
@@ -32,19 +37,20 @@ describe('EditTaskDialog', () => {
 
   const mockTask: Task = {
     id: 'task-to-edit-id',
-    title: 'Originele Titel',
-    description: 'Originele Beschrijving',
+    title: 'Original Title',
+    description: 'Original Description',
     priority: 'medium',
     status: 'todo',
     deadline: '2024-12-31T00:00:00.000Z',
     userId: 'test-user-id',
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     subtasks: [],
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useTask as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ updateTask: mockUpdateTask /* other mocks */ });
+    (useTask as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ updateTask: mockUpdateTask });
     (useToast as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ toast: mockToast });
     mockUpdateTask.mockResolvedValue({ ...mockTask, title: 'Updated Task' });
   });
@@ -52,10 +58,10 @@ describe('EditTaskDialog', () => {
   it('should render dialog content and pre-fill form fields', () => {
     renderEditDialog(mockTask); 
 
-    expect(screen.getByRole('heading', { name: /taak bewerken/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/titel/i)).toHaveValue(mockTask.title);
-    expect(screen.getByLabelText(/beschrijving/i)).toHaveValue(mockTask.description);
-    expect(screen.getByRole('combobox', { name: /prioriteit/i })).toHaveTextContent(/medium/i);
+    expect(screen.getByRole('heading', { name: /edit task/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/title/i)).toHaveValue(mockTask.title);
+    expect(screen.getByLabelText(/description/i)).toHaveValue(mockTask.description);
+    expect(screen.getByRole('combobox', { name: /priority/i })).toHaveTextContent(/medium/i);
     expect(screen.getByRole('combobox', { name: /status/i })).toHaveTextContent(/todo/i);
     // Add deadline check if needed
   });
@@ -63,12 +69,12 @@ describe('EditTaskDialog', () => {
   it('should call updateTask and setOpen(false) on submit', async () => {
     const { user, mockSetOpen } = renderEditDialog(mockTask);
 
-    const titleInput = screen.getByLabelText(/titel/i);
-    const descriptionInput = screen.getByLabelText(/beschrijving/i);
-    const saveButton = screen.getByRole('button', { name: /wijzigingen opslaan/i });
+    const titleInput = screen.getByLabelText(/title/i);
+    const descriptionInput = screen.getByLabelText(/description/i);
+    const saveButton = screen.getByRole('button', { name: /save changes/i });
 
-    const newTitle = 'Nieuwe Titel Test';
-    const newDescription = 'Nieuwe Beschrijving Test';
+    const newTitle = 'New Test Title';
+    const newDescription = 'New Test Description';
 
     await user.clear(titleInput);
     await user.type(titleInput, newTitle);
@@ -88,9 +94,9 @@ describe('EditTaskDialog', () => {
     });
   });
 
-  // TODO: Add tests for:
-  // - Validation errors (if any)
-  // - Handling updateTask failure (e.g., showing error toast)
-  // - Updating priority, status, deadline fields
-  // - Cancelling the dialog (calls setOpen(false))
+  // TODO: Add tests for the following scenarios:
+  // - Validation errors (e.g., empty title).
+  // - Handling API errors during task update (e.g., displaying an error toast).
+  // - Correctly updating priority, status, and deadline fields.
+  // - Ensuring the dialog calls setOpen(false) when the cancel button or escape key is pressed.
 }); 

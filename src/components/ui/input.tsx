@@ -2,6 +2,16 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils.ts"
 
+/**
+ * A customizable input field component.
+ *
+ * This component wraps a standard HTML `input` element, providing styling via Tailwind CSS
+ * and support for `React.forwardRef` to forward refs to the underlying input element.
+ *
+ * @param {React.ComponentProps<"input">} props - Props for the Input component, extending standard HTMLInputElement attributes.
+ * @param {React.Ref<HTMLInputElement>} ref - The ref to forward to the underlying input element.
+ * @returns {JSX.Element} The Input component.
+ */
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ className, type, ...props }, ref) => {
     return (

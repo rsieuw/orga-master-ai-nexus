@@ -8,16 +8,40 @@ import { Components } from 'react-markdown';
 import { useTranslation } from 'react-i18next';
 import { GradientLoader } from "@/components/ui/loader.tsx";
 
+/**
+ * Props for the MessageItem component.
+ */
 interface MessageItemProps {
+  /** The message object to display, containing content, role, type, and other metadata. */
   message: Message;
+  /** Function to call when the copy button is clicked to copy message content. */
   onCopy: (text: string) => void;
+  /** Optional function to call when deleting a saved note. */
   onDeleteNote?: (noteId: string) => void;
+  /** Optional function to call when deleting a research result. */
   onDeleteResearch?: (researchId: string) => void;
+  /** Optional function to call when pinning or unpinning a message. */
   onTogglePin?: (messageId: string, currentIsPinned: boolean) => void;
+  /** Whether the component is in a loading state (disables action buttons). */
   isLoading: boolean;
+  /** Optional URL of the user's avatar to display for user messages. */
   userAvatarUrl?: string;
 }
 
+/**
+ * A component that renders a single message item in the chat interface.
+ * 
+ * This component handles various message types (user messages, AI responses, notes, research results)
+ * with different styling and functionality for each. It includes support for:
+ * - Rendering markdown content with custom styling
+ * - Showing user avatars or AI/research icons
+ * - Action buttons for copying, deleting, and pinning messages
+ * - Special formatting for research results with citations
+ * - Loading state indicators
+ *
+ * @param {MessageItemProps} props - The props for the MessageItem component.
+ * @returns {JSX.Element} The MessageItem component.
+ */
 export function MessageItem({ 
   message, 
   onCopy, 
@@ -32,7 +56,10 @@ export function MessageItem({
   // Define container classes based on message role
   const messageContainerClasses = `group/message flex items-start gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4` + (message.messageType === 'research_result' ? ' DBG-RESEARCH-CONTAINER' : '');
   
-  // Define Markdown components for rendering
+  /**
+   * Custom component overrides for ReactMarkdown to apply specialized styling to markdown elements.
+   * These ensure that markdown content is rendered with consistent styling that matches the application theme.
+   */
   const markdownComponents: Partial<Components> = {
     p: ({node, ...props}) => <p className="mb-2" {...props} />,
     h1: ({node, ...props}) => <h1 className="text-xl font-semibold mb-3 mt-4 text-foreground" {...props} />,

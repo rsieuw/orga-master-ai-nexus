@@ -1,4 +1,8 @@
 {
+  // @fileoverview TypeScript configuration file for the project.
+  // This configuration specifies compiler options for targeting ES2020, module resolution strategy,
+  // JSX settings, strict type checking, and path aliases.
+  // It includes files from the `src` directory and references `tsconfig.node.json`.
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,

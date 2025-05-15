@@ -10,23 +10,45 @@ import { useToast } from '@/hooks/use-toast.ts';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// Placeholder interface - adjust based on your DB structure
+/**
+ * Interface representing a price object, typically from Stripe.
+ * @interface Price
+ */
 interface Price {
-  id: string; // Stripe Price ID
+  /** The Stripe Price ID. */
+  id: string; 
+  /** The unit amount of the price in the smallest currency unit (e.g., cents). Can be null. */
   unit_amount: number | null;
+  /** The currency code (e.g., 'eur'). Can be null. */
   currency: string | null;
+  /** The billing interval ('month' or 'year'). Can be null for one-time payments or free plans. */
   interval: 'month' | 'year' | null;
 }
 
-// Placeholder interface - adjust based on your DB structure
+/**
+ * Interface representing a product, typically from Stripe, with associated prices.
+ * @interface Product
+ */
 interface Product {
+  /** The product ID. */
   id: string;
+  /** The name of the product. Can be null. */
   name: string | null;
+  /** A description of the product. Can be null. */
   description: string | null;
-  features: string[]; // Add a way to store/retrieve features
+  /** An array of strings describing the features included in the product. */
+  features: string[]; 
+  /** An array of `Price` objects associated with this product. */
   prices: Price[];
 }
 
+/**
+ * `PricingPage` component displays available subscription plans (products and prices).
+ * It fetches product data (currently using placeholder data) and allows users to select a plan.
+ * Selecting a plan initiates a Stripe checkout session by calling a Supabase Edge Function.
+ * Shows loading states for data fetching and during checkout redirection.
+ * Includes a back button for navigation.
+ */
 export default function PricingPage() {
   const { session } = useAuth();
   const { toast } = useToast();
@@ -35,7 +57,12 @@ export default function PricingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState<string | null>(null); // Track for which price-ID is loading
 
-  // TODO: Implement data fetching logic
+  /**
+   * useEffect hook to fetch product and price information.
+   * Currently, it uses placeholder data. 
+   * TODO: Replace placeholder data with actual Supabase query to fetch active products and their prices.
+   * It sets loading states accordingly.
+   */
   useEffect(() => {
     const fetchProducts = () => {
       setIsLoading(true);
@@ -59,6 +86,14 @@ export default function PricingPage() {
     fetchProducts();
   }, []);
 
+  /**
+   * Handles the selection of a subscription plan.
+   * If the user is not authenticated or selects the 'free' plan they are already on, it shows a toast.
+   * Otherwise, it invokes the 'create-checkout-session' Supabase Edge Function with the selected price ID.
+   * On success, it redirects the user to the Stripe checkout URL.
+   * Displays loading states and error toasts if the process fails.
+   * @param {string} priceId - The Stripe Price ID of the selected plan.
+   */
   const handleSelectPlan = async (priceId: string) => {
      if (!session) {
        toast({ variant: "destructive", title: "Error", description: "Session not found. Please log in again." });

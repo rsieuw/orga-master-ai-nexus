@@ -9,17 +9,29 @@ import { UserRole } from '@/types/auth.ts'; // Import UserRole if needed
 import { GradientLoader } from '@/components/ui/loader.tsx'; // Import loader
 import { useTranslation } from 'react-i18next'; // Import useTranslation
 
-// Define the structure of the data we fetch and manage
+/**
+ * Interface defining the structure for role-based permissions.
+ * Each role is associated with a list of enabled features.
+ * @interface RolePermission
+ */
 interface RolePermission {
+  /** The user role (e.g., 'admin', 'paid', 'free'). */
   role: UserRole;
+  /** An array of `Feature` keys that are enabled for this role. */
   enabled_features: Feature[];
 }
 
-// Define all available features (should match permissions.ts, but kept here for UI mapping)
-// Ideally, this comes from a single source of truth later
+/**
+ * Array of all available features in the application.
+ * This should ideally be kept in sync with the `Feature` type in `lib/permissions.ts`.
+ * Used here to iterate over all possible features for UI rendering.
+ */
 const ALL_FEATURES: Feature[] = ['deepResearch', 'exportChat', 'adminPanel', 'choose_research_model', 'chatModes'];
 
-// --- NEW: Mapping for display names ---
+/**
+ * Mapping of `Feature` keys to their corresponding i18next translation keys for display names.
+ * Used to show user-friendly feature names in the UI.
+ */
 const FEATURE_DISPLAY_NAMES: Record<Feature, string> = {
   deepResearch: "adminPermissionsPage.features.deepResearch", // Placeholder for i18n key
   exportChat: "adminPermissionsPage.features.exportChat", // Placeholder for i18n key
@@ -29,7 +41,14 @@ const FEATURE_DISPLAY_NAMES: Record<Feature, string> = {
 };
 // --- END NEW ---
 
-// The component containing the table and logic
+/**
+ * `PermissionsManagementTable` component allows administrators to manage feature permissions for different user roles.
+ * It displays a table where each row represents a user role and each column a feature.
+ * Admins can toggle permissions using switches.
+ * Changes are saved to the Supabase 'role_permissions' table.
+ * Fetches current permissions on load and handles loading/error states.
+ * Provides separate table layouts for desktop and mobile views.
+ */
 export const PermissionsManagementTable: React.FC = () => {
   const { t } = useTranslation(); // Initialize t function
   const { toast } = useToast();
@@ -37,7 +56,11 @@ export const PermissionsManagementTable: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch current permissions on load
+  /**
+   * useEffect hook to fetch current role permissions from the Supabase 'role_permissions' table when the component mounts.
+   * It sets the loading state, fetches data, and updates the `permissions` state.
+   * Handles errors during fetching and displays toast notifications.
+   */
   useEffect(() => {
     const fetchPermissions = async () => {
       // No admin check here, this is handled in the parent (AdminDashboardPage)
@@ -67,7 +90,13 @@ export const PermissionsManagementTable: React.FC = () => {
     fetchPermissions();
   }, [toast, t]); // Dependency on toast and t now
 
-  // Handle switch change (type added to checked)
+  /**
+   * Handles the change of a permission switch for a specific role and feature.
+   * Updates the local `permissions` state optimistically to reflect the change immediately in the UI.
+   * @param {UserRole} role - The role for which the permission is being changed.
+   * @param {Feature} feature - The feature whose permission is being toggled.
+   * @param {boolean} checked - The new state of the permission (true if enabled, false if disabled).
+   */
   const handlePermissionChange = (role: UserRole, feature: Feature, checked: boolean) => {
     setPermissions(currentPermissions =>
       currentPermissions.map(p => {
@@ -82,7 +111,11 @@ export const PermissionsManagementTable: React.FC = () => {
     );
   };
 
-  // Save changes to the database
+  /**
+   * Saves all current permission changes to the Supabase 'role_permissions' table.
+   * Iterates through the `permissions` state and updates each role's `enabled_features`.
+   * Sets loading state during the save operation and displays success or error toast notifications.
+   */
   const handleSaveChanges = async () => {
      // No admin check needed here, parent component handles access
      setIsLoading(true); 
@@ -209,7 +242,10 @@ export const PermissionsManagementTable: React.FC = () => {
   );
 };
 
-// The page component now only exports the table component
+/**
+ * `AdminPermissionsPage` is a simple wrapper component that renders the `PermissionsManagementTable`.
+ * This component is typically used as the content for a tab within the main admin dashboard.
+ */
 const AdminPermissionsPage: React.FC = () => {
   return <PermissionsManagementTable />;
 };

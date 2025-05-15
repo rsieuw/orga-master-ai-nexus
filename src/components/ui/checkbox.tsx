@@ -6,6 +6,18 @@ import { Check } from "lucide-react"
 
 import { cn } from "@/lib/utils.ts"
 
+/**
+ * A checkbox component that allows users to select one or more options from a set.
+ *
+ * This component is built on top of the `@radix-ui/react-checkbox` primitive,
+ * providing accessible and customizable checkbox functionality.
+ * It supports `React.forwardRef` to forward refs to the underlying Radix Checkbox primitive.
+ *
+ * @param {React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>} props - Props for the Checkbox component,
+ *   extending props from the Radix Checkbox Root primitive.
+ * @param {React.Ref<React.ElementRef<typeof CheckboxPrimitive.Root>>} ref - The ref to forward to the underlying Radix Checkbox Root element.
+ * @returns {JSX.Element} The Checkbox component.
+ */
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>

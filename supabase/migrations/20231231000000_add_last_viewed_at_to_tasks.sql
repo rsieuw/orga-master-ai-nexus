@@ -1,3 +1,6 @@
+-- @fileoverview Adds a last_viewed_at column to the public.tasks table.
+-- This migration allows tracking when a task was last viewed by a user.
+
 -- Add the last_viewed_at column to the tasks table
 ALTER TABLE public.tasks
 ADD COLUMN last_viewed_at TIMESTAMPTZ DEFAULT NULL;

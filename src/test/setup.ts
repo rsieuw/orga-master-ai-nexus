@@ -1,17 +1,24 @@
+/**
+ * @fileoverview Test setup file for Vitest.
+ * This file is automatically executed before running tests and sets up the testing environment.
+ * It includes:
+ * - Automatic cleanup of the testing DOM after each test using `@testing-library/react`.
+ * - Mocking of `ResizeObserver` to prevent issues in test environments where it might not be available or behave as expected.
+ */
 import { afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-// Voer cleanup uit na elke test
+// Perform cleanup after each test
 afterEach(() => {
   cleanup();
 });
 
-// Mock voor de ResizeObserver, die vaak problemen veroorzaakt in test omgevingen
+// Mock for ResizeObserver, which often causes issues in test environments
 class ResizeObserverMock {
-  observe() { /* doe niets */ }
-  unobserve() { /* doe niets */ }
-  disconnect() { /* doe niets */ }
+  observe() { /* do nothing */ }
+  unobserve() { /* do nothing */ }
+  disconnect() { /* do nothing */ }
 }
 
 globalThis.ResizeObserver = ResizeObserverMock; 

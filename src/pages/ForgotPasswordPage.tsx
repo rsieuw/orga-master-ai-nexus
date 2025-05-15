@@ -9,6 +9,11 @@ import { useToast } from "@/hooks/use-toast.ts"; // Import useToast for feedback
 import { supabase } from '@/integrations/supabase/client.ts'; // Import Supabase client - ADDED .ts extension
 import { useTranslation } from "react-i18next";
 
+/**
+ * `ForgotPasswordPage` component provides a form for users to request a password reset.
+ * It collects the user's email address and sends a password reset link via Supabase.
+ * Displays loading states and feedback messages (success or error) using toasts.
+ */
 const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -16,6 +21,14 @@ const ForgotPasswordPage: React.FC = () => {
   const { t } = useTranslation();
   // const navigate = useNavigate(); // Use navigate for redirection - Commented out
 
+  /**
+   * Handles the submission of the password reset request form.
+   * Prevents default form submission and sets loading state.
+   * Calls Supabase `resetPasswordForEmail` to send a reset link to the user's email.
+   * The `redirectTo` URL points to the page where the user can set a new password.
+   * Displays success or error toasts based on the outcome of the API call.
+   * @param {React.FormEvent<HTMLFormElement>} event - The form submission event.
+   */
   const handlePasswordResetRequest = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);

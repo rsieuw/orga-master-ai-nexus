@@ -1,16 +1,21 @@
+/**
+ * @fileoverview Unit tests for the NewTaskDialog component.
+ * These tests cover rendering the dialog, AI-powered task detail generation (success and failure),
+ * manual form submission, and interaction with context and toast notifications.
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor, act } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { renderWithProviders } from '@/test/utils';
-import NewTaskDialog from './NewTaskDialog';
-import { useTask } from '@/contexts/TaskContext';
-import { useToast } from '@/components/ui/use-toast';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { supabase } from '@/integrations/supabase/client';
+import { renderWithProviders } from '@/test/test-helpers.ts';
+import NewTaskDialog from './NewTaskDialog.tsx';
+import { useTask } from '@/contexts/TaskContext.hooks.ts';
+import { useToast } from '@/components/ui/use-toast.ts';
+import { Dialog, DialogContent } from "@/components/ui/dialog.tsx";
+import { supabase } from '@/integrations/supabase/client.ts';
 import { User } from '@supabase/supabase-js';
 
 // Mock hooks
-vi.mock('@/contexts/TaskContext');
+vi.mock('@/contexts/TaskContext.hooks');
 vi.mock('@/components/ui/use-toast');
 // Mock the actual client module using a factory
 vi.mock('@/integrations/supabase/client', () => ({
@@ -38,13 +43,13 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-// Helper renders the dialog open directly, passing setOpen
+// Helper to render the dialog open directly, passing setOpen
 const renderNewDialog = () => {
   const user = userEvent.setup();
   const mockSetOpen = vi.fn();
   renderWithProviders(
     // Render the Dialog open and pass setOpen to NewTaskDialog
-    <Dialog open={true}>
+    <Dialog open>
       <DialogContent>
         <NewTaskDialog setOpen={mockSetOpen} />
       </DialogContent>
@@ -88,18 +93,18 @@ describe('NewTaskDialog', () => {
   it('should render the dialog content when open', () => {
     renderNewDialog(); // Use the updated helper
     // Check for title and initial AI input elements
-    expect(screen.getByRole('heading', { name: /nieuwe taak aanmaken/i })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/beschrijf je taak of idee/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /genereer taakdetails/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /create new task/i })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/describe your task or idea/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /generate task details/i })).toBeInTheDocument();
     // Initially, the regular form fields should NOT be visible
-    expect(screen.queryByLabelText(/titel/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/title/i)).not.toBeInTheDocument();
   });
 
   // --- Tests for AI Generation Flow ---
   it('should show task details form after successful AI generation', async () => {
     const { user } = renderNewDialog();
-    const initialInput = screen.getByPlaceholderText(/beschrijf je taak of idee/i);
-    const generateButton = screen.getByRole('button', { name: /genereer taakdetails/i });
+    const initialInput = screen.getByPlaceholderText(/describe your task or idea/i);
+    const generateButton = screen.getByRole('button', { name: /generate task details/i });
 
     // Configure the mock response for this test
     supabaseFunctionsInvokeMock.mockResolvedValueOnce({
@@ -108,39 +113,39 @@ describe('NewTaskDialog', () => {
     });
     
     await act(async () => {
-      await user.type(initialInput, 'Doe de boodschappen');
+      await user.type(initialInput, 'Do the groceries');
       await user.click(generateButton);
     });
 
     // Wait for form to appear
     await waitFor(() => {
-      expect(screen.getByLabelText(/titel/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/beschrijving/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/prioriteit/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /taak aanmaken/i })).toBeInTheDocument();
+      expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/priority/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /create task/i })).toBeInTheDocument();
     });
 
     // Check if fields are populated
-    expect(screen.getByLabelText(/titel/i)).toHaveValue('AI Generated Title');
-    expect(screen.getByLabelText(/beschrijving/i)).toHaveValue('AI Generated Description');
+    expect(screen.getByLabelText(/title/i)).toHaveValue('AI Generated Title');
+    expect(screen.getByLabelText(/description/i)).toHaveValue('AI Generated Description');
 
      // Check if supabase function was called correctly
     expect(supabaseFunctionsInvokeMock).toHaveBeenCalledTimes(1);
     expect(supabaseFunctionsInvokeMock).toHaveBeenCalledWith('generate-task-details', {
-      body: { input: 'Doe de boodschappen' },
+      body: { input: 'Do the groceries' },
     });
   });
 
   it('should show error toast if AI generation fails', async () => {
      const { user } = renderNewDialog();
-    const initialInput = screen.getByPlaceholderText(/beschrijf je taak of idee/i);
-    const generateButton = screen.getByRole('button', { name: /genereer taakdetails/i });
+    const initialInput = screen.getByPlaceholderText(/describe your task or idea/i);
+    const generateButton = screen.getByRole('button', { name: /generate task details/i });
 
     // Configure the mock response for this test
     supabaseFunctionsInvokeMock.mockResolvedValueOnce({ data: null, error: { message: 'AI Error' }});
 
     await act(async () => {
-      await user.type(initialInput, 'Mislukte taak');
+      await user.type(initialInput, 'Failed task');
       await user.click(generateButton);
     });
 
@@ -148,21 +153,21 @@ describe('NewTaskDialog', () => {
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
         variant: 'destructive',
-        title: 'Genereren mislukt',
+        title: 'Generation failed',
         description: 'AI Error',
       }));
     });
 
     // Ensure regular form fields are still hidden
-    expect(screen.queryByLabelText(/titel/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/title/i)).not.toBeInTheDocument();
   });
 
   // --- Tests for Manual Form Submission ---
   it('should call createTask with form data on submit after generation', async () => {
     // Setup: Render, trigger AI generation to show the form
     const { user } = renderNewDialog();
-    const initialInput = screen.getByPlaceholderText(/beschrijf je taak of idee/i);
-    const generateButton = screen.getByRole('button', { name: /genereer taakdetails/i });
+    const initialInput = screen.getByPlaceholderText(/describe your task or idea/i);
+    const generateButton = screen.getByRole('button', { name: /generate task details/i });
     // Configure mock response for generation
     supabaseFunctionsInvokeMock.mockResolvedValueOnce({ 
       data: { title: 'AI Title', description: 'AI Desc' }, error: null 
@@ -172,18 +177,18 @@ describe('NewTaskDialog', () => {
       await user.click(generateButton);
     });
     await waitFor(() => { 
-        expect(screen.getByLabelText(/titel/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
     });
 
     // Now interact with the visible form
-    const titleInput = screen.getByLabelText(/titel/i);
-    const descriptionInput = screen.getByLabelText(/beschrijving/i);
-    const prioritySelect = screen.getByLabelText(/prioriteit/i);
-    const submitButton = screen.getByRole('button', { name: /taak aanmaken/i });
+    const titleInput = screen.getByLabelText(/title/i);
+    const descriptionInput = screen.getByLabelText(/description/i);
+    const prioritySelect = screen.getByLabelText(/priority/i);
+    const submitButton = screen.getByRole('button', { name: /create task/i });
 
     const testData = {
-      title: 'Manueel Aangepaste Taak',
-      description: 'Manueel Aangepaste Beschrijving',
+      title: 'Manually Updated Task',
+      description: 'Manually Updated Description',
       priority: 'high',
     };
 
@@ -209,14 +214,15 @@ describe('NewTaskDialog', () => {
     // Optionally check for toast message
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
-        title: 'Taak aangemaakt',
-        description: 'De nieuwe taak is succesvol aangemaakt',
+        title: 'Task created',
+        description: 'The new task has been successfully created',
       }));
     });
   });
 
-  // This test is harder now as the form isn't visible initially.
-  // We might need a different approach or skip validation tests for now.
+  // TODO: Consider adding tests for form validation (e.g., empty title) if the form becomes directly accessible
+  // or if a "skip AI" option is implemented. Currently, testing this is complex
+  // as the main form fields are only shown after AI generation.
   // it('should show validation errors for empty title', async () => { ... }); 
 
 }); 

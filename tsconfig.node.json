@@ -1,4 +1,7 @@
 {
+  // @fileoverview TypeScript configuration specifically for Node.js-related files in the project,
+  // such as vite.config.ts. This configuration extends or overrides the main tsconfig.json
+  // for Node.js specific build and linting requirements.
   "compilerOptions": {
     "composite": true,
     "target": "ES2022",

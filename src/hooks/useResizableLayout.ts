@@ -3,21 +3,54 @@ import { useAuth } from "@/hooks/useAuth.ts"; // Assuming useAuth provides user 
 import { useToast } from "@/hooks/use-toast.ts"; // Added import
 import { useTranslation } from 'react-i18next'; // Added import
 
+/**
+ * Type for the user's layout preference.
+ * Determines the distribution of the two columns in the interface.
+ */
 export type LayoutPreference = '50-50' | '33-67';
 
+/**
+ * Props for the useResizableLayout hook.
+ * 
+ * @interface UseResizableLayoutProps
+ */
 interface UseResizableLayoutProps {
+  /** Initial layout preference used if the user has not set a preference */
   initialLayoutPreference?: LayoutPreference;
+  /** Minimum width of the left column in pixels */
   leftColumnMinWidth?: number;
+  /** Minimum width of the right column in pixels */
   rightColumnMinWidth?: number;
 }
 
+/**
+ * Return type for the useResizableLayout hook.
+ * 
+ * @interface UseResizableLayoutReturn
+ */
 interface UseResizableLayoutReturn {
+  /** The current dimensions of both columns as a percentage */
   columnSizes: { left: number; right: number };
+  /** Ref to be applied to the container element */
   containerRef: React.RefObject<HTMLDivElement>;
+  /** Function to start resizing, should be used as onMouseDown event handler on the resize element */
   startResize: (e: React.MouseEvent<HTMLDivElement>) => void;
+  /** Boolean indicating whether resizing is currently active */
   isResizing: boolean;
 }
 
+/**
+ * Hook that implements a resizable layout with two columns.
+ * 
+ * Provides functionality for:
+ * - Adjusting column width by dragging
+ * - Storing user preferences
+ * - Restoring saved preferences
+ * - Limiting minimum column width
+ * 
+ * @param {UseResizableLayoutProps} props - Configuration options for the resizable layout
+ * @returns {UseResizableLayoutReturn} Object with state and functions for the resizable layout
+ */
 export function useResizableLayout({
   initialLayoutPreference = '50-50',
   leftColumnMinWidth = 200, // Minimum width for the left column in pixels
@@ -27,6 +60,12 @@ export function useResizableLayout({
   const { toast } = useToast(); // Added useToast
   const { t } = useTranslation(); // Added useTranslation
 
+  /**
+   * Converts a layout preference (string) to concrete column percentages.
+   * 
+   * @param {LayoutPreference | undefined | null} preference - The user's preferred layout
+   * @returns {{ left: number, right: number }} Object with column widths as percentages
+   */
   const calculateColumnSizesFromPreference = useCallback((preference: LayoutPreference | undefined | null) => {
     if (preference === '33-67') {
       return { left: 33.33, right: 66.67 };
@@ -47,7 +86,9 @@ export function useResizableLayout({
   const lastSavedPreferenceRef = useRef<LayoutPreference | null>(null);
   const prevIsResizingRef = useRef<boolean>(false);
 
-  // Effect to set initial column sizes and update if user.layout_preference changes
+  /**
+   * Effect to set initial column sizes and update if user.layout_preference changes.
+   */
   useEffect(() => {
     if (user && !hasAppliedInitialLayoutRef.current) {
       const newSizes = calculateColumnSizesFromPreference(user.layout_preference as LayoutPreference || initialLayoutPreference);
@@ -57,7 +98,9 @@ export function useResizableLayout({
     }
   }, [user, initialLayoutPreference, calculateColumnSizesFromPreference]);
 
-
+  /**
+   * Saves the current layout preference with a delay to avoid frequent updates.
+   */
   const debounceSaveLayoutPreference = useCallback(() => {
     if (saveLayoutTimeoutRef.current) {
       clearTimeout(saveLayoutTimeoutRef.current);
@@ -93,7 +136,9 @@ export function useResizableLayout({
     }, 1000);
   }, [user, updateUser, columnSizes, toast, t]); // Added toast and t to dependencies
 
-
+  /**
+   * Effect that handles changes in isResizing status and saves accordingly.
+   */
   useEffect(() => {
     const wasResizingInPreviousRender = prevIsResizingRef.current;
 
@@ -125,12 +170,18 @@ export function useResizableLayout({
     }
   }, [user, isResizing, calculateColumnSizesFromPreference, debounceSaveLayoutPreference, columnSizes, initialLayoutPreference]);
 
-
+  /**
+   * Effect to keep track of the previous isResizing status.
+   */
   useEffect(() => {
     prevIsResizingRef.current = isResizing;
   }, [isResizing]);
 
-
+  /**
+   * Starts the resize process by storing the initial position and width.
+   * 
+   * @param {React.MouseEvent<HTMLDivElement>} e - The mouse event that starts the resizing
+   */
   const startResize = (e: React.MouseEvent<HTMLDivElement>) => {
     if (containerRef.current) {
       setIsResizing(true);
@@ -141,6 +192,11 @@ export function useResizableLayout({
     }
   };
 
+  /**
+   * Performs resizing by adjusting column width based on mouse position.
+   * 
+   * @param {MouseEvent} e - The mouse event during movement
+   */
   const doResize = useCallback((e: MouseEvent) => {
     if (!isResizing || !containerRef.current) return;
 
@@ -161,6 +217,9 @@ export function useResizableLayout({
     });
   }, [isResizing, leftColumnMinWidth, rightColumnMinWidth]);
 
+  /**
+   * Stops the resize process and resets styling to normal.
+   */
   const stopResize = useCallback(() => {
     if (!isResizing) return;
     setIsResizing(false);
@@ -170,6 +229,9 @@ export function useResizableLayout({
     // The debounceSaveLayoutPreference will be called by the useEffect that watches isResizing
   }, [isResizing]);
 
+  /**
+   * Effect for adding and removing event listeners during resizing.
+   */
   useEffect(() => {
     if (isResizing) {
       globalThis.addEventListener('mousemove', doResize);

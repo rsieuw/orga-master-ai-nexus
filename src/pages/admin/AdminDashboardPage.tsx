@@ -4,13 +4,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.t
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card.tsx';
 import { UsersManagementTable } from "./AdminUsersPage.tsx"; // Import the table components
 import { PermissionsManagementTable } from "./AdminPermissionsPage.tsx";
+import { ThemeSettingsTable } from "./AdminThemeSettingsPage.tsx"; // Import the theme settings table
 import { Input } from "@/components/ui/input.tsx"; // Import Input
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select.tsx"; // Import Select
 import { UserRole } from '@/types/auth.ts'; // Import UserRole
 import { useTranslation } from 'react-i18next'; // Import useTranslation
 import AdminFeedbackPage from "./AdminFeedbackPage.tsx";
-import { Users, Shield, MessageSquare } from "lucide-react"; // Import icons for admin tabs
+import { Users, Shield, MessageSquare, Palette } from "lucide-react"; // Import icons for admin tabs
 
+/**
+ * `AdminDashboardPage` component serves as the main dashboard for administrators.
+ * It provides a tabbed interface to navigate between different admin sections:
+ * Users, Permissions, Themes, and Feedback.
+ * It includes filtering options for the users table (searchTerm, role, status).
+ */
 const AdminDashboardPage: React.FC = () => {
   const { t } = useTranslation(); // Initialize t function
   // Manage state for filters here
@@ -31,6 +38,10 @@ const AdminDashboardPage: React.FC = () => {
           <TabsTrigger value="permissions" className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
             <span className="hidden sm:inline">{t('adminDashboard.tabs.permissions')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="themes" className="flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            <span className="hidden sm:inline">{t('adminDashboard.tabs.themes')}</span>
           </TabsTrigger>
           <TabsTrigger value="feedback" className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
@@ -94,6 +105,18 @@ const AdminDashboardPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <PermissionsManagementTable />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="themes" className="mt-4">
+          {/* Card wrapper for consistency */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('adminDashboard.themes.title')}</CardTitle>
+              <CardDescription>{t('adminDashboard.themes.description')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ThemeSettingsTable />
             </CardContent>
           </Card>
         </TabsContent>

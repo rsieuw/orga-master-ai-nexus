@@ -1,3 +1,6 @@
+-- @fileoverview Adds an emoji column to the public.tasks table.
+-- This migration allows associating an emoji character with each task for visual representation.
+
 -- Add emoji field to tasks table
 ALTER TABLE tasks ADD COLUMN emoji TEXT;
 

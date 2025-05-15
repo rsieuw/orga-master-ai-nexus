@@ -11,10 +11,25 @@ import {
 } from "@/components/ui/dropdown-menu.tsx";
 import { useTranslation } from 'react-i18next';
 
+/**
+ * Props for the Navbar component.
+ */
 interface NavbarProps {
+  /** Function to open the modal for creating a new task. */
   openNewTaskModal: () => void;
 }
 
+/**
+ * The top navigation bar component of the application.
+ * 
+ * This component displays the app logo, a button to create new tasks (when authenticated),
+ * and either user menu options (when authenticated) or login/register buttons (when not authenticated).
+ * The user menu includes links to profile, settings, admin dashboard (for admin users),
+ * upgrade option (for free users), and logout functionality.
+ *
+ * @param {NavbarProps} props - The props for the Navbar component.
+ * @returns {JSX.Element} The Navbar component.
+ */
 export default function Navbar({ openNewTaskModal }: NavbarProps) {
   const { t } = useTranslation();
   const { isAuthenticated, logout, user } = useAuth();

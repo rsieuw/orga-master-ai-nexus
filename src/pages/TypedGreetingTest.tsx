@@ -2,6 +2,18 @@ import React from 'react';
 import { TypedGreeting } from '@/components/ui/TypedGreeting.tsx';
 import AppLayout from '@/components/layout/AppLayout.tsx';
 
+/**
+ * `TypedGreetingTest` is a React functional component that serves as a test page
+ * for the `TypedGreeting` component. It demonstrates the `TypedGreeting` with
+ * different text inputs and gradient color configurations corresponding to various
+ * priority levels (high, medium, low, none).
+ *
+ * The component is wrapped in an `AppLayout` for consistent page structure.
+ * Each `TypedGreeting` instance is displayed within a styled card,
+ * showcasing its appearance under different priority scenarios.
+ *
+ * @returns {JSX.Element} The rendered test page with multiple `TypedGreeting` examples.
+ */
 const TypedGreetingTest: React.FC = () => {
   const priorityColors = {
     high: { start: '#DC2626', end: '#BE185D' },    // Red to Rose

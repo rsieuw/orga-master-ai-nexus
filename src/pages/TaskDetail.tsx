@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
-import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, MessageSquareText, Loader2, ChevronUp, ChevronDown } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, MessageSquareText, Loader2, ChevronUp, ChevronDown, ArrowUpDown } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +27,6 @@ import {
   DialogTrigger,
   DialogClose,
   DialogPortal,
-  DialogOverlay,
 } from "@/components/ui/dialog.tsx";
 import { useToast } from "@/hooks/use-toast.ts";
 import TaskAIChat from "@/components/ai/TaskAIChat.tsx";
@@ -57,6 +56,24 @@ import { nl, enUS } from "date-fns/locale";
 import EditTaskDialog from "@/components/tasks/EditTaskDialog.tsx";
 import { TASK_CATEGORIES, TASK_CATEGORY_KEYS } from "@/constants/categories.ts";
 
+/**
+ * Task detail page component that displays comprehensive information about a task.
+ * 
+ * This page shows all details of a specific task, including:
+ * - Title, description, priority, due date, and category
+ * - Subtasks with completion status
+ * - Task actions (edit, delete, AI generation)
+ * - AI chat interface for task assistance
+ * - Resizable layout for details and chat panels
+ * 
+ * The component provides functionality for:
+ * - Managing subtasks (add, toggle, delete)
+ * - Generating subtasks using AI
+ * - Editing and deleting the task
+ * - Communicating with AI assistant about the task
+ * 
+ * @returns {JSX.Element} The TaskDetail page component
+ */
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
   const { 
@@ -91,6 +108,7 @@ export default function TaskDetail() {
   const [isInfoCollapsed] = useState(false);
   const [isDescriptionMinimized, setIsDescriptionMinimized] = useState(false);
   const subtaskCardRef = useRef<HTMLDivElement>(null);
+  const [subtaskSortOrder, setSubtaskSortOrder] = useState<'default' | 'completedFirst' | 'incompleteFirst'>('default');
 
   const { user } = useAuth();
 
@@ -121,7 +139,12 @@ export default function TaskDetail() {
     }
   }
 
-  // Functie om de prioriteitskleur te bepalen voor de achtergrond zonder de lijn
+  /**
+   * Determines the CSS classes for styling based on task priority.
+   * 
+   * @param {string} priority - The priority level of the task ('high', 'medium', 'low', or 'none').
+   * @returns {{ backgroundClass: string; shadowClass: string }} An object containing the CSS classes for background and shadow effects.
+   */
   const getPriorityClass = (priority: string = 'none'): { backgroundClass: string; shadowClass: string } => {
     let backgroundClass = '';
     let shadowClass = '';
@@ -129,19 +152,19 @@ export default function TaskDetail() {
     switch(priority) {
       case 'high':
         backgroundClass = 'bg-gradient-to-br from-[#b12429]/30 via-[#8112a9]/30 to-[#690365]/30 dark:bg-gradient-to-br dark:from-[rgba(220,38,38,0.8)] dark:via-[rgba(150,25,80,0.75)] dark:to-[rgba(70,20,90,0.7)]';
-        shadowClass = 'neumorphic-shadow-high'; // Verwijst naar de aangepaste CSS klasse
+        shadowClass = 'neumorphic-shadow-high';
         break;
       case 'medium':
         backgroundClass = 'bg-gradient-to-br from-[#db7b0b]/30 via-[#9e4829]/30 to-[#651945]/30 dark:bg-gradient-to-br dark:from-[rgba(255,145,0,0.9)] dark:to-[rgba(101,12,78,0.85)]';
-        shadowClass = 'neumorphic-shadow-medium'; // Verwijst naar de aangepaste CSS klasse
+        shadowClass = 'neumorphic-shadow-medium';
         break;
       case 'low':
         backgroundClass = 'bg-gradient-to-br from-blue-500/30 via-cyan-400/30 to-teal-400/30 dark:bg-gradient-to-br dark:from-[rgb(36,74,212)] dark:via-[rgba(15,168,182,0.75)] dark:to-[rgba(16,185,129,0.7)]';
-        shadowClass = 'neumorphic-shadow-low'; // Verwijst naar de aangepaste CSS klasse
+        shadowClass = 'neumorphic-shadow-low';
         break;
       default:
         backgroundClass = 'bg-gradient-to-br from-blue-600/30 to-purple-700/30 dark:bg-gradient-to-br dark:from-[rgba(100,116,139,0.8)] dark:via-[rgba(71,85,105,0.75)] dark:to-[rgba(51,65,85,0.7)]';
-        shadowClass = 'neumorphic-shadow-none'; // Verwijst naar de aangepaste CSS klasse
+        shadowClass = 'neumorphic-shadow-none';
         break;
     }
     return { backgroundClass, shadowClass };
@@ -152,6 +175,32 @@ export default function TaskDetail() {
   const maxGenerations = getMaxAiGenerationsForUser();
   const isLimitReached = task ? isAiGenerationLimitReached(task) : false;
   
+  // Memoized sorted subtasks
+  const sortedSubtasks = useMemo(() => {
+    if (!task?.subtasks) return [];
+    const subtasksCopy = [...task.subtasks]; 
+
+    if (subtaskSortOrder === 'completedFirst') {
+      return subtasksCopy.sort((a, b) => {
+        if (a.completed === b.completed) return 0;
+        return a.completed ? -1 : 1;
+      });
+    } else if (subtaskSortOrder === 'incompleteFirst') {
+      return subtasksCopy.sort((a, b) => {
+        if (a.completed === b.completed) return 0;
+        return a.completed ? 1 : -1;
+      });
+    }
+    return subtasksCopy; // Default order
+  }, [task?.subtasks, subtaskSortOrder]);
+
+  /**
+   * Toggles the completion status of a subtask.
+   * 
+   * @param {string} subtaskId - The ID of the subtask to toggle.
+   * @param {boolean} completed - The new completion status of the subtask.
+   * @returns {Promise<void>} A promise that resolves when the subtask is updated.
+   */
   const handleSubtaskToggle = async (subtaskId: string, completed: boolean) => {
     if (!task) return;
     try {
@@ -161,6 +210,12 @@ export default function TaskDetail() {
     }
   };
 
+  /**
+   * Adds a new subtask to the current task.
+   * 
+   * @param {React.FormEvent} e - The form event triggering the addition.
+   * @returns {Promise<void>} A promise that resolves when the subtask is added.
+   */
   const handleAddSubtask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!task || !newSubtaskTitle.trim()) return;
@@ -178,6 +233,11 @@ export default function TaskDetail() {
     }
   };
 
+  /**
+   * Initiates AI-based subtask generation for the current task.
+   * 
+   * @returns {Promise<void>} A promise that resolves when the subtasks generation process is complete.
+   */
   const handleGenerateSubtasks = async () => {
     if (task) {
       try {
@@ -192,22 +252,39 @@ export default function TaskDetail() {
     }
   };
 
+  /**
+   * Scrolls to the top of the page if no hash is present in the URL.
+   * This ensures that the user sees the top of the task details
+   * when navigating directly to the page without a specific section hash.
+   */
   useEffect(() => {
     if (!location.hash) {
       globalThis.scrollTo(0, 0);
     }
   }, [location.hash]);
 
+  /**
+   * Locks or unlocks body scroll based on the state of various dialogs.
+   * This prevents background scrolling when a dialog (edit, generate subtasks) is open.
+   */
   useEffect(() => {
     const shouldLock = isEditDialogOpen || isGenerateSubtasksDialogOpen || isMobileGenerateDialogOpen;
     document.body.style.overflow = shouldLock ? 'hidden' : 'auto';
     return () => { document.body.style.overflow = 'auto'; };
   }, [isEditDialogOpen, isGenerateSubtasksDialogOpen, isMobileGenerateDialogOpen]);
 
+  /**
+   * Sets the active mobile view (details or chat) based on the URL hash.
+   * Allows linking directly to the chat view on mobile.
+   */
   useEffect(() => {
     setActiveMobileView(location.hash === '#chat' ? 'chat' : 'details');
   }, [location.hash]);
 
+  /**
+   * Manages the visibility of mobile action buttons based on user activity.
+   * Buttons are shown on interaction and hidden after a period of inactivity.
+   */
   useEffect(() => {
     const INACTIVITY_TIMEOUT = 2500;
     const handleActivity = () => {
@@ -229,12 +306,13 @@ export default function TaskDetail() {
       globalThis.removeEventListener('click', handleActivity, { capture: true });
       globalThis.removeEventListener('mousemove', handleActivity);
       globalThis.removeEventListener('touchmove', handleActivity);
-      if (hideTimerRef.current !== null) { 
-        clearTimeout(hideTimerRef.current);
-      }
     };
   }, []);
 
+  /**
+   * Sets the selected subtask title for potential AI chat interaction.
+   * @param {string} title - The title of the subtask selected by the user.
+   */
   const handleSubtaskLabelClick = (title: string) => {
     setSelectedSubtaskTitle(title);
   };
@@ -245,11 +323,19 @@ export default function TaskDetail() {
     ? (completedSubtasks / totalSubtasks) * 100
     : 0;
 
+  /**
+   * Closes the context menu for subtasks.
+   * Resets the long-pressed subtask ID and context menu position.
+   */
   const closeSubtaskContextMenu = () => {
     setLongPressedSubtaskId(null);
     setContextMenuPosition(null);
   };
 
+  /**
+   * Marks the task as viewed when the component mounts or the task/ID changes,
+   * but only if the task is marked as new.
+   */
   useEffect(() => {
     if (id && task && !task.isNew) {
       return;
@@ -261,23 +347,47 @@ export default function TaskDetail() {
   }, [id, task, markTaskAsViewed]);
 
   // Functie om de juiste vertaalsleutel voor een categorie te vinden
+  /**
+   * Finds the translation key for a given category string.
+   * @param {string} category - The category string (e.g., "Werk/Studie").
+   * @returns {string} The translation key (e.g., "categories.workStudy") or the original category string if not found.
+   */
   const getCategoryTranslationKey = (category: string) => {
     const index = TASK_CATEGORIES.findIndex(cat => cat === category);
     return index !== -1 ? TASK_CATEGORY_KEYS[index] : category;
   };
 
+  // Vertaalde categorienaam ophalen
+  /**
+   * Gets the translated name for a given category string using its translation key.
+   * @param {string} [category] - The category string.
+   * @returns {string} The translated category name, or an empty string if category is undefined.
+   */
+  const getTranslatedCategory = (category?: string) => {
+    if (!category) return "";
+    const translationKey = getCategoryTranslationKey(category);
+    return t(translationKey);
+  };
+
   // Functie voor het achtergrondicoon met aanpassing voor elke prioriteitskleur
+  /**
+   * Gets the appropriate background icon component for a given task category.
+   * The icon's color is adjusted based on the task's priority.
+   * @param {string} [category] - The category string.
+   * @returns {JSX.Element | null} The icon component or null if the category is not recognized.
+   */
   const getCategoryBackgroundIcon = (category?: string) => {
     // Vaste opaciteit voor alle iconen (natuurlijke opacity via CSS styling)
+    // Fixed opacity for all icons (natural opacity via CSS styling)
     const getIconClass = (priority?: string) => {
       if (priority === 'high') {
-        return "text-[rgb(175,36,42)] opacity-40"; // Kleur voor hoge prioriteit
+        return "text-[rgb(175,36,42)] opacity-40"; // Kleur voor hoge prioriteit // Color for high priority
       } else if (priority === 'medium') {
-        return "text-[rgb(227,131,6)] opacity-40"; // Kleur voor medium prioriteit
+        return "text-[rgb(227,131,6)] opacity-40"; // Kleur voor medium prioriteit // Color for medium priority
       } else if (priority === 'low') {
-        return "text-[#c1ccf5] opacity-40"; // Kleur voor lage prioriteit
+        return "text-[#c1ccf5] opacity-40"; // Kleur voor lage prioriteit // Color for low priority
       } else {
-        return "text-gray-300 opacity-40"; // Standaard kleur
+        return "text-gray-300 opacity-40"; // Standaard kleur // Default color
       }
     };
 
@@ -292,6 +402,7 @@ export default function TaskDetail() {
     
     // Gebruik de Nederlandse categorienamen voor de icons
     // Dit is nodig omdat de database nog steeds de Nederlandse namen gebruikt
+    // Use Dutch category names for icons as the database still uses them.
     switch(category) {
       case "Werk/Studie":
         return <BriefcaseBusiness {...iconProps} />;
@@ -328,7 +439,7 @@ export default function TaskDetail() {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center h-full text-center">
-          <p className="text-xl text-muted-foreground">{t('taskContext.taskNotFound', { taskId: id })}</p>
+          <p className="text-xl text-muted-foreground">{t('taskContext.taskNotFoundWithNoQuotes', { taskId: id })}</p>
           <Button onClick={() => navigate(-1)} className="mt-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('taskDetail.backButton')}
@@ -338,6 +449,13 @@ export default function TaskDetail() {
     );
   }
 
+  /**
+   * Handles the deletion of the current task.
+   * Navigates to the home page on successful deletion.
+   * Displays toast notifications for success or failure.
+   * @async
+   * @returns {Promise<void>}
+   */
   const handleDelete = async () => {
     try {
       await deleteTask(task.id);
@@ -470,7 +588,7 @@ export default function TaskDetail() {
                     <div className="mt-4 flex flex-wrap items-center gap-2 relative z-10">
                       {task.category && (
                         <Badge variant="outline" className="text-xs h-6 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-sm text-white border-white/10 shadow-md">
-                          {t(getCategoryTranslationKey(task.category))}
+                          {getTranslatedCategory(task.category)}
                         </Badge>
                       )}
                       <Button
@@ -549,7 +667,10 @@ export default function TaskDetail() {
                               style={{ width: `${progressValue}%` }}
                             />
                             {progressValue > 10 && (
-                              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold select-none">
+                              <span 
+                                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold select-none"
+                                style={{ textShadow: '0px 0px 5px rgba(0,0,0,0.6)' }}
+                              >
                                 {Math.round(progressValue)}%
                               </span>
                             )}
@@ -576,17 +697,53 @@ export default function TaskDetail() {
                   "lg:hover:border-white/5"
                 )}
               >
-                <CardHeader className="px-4 py-2 lg:px-4 lg:py-2 relative">
-                  <h3 className="text-xs font-medium text-white/60 uppercase tracking-wider text-center">{t('common.subtasks')}</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 absolute right-3 top-[-2px] rounded-full text-white/70 hover:text-white hover:bg-white/10 z-30 flex items-center justify-center"
-                    onClick={() => setIsDescriptionMinimized(!isDescriptionMinimized)}
-                    aria-label={isDescriptionMinimized ? t('taskDetail.expandDescription') : t('taskDetail.minimizeDescription')}
-                  >
-                    {isDescriptionMinimized ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                  </Button>
+                <CardHeader className="px-4 pt-2 pb-0 lg:px-4 lg:pt-2 lg:pb-0 relative">
+                  <div className="flex justify-between items-center px-1">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                      {t('taskDetail.subtasksTitle')} ({completedSubtasks}/{totalSubtasks})
+                    </h3>
+                    <div className="flex items-center space-x-1">
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                if (subtaskSortOrder === 'default') {
+                                  setSubtaskSortOrder('incompleteFirst');
+                                } else if (subtaskSortOrder === 'incompleteFirst') {
+                                  setSubtaskSortOrder('completedFirst');
+                                } else {
+                                  setSubtaskSortOrder('default');
+                                }
+                              }}
+                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                              aria-label={t('taskDetail.sortSubtasksAriaLabel')}
+                            >
+                              <ArrowUpDown size={16} />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p>
+                              {subtaskSortOrder === 'default' ? t('taskDetail.sort.currentSortDefault') :
+                              subtaskSortOrder === 'incompleteFirst' ? t('taskDetail.sort.currentSortIncompleteFirst') :
+                              t('taskDetail.sort.currentSortCompletedFirst')}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 rounded-full text-white/70 hover:text-white hover:bg-white/10 z-30 flex items-center justify-center"
+                        onClick={() => setIsDescriptionMinimized(!isDescriptionMinimized)}
+                        aria-label={isDescriptionMinimized ? t('taskDetail.expandDescription') : t('taskDetail.minimizeDescription')}
+                      >
+                        {isDescriptionMinimized ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-0 flex flex-col flex-grow h-full overflow-hidden relative max-h-[calc(100%-25px)]">
                   {/* Scrollbare container met flex-grow voor de subtaken */}
@@ -602,7 +759,7 @@ export default function TaskDetail() {
                     <AnimatePresence mode='wait'>
                       {task.subtasks.length > 0 ? (
                         <motion.div key="subtask-list" layout className="w-full">
-                          {task.subtasks.map((subtaskItem: SubTask, index: number) => (
+                          {sortedSubtasks.map((subtaskItem: SubTask, index: number) => (
                             <div key={`subtask-wrapper-${subtaskItem.id}`} className="relative">
                               <SubtaskRow 
                                 task={task}
@@ -780,8 +937,7 @@ export default function TaskDetail() {
                           </div>
                           
                           <DialogPortal>
-                            <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-                            <DialogContent className="sm:max-w-[425px] bg-card/90 backdrop-blur-md border border-white/10 shadow-lg">
+                            <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card/90 backdrop-blur-md p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg sm:max-w-[425px]">
                               <DialogHeader>
                                 <DialogTitle>{t('common.generateSubtasksDialogTitle')}</DialogTitle>
                                 <DialogDescription>
@@ -988,7 +1144,6 @@ export default function TaskDetail() {
       {isEditDialogOpen && (
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogPortal>
-            <DialogOverlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
             <DialogContent className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card/90 backdrop-blur-md border-white/10 p-6 shadow-lg sm:rounded-lg z-50 sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle className="text-2xl">{t('taskDetail.editTaskDialog.title')}</DialogTitle>

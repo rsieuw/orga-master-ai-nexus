@@ -1,13 +1,19 @@
 import { type UserProfile } from '@/types/auth.ts';
 
-// Define all possible features in your application
+/**
+ * Defines all possible features in the application.
+ * This type is used to check user permissions for specific functionalities.
+ * Add more features here as they are implemented in the application.
+ * @example
+ * // | 'someOtherFeature'
+ */
 export type Feature = 
   | 'deepResearch' 
   | 'exportChat' 
   | 'adminPanel'
   | 'choose_research_model'
   | 'chatModes'
-  // Voeg hier meer features toe naarmate je ze implementeert
+  // TODO: Add more features here as you implement them
   // | 'someOtherFeature'
   ;
 
@@ -19,7 +25,7 @@ export type Feature =
  * @returns True if the user has permission, false otherwise.
  */
 export function hasPermission(user: UserProfile | null, feature: Feature): boolean {
-  // TIJDELIJKE DEBUG VERSIE: Geeft altijd true terug voor testing
+  // TEMPORARY DEBUG VERSION: Always returns true for testing
   if (feature === 'deepResearch') {
     return true;
   }

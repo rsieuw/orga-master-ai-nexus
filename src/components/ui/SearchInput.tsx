@@ -3,12 +3,29 @@ import { Input } from "@/components/ui/input.tsx";
 import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 
+/**
+ * Props for the SearchInput component.
+ *
+ * @interface SearchInputProps
+ */
 interface SearchInputProps {
+  /** Placeholder text for the input field. */
   placeholder?: string;
+  /** Additional CSS class names for the component. */
   className?: string;
+  /** Callback function triggered when the input value changes. */
   onChange?: (value: string) => void;
 }
 
+/**
+ * SearchInput component.
+ *
+ * A styled input field with a search icon and a clear button.
+ * It expands on focus and provides a callback for value changes.
+ *
+ * @param {SearchInputProps} props - The props for the component.
+ * @returns {JSX.Element} The rendered SearchInput component.
+ */
 const SearchInput: React.FC<SearchInputProps> = ({
   placeholder = "Search...",
   className = "",
@@ -17,6 +34,11 @@ const SearchInput: React.FC<SearchInputProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
 
+  /**
+   * Handles the change event of the input field.
+   * Updates the internal state and calls the onChange callback.
+   * @param {React.ChangeEvent<HTMLInputElement>} e - The input change event.
+   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
@@ -25,6 +47,10 @@ const SearchInput: React.FC<SearchInputProps> = ({
     }
   };
 
+  /**
+   * Clears the input field value.
+   * Updates the internal state and calls the onChange callback with an empty string.
+   */
   const clearInput = () => {
     setInputValue('');
     if (onChange) {

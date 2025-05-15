@@ -7,7 +7,14 @@ import { Label } from "@/components/ui/label.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { useToast } from "@/hooks/use-toast.ts";
 import { Eye, EyeOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
+/**
+ * `UpdatePasswordPage` component allows users to update their password after a password reset request.
+ * It validates the reset token from the URL, handles password input and confirmation,
+ * and communicates with Supabase to update the user's password.
+ * Displays appropriate loading states, error messages, and success notifications.
+ */
 const UpdatePasswordPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -18,32 +25,47 @@ const UpdatePasswordPage: React.FC = () => {
   const [tokenFound, setTokenFound] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
+  /**
+   * useEffect hook to check for a valid password reset token in the URL hash.
+   * Supabase client automatically handles the token and attempts to recover the session.
+   * This effect verifies if the session was successfully recovered.
+   * If the session is recovered, `tokenFound` is set to true.
+   * If not, an error message is displayed indicating an invalid or expired link.
+   */
   useEffect(() => {
-    // Supabase stuurt de token in de URL hash na een wachtwoord reset.
-    // De Supabase client handelt dit automatisch af en zet de sessie.
-    // We controleren hier of de sessie succesvol is hersteld.
+    // Supabase sends the token in the URL hash after a password reset
+    // The Supabase client handles this automatically and sets the session
+    // We check here if the session was successfully recovered
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setTokenFound(true);
       } else {
-        setError("Ongeldige of verlopen link. Vraag opnieuw wachtwoordherstel aan.");
-        // Optioneel: navigeer weg na een vertraging
+        setError(t("auth.updatePassword.invalidLinkError"));
+        // Optional: navigate away after a delay
         // setTimeout(() => navigate('/login'), 5000);
       }
     };
     checkSession();
-  }, [navigate]);
+  }, [navigate, t]);
 
+  /**
+   * Handles the submission of the password update form.
+   * Prevents default form submission, validates that passwords match and meet length requirements.
+   * If validation passes, it attempts to update the user's password via Supabase.
+   * Displays loading states, success or error toasts, and navigates to login on success.
+   * @param {React.FormEvent<HTMLFormElement>} event - The form submission event.
+   */
   const handlePasswordUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (password !== confirmPassword) {
-      setError('Wachtwoorden komen niet overeen.');
+      setError(t("auth.updatePassword.passwordsMismatchError"));
       return;
     }
     if (password.length < 6) {
-       setError('Wachtwoord moet minimaal 6 tekens lang zijn.');
+       setError(t("auth.updatePassword.passwordTooShortError"));
        return;
     }
     
@@ -60,20 +82,20 @@ const UpdatePasswordPage: React.FC = () => {
       }
 
       toast({
-        title: "Wachtwoord Bijgewerkt",
-        description: "Uw wachtwoord is succesvol bijgewerkt. U kunt nu inloggen.",
+        title: t("auth.updatePassword.success.title"),
+        description: t("auth.updatePassword.success.description"),
       });
-      navigate('/login'); // Stuur gebruiker naar login na succes
+      navigate('/login'); // Redirect user to login after success
     } catch (err) {
       console.error("Password Update error:", err);
-      let errorMessage = 'Er is een fout opgetreden bij het bijwerken van het wachtwoord.';
+      let errorMessage = t("auth.updatePassword.error.defaultMessage");
       if (err instanceof Error) {
         errorMessage = err.message;
       }
       setError(errorMessage);
       toast({
         variant: "destructive",
-        title: "Fout bij Bijwerken",
+        title: t("auth.updatePassword.error.title"),
         description: errorMessage,
       });
     } finally {
@@ -92,16 +114,16 @@ const UpdatePasswordPage: React.FC = () => {
            </svg>
            <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">OrgaMaster AI</span>
          </h1>
-        <p className="mt-2 text-muted-foreground">Stel een nieuw wachtwoord in</p>
+        <p className="mt-2 text-muted-foreground">{t("auth.updatePassword.subtitle")}</p>
       </div>
 
       <Card className="w-full max-w-md mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Nieuw Wachtwoord Instellen</CardTitle>
+          <CardTitle className="text-2xl text-center">{t("auth.updatePassword.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           {!tokenFound && !error && (
-            <p className="text-center text-muted-foreground">Link valideren...</p>
+            <p className="text-center text-muted-foreground">{t("auth.updatePassword.validatingLink")}</p>
           )}
           {error && (
             <p className="text-center text-red-500 mb-4">{error}</p>
@@ -109,7 +131,7 @@ const UpdatePasswordPage: React.FC = () => {
           {tokenFound && (
             <form onSubmit={handlePasswordUpdate} className="space-y-6">
               <div className="space-y-2 relative">
-                <Label htmlFor="password">Nieuw Wachtwoord</Label>
+                <Label htmlFor="password">{t("auth.updatePassword.newPasswordLabel")}</Label>
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -123,11 +145,13 @@ const UpdatePasswordPage: React.FC = () => {
                 />
                 <Button type="button" variant="ghost" size="icon" className="absolute right-2 top-7 h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setShowPassword(!showPassword)}>
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  <span className="sr-only">{showPassword ? "Verberg" : "Toon"} wachtwoord</span>
+                  <span className="sr-only">
+                    {showPassword ? t("auth.updatePassword.hidePassword") : t("auth.updatePassword.showPassword")}
+                  </span>
                 </Button>
               </div>
               <div className="space-y-2 relative">
-                <Label htmlFor="confirm-password">Bevestig Nieuw Wachtwoord</Label>
+                <Label htmlFor="confirm-password">{t("auth.updatePassword.confirmPasswordLabel")}</Label>
                 <Input
                   id="confirm-password"
                   type={showConfirmPassword ? "text" : "password"}
@@ -141,7 +165,9 @@ const UpdatePasswordPage: React.FC = () => {
                 />
                  <Button type="button" variant="ghost" size="icon" className="absolute right-2 top-7 h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                   {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  <span className="sr-only">{showConfirmPassword ? "Verberg" : "Toon"} wachtwoord</span>
+                  <span className="sr-only">
+                    {showConfirmPassword ? t("auth.updatePassword.hidePassword") : t("auth.updatePassword.showPassword")}
+                  </span>
                 </Button>
               </div>
 
@@ -151,7 +177,7 @@ const UpdatePasswordPage: React.FC = () => {
                 size="lg"
                 disabled={isLoading || !tokenFound}
               >
-                {isLoading ? "Bijwerken..." : "Wachtwoord Bijwerken"}
+                {isLoading ? t("auth.updatePassword.updatingButton") : t("auth.updatePassword.updateButton")}
               </Button>
             </form>
           )}

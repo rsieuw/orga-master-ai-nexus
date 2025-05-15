@@ -10,21 +10,53 @@ import { useAuth } from "@/hooks/useAuth.ts";
 import { ResearchMode } from "./hooks/useDeepResearch.ts";
 import { useState } from "react";
 
+/**
+ * Props for the ChatControls component.
+ */
 interface ChatControlsProps {
+  /** Whether the chat is in note-taking mode. */
   isNoteMode: boolean;
+  /** Function to toggle note-taking mode. */
   setIsNoteMode: (isNoteMode: boolean) => void;
+  /** Function to clear chat history. */
   onClearHistory: () => void;
+  /** Optional function to export chat content. */
   onExport?: () => void;
+  /** Function to trigger AI research with the specified mode. */
   onResearch: (mode: ResearchMode) => void;
+  /** Available research modes with their labels, values and icons. */
   researchModeOptions: { labelKey: string; value: ResearchMode; icon?: React.ElementType, descriptionKey: string }[];
+  /** Currently selected research mode. */
   currentResearchMode: ResearchMode;
+  /** Current user profile or null if not authenticated. */
   user: UserProfile | null;
+  /** Whether the chat is in a loading state. */
   isLoading: boolean;
+  /** Whether the AI is currently generating a response. */
   isGenerating: boolean;
+  /** Optional function to cancel ongoing research. */
   onCancelResearch?: () => void;
+  /** Whether to show the cancel button for research. */
   showCancelButton?: boolean;
 }
 
+/**
+ * Chat controls component that provides UI for managing chat-related actions.
+ * 
+ * Provides controls for:
+ * - Starting AI research with different modes
+ * - Toggling note-taking mode
+ * - Selecting AI models
+ * - Clearing chat history
+ * - Exporting chat content (if user has permission)
+ * - Canceling ongoing research operations
+ *
+ * Access to certain features depends on user permissions, which are checked using
+ * the `hasPermission` function.
+ *
+ * @param {ChatControlsProps} props - The props for the ChatControls component.
+ * @returns {JSX.Element} The ChatControls component.
+ */
 export function ChatControls({
   isNoteMode,
   setIsNoteMode,
@@ -43,6 +75,11 @@ export function ChatControls({
   const { aiMode, setAiMode } = useAuth();
   const [isResearchPopoverOpen, setIsResearchPopoverOpen] = useState(false);
 
+  /**
+   * Handles the selection of an AI model, with permission checks for premium models.
+   * 
+   * @param {AIModel['id']} modelId - The ID of the selected AI model.
+   */
   const handleAiModelSelect = (modelId: AIModel['id']) => {
     if (user?.role === 'free' && (modelId === 'creative' || modelId === 'precise')) {
       console.log("Creative and Precise modes are premium features.");

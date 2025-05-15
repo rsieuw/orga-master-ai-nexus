@@ -26,38 +26,72 @@ import { Loader } from "@/components/ui/loader.tsx";
 import { useTranslation } from 'react-i18next';
 import { cn } from "@/lib/utils.ts";
 
-// Define research model provider type from backend
+/**
+ * Type definition for available research model providers.
+ * These typically correspond to different backend services or models
+ * that can be used for the 'deep research' functionality.
+ */
 type ResearchModelProvider = 'perplexity-sonar' | 'gpt4o-mini';
 
-// Define chat model provider type (using same options as research model provider)
+/**
+ * Type definition for available chat model providers.
+ * These correspond to different backend services or models
+ * that can be used for standard chat interactions.
+ * Currently, these reuse the same options as ResearchModelProvider.
+ */
 type ChatModelProvider = 'perplexity-sonar' | 'gpt4o-mini';
 
-// Use labelKey for i18n - AI Chat interaction modes
+/**
+ * Configuration options for AI chat interaction modes.
+ * Each option defines a value, a translation key for its label and description,
+ * and an icon component.
+ */
 const aiModeOptions: { value: AiChatMode; labelKey: string; descriptionKey: string; icon: React.ElementType }[] = [
   { value: 'default', labelKey: 'aiModes.default.name', descriptionKey: 'aiModes.default.description', icon: SlidersHorizontal },
   { value: 'creative', labelKey: 'aiModes.creative.name', descriptionKey: 'aiModes.creative.description', icon: Lightbulb },
   { value: 'precise', labelKey: 'aiModes.precise.name', descriptionKey: 'aiModes.precise.description', icon: Target },
 ];
 
-// Use labelKey for research models modes
+/**
+ * Configuration options for AI research model modes.
+ * Each option defines a value, a translation key for its label and description,
+ * and an icon component. These modes typically define the behavior or
+ * style of the research AI (e.g., factual, creative).
+ */
 const researchModelOptions: { value: ResearchModelMode; labelKey: string; descriptionKey: string; icon: React.ElementType }[] = [
   { value: 'research', labelKey: 'settings.researchModel.research', descriptionKey: 'settings.researchModel.researchDescription', icon: Library },
   { value: 'instruction', labelKey: 'settings.researchModel.instruction', descriptionKey: 'settings.researchModel.instructionDescription', icon: ListOrdered },
   { value: 'creative', labelKey: 'settings.researchModel.creative', descriptionKey: 'settings.researchModel.creativeDescription', icon: Sparkles },
 ];
 
-// Define available research model providers
+/**
+ * Configuration for available research model providers.
+ * Each provider option includes a value (matching `ResearchModelProvider` type),
+ * translation keys for its label and description, and an icon.
+ */
 const researchModelProviders: { value: ResearchModelProvider; labelKey: string; descriptionKey: string; icon: React.ElementType }[] = [
   { value: 'perplexity-sonar', labelKey: 'settings.researchModel.perplexitySonar', descriptionKey: 'settings.researchModel.perplexitySonarDescription', icon: Search },
   { value: 'gpt4o-mini', labelKey: 'settings.researchModel.gpt4oMini', descriptionKey: 'settings.researchModel.gpt4oMiniDescription', icon: Brain },
 ];
 
-// Define available chat model providers - reusing same labels as research model providers
+/**
+ * Configuration for available chat model providers.
+ * Each provider option includes a value (matching `ChatModelProvider` type),
+ * translation keys for its label and description, and an icon.
+ * Reuses some labels from research model providers where applicable.
+ */
 const chatModelProviders: { value: ChatModelProvider; labelKey: string; descriptionKey: string; icon: React.ElementType }[] = [
   { value: 'perplexity-sonar', labelKey: 'settings.researchModel.perplexitySonar', descriptionKey: 'settings.chatModel.perplexitySonarDescription', icon: Search },
   { value: 'gpt4o-mini', labelKey: 'settings.researchModel.gpt4oMini', descriptionKey: 'settings.chatModel.gpt4oMiniDescription', icon: Brain },
 ];
 
+/**
+ * SettingsPage component allows users to configure various aspects of the application.
+ * This includes appearance (theme), account details (name, email), language preferences
+ * (UI and AI interaction), notification settings, AI model preferences (chat and research),
+ * and layout preferences.
+ * It uses tabs to organize different sections of settings.
+ */
 export default function SettingsPage() {
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
@@ -81,7 +115,13 @@ export default function SettingsPage() {
   const [initialLanguageSet, setInitialLanguageSet] = useState(false);
   const [toastLanguage, setToastLanguage] = useState<string | null>(null);
 
-  // Initialize form state when user data is available
+  /**
+   * useEffect hook to initialize form state when user data becomes available
+   * or when the user object changes. It sets the local state for name, email,
+   * language preferences, notification settings, AI mode, research model,
+   * research provider, chat provider, and layout preference based on the
+   * user's saved profile information or defaults if not set.
+   */
   useEffect(() => {
     if (user) {
       setName(user.name || "");
@@ -121,13 +161,23 @@ export default function SettingsPage() {
     }
   }, [user]);
 
+  /**
+   * useEffect hook to track the initialization state of i18next.
+   * Sets `initialLanguageSet` to true once i18n is initialized.
+   * This is used to prevent showing a language change toast on initial load. 
+   */
   useEffect(() => {
     if (i18n.isInitialized) {
         setInitialLanguageSet(true);
     }
   }, [i18n.isInitialized]);
 
-  // New useEffect to show toast AFTER language change is fully processed and component re-rendered
+  /**
+   * useEffect hook to display a toast notification after the UI language has been changed.
+   * This hook triggers when `i18n.language` or `toastLanguage` changes, ensuring the toast
+   * is shown only after the language update is complete and the component has re-rendered.
+   * It uses `initialLanguageSet` to avoid showing a toast on the initial page load.
+   */
   useEffect(() => {
     if (toastLanguage && toastLanguage === i18n.language && initialLanguageSet) {
       const toastTitle = t('settings.toast.uiLanguageChanged.title');
@@ -150,6 +200,12 @@ export default function SettingsPage() {
     }
   }, [i18n.language, toastLanguage, t, toast, initialLanguageSet]); 
 
+  /**
+   * Handles changes to the AI interaction language preference.
+   * Updates the local state and calls `updateUser` to persist the change.
+   * Shows a toast notification on success or failure.
+   * @param {string} value - The new language code (e.g., 'en', 'nl').
+   */
   const handleAiLanguageChange = async (value: string) => {
     setAiLanguage(value);
     try {
@@ -170,6 +226,12 @@ export default function SettingsPage() {
     }
   };
 
+  /**
+   * Handles changes to the UI language.
+   * Calls `i18n.changeLanguage` to update the application's language.
+   * Sets `toastLanguage` to trigger a toast notification upon successful language change.
+   * @param {string} newLang - The new language code (e.g., 'en', 'nl').
+   */
   const handleUiLanguageChange = async (newLang: string) => {
     if (i18n.language !== newLang) { // Only trigger if language actually changes
       await i18n.changeLanguage(newLang);
@@ -177,6 +239,13 @@ export default function SettingsPage() {
     }
   };
 
+  /**
+   * Toggles the email notification preference.
+   * Updates the local state optimistically, then calls `updateUser` to persist the change.
+   * Reverts to the original value and shows an error toast if the update fails.
+   * Shows a success toast on successful update.
+   * @param {boolean} checked - The new state of email notifications (true for enabled, false for disabled).
+   */
   const handleToggleNotifications = async (checked: boolean) => {
     setIsSavingNotifications(true);
     const originalValue = emailNotifications;
@@ -203,6 +272,11 @@ export default function SettingsPage() {
     }
   };
 
+  /**
+   * Handles saving the user's account information (name and email).
+   * Calls `updateUser` to persist the changes.
+   * Shows a toast notification on success or failure.
+   */
   const handleSaveAccount = async () => {
     if (!user) return;
     try {
@@ -221,6 +295,13 @@ export default function SettingsPage() {
     }
   };
 
+  /**
+   * Handles changes to the AI mode preference.
+   * Updates the local state optimistically, then calls `updateUser` to persist the change.
+   * Reverts to the original mode and shows an error toast if the update fails.
+   * Shows a success toast with the translated mode label on successful update.
+   * @param {string} value - The new AI mode value (e.g., 'default', 'creative').
+   */
   const handleAiModeChange = async (value: string) => {
     const newMode = value as AiChatMode;
     setIsSavingAiMode(true);
@@ -248,7 +329,13 @@ export default function SettingsPage() {
     }
   };
 
-  // Handle research model change
+  /**
+   * Handles changes to the research model preference.
+   * Updates the local state optimistically, then calls `updateUser` to persist the change.
+   * Reverts to the original model and shows an error toast if the update fails.
+   * Shows a success toast with the translated model label on successful update.
+   * @param {ResearchModelMode} value - The new research model mode.
+   */
   const handleResearchModelChange = async (value: ResearchModelMode) => {
     // Skip if the value is already set
     if (value === researchModelPreference) return;
@@ -284,7 +371,13 @@ export default function SettingsPage() {
     }
   };
 
-  // Handle research model provider change
+  /**
+   * Handles changes to the research model provider preference.
+   * Updates the local state optimistically, then calls `updateUser` to persist the change.
+   * Reverts to the original provider and shows an error toast if the update fails.
+   * Shows a success toast with the translated provider label on successful update.
+   * @param {ResearchModelProvider} value - The new research model provider.
+   */
   const handleResearchModelProviderChange = async (value: ResearchModelProvider) => {
     // Skip if the value is already set
     if (value === researchModelProvider) return;
@@ -320,7 +413,13 @@ export default function SettingsPage() {
     }
   };
 
-  // Handle chat model provider change
+  /**
+   * Handles changes to the chat model provider preference.
+   * Updates the local state optimistically, then calls `updateUser` to persist the change.
+   * Reverts to the original provider and shows an error toast if the update fails.
+   * Shows a success toast with the translated provider label on successful update.
+   * @param {ChatModelProvider} value - The new chat model provider.
+   */
   const handleChatModelProviderChange = async (value: ChatModelProvider) => {
     // Skip if the value is already set
     if (value === chatModelProvider) return;
@@ -356,7 +455,12 @@ export default function SettingsPage() {
     }
   };
 
-  // Handle layout preference change
+  /**
+   * Handles changes to the layout preference.
+   * Updates the local state and calls `updateUser` to persist the change.
+   * Shows a toast notification on success or failure.
+   * @param {LayoutPreference} value - The new layout preference (e.g., '50-50', '33-67').
+   */
   const handleLayoutPreferenceChange = async (value: LayoutPreference) => {
     const originalLayout = layoutPreference;
     setLayoutPreference(value);
@@ -376,6 +480,11 @@ export default function SettingsPage() {
     }
   };
 
+  /**
+   * Handles changes to the application theme.
+   * Calls `setTheme` from the `useTheme` hook to update the theme.
+   * @param {string} newTheme - The name of the new theme to apply.
+   */
   const handleThemeChange = (newTheme: string) => {
     // Cast string value to Theme type
     setTheme(newTheme as "light" | "dark" | "custom-dark");

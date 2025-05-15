@@ -1,7 +1,12 @@
+/**
+ * @fileoverview Unit tests for the Supabase client initialization.
+ * These tests verify that the Supabase client is created with the correct parameters
+ * and that the client instance is properly exported.
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 
-// Mock de createClient functie
+// Mock the createClient function
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
     auth: {},
@@ -10,19 +15,19 @@ vi.mock('@supabase/supabase-js', () => ({
 }));
 
 describe('Supabase Client', () => {
-  // Importeer de module opnieuw voor elke test om zuivere tests te garanderen
+  // Re-import the module before each test to ensure clean tests
   beforeEach(() => {
     vi.resetModules();
   });
   
-  it('initialiseert de client met de juiste URL en key', async () => {
-    // Dynamisch importeren van client voor elke test
+  it('initializes the client with the correct URL and key', async () => {
+    // Dynamically import the client for each test
     await import('./client.ts');
     
-    // Controleer of createClient is aangeroepen
+    // Check if createClient was called
     expect(createClient).toHaveBeenCalled();
     
-    // Controleer of de eerste parameter een geldige Supabase URL is
+    // Check if the first parameter is a valid Supabase URL
     const calls = vi.mocked(createClient).mock.calls;
     expect(calls.length).toBeGreaterThan(0);
     
@@ -30,17 +35,17 @@ describe('Supabase Client', () => {
     expect(typeof firstArg).toBe('string');
     expect(firstArg).toContain('supabase.co');
     
-    // Controleer of de tweede parameter een string is (de API key)
+    // Check if the second parameter is a string (the API key)
     const secondArg = calls[0][1];
     expect(typeof secondArg).toBe('string');
     expect(secondArg.length).toBeGreaterThan(0);
   });
   
-  it('exporteert de supabase client', async () => {
-    // Dynamisch importeren van client voor elke test
+  it('exports the supabase client', async () => {
+    // Dynamically import the client for each test
     const { supabase } = await import('./client.ts');
     
-    // Controleer of de client een object is
+    // Check if the client is an object
     expect(typeof supabase).toBe('object');
     expect(supabase).not.toBeNull();
   });
