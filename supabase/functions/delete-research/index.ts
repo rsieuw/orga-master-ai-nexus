@@ -33,19 +33,35 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  // Logging variables
+  let userIdForLogging: string | undefined;
+  const functionNameForLogging = 'delete-research';
+  let requestBodyForLogging: Record<string, unknown> = {};
+  let supabaseClient; // Declare here to be accessible in final catch
+
   try {
     // 1. Create Supabase client with Auth context
     const authHeader = req.headers.get('Authorization')!;
-    const supabaseClient = createClient(
+    supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
+      // Create a new client with the user's token for RLS for the main operation
+      { global: { headers: { Authorization: authHeader } } } 
     );
 
     // 2. Get user from Auth context
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    userIdForLogging = user?.id; // Assign userIdForLogging here
+
     if (userError || !user) {
-      // console.error("User authentication error:", userError);
+      // Log an attempt if a user context was partially established or if it's an anonymous attempt
+      if (supabaseClient && userIdForLogging) { // only log if client and user id is available
+          await supabaseClient.from('user_api_logs').insert({
+              user_id: userIdForLogging,
+              function_name: functionNameForLogging,
+              metadata: { success: false, error: 'User not authorized', details: userError?.message },
+          });
+      }
       return new Response(JSON.stringify({ error: 'Not authorized' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
@@ -53,8 +69,29 @@ Deno.serve(async (req) => {
     }
 
     // 3. Parse request body to get the researchId
-    const { researchId } = await req.json();
+    let researchId: string | undefined;
+    try {
+      const body = await req.json();
+      researchId = body.researchId;
+      requestBodyForLogging = { researchId: researchId, userAgent: req.headers.get('user-agent') };
+    } catch (parseError: unknown) {
+      await supabaseClient.from('user_api_logs').insert({
+        user_id: userIdForLogging,
+        function_name: functionNameForLogging,
+        metadata: { success: false, error: 'Invalid JSON in request body', rawError: String(parseError), ...requestBodyForLogging },
+      });
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+    
     if (!researchId || typeof researchId !== 'string') {
+      await supabaseClient.from('user_api_logs').insert({
+        user_id: userIdForLogging,
+        function_name: functionNameForLogging,
+        metadata: { success: false, error: 'Missing or invalid researchId', ...requestBodyForLogging },
+      });
       return new Response(
         JSON.stringify({ error: "Missing or invalid 'researchId' in request body" }),
         { 
@@ -63,6 +100,8 @@ Deno.serve(async (req) => {
         }
       );
     }
+    
+    requestBodyForLogging = { researchId, userId: user.id }; // Update after validation
 
     // 4. Delete data from the saved_research table
     const { count, error: deleteError } = await supabaseClient
@@ -71,41 +110,62 @@ Deno.serve(async (req) => {
       .eq('id', researchId)
       .eq('user_id', user.id); // Extra check: only delete if it belongs to the user
 
-    // ---> NEW: Log the result of the delete operation <---
     console.log(`[delete-research] Attempted delete for researchId: ${researchId}, userId: ${user.id}. Result count: ${count}`);
-    // ---> END NEW <---
 
     if (deleteError) {
-      // console.error("Error deleting saved research:", deleteError);
-      // Differentiate between not found and other errors?
-      // For now, just throw generic error
+      await supabaseClient.from('user_api_logs').insert({
+        user_id: userIdForLogging,
+        function_name: functionNameForLogging,
+        metadata: { success: false, error: `Database error: ${deleteError.message}`, researchId, dbErrorCode: deleteError.code, ...requestBodyForLogging },
+      });
       throw new Error(`Database error: ${deleteError.message}`);
     }
 
-    // ---> NEW: Check if anything was actually deleted <---
     if (count === 0) {
       console.warn(`[delete-research] No research found with id ${researchId} for user ${user.id}, or deletion prevented (e.g., RLS).`);
-      // Decide whether to return an error here or success (if 'not found' is also ok)
-      // For now, we return a milder error message
+      await supabaseClient.from('user_api_logs').insert({
+        user_id: userIdForLogging,
+        function_name: functionNameForLogging,
+        metadata: { success: false, warning: 'Research not found or not deleted', researchId, count, ...requestBodyForLogging },
+      });
       return new Response(JSON.stringify({ 
         warning: `Research with ID ${researchId} not found or could not be deleted.` 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 404, // Or 403 if RLS is more likely
+        status: 404, 
       });
     }
-    // ---> END NEW <---
 
-    // 5. Return success response
+    // 5. Return success response & log
+    await supabaseClient.from('user_api_logs').insert({
+      user_id: userIdForLogging,
+      function_name: functionNameForLogging,
+      metadata: { success: true, researchId, deletedCount: count, ...requestBodyForLogging },
+    });
     // console.log(`Research with ID ${researchId} deleted successfully.`);
     return new Response(JSON.stringify({ message: "Research successfully deleted!" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     // console.error("Error in delete-research function:", error);
     const errorMessage = error instanceof Error ? error.message : "Internal server error while deleting research.";
+    // Ensure supabaseClient is available for logging, might be uninitialized if error is early
+    if (supabaseClient && userIdForLogging) {
+        try {
+            await supabaseClient.from('user_api_logs').insert({
+                user_id: userIdForLogging,
+                function_name: functionNameForLogging,
+                metadata: { success: false, error: 'Generic error in function', rawErrorMessage: errorMessage, ...requestBodyForLogging },
+            });
+        } catch (logError: unknown) {
+            console.error('[delete-research] FAILED TO LOG TO user_api_logs:', logError instanceof Error ? logError.message : String(logError));
+        }
+    } else {
+        console.error('[delete-research] Supabase client or user ID not available for error logging. Original error:', errorMessage);
+    }
+    
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

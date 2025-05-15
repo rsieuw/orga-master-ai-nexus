@@ -69,9 +69,15 @@ serve(async (req) => {
     );
   }
 
+  // Logging variables
+  let userIdForLogging: string | undefined;
+  const functionNameForLogging = 'update-theme-settings';
+  let requestBodyForLogging: Record<string, unknown> = {};
+  let supabaseClient: SupabaseClient | undefined;
+
   try {
     // Create a Supabase client with the Authorization header
-    const supabaseClient: SupabaseClient = createClient( // Typed the client
+    supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
@@ -91,6 +97,9 @@ serve(async (req) => {
       );
     }
 
+    // Store user ID for logging
+    userIdForLogging = user.id;
+
     // Check if user is admin
     const { data: userData, error: userError } = await supabaseClient
       .from('profiles')
@@ -99,6 +108,21 @@ serve(async (req) => {
       .single();
 
     if (userError || !userData || userData.role !== 'admin') {
+      // Log unauthorized attempt to user_api_logs
+      try {
+        await supabaseClient.from('user_api_logs').insert({
+          user_id: userIdForLogging,
+          function_name: functionNameForLogging,
+          metadata: { 
+            success: false, 
+            error: 'Unauthorized: Only administrators can update theme settings',
+            userRole: userData?.role 
+          },
+        });
+      } catch (logError) {
+        console.error('Failed to log unauthorized attempt to user_api_logs:', logError);
+      }
+
       return new Response(
         JSON.stringify({ error: 'Only administrators can update theme settings' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -108,7 +132,28 @@ serve(async (req) => {
     // Get request body
     const requestData: UpdateThemeSettingsRequest = await req.json();
     
+    // Store simplified request data for logging
+    requestBodyForLogging = { 
+      settingsCount: requestData.settings?.length,
+      roles: requestData.settings?.map(s => s.role)
+    };
+    
     if (!requestData.settings || !Array.isArray(requestData.settings)) {
+      // Log invalid request to user_api_logs
+      try {
+        await supabaseClient.from('user_api_logs').insert({
+          user_id: userIdForLogging,
+          function_name: functionNameForLogging,
+          metadata: { 
+            ...requestBodyForLogging,
+            success: false, 
+            error: 'Invalid input: settings array is required' 
+          },
+        });
+      } catch (logError) {
+        console.error('Failed to log invalid request to user_api_logs:', logError);
+      }
+
       return new Response(
         JSON.stringify({ error: 'Invalid input: settings array is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -156,6 +201,21 @@ serve(async (req) => {
     }
 
     // All successful
+    // Log successful updates to user_api_logs
+    try {
+      await supabaseClient.from('user_api_logs').insert({
+        user_id: userIdForLogging,
+        function_name: functionNameForLogging,
+        metadata: { 
+          ...requestBodyForLogging,
+          success: true,
+          rolesUpdated: requestData.settings.map(s => s.role)
+        },
+      });
+    } catch (logError) {
+      console.error('Failed to log successful updates to user_api_logs:', logError);
+    }
+
     return new Response(
       JSON.stringify({ success: true, message: 'Theme settings updated successfully' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -163,6 +223,24 @@ serve(async (req) => {
 
   } catch (err: unknown) {
     console.error('Error in update-theme-settings function:', err);
+    
+    // Log error to user_api_logs if we have the client and user ID
+    if (supabaseClient && userIdForLogging) {
+      try {
+        await supabaseClient.from('user_api_logs').insert({
+          user_id: userIdForLogging,
+          function_name: functionNameForLogging,
+          metadata: { 
+            ...requestBodyForLogging,
+            success: false, 
+            error: 'A server error occurred',
+            rawErrorMessage: err instanceof Error ? err.message : String(err)
+          },
+        });
+      } catch (logError) {
+        console.error('Failed to log error to user_api_logs:', logError);
+      }
+    }
     
     return new Response(
       JSON.stringify({ 

@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UserRole } from '@/types/auth.ts'; // Import UserRole
 import { useTranslation } from 'react-i18next'; // Import useTranslation
 import AdminFeedbackPage from "./AdminFeedbackPage.tsx";
-import { Users, Shield, MessageSquare, Palette } from "lucide-react"; // Import icons for admin tabs
+import AdminApiUsagePage from "./AdminApiUsagePage.tsx"; // Nieuwe import
+import AdminExternalApiUsagePage from "./AdminExternalApiUsagePage.tsx"; // Nieuwe import
+import { Users, Shield, MessageSquare, Palette, Activity } from "lucide-react"; // Import icons for admin tabs
 
 /**
  * `AdminDashboardPage` component serves as the main dashboard for administrators.
@@ -46,6 +48,14 @@ const AdminDashboardPage: React.FC = () => {
           <TabsTrigger value="feedback" className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
             <span className="hidden sm:inline">{t('adminDashboard.tabs.feedback', 'Berichten')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="internalApiUsage" className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            <span className="hidden sm:inline">{t('adminDashboard.tabs.internalApiUsage', 'Intern API Gebruik')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="externalApiUsage" className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            <span className="hidden sm:inline">{t('adminDashboard.tabs.externalApiUsage', 'Extern API Gebruik')}</span>
           </TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-4">
@@ -122,6 +132,28 @@ const AdminDashboardPage: React.FC = () => {
         </TabsContent>
         <TabsContent value="feedback" className="mt-4">
           <AdminFeedbackPage />
+        </TabsContent>
+        <TabsContent value="internalApiUsage" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('adminDashboard.internalApiUsage.title', 'Intern API Verbruik')}</CardTitle>
+              <CardDescription>{t('adminDashboard.internalApiUsage.description', 'Monitor welke gebruikers de interne API functies aanroepen.')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdminApiUsagePage />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="externalApiUsage" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('adminDashboard.externalApiUsage.title', 'Extern API Verbruik')}</CardTitle>
+              <CardDescription>{t('adminDashboard.externalApiUsage.description', 'Monitor het verbruik van externe AI diensten door de API functies.')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdminExternalApiUsagePage />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

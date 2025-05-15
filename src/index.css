@@ -310,6 +310,24 @@
   background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(0, 0, 0, 0) 100%);
 }
 
+/* Verberg het after element op mobiele apparaten */
+@media (max-width: 767px) {
+  .firebase-card::after {
+    display: none;
+  }
+  
+  /* Rechthoekige hoeken voor cards op mobiel */
+  .firebase-card {
+    border-radius: 0 !important;
+  }
+  
+  /* Specifieke Card-Content en Card-Header in TaskDetail voor mobiel */
+  .firebase-card .subtask-card-glow-target,
+  .firebase-card .chat-card-glow-target {
+    border-radius: 0 !important;
+  }
+}
+
 .firebase-card::before {
   content: '';
   position: absolute;

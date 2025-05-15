@@ -251,7 +251,6 @@ export default function SubtaskRow({
   return (
     <div
       ref={combinedRefCallback}
-      key={subtask.id}
       {...eventHandlers}
       className={cn(
         "group/row flex items-center justify-between space-x-3 rounded-md py-1 pl-2 lg:pl-2 pr-2 hover:bg-muted/50 overflow-hidden relative mt-0",
@@ -319,7 +318,8 @@ export default function SubtaskRow({
                   "flex-grow text-sm cursor-pointer hover:text-primary transition-colors text-neutral-200",
                   subtask.completed && "text-gray-700 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-400 line-through"
                 )}
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
                   if (!isEditing) {
                     handleSubtaskLabelClick(subtask.title);
                     setIsDescriptionVisible(!isDescriptionVisible);
@@ -336,7 +336,7 @@ export default function SubtaskRow({
                     animate={{ opacity: 1, height: 'auto', marginTop: '0' }}
                     exit={{ opacity: 0, height: 0, marginTop: 0 }}
                     transition={{ duration: 0.2, ease: "easeInOut" }}
-                    className="text-[9px] text-muted-foreground pl-1 pr-2 whitespace-pre-wrap pb-0.5"
+                    className="text-xs text-muted-foreground pl-1 pr-2 whitespace-pre-wrap pb-0.5"
                   >
                     {subtask.description}
                   </motion.div>

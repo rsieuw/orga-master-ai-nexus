@@ -12,8 +12,8 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
-// Removed import for serve
-import { corsHeaders } from "../_shared/cors.ts"; // Keep CORS headers import
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Import Supabase client
+import { corsHeaders } from "../_shared/cors.ts";
 import { OpenAI } from "https://deno.land/x/openai@v4.52.7/mod.ts";
 
 /**
@@ -57,7 +57,27 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  let userIdForLogging: string | undefined;
+  const functionNameForLogging = 'generate-task-details';
+  let requestBodyForContext: Record<string, unknown> = {};
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+  );
+
+  let openaiModelUsed: string = "gpt-4o-mini"; // Default model for this function
+  let promptTokens: number | undefined;
+  let completionTokens: number | undefined;
+  let totalTokens: number | undefined;
+  let openAIError: { status?: number; message: string; body?: unknown } | null = null;
+  let generatedTaskDetailsForLogging: OpenAIResponse | null = null;
+
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    userIdForLogging = user?.id;
+
     // 1. Get OpenAI API Key from secrets
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     if (!OPENAI_API_KEY) {
@@ -74,15 +94,14 @@ Deno.serve(async (req) => {
     
     try {
        const body = await req.json();
-       userInput = body?.input; // Expecting { "input": "user's idea..." }
-       
-       // Get language preference if provided
+       userInput = body?.input;
        if (body?.languagePreference) {
          languagePreference = body.languagePreference;
        }
+       requestBodyForContext = { userInputLength: userInput?.length, languagePreference }; // For logging
        
        if (!userInput || typeof userInput !== 'string' || userInput.trim() === '') {
-          throw new Error("errors.request.invalidInput"); // Key as message
+          throw new Error("errors.request.invalidInput");
        }
     } catch (e) {
        console.error("Failed to parse request body or invalid input:", e);
@@ -128,67 +147,150 @@ Deno.serve(async (req) => {
 
     // 4. Call OpenAI API (Chat Completions)
     const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+    let chatCompletionUsage;
+
+    try {
     const chatCompletion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+        model: openaiModelUsed,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      // Request JSON output directly if model supports it
       response_format: { type: "json_object" },
-      temperature: 0.5, // Lower temperature for more deterministic results
-      max_tokens: 150, // Limit response length
-    });
+        temperature: 0.5,
+        max_tokens: 150,
+      });
+
+      chatCompletionUsage = chatCompletion.usage;
+      promptTokens = chatCompletionUsage?.prompt_tokens;
+      completionTokens = chatCompletionUsage?.completion_tokens;
+      totalTokens = chatCompletionUsage?.total_tokens;
+      openaiModelUsed = chatCompletion.model || openaiModelUsed; // Update if model in response
 
     const aiResponse = chatCompletion.choices?.[0]?.message?.content;
 
     if (!aiResponse) {
+        openAIError = { message: "errors.ai.noUsableAnswer", body: chatCompletion };
       console.error("OpenAI response did not contain expected content:", chatCompletion);
-      throw new Error("errors.ai.noUsableAnswer"); // Key as message
-    }
-
-    // 5. Parse and validate the response - Updated to include emoji and category
-    let generatedData: OpenAIResponse;
-    try {
-      generatedData = JSON.parse(aiResponse);
-      // Enhanced validation for all fields
+        // Don't throw yet, log first
+      } else {
+        // Attempt to parse and validate immediately after successful OpenAI call
+        try {
+          const parsedResponse = JSON.parse(aiResponse) as OpenAIResponse; // Parse first
+          // Now validate the parsedResponse structure
       if (
-        typeof generatedData.title !== 'string' || 
-        typeof generatedData.description !== 'string' ||
-        typeof generatedData.category !== 'string' ||
-        typeof generatedData.emoji !== 'string'
+            typeof parsedResponse.title === 'string' && 
+            typeof parsedResponse.description === 'string' &&
+            typeof parsedResponse.category === 'string' &&
+            typeof parsedResponse.emoji === 'string'
       ) {
-          throw new Error("errors.ai.invalidJson"); // Key as message
+            generatedTaskDetailsForLogging = parsedResponse; // Assign if valid
+          } else {
+              openAIError = { message: "errors.ai.invalidJson", body: aiResponse };
+              console.error("OpenAI response JSON structure invalid:", aiResponse);
+              // generatedTaskDetailsForLogging remains null
       }
     } catch (e) {
-      console.error("Failed to parse OpenAI JSON response:", aiResponse, e);
-      const key = (e instanceof Error && e.message === "errors.ai.invalidJson") 
-                  ? e.message 
-                  : "errors.ai.processingFailed";
-      throw new Error(key); // Key as message
+          openAIError = { message: "errors.ai.processingFailed", body: aiResponse };
+          console.error("Failed to parse OpenAI JSON response for logging:", aiResponse, e);
+          generatedTaskDetailsForLogging = null; // Clear if parsing failed
+        }
+      }
+    } catch (e: unknown) { // Explicitly type e as unknown
+        console.error("OpenAI API call failed:", e);
+        const status = (typeof e === 'object' && e !== null && typeof (e as Record<string, unknown>).status === 'number')
+            ? (e as Record<string, unknown>).status as number
+            : undefined;
+
+        openAIError = { 
+            message: e instanceof Error ? e.message : "errors.ai.apiCallFailed", 
+            status // Use the derived status
+        };
+    }
+    
+    // Log external API call (OpenAI)
+    try {
+      await supabase.from('external_api_usage_logs').insert({
+        user_id: userIdForLogging,
+        // task_id: null, // No specific task_id for initial generation
+        service_name: 'OpenAI',
+        function_name: 'chatCompletionsCreate', // More specific function
+        tokens_prompt: promptTokens,
+        tokens_completion: completionTokens,
+        tokens_total: totalTokens,
+        // cost: calculateCost(...), // Implement if needed
+        metadata: { 
+          model: openaiModelUsed,
+          languagePreference,
+          success: !openAIError, 
+          error: openAIError ? openAIError : undefined,
+          // response_id: chatCompletion.id, // If available and needed
+        },
+      });
+    } catch (logError) {
+      console.error('Failed to log to external_api_usage_logs', logError);
+    }
+
+    // If OpenAI call or parsing failed, throw to be caught by the main catch block
+    if (openAIError) {
+      throw new Error(openAIError.message); // This will be caught and logged as internal failure
+    }
+    if (!generatedTaskDetailsForLogging) { // Should be redundant if openAIError is handled
+        throw new Error("errors.ai.noUsableAnswer"); // Fallback
+    }
+    
+    // Log internal API call SUCCESS
+    try {
+      await supabase.from('user_api_logs').insert({
+        user_id: userIdForLogging,
+        function_name: functionNameForLogging,
+        metadata: { 
+          ...requestBodyForContext, 
+          success: true, 
+          generatedTitleLength: generatedTaskDetailsForLogging!.title.length // Added non-null assertion as it's checked before
+        },
+      });
+    } catch (logError) {
+      console.error('Failed to log SUCCESS to user_api_logs', logError);
     }
 
     // 6. Return the generated title, description, category and emoji
     return new Response(
-      JSON.stringify(generatedData),
+      JSON.stringify(generatedTaskDetailsForLogging),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {
     let errorKey = "errors.internal.generateTaskDetails"; // Default fallback key
     if (error instanceof Error) {
-      // Check if the message is already one of our defined keys
       const knownKeys = [
         "errors.request.invalidInput", 
         "errors.ai.noUsableAnswer", 
         "errors.ai.invalidJson", 
-        "errors.ai.processingFailed"
+        "errors.ai.processingFailed",
+        "errors.ai.apiCallFailed" // Added from OpenAI try-catch
       ];
       if (knownKeys.includes(error.message)) {
         errorKey = error.message;
       }
-      // Note: errors.api.configMissing and errors.request.invalidBody are already handled directly with JSON.stringify({ errorKey: ... }).
     }
+    
+    // Log internal API call FAILURE
+    try {
+      await supabase.from('user_api_logs').insert({
+        user_id: userIdForLogging,
+        function_name: functionNameForLogging,
+        metadata: { 
+          ...requestBodyForContext, 
+          success: false, 
+          error: errorKey, 
+          rawErrorMessage: error instanceof Error ? error.message : String(error) 
+        },
+      });
+    } catch (logError) {
+      console.error('Failed to log FAILURE to user_api_logs', logError);
+    }
+
     return new Response(JSON.stringify({ errorKey: errorKey }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

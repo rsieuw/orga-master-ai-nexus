@@ -135,8 +135,35 @@ serve(async (req) => {
   const body = await req.text()
   const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SIGNING_SECRET')
 
+  // Logging variables
+  const functionNameForLogging = 'stripe-webhooks';
+  let requestBodyForLogging: Record<string, unknown> = {};
+  let eventType: string | undefined;
+  let eventId: string | undefined;
+  let userId: string | undefined; // Will be populated when we have a customer ID that maps to a user
+  let stripeCustomerId: string | undefined;
+
   if (!signature || !webhookSecret) {
     console.error('Missing Stripe signature or webhook secret.')
+    
+    // Log error without userId
+    try {
+      await supabaseAdmin.from('user_api_logs').insert({
+        // No user_id available
+        function_name: functionNameForLogging,
+        metadata: { 
+          success: false, 
+          error: 'Missing Stripe signature or webhook secret',
+          headers: { 
+            'stripe-signature': !!signature, 
+            'webhook-secret-configured': !!webhookSecret 
+          }
+        },
+      });
+    } catch (logError) {
+      console.error('Failed to log missing signature/secret to user_api_logs:', logError);
+    }
+    
     return new Response('Webhook Error: Missing signature or secret.', { status: 400 })
   }
 
@@ -149,9 +176,37 @@ serve(async (req) => {
       undefined,
       Stripe.createSubtleCryptoProvider() // Use Deno's SubtleCrypto
     )
+    eventType = event.type;
+    eventId = event.id;
+    
+    // Basic logging information
+    requestBodyForLogging = {
+      eventType,
+      eventId,
+      endpoint: req.url,
+      timestamp: new Date().toISOString(),
+    };
+    
     console.log(`Webhook event received: ${event.type} [${event.id}]`)
   } catch (err) {
     console.error(`Webhook signature verification failed: ${err.message}`)
+    
+    // Log signature verification error without userId
+    try {
+      await supabaseAdmin.from('user_api_logs').insert({
+        // No user_id available
+        function_name: functionNameForLogging,
+        metadata: { 
+          success: false, 
+          error: 'Webhook signature verification failed',
+          errorMessage: err.message,
+          ...requestBodyForLogging
+        },
+      });
+    } catch (logError) {
+      console.error('Failed to log signature verification error to user_api_logs:', logError);
+    }
+    
     return new Response(`Webhook signature verification failed: ${err.message}`, { status: 400 })
   }
 
@@ -171,6 +226,22 @@ serve(async (req) => {
                throw new Error('Customer ID missing in checkout session.');
              }
 
+             stripeCustomerId = customerId;
+             // Try to get the Supabase user ID from the Stripe customer ID
+             try {
+               const { data: customerData } = await supabaseAdmin
+                 .from('customers')
+                 .select('id') // id is the user_id in the customers table
+                 .eq('stripe_customer_id', customerId)
+                 .single();
+               
+               if (customerData?.id) {
+                 userId = customerData.id;
+               }
+             } catch (lookupError) {
+               console.error('Error looking up user ID from customer ID:', lookupError);
+             }
+
              await manageSubscriptionStatusChange(subscriptionId, customerId);
           } else {
              console.log(`Ignoring checkout session [${session.id}] (mode: ${session.mode}).`)
@@ -183,6 +254,24 @@ serve(async (req) => {
           const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
           const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
 
+          if (customerId) {
+            stripeCustomerId = customerId;
+            // Try to get the Supabase user ID from the Stripe customer ID
+            try {
+              const { data: customerData } = await supabaseAdmin
+                .from('customers')
+                .select('id') // id is the user_id in the customers table
+                .eq('stripe_customer_id', customerId)
+                .single();
+              
+              if (customerData?.id) {
+                userId = customerData.id;
+              }
+            } catch (lookupError) {
+              console.error('Error looking up user ID from customer ID:', lookupError);
+            }
+          }
+
           if (subscriptionId && customerId) {
             await manageSubscriptionStatusChange(subscriptionId, customerId);
           } else {
@@ -194,6 +283,26 @@ serve(async (req) => {
         case 'customer.subscription.updated':
         case 'customer.subscription.deleted': {
           const subscription = event.data.object as Stripe.Subscription;
+          const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
+          
+          if (customerId) {
+            stripeCustomerId = customerId;
+            // Try to get the Supabase user ID from the Stripe customer ID
+            try {
+              const { data: customerData } = await supabaseAdmin
+                .from('customers')
+                .select('id') // id is the user_id in the customers table
+                .eq('stripe_customer_id', customerId)
+                .single();
+              
+              if (customerData?.id) {
+                userId = customerData.id;
+              }
+            } catch (lookupError) {
+              console.error('Error looking up user ID from customer ID:', lookupError);
+            }
+          }
+          
           await upsertSubscriptionRecord(subscription); // `upsert` handles create, update, and delete (via status)
           break;
         }
@@ -201,12 +310,68 @@ serve(async (req) => {
           console.log(`Unhandled relevant event type: ${event.type}`)
       }
        console.log(`Successfully processed event: ${event.type} [${event.id}]`)
+       
+       // Log success to user_api_logs
+       try {
+         await supabaseAdmin.from('user_api_logs').insert({
+           user_id: userId, // May be undefined for some events
+           function_name: functionNameForLogging,
+           metadata: { 
+             success: true, 
+             eventType: event.type,
+             eventId: event.id,
+             stripeCustomerId,
+             hasUserId: !!userId,
+             ...requestBodyForLogging
+           },
+         });
+       } catch (logError) {
+         console.error('Failed to log webhook success to user_api_logs:', logError);
+       }
     } catch (error) {
       console.error(`Error processing event ${event.type} [${event.id}]:`, error)
+      
+      // Log processing error to user_api_logs
+      try {
+        await supabaseAdmin.from('user_api_logs').insert({
+          user_id: userId, // May be undefined
+          function_name: functionNameForLogging,
+          metadata: { 
+            success: false, 
+            error: `Error processing event ${event.type}`,
+            errorMessage: error.message,
+            eventId: event.id,
+            stripeCustomerId,
+            hasUserId: !!userId,
+            ...requestBodyForLogging
+          },
+        });
+      } catch (logError) {
+        console.error('Failed to log processing error to user_api_logs:', logError);
+      }
+      
       return new Response(`Webhook handler failed: ${error.message}`, { status: 500 })
     }
   } else {
     console.log(`Ignoring irrelevant event type: ${event.type}`)
+    
+    // Optionally log ignored events
+    try {
+      await supabaseAdmin.from('user_api_logs').insert({
+        // No user_id for irrelevant events
+        function_name: functionNameForLogging,
+        metadata: { 
+          success: true, 
+          ignored: true,
+          reason: 'Irrelevant event type',
+          eventType: event.type,
+          eventId: event.id,
+          ...requestBodyForLogging
+        },
+      });
+    } catch (logError) {
+      console.error('Failed to log ignored event to user_api_logs:', logError);
+    }
   }
 
   // Return a 200 OK response to Stripe

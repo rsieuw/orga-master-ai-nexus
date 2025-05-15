@@ -346,7 +346,7 @@ export default function TaskDetail() {
     }
   }, [id, task, markTaskAsViewed]);
 
-  // Functie om de juiste vertaalsleutel voor een categorie te vinden
+  // Function to find the correct translation key for a category
   /**
    * Finds the translation key for a given category string.
    * @param {string} category - The category string (e.g., "Werk/Studie").
@@ -357,7 +357,7 @@ export default function TaskDetail() {
     return index !== -1 ? TASK_CATEGORY_KEYS[index] : category;
   };
 
-  // Vertaalde categorienaam ophalen
+  // Get translated category name
   /**
    * Gets the translated name for a given category string using its translation key.
    * @param {string} [category] - The category string.
@@ -369,7 +369,7 @@ export default function TaskDetail() {
     return t(translationKey);
   };
 
-  // Functie voor het achtergrondicoon met aanpassing voor elke prioriteitskleur
+  // Function for background icon with adjustment for each priority color
   /**
    * Gets the appropriate background icon component for a given task category.
    * The icon's color is adjusted based on the task's priority.
@@ -377,17 +377,16 @@ export default function TaskDetail() {
    * @returns {JSX.Element | null} The icon component or null if the category is not recognized.
    */
   const getCategoryBackgroundIcon = (category?: string) => {
-    // Vaste opaciteit voor alle iconen (natuurlijke opacity via CSS styling)
     // Fixed opacity for all icons (natural opacity via CSS styling)
     const getIconClass = (priority?: string) => {
       if (priority === 'high') {
-        return "text-[rgb(175,36,42)] opacity-40"; // Kleur voor hoge prioriteit // Color for high priority
+        return "text-[rgb(175,36,42)] opacity-40"; // Color for high priority
       } else if (priority === 'medium') {
-        return "text-[rgb(227,131,6)] opacity-40"; // Kleur voor medium prioriteit // Color for medium priority
+        return "text-[rgb(227,131,6)] opacity-40"; // Color for medium priority
       } else if (priority === 'low') {
-        return "text-[#c1ccf5] opacity-40"; // Kleur voor lage prioriteit // Color for low priority
+        return "text-[#c1ccf5] opacity-40"; // Color for low priority
       } else {
-        return "text-gray-300 opacity-40"; // Standaard kleur // Default color
+        return "text-gray-300 opacity-40"; // Default color
       }
     };
 
@@ -397,11 +396,9 @@ export default function TaskDetail() {
       strokeWidth: 0.6 
     };
     
-    // Gebruik Sparkles component uit bestaande import
+    // Use Sparkles component from existing import
     const SparklesIcon = Sparkles;
     
-    // Gebruik de Nederlandse categorienamen voor de icons
-    // Dit is nodig omdat de database nog steeds de Nederlandse namen gebruikt
     // Use Dutch category names for icons as the database still uses them.
     switch(category) {
       case "Werk/Studie":
@@ -474,8 +471,8 @@ export default function TaskDetail() {
   };
 
   return (
-    <AppLayout>
-      <div className="relative">
+    <AppLayout noPadding>
+      <div className="relative pb-20 mb-4 md:container md:mx-auto md:px-4 md:pt-8 md:pb-4">
         <Button
           variant="ghost"
           size="icon"
@@ -557,14 +554,14 @@ export default function TaskDetail() {
                             </div>
                           </TooltipTrigger>
                           <TooltipContent 
-                            side="bottom" 
-                            align="end" 
-                            sideOffset={5} 
-                            alignOffset={5}
+                            side="left" 
+                            align="center" 
+                            sideOffset={8} 
+                            alignOffset={0}
                             avoidCollisions
-                            className="bg-popover/90 backdrop-blur-lg px-3 py-2 max-w-[200px] z-50 whitespace-normal break-words"
+                            className="bg-popover/90 backdrop-blur-lg px-3 py-2 max-w-[300px] z-50 whitespace-normal break-words"
                           >
-                            <p>{deadlineText}</p>
+                            <p className="text-sm font-medium">{deadlineText}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -580,7 +577,7 @@ export default function TaskDetail() {
                     ? "opacity-0 max-h-0 transform translate-y-[-10px] overflow-hidden" 
                     : "opacity-100 transform translate-y-0"
                 )}>
-                  <div className="p-6 pt-0 flex flex-col flex-grow min-h-0 px-0 pb-0 lg:p-6 lg:pt-0">
+                  <div className="flex flex-col flex-grow min-h-0 px-4 pb-4 pt-0 sm:px-6 sm:pb-6 sm:pt-0">
                     <TaskInfoDisplay
                       task={task}
                       isInfoCollapsed={isInfoCollapsed}
@@ -644,42 +641,42 @@ export default function TaskDetail() {
                               ${task?.priority === 'low' ? 'text-cyan-400' : ''}
                               ${task?.priority !== 'high' && task?.priority !== 'medium' && task?.priority !== 'low' ? 'text-slate-400' : ''}
                             `}>
-                              <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
-                              <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                            <span className={`text-xs flex-shrink-0 mr-2
-                                ${task?.priority === 'high' ? 'text-red-400' : ''}
-                                ${task?.priority === 'medium' ? 'text-amber-400' : ''}
-                                ${task?.priority === 'low' ? 'text-cyan-400' : ''}
-                                ${task?.priority !== 'high' && task?.priority !== 'medium' && task?.priority !== 'low' ? 'text-slate-400' : ''}
-                              `}>
-                              {completedSubtasks}/{totalSubtasks}
-                            </span>
-                          </div>
-                          <div className="relative w-full h-3.5 bg-white/20 backdrop-blur-md rounded-full overflow-hidden flex-grow shadow-md">
-                            <div
-                              className={`h-full rounded-full transition-all duration-300
-                                ${task?.priority === 'high' ? 'bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 shadow-[0_0_8px_2px_rgba(244,63,94,0.4)]' : ''}
-                                ${task?.priority === 'medium' ? 'bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.4)]' : ''}
-                                ${task?.priority === 'low' ? 'bg-gradient-to-r from-blue-500 via-cyan-400 to-teal-400 shadow-[0_0_8px_2px_rgba(34,211,238,0.4)]' : ''}
-                                ${task?.priority !== 'high' && task?.priority !== 'medium' && task?.priority !== 'low' ? 'bg-gradient-to-r from-slate-400 to-slate-500 shadow-[0_0_8px_2px_rgba(100,116,139,0.3)]' : ''}
-                              `}
-                              style={{ width: `${progressValue}%` }}
-                            />
-                            {progressValue > 10 && (
-                              <span 
-                                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold select-none"
-                                style={{ textShadow: '0px 0px 5px rgba(0,0,0,0.6)' }}
-                              >
-                                {Math.round(progressValue)}%
-                              </span>
-                            )}
-                          </div>
-                          <span className="sr-only">
-                            ({Math.round(progressValue)}%)
+                            <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+                            <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          <span className={`text-xs flex-shrink-0 mr-2
+                              ${task?.priority === 'high' ? 'text-red-400' : ''}
+                              ${task?.priority === 'medium' ? 'text-amber-400' : ''}
+                              ${task?.priority === 'low' ? 'text-cyan-400' : ''}
+                              ${task?.priority !== 'high' && task?.priority !== 'medium' && task?.priority !== 'low' ? 'text-slate-400' : ''}
+                            `}>
+                            {completedSubtasks}/{totalSubtasks}
                           </span>
                         </div>
-                      )}
+                        <div className="relative w-full h-3.5 bg-white/20 backdrop-blur-md rounded-full overflow-hidden flex-grow shadow-md">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300
+                              ${task?.priority === 'high' ? 'bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 shadow-[0_0_8px_2px_rgba(244,63,94,0.4)]' : ''}
+                              ${task?.priority === 'medium' ? 'bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.4)]' : ''}
+                              ${task?.priority === 'low' ? 'bg-gradient-to-r from-blue-500 via-cyan-400 to-teal-400 shadow-[0_0_8px_2px_rgba(34,211,238,0.4)]' : ''}
+                              ${task?.priority !== 'high' && task?.priority !== 'medium' && task?.priority !== 'low' ? 'bg-gradient-to-r from-slate-400 to-slate-500 shadow-[0_0_8px_2px_rgba(100,116,139,0.3)]' : ''}
+                            `}
+                            style={{ width: `${progressValue}%` }}
+                          />
+                          {progressValue > 10 && (
+                            <span 
+                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold select-none"
+                              style={{ textShadow: '0px 0px 5px rgba(0,0,0,0.6)' }}
+                            >
+                              {Math.round(progressValue)}%
+                            </span>
+                          )}
+                        </div>
+                        <span className="sr-only">
+                          ({Math.round(progressValue)}%)
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               )}
@@ -697,12 +694,12 @@ export default function TaskDetail() {
                   "lg:hover:border-white/5"
                 )}
               >
-                <CardHeader className="px-4 pt-2 pb-0 lg:px-4 lg:pt-2 lg:pb-0 relative">
+                <CardHeader className="px-4 pt-2 pb-0.5 lg:px-4 lg:pt-2 lg:pb-0.5 relative">
                   <div className="flex justify-between items-center px-1">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">
                       {t('taskDetail.subtasksTitle')} ({completedSubtasks}/{totalSubtasks})
                     </h3>
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center space-x-2">
                       <TooltipProvider delayDuration={100}>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -718,13 +715,13 @@ export default function TaskDetail() {
                                   setSubtaskSortOrder('default');
                                 }
                               }}
-                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                              className="h-6 w-6 text-muted-foreground/60 hover:text-muted-foreground"
                               aria-label={t('taskDetail.sortSubtasksAriaLabel')}
                             >
-                              <ArrowUpDown size={16} />
+                              <ArrowUpDown size={14} />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent side="bottom">
+                          <TooltipContent side="left" align="center" alignOffset={5}>
                             <p>
                               {subtaskSortOrder === 'default' ? t('taskDetail.sort.currentSortDefault') :
                               subtaskSortOrder === 'incompleteFirst' ? t('taskDetail.sort.currentSortIncompleteFirst') :
@@ -733,27 +730,38 @@ export default function TaskDetail() {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 rounded-full text-white/70 hover:text-white hover:bg-white/10 z-30 flex items-center justify-center"
-                        onClick={() => setIsDescriptionMinimized(!isDescriptionMinimized)}
-                        aria-label={isDescriptionMinimized ? t('taskDetail.expandDescription') : t('taskDetail.minimizeDescription')}
-                      >
-                        {isDescriptionMinimized ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                      </Button>
+                      
+                      {/* Toggle button (right positioned) */}
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 z-30 flex items-center justify-center backdrop-blur-sm shadow-md"
+                              onClick={() => setIsDescriptionMinimized(!isDescriptionMinimized)}
+                              aria-label={isDescriptionMinimized ? t('taskDetail.expandDescription') : t('taskDetail.minimizeDescription')}
+                            >
+                              {isDescriptionMinimized ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" align="center">
+                            <p>{isDescriptionMinimized ? t('taskDetail.expandDescription') : t('taskDetail.minimizeDescription')}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0 flex flex-col flex-grow h-full overflow-hidden relative max-h-[calc(100%-25px)]">
-                  {/* Scrollbare container met flex-grow voor de subtaken */}
+                  {/* Scrollable container with flex-grow for subtasks */}
                   <div className={cn(
                     // Base padding
-                    "pl-4 pt-1 pb-2", // Linker en verticale padding blijven constant
-                    task.subtasks.length > 9 ? "pr-2 lg:pr-2" : "pr-4 lg:pr-4", // Conditionele rechter padding
-                    // Scrollbare container die automatisch groeit maar krimpt bij overflow
-                    "flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-primary scrollbar-track-neutral-200 dark:scrollbar-track-neutral-800 scrollbar-thumb-rounded max-h-[calc(100%-80px)]",
-                    // Conditonele styling
+                    "pl-4 pt-1 pb-2", // Left and vertical padding remain constant
+                    task.subtasks.length > 9 ? "pr-2 lg:pr-2" : "pr-4 lg:pr-4", // Conditional right padding
+                    // Scrollable container that automatically grows but shrinks on overflow
+                    "flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-primary scrollbar-track-neutral-200 dark:scrollbar-track-neutral-800 scrollbar-thumb-rounded max-h-full lg:max-h-[calc(100%-80px)]",
+                    // Conditional styling
                     task.subtasks.length === 0 && "flex items-center justify-center"
                   )}>
                     <AnimatePresence mode='wait'>
@@ -860,12 +868,12 @@ export default function TaskDetail() {
                     </AnimatePresence>
                   </div>
                   
-                  {/* Knoppenbalk als aparte flex-item zodat deze onderaan blijft en niet scroll */}
-                  <div className="flex-shrink-0 px-4 pt-2 pb-3 lg:px-6 lg:pt-3 lg:pb-3 border-t border-border bg-card/80 backdrop-blur-md">
+                  {/* Button bar as separate flex item so it stays at the bottom and doesn't scroll */}
+                  <div className="hidden lg:flex lg:flex-col flex-shrink-0 px-4 pt-2 pb-3 lg:px-6 lg:pt-3 lg:pb-3 border-t border-border bg-card/80 backdrop-blur-md">
                     <div className="flex items-center flex-wrap gap-3 justify-center mb-1">
                       {showAddSubtaskForm ? (
                         <form onSubmit={handleAddSubtask} className="flex items-center gap-3 flex-grow">
-                          <label htmlFor="new-subtask-title-desktop" className="sr-only">{t('taskDetail.newSubtaskTitleLabel', 'Titel nieuwe subtaak')}</label>
+                          <label htmlFor="new-subtask-title-desktop" className="sr-only">{t('taskDetail.newSubtaskTitleLabel', 'Title for new subtask')}</label>
                           <Input
                             id="new-subtask-title-desktop"
                             name="new-subtask-title-desktop"
@@ -944,11 +952,12 @@ export default function TaskDetail() {
                                   {t('common.generateSubtasksDialogDescription', { taskTitle: task?.title })}
                                 </DialogDescription>
                               </DialogHeader>
-                              <div className="mt-4 space-y-3">
+                              <div className="mt-4 flex flex-row gap-3">
+                                <AlertDialogCancel className="flex-1 h-12 bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
                                 <Button
                                   disabled={isGeneratingSubtasksForTask(task.id) || isLimitReached}
                                   variant="default"
-                                  className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
+                                  className="flex-1 h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
                                   onClick={handleGenerateSubtasks}
                                 >
                                   {isGeneratingSubtasksForTask(task.id) ? (
@@ -960,9 +969,6 @@ export default function TaskDetail() {
                                     t('taskDetail.generateSubtasks.confirmButton')
                                   )}
                                 </Button>
-                                <DialogClose asChild>
-                                  <Button variant="outline" className="w-full h-12 bg-secondary/80 border-white/10">{t('common.cancel')}</Button>
-                                </DialogClose>
                               </div>
                             </DialogContent>
                           </DialogPortal>
@@ -1004,10 +1010,8 @@ export default function TaskDetail() {
               "lg:flex-[1_1_auto]",
               activeMobileView === 'details' ? 'hidden lg:flex' : 'flex w-full lg:w-auto',
               activeMobileView === 'chat' && 'h-full p-0',
-              "lg:border lg:border-solid lg:border-white/10",
-              priorityStyles.backgroundClass,
-              priorityStyles.shadowClass,
-              "lg:hover:border-white/10"
+              "lg:border-0", /* Verwijder de border van het chatvenster */
+              "lg:hover:border-0" /* Verwijder ook de hover border */
             )}
             style={globalThis.innerWidth >= 1024 ? { width: `${columnSizes.right}%` } : { /* Do not explicitly set height here, let flexbox do the work */ }}
           >
@@ -1119,11 +1123,12 @@ export default function TaskDetail() {
                 {t('common.generateSubtasksDialogDescription', { taskTitle: task?.title })}
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 flex flex-row gap-3">
+              <AlertDialogCancel className="flex-1 h-12 bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
               <Button
                 disabled={isGeneratingSubtasksForTask(task.id) || isLimitReached}
                 variant="default"
-                className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
+                className="flex-1 h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
                 onClick={handleGenerateSubtasks}
               >
                 {isGeneratingSubtasksForTask(task.id) ? (
@@ -1135,7 +1140,6 @@ export default function TaskDetail() {
                   t('taskDetail.generateSubtasks.confirmButton')
                 )}
               </Button>
-              <AlertDialogCancel className="w-full h-12 bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
             </div>
           </AlertDialogContent>
         </AlertDialogPortal>

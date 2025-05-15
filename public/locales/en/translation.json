@@ -232,7 +232,9 @@
       "users": "Users",
       "permissions": "Permissions",
       "themes": "Themes",
-      "feedback": "Feedback"
+      "feedback": "Feedback",
+      "internalApiUsage": "Internal API Usage",
+      "externalApiUsage": "External API Usage"
     },
     "users": {
       "title": "User management",
@@ -259,6 +261,14 @@
     "themes": {
       "title": "Theme settings",
       "description": "Manage which themes are available to each user role."
+    },
+    "internalApiUsage": {
+      "title": "Internal API Usage",
+      "description": "Monitor which users are calling the internal API functions."
+    },
+    "externalApiUsage": {
+      "title": "External API Usage",
+      "description": "Monitor the consumption of external AI services by the API functions."
     }
   },
   "adminUsersPage": {
@@ -381,7 +391,12 @@
       "description": "Are you sure you want to delete user {{email}}? This action cannot be undone and will permanently delete the user and all associated data.",
       "success": "User {{email}} successfully deleted.",
       "error": "Error deleting user."
-    }
+    },
+    "permissions": "Permissions",
+    "themes": "Themes",
+    "feedback": "Feedback",
+    "internalApiUsage": "Internal API Usage",
+    "externalApiUsage": "External API Usage"
   },
   "adminPermissionsPage": {
     "features": {
@@ -620,7 +635,8 @@
     "subtasksTitle": "Subtasks",
     "sortSubtasksAriaLabel": "Sort subtasks",
     "sort": {
-      "currentSortDefault": "Current sort: Default"
+      "currentSortDefault": "Current sort: Default",
+      "currentSortIncompleteFirst": "Current sort: Incomplete First"
     },
     "taskOptionsSR": "Task options",
     "editTask": "Edit task",
@@ -1344,6 +1360,46 @@
         "read": "Read",
         "unread": "Unread",
         "handled": "Handled"
+    }
+  },
+  "adminApiUsagePage": {
+    "title": "API Usage",
+    "tableHeaders": {
+      "user": "User",
+      "functionName": "Function Name",
+      "callCount": "Call Count",
+      "lastCalledAt": "Last Called At"
+    },
+    "noLogs": "No API usage logs found."
+  },
+  "adminExternalApiUsagePage": {
+    "title": "External API Usage",
+    "loadingMore": "Loading more logs...",
+    "tableHeaders": {
+      "timestamp": "Timestamp",
+      "user": "User",
+      "service": "Service",
+      "function": "Function",
+      "promptTokens": "Prompt Tokens",
+      "completionTokens": "Completion Tokens",
+      "totalTokens": "Total Tokens",
+      "cost": "Cost",
+      "status": "Status",
+      "details": "Details"
+    },
+    "status": {
+      "success": "Success",
+      "failed": "Failed",
+      "unknown": "Unknown"
+    },
+    "noLogs": "No external API usage logs found.",
+    "toastTitles": {
+      "fetchError": "Error Fetching Logs",
+      "fetchUsersError": "Error Fetching Users"
+    },
+    "errors": {
+      "unknownError": "An unknown error occurred.",
+      "fetchLogsError": "Error fetching external API logs."
     }
   },
   "taskForm": {

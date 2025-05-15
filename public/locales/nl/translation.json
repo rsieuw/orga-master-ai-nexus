@@ -361,7 +361,9 @@
       "users": "Gebruikers",
       "permissions": "Machtigingen",
       "themes": "Thema's",
-      "feedback": "Berichten"
+      "feedback": "Berichten",
+      "internalApiUsage": "Intern API Gebruik",
+      "externalApiUsage": "Extern API Gebruik"
     },
     "users": {
       "title": "Gebruikersbeheer",
@@ -388,6 +390,14 @@
     "themes": {
       "title": "Thema-instellingen",
       "description": "Beheer welke thema's beschikbaar zijn voor elke gebruikersrol."
+    },
+    "internalApiUsage": {
+      "title": "Intern API Verbruik",
+      "description": "Monitor welke gebruikers de interne API functies aanroepen."
+    },
+    "externalApiUsage": {
+      "title": "Extern API Verbruik",
+      "description": "Monitor het verbruik van externe AI diensten door de API functies."
     }
   },
   "adminUsersPage": {
@@ -778,7 +788,8 @@
     "subtasksTitle": "Subtaken",
     "sortSubtasksAriaLabel": "Sorteer subtaken",
     "sort": {
-      "currentSortDefault": "Huidige sortering: Standaard"
+      "currentSortDefault": "Huidige sortering: Standaard",
+      "currentSortIncompleteFirst": "Huidige sortering: Onvoltooid eerst"
     },
     "editTaskDialog": {
       "title": "Taak bewerken",
@@ -1356,6 +1367,46 @@
       "deletedTitle": "Bericht verwijderd",
       "deletedDescription": "Het feedbackbericht is succesvol verwijderd.",
       "deleteError": "Kon bericht niet verwijderen: {error}"
+    }
+  },
+  "adminApiUsagePage": {
+    "title": "API Gebruik",
+    "tableHeaders": {
+      "user": "Gebruiker",
+      "functionName": "Functienaam",
+      "callCount": "Aantal Aanroepen",
+      "lastCalledAt": "Laatst Aangeroepen Op"
+    },
+    "noLogs": "Geen API-gebruikslogboeken gevonden."
+  },
+  "adminExternalApiUsagePage": {
+    "title": "Extern API Gebruik",
+    "loadingMore": "Meer logs laden...",
+    "tableHeaders": {
+      "timestamp": "Tijdstempel",
+      "user": "Gebruiker",
+      "service": "Dienst",
+      "function": "Functie",
+      "promptTokens": "Prompt Tokens",
+      "completionTokens": "Voltooiing Tokens",
+      "totalTokens": "Totaal Tokens",
+      "cost": "Kosten",
+      "status": "Status",
+      "details": "Details"
+    },
+    "status": {
+      "success": "Succesvol",
+      "failed": "Mislukt",
+      "unknown": "Onbekend"
+    },
+    "noLogs": "Geen externe API-gebruikslogboeken gevonden.",
+    "toastTitles": {
+      "fetchError": "Fout bij ophalen logs",
+      "fetchUsersError": "Fout bij ophalen gebruikers"
+    },
+    "errors": {
+      "unknownError": "Er is een onbekende fout opgetreden.",
+      "fetchLogsError": "Fout bij ophalen externe API logs."
     }
   },
   "registerForm": {

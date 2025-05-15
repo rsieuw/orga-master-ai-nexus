@@ -50,6 +50,12 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // Logging variables
+  let userIdForLogging: string | undefined;
+  const functionNameForLogging = 'create-checkout-session';
+  let requestBodyForLogging: Record<string, unknown> = {};
+  let supabaseLoggingClient: ReturnType<typeof createClient<Database>> | undefined; // For logging attempts
+
   try {
     // 1. Get User from JWT
     const authHeader = req.headers.get('Authorization')
@@ -62,15 +68,22 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_ANON_KEY') ?? '',
         { global: { headers: { Authorization: authHeader } } }
     )
+    // Also use this client for logging
+    supabaseLoggingClient = supabaseClient;
+    
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     if (userError || !user) {
       console.error('User retrieval error:', userError)
       throw new Error('Failed to retrieve user')
     }
+    // Set userId for logging
+    userIdForLogging = user.id;
     console.log(`User [${user.id}] authenticated.`);
 
     // 2. Get Price ID from request body
-    const { priceId } = await req.json()
+    const reqBody = await req.json()
+    const { priceId } = reqBody
+    requestBodyForLogging = { priceId, userAgent: req.headers.get('user-agent') }; // Store for logging
     if (!priceId) {
       throw new Error('Missing priceId in request body')
     }
@@ -144,6 +157,23 @@ serve(async (req) => {
     }
     console.log(`Created checkout session [${session.id}] for customer [${customerId}]`);
 
+    // Add logging at the end of the try block, right before returning response
+    // Log SUCCESS to user_api_logs
+    try {
+      await supabaseLoggingClient.from('user_api_logs').insert({
+        user_id: userIdForLogging,
+        function_name: functionNameForLogging,
+        metadata: { 
+          ...requestBodyForLogging, 
+          success: true, 
+          sessionId: session.id,
+          customerId
+        },
+      });
+    } catch (logError) {
+      console.error('Failed to log SUCCESS to user_api_logs:', logError);
+    }
+
     // 5. Return Session URL
     return new Response(
       JSON.stringify({ sessionId: session.id, url: session.url }),
@@ -179,6 +209,24 @@ serve(async (req) => {
                  // Keep the default 'checkout.error.unknown' or log the specific message
                  console.error('Unknown but specific error:', error.message); 
         }
+    }
+
+    // Log FAILURE to user_api_logs
+    if (supabaseLoggingClient && userIdForLogging) {
+      try {
+        await supabaseLoggingClient.from('user_api_logs').insert({
+          user_id: userIdForLogging,
+          function_name: functionNameForLogging,
+          metadata: { 
+            ...requestBodyForLogging, 
+            success: false, 
+            error: errorKey,
+            rawErrorMessage: error instanceof Error ? error.message : String(error)
+          },
+        });
+      } catch (logError) {
+        console.error('Failed to log FAILURE to user_api_logs:', logError);
+      }
     }
 
     return new Response(
