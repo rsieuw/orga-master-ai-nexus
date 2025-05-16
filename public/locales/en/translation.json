@@ -10,6 +10,7 @@
     "low": "Low",
     "categoryTitle": "Category"
   },
+  "project": "Project",
   "categories": {
     "workStudy": "Work/Study",
     "personal": "Personal",
@@ -18,12 +19,29 @@
     "social": "Social",
     "health": "Health",
     "finances": "Finances",
-    "projects": "Projects"
+    "projects": "Projects",
+    "overdue": "Overdue",
+    "later": "Later",
+    "work": "Work",
+    "learning": "Learning",
+    "home": "Home"
+  },
+  "bottomNavigation": {
+    "tasks": "Tasks",
+    "profile": "Profile",
+    "settings": "Settings",
+    "taskDetails": "Task Details",
+    "chat": "Chat"
   },
   "messageItem": {
     "sources": "Sources",
     "source": "Source"
   },
+  "work": "Work",
+  "health": "Health",
+  "learning": "Learning",
+  "personal": "Personal",
+  "home": "Home",
   "settings": {
     "title": "Settings",
     "tabs": {
@@ -575,6 +593,15 @@
     "health": "Health",
     "finances": "Finances",
     "projects": "Projects",
+    "categories": {
+      "completed": "Completed",
+      "overdue": "Overdue",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "dayAfterTomorrow": "Day After Tomorrow",
+      "nextWeek": "Next Week",
+      "later": "Later"
+    },
     "addNewTaskPlaceholder": "Add new task",
     "emptyState": {
       "noTasksAfterFilter": "No tasks found matching the filters.",
@@ -688,7 +715,13 @@
     },
     "minimizeDescription": "Minimize/maximize description",
     "newSubtaskTitleLabel": "New subtask title",
-    "addSubtaskPlaceholder": "Add a new subtask..."
+    "addSubtaskPlaceholder": "Add a new subtask...",
+    "emptySubtasks": "No subtasks added",
+    "addSubtaskButton": "Add",
+    "addingSubtask": "Adding...",
+    "noSubtasks": "No subtasks yet",
+    "markAsComplete": "Mark as complete",
+    "markAsIncomplete": "Mark as incomplete"
   },
   "common": {
     "add": "Add",

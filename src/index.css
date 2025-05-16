@@ -326,6 +326,12 @@
   .firebase-card .chat-card-glow-target {
     border-radius: 0 !important;
   }
+  
+  /* Verwijder de linker en rechter borders van chat-card-glow-target alleen op mobiel */
+  .chat-card-glow-target.firebase-card {
+    border-left: 0 !important;
+    border-right: 0 !important;
+  }
 }
 
 .firebase-card::before {
@@ -400,6 +406,14 @@
 /* Style voor opgeslagen onderzoek, iets lichter dan normale onderzoeksballonnen */
 .chat-message-saved-research {
   @apply bg-gradient-to-br from-blue-800/70 via-indigo-700/70 to-indigo-800/70 text-blue-50 border border-indigo-500/50 shadow-sm; /* Gradient colors reversed */
+}
+
+/* Mobiele override voor max-width van onderzoek chatberichten */
+@media (max-width: 767px) {
+  .chat-message-research,
+  .chat-message-saved-research {
+    max-width: 90%;
+  }
 }
 
 .chat-input {
@@ -1089,27 +1103,165 @@ input[type="search"]::-webkit-search-results-decoration {
 /* Einde van CSS */
 
 /* Speciale stijl voor taken die automatisch voltooid zijn (alle subtaken gedaan) */
-.task-card.auto-completed {
-  background: linear-gradient(165deg, rgba(16, 185, 129, 0.7) 0%, rgba(139, 92, 246, 0.7) 100%);
-  background-blend-mode: overlay;
+.task-card.auto-completed,
+.custom-dark .task-card.auto-completed.priority-high, 
+.custom-dark .task-card.auto-completed.priority-medium, 
+.custom-dark .task-card.auto-completed.priority-low, 
+.custom-dark .task-card.auto-completed.priority-none {
+  background: linear-gradient(165deg, #19e965b3 0%, #074a47b3 100%) !important;
+  background-blend-mode: overlay !important;
   box-shadow: 
     8px 8px 16px rgba(5, 20, 10, 0.7),
-    -8px -8px 16px rgba(80, 30, 120, 0.1),
-    inset 1px 1px 0px rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+    -8px -8px 16px rgba(7, 74, 71, 0.2),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(25, 233, 101, 0.3) !important;
 }
 
-.task-card.auto-completed:hover {
-  background: linear-gradient(165deg, rgba(34, 211, 150, 0.75) 0%, rgba(167, 139, 250, 0.75) 100%);
-  background-blend-mode: overlay;
+/* Speciale stijl voor voltooid kaarten in de detail pagina - ALLEEN voor de beschrijving kaart */
+.firebase-card.auto-completed:not(.subtask-card-glow-target),
+.custom-dark .firebase-card.auto-completed:not(.subtask-card-glow-target) {
+  background: linear-gradient(165deg, #19e965b3 0%, #074a47b3 100%) !important;
+  background-blend-mode: overlay !important;
+  box-shadow: 
+    8px 8px 16px rgba(5, 20, 10, 0.7),
+    -8px -8px 16px rgba(7, 74, 71, 0.2),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(25, 233, 101, 0.3) !important;
+}
+
+.task-card.auto-completed:hover,
+.custom-dark .task-card.auto-completed.priority-high:hover, 
+.custom-dark .task-card.auto-completed.priority-medium:hover, 
+.custom-dark .task-card.auto-completed.priority-low:hover, 
+.custom-dark .task-card.auto-completed.priority-none:hover {
+  background: linear-gradient(165deg, #25ff71cc 0%, #0a615ccc 100%) !important;
+  background-blend-mode: overlay !important;
   box-shadow: 
     10px 10px 20px rgba(5, 20, 10, 0.7),
-    -8px -8px 16px rgba(80, 30, 120, 0.2),
-    inset 1px 1px 0px rgba(255, 255, 255, 0.07);
+    -8px -8px 16px rgba(7, 74, 71, 0.3),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(25, 233, 101, 0.5) !important;
 }
 
-.task-card.auto-completed::after {
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(139, 92, 246, 0.7) 50%, rgba(0, 0, 0, 0) 100%);
+/* Hover effect voor voltooide kaarten in detail pagina - ALLEEN voor de beschrijving kaart */
+.firebase-card.auto-completed:not(.subtask-card-glow-target):hover,
+.custom-dark .firebase-card.auto-completed:not(.subtask-card-glow-target):hover {
+  background: linear-gradient(165deg, #25ff71cc 0%, #0a615ccc 100%) !important;
+  background-blend-mode: overlay !important;
+  box-shadow: 
+    10px 10px 20px rgba(5, 20, 10, 0.7),
+    -8px -8px 16px rgba(7, 74, 71, 0.3),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(25, 233, 101, 0.5) !important;
+}
+
+.task-card.auto-completed::after,
+.custom-dark .task-card.auto-completed.priority-high::after, 
+.custom-dark .task-card.auto-completed.priority-medium::after, 
+.custom-dark .task-card.auto-completed.priority-low::after, 
+.custom-dark .task-card.auto-completed.priority-none::after {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(25, 233, 101, 0.7) 50%, rgba(0, 0, 0, 0) 100%) !important;
+}
+
+/* After effect voor voltooide kaarten in detail pagina - ALLEEN voor de beschrijving kaart */
+.firebase-card.auto-completed:not(.subtask-card-glow-target)::after,
+.custom-dark .firebase-card.auto-completed:not(.subtask-card-glow-target)::after {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(25, 233, 101, 0.7) 50%, rgba(0, 0, 0, 0) 100%) !important;
+}
+
+/* Groene voortgangsbalk voor voltooide taken */
+.task-card.auto-completed div[class*="rounded-full"] > div[class*="rounded-full"],
+.custom-dark .task-card.auto-completed div[class*="rounded-full"] > div[class*="rounded-full"] {
+  background: linear-gradient(to right, #19e965, #074a47) !important;
+  box-shadow: 0 0 8px 2px rgba(25, 233, 101, 0.4) !important;
+}
+
+/* Groene voortgangsbalk voor voltooide taken in detail pagina */
+.firebase-card.auto-completed div[class*="rounded-full"] > div[class*="rounded-full"],
+.custom-dark .firebase-card.auto-completed div[class*="rounded-full"] > div[class*="rounded-full"] {
+  background: linear-gradient(to right, #19e965, #074a47) !important;
+  box-shadow: 0 0 8px 2px rgba(25, 233, 101, 0.4) !important;
+}
+
+/* Groene kleur voor subtaken cijfer en checkbox in voltooide taken */
+.task-card.auto-completed svg[width="20"][height="20"],
+.custom-dark .task-card.auto-completed svg[width="20"][height="20"] {
+  color: #19e965 !important;
+}
+
+.task-card.auto-completed svg[width="20"][height="20"] + span,
+.custom-dark .task-card.auto-completed svg[width="20"][height="20"] + span {
+  color: #19e965 !important;
+}
+
+/* Groene kleur voor subtaken cijfer en checkbox in voltooide taken in detail pagina */
+.firebase-card.auto-completed svg,
+.custom-dark .firebase-card.auto-completed svg {
+  color: #19e965 !important;
+}
+
+.firebase-card.auto-completed svg + span,
+.custom-dark .firebase-card.auto-completed svg + span {
+  color: #19e965 !important;
+}
+
+/* Zorg dat delete-icoon rood blijft, zelfs in voltooide (groene) kaarten */
+.firebase-card.auto-completed button[class*="rounded-full"][class*="bg-red-500"] svg,
+.firebase-card.auto-completed button[class*="text-red-300"] svg,
+.custom-dark .firebase-card.auto-completed button[class*="rounded-full"][class*="bg-red-500"] svg,
+.custom-dark .firebase-card.auto-completed button[class*="text-red-300"] svg {
+  color: rgb(252, 165, 165) !important; /* text-red-300 */
+}
+
+/* Kalender icoon in voltooide kaarten wordt groen */
+.firebase-card.auto-completed .calendar-badge,
+.custom-dark .firebase-card.auto-completed .calendar-badge,
+.task-card.auto-completed .calendar-badge,
+.custom-dark .task-card.auto-completed .calendar-badge {
+  background: linear-gradient(to bottom right, #19e965 0%, #074a47 100%) !important;
+  border-color: rgba(25, 233, 101, 0.3) !important;
+  border-left-color: rgba(25, 233, 101, 0.5) !important; /* Lichtere border links voor voltooide kaarten */
+  border-top-color: rgba(25, 233, 101, 0.5) !important; /* Lichtere border bovenaan voor voltooide kaarten */
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5), -1px -1px 2px rgba(25, 233, 101, 0.2), 0 0 8px 2px rgba(25, 233, 101, 0.3) !important; /* Donkere schaduw voor voltooide kaarten */
+  overflow: visible !important;
+}
+
+.firebase-card.auto-completed .calendar-badge > div,
+.custom-dark .firebase-card.auto-completed .calendar-badge > div,
+.task-card.auto-completed .calendar-badge > div,
+.custom-dark .task-card.auto-completed .calendar-badge > div {
+  color: white !important;
+}
+
+/* Fix voor afgekapte kalender icoon */
+.calendar-badge {
+  width: 2rem !important; /* w-8 */
+  height: 2rem !important; /* h-8 */
+  border-radius: 9999px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-left-color: rgba(255, 255, 255, 0.25) !important; /* Lichtere border links */
+  border-top-color: rgba(255, 255, 255, 0.25) !important; /* Lichtere border bovenaan */
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.25rem !important;
+  position: relative !important;
+  gap: 0 !important;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4), -1px -1px 2px rgba(255, 255, 255, 0.1) !important; /* Donkere schaduw toegevoegd */
+}
+
+.calendar-badge > div:first-child {
+  margin-bottom: -0.125rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1rem !important;
+}
+
+.calendar-badge > div:last-child {
+  font-size: 0.7rem !important;
+  line-height: 0.75rem !important;
+  margin-top: -0.125rem !important;
 }
 
 /* Verbeterde z-index voor dropdown menus en popovers */
@@ -1129,20 +1281,7 @@ input[type="search"]::-webkit-search-results-decoration {
   position: relative !important;
 }
 
-/* Hersteld naar shine-effect stijl voor ::before, met correcte z-index en selector */
-.task-card.new-task-highlight::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.05) 25%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 215, 0, 0.6) 75%, /* Subtiele gouden tint uit shine-effect - OPACITEIT VERHOOGD */
-    rgba(255, 255, 255, 0) 100%
-  );
-  z-index: 1; /* Gecorrigeerde z-index: achter content (10), boven categorie-icoon (0) */
-  pointer-events: none;
-  animation: backgroundPulse 3s ease-in-out infinite; /* Animatie van shine-effect */
+/* Custom card hover effect */
+.firebase-card:hover {
+  border-color: hsl(var(--primary) / 0.3) !important; /* Added important to ensure override if needed */
 }

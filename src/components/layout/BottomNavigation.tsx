@@ -1,11 +1,12 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { List, Settings, Info, MessageSquare, User } from 'lucide-react';
+import { Grid2x2, Settings, LayoutList, BotMessageSquare, User } from 'lucide-react';
 import { cn } from '@/lib/utils.ts';
 import { useAuth } from '@/hooks/useAuth.ts';
 import { useTask } from '@/contexts/TaskContext.hooks.ts';
 import { isPast, isToday, parseISO } from 'date-fns';
 import { Task } from '@/types/task.ts';
+import { useTranslation } from 'react-i18next';
 
 // Definieer de structuur voor een navigatie item
 interface NavItem {
@@ -24,6 +25,7 @@ const BottomNavigation: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { tasks } = useTask();
+  const { t } = useTranslation();
 
   if (!isAuthenticated) {
     return null;
@@ -65,15 +67,15 @@ const BottomNavigation: React.FC = () => {
 
   if (isTaskDetail) {
     navItems = [
-      { path: '/', icon: List, label: 'Taken' },
-      { hash: '#details', icon: Info, label: 'Details' },
-      { hash: '#chat', icon: MessageSquare, label: 'Chat' },
+      { path: '/', icon: Grid2x2, label: t('bottomNavigation.tasks') },
+      { hash: '#details', icon: LayoutList, label: t('bottomNavigation.taskDetails') },
+      { hash: '#chat', icon: BotMessageSquare, label: t('bottomNavigation.chat') },
     ];
   } else {
     navItems = [
-      { path: '/', icon: List, label: 'Taken' },
-      { path: '/profile', icon: User, label: 'Profiel' }, 
-      { path: '/settings', icon: Settings, label: 'Instellingen' },
+      { path: '/', icon: Grid2x2, label: t('bottomNavigation.tasks') },
+      { path: '/profile', icon: User, label: t('bottomNavigation.profile') }, 
+      { path: '/settings', icon: Settings, label: t('bottomNavigation.settings') },
     ];
   }
 
@@ -91,7 +93,7 @@ const BottomNavigation: React.FC = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-card/80 backdrop-blur-sm border-t border-border shadow-md flex justify-around items-center md:hidden z-[70]">
+    <nav className="fixed bottom-[-1px] left-0 right-0 h-16 bg-card/80 backdrop-blur-sm border-t border-border shadow-md flex justify-around items-center md:hidden z-[70]">
       {navItems.map((item) => {
         const isActive = item.path ? location.pathname === item.path : currentHash === item.hash || (!currentHash && item.hash === '#details');
         const Icon = item.icon;
@@ -107,7 +109,7 @@ const BottomNavigation: React.FC = () => {
           >
             <Icon className="h-5 w-5 mb-0.5" />
             <span>{item.label}</span>
-            {item.label === 'Taken' && totalBadgeCount > 0 && (
+            {item.label === t('bottomNavigation.tasks') && totalBadgeCount > 0 && (
               <span className="absolute top-1 right-[40%] transform translate-x-1/2 text-xs bg-red-600 text-white rounded-full h-4 min-w-[1rem] px-1 flex items-center justify-center leading-none">
                 {totalBadgeCount}
               </span>

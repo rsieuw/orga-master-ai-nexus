@@ -237,6 +237,7 @@ export default function Dashboard() {
 
   const filteredAndSortedTaskGroups = useMemo(() => {
     const groups: TasksByDate = {
+      completed: [],
       overdue: [],
       today: [],
       tomorrow: [],
@@ -302,6 +303,7 @@ export default function Dashboard() {
     // Function placed inside useMemo to prevent unnecessary re-renders
     const getCategoryTitle = (category: keyof TasksByDate): string => {
       switch (category) {
+        case 'completed': return t('dashboard.categories.completed');
         case 'overdue': return t('dashboard.categories.overdue');
         case 'today': return t('dashboard.categories.today');
         case 'tomorrow': return t('dashboard.categories.tomorrow');
@@ -382,55 +384,84 @@ export default function Dashboard() {
             </motion.div>
 
             {/* Horizontal scrollable container for mobile */}
-            <div className="flex flex-col space-y-1 sm:hidden">
-              {/* Verdeel taken in groepen van 3 voor betere mobiele weergave */}
-              {Array.from({ length: Math.ceil(tasksInCategory.length / 3) }).map((_, rowIndex) => (
-                <motion.div
-                  key={`row-${category}-${rowIndex}`}
-                  className="flex overflow-x-auto pb-2 px-4 -mx-4 gap-3 snap-x snap-mandatory hide-scrollbar"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                >
-                  {/* Lege ruimte aan het begin voor center-snap effect */}
-                  <div className="flex-shrink-0 min-w-[8%]"></div>
-                  
-                  {tasksInCategory.slice(rowIndex * 3, rowIndex * 3 + 3).map(task => (
-                    <motion.div
-                      key={task.id}
-                      variants={cardVariants}
-                      layout="position"
-                      className="flex-shrink-0 w-[85vw] max-w-[300px] snap-center shadow-md mt-0.5 mb-1 mx-1"
-                    >
-                      <TaskCard task={task} />
-                    </motion.div>
-                  ))}
-                  
-                  {/* Voeg de placeholder alleen toe aan de eerste rij als het category 'today' is */}
-                  {category === 'today' && rowIndex === 0 && (tasksInCategory.length === 0 || tasksInCategory.length % 3 !== 0) && (
-                    <motion.div
-                      key="add-new-task-placeholder-mobile"
-                      variants={cardVariants}
-                      layout="position"
-                      className="flex-shrink-0 w-[85vw] max-w-[300px] snap-center shadow-md mt-0.5 mb-1 mx-1"
-                    >
-                      <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
-                        <DialogTrigger asChild>
-                          <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10">
-                            <PlusCircle className="h-10 w-10 text-muted-foreground/70 group-hover:text-primary transition-colors" />
-                            <span className="mt-2 text-sm text-muted-foreground/90 group-hover:text-primary transition-colors">
-                              {t('dashboard.addNewTaskPlaceholder')}
-                            </span>
-                          </Card>
-                        </DialogTrigger>
-                      </Dialog>
-                    </motion.div>
-                  )}
-                  
-                  {/* Lege ruimte aan het einde voor center-snap effect */}
-                  <div className="flex-shrink-0 min-w-[8%]"></div>
-                </motion.div>
-              ))}
+            <div className="flex flex-col space-y-2 sm:hidden">
+              {/* Dynamisch aantal taken per rij op basis van totaal aantal taken */}
+              {(() => {
+                // Bereken optimale aantal kaarten per rij
+                let cardsPerRow = 4; // Standaard waarde
+                const totalCards = tasksInCategory.length;
+                
+                // Bereken dynamisch aantal rijen/kaarten
+                if (totalCards <= 6) {
+                  // Voor weinig kaarten: 1 rij
+                  cardsPerRow = totalCards;
+                } else if (totalCards <= 16) {
+                  // Voor middelmatig aantal: ongeveer 4 per rij
+                  cardsPerRow = 4;
+                } else if (totalCards <= 36) {
+                  // Voor groter aantal: ongeveer 6 per rij
+                  cardsPerRow = 6;
+                } else {
+                  // Voor heel groot aantal: ongeveer wortel uit aantal (ongeveer vierkante indeling)
+                  cardsPerRow = Math.min(8, Math.ceil(Math.sqrt(totalCards)));
+                }
+                
+                // Zorg voor minimaal 2 kaarten per rij, als er kaarten zijn
+                if (totalCards > 0) {
+                  cardsPerRow = Math.max(2, cardsPerRow);
+                }
+                
+                // Bereken aantal rijen
+                const numberOfRows = Math.ceil(totalCards / cardsPerRow);
+                
+                return Array.from({ length: numberOfRows }).map((_, rowIndex) => (
+                  <motion.div
+                    key={`row-${category}-${rowIndex}`}
+                    className="flex overflow-x-auto pb-3 px-4 -mx-4 gap-3 snap-x snap-mandatory hide-scrollbar lg:pb-3"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                  >
+                    {/* Lege ruimte aan het begin voor center-snap effect */}
+                    <div className="flex-shrink-0 min-w-[8%]"></div>
+                    
+                    {tasksInCategory.slice(rowIndex * cardsPerRow, rowIndex * cardsPerRow + cardsPerRow).map(task => (
+                      <motion.div
+                        key={task.id}
+                        variants={cardVariants}
+                        layout="position"
+                        className="flex-shrink-0 w-[85vw] max-w-[300px] snap-center shadow-md mt-1 mb-2.5 mx-1"
+                      >
+                        <TaskCard task={task} />
+                      </motion.div>
+                    ))}
+                    
+                    {/* Voeg de placeholder alleen toe aan de eerste rij als het category 'today' is */}
+                    {category === 'today' && rowIndex === 0 && (tasksInCategory.length === 0 || tasksInCategory.length % cardsPerRow !== 0) && (
+                      <motion.div
+                        key="add-new-task-placeholder-mobile"
+                        variants={cardVariants}
+                        layout="position"
+                        className="flex-shrink-0 w-[85vw] max-w-[300px] snap-center shadow-md mt-1 mb-2.5 mx-1"
+                      >
+                        <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+                          <DialogTrigger asChild>
+                            <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10">
+                              <PlusCircle className="h-10 w-10 text-muted-foreground/70 group-hover:text-primary transition-colors" />
+                              <span className="mt-2 text-sm text-muted-foreground/90 group-hover:text-primary transition-colors">
+                                {t('dashboard.addNewTaskPlaceholder')}
+                              </span>
+                            </Card>
+                          </DialogTrigger>
+                        </Dialog>
+                      </motion.div>
+                    )}
+                    
+                    {/* Lege ruimte aan het einde voor center-snap effect */}
+                    <div className="flex-shrink-0 min-w-[8%]"></div>
+                  </motion.div>
+                ));
+              })()}
             </div>
           </div>
         );
@@ -581,7 +612,7 @@ export default function Dashboard() {
                     >
                       <PlusCircle className="h-7 w-7" />
                     </Button>
-                    <span className="text-xs text-muted-foreground">{t('navbar.newTaskButton.text')}</span>
+                    <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-md bg-background/70 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none">{t('navbar.newTaskButton.text')}</span>
                   </div>
                 </DialogTrigger>
               </Dialog>

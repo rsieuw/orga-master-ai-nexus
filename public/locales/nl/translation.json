@@ -10,6 +10,7 @@
     "low": "Laag",
     "categoryTitle": "Categorie"
   },
+  "project": "Project",
   "categories": {
     "workStudy": "Werk/Studie",
     "personal": "Persoonlijk",
@@ -20,7 +21,17 @@
     "finances": "Financiën",
     "projects": "Projecten",
     "overdue": "Verlopen",
-    "later": "Binnenkort"
+    "later": "Binnenkort",
+    "work": "Werk",
+    "learning": "Leren",
+    "home": "Thuis"
+  },
+  "bottomNavigation": {
+    "tasks": "Taken",
+    "profile": "Profiel",
+    "settings": "Instellingen",
+    "taskDetails": "Taakdetails",
+    "chat": "Chat"
   },
   "auth": {
     "login": {
@@ -145,6 +156,11 @@
     "sources": "Bronnen",
     "source": "Bron"
   },
+  "work": "Werk",
+  "health": "Gezondheid",
+  "learning": "Leren",
+  "personal": "Persoonlijk",
+  "home": "Thuis",
   "settings": {
     "title": "Instellingen",
     "tabs": {
@@ -704,6 +720,15 @@
     "dayAfterTomorrow": "Overmorgen",
     "nextWeek": "Volgende week",
     "later": "Binnenkort",
+    "categories": {
+      "completed": "Voltooid",
+      "overdue": "Verlopen",
+      "today": "Vandaag",
+      "tomorrow": "Morgen",
+      "dayAfterTomorrow": "Overmorgen",
+      "nextWeek": "Volgende week",
+      "later": "Binnenkort"
+    },
     "workStudy": "Werk/Studie",
     "personal": "Persoonlijk",
     "household": "Huishouden",
@@ -713,10 +738,7 @@
     "finances": "Financiën",
     "projects": "Projecten",
     "addNewTaskPlaceholder": "Nieuwe taak toevoegen",
-    "categories": {
-      "overdue": "Verlopen",
-      "later": "Binnenkort"
-    },
+
     "tooltips": {
       "addNewTask": "Nieuwe taak toevoegen"
     },
@@ -739,7 +761,7 @@
     }
   },
   "taskDetail": {
-    "backButton": "Terug naar dashboard",
+    "backButton": "Terug",
     "editButton": "Taak bewerken",
     "deleteButton": "Taak verwijderen",
     "deleteConfirmation": {
@@ -769,6 +791,8 @@
     "addSubtaskPlaceholder": "Nieuwe subtaak...",
     "addSubtaskButton": "Subtaak toevoegen",
     "noSubtasks": "Nog geen subtaken.",
+    "markAsComplete": "Markeer als voltooid",
+    "markAsIncomplete": "Markeer als onvoltooid",
     "subtask": {
       "editTitleAriaLabel": "Bewerk subtitel",
       "editSubtaskSR": "Bewerk subtaak",
@@ -854,7 +878,9 @@
       "buttonAriaLabel": "Nieuwe subtaak toevoegen",
       "tooltip": "Voeg een nieuwe subtaak toe aan deze hoofdtaak.",
       "fabText": "Nieuwe subtaak"
-    }
+    },
+    "emptySubtasks": "Geen subtaken toegevoegd",
+    "addingSubtask": "Toevoegen..."
   },
   "common": {
     "add": "Toevoegen",
