@@ -64,7 +64,10 @@ const sortTasksByPriority = (a: Task, b: Task): number => {
   return priorityOrder[b.priority] - priorityOrder[a.priority];
 };
 
-// Variants for animations
+/**
+ * Animation variants for container elements.
+ * Controls the animation of the container when it enters or exits the DOM.
+ */
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
@@ -75,7 +78,10 @@ const containerVariants: Variants = {
   },
 };
 
-// Variants for individual cards
+/**
+ * Animation variants for individual card elements.
+ * Defines how cards animate when they enter, are visible, and exit the DOM.
+ */
 const cardVariants: Variants = {
   hidden: { opacity: 0, y: 20, scale: 0.95 },
   visible: {
@@ -149,6 +155,7 @@ export default function Dashboard() {
   const [showMobileActions, setShowMobileActions] = useState(true);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+
   // Update Local Storage when local state changes
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEYS.SEARCH_TERM, searchTerm);
@@ -184,6 +191,11 @@ export default function Dashboard() {
   // Effect for managing FAB button visibility
   useEffect(() => {
     const INACTIVITY_TIMEOUT = 2500;
+    
+    /**
+     * Handles user activity events to show/hide the mobile action buttons.
+     * Resets the inactivity timer on user interaction.
+     */
     const handleActivity = () => {
       if (hideTimerRef.current !== null) {
         clearTimeout(hideTimerRef.current);
@@ -193,6 +205,7 @@ export default function Dashboard() {
         setShowMobileActions(false);
       }, INACTIVITY_TIMEOUT) as ReturnType<typeof setTimeout>;
     };
+    
     handleActivity();
     globalThis.addEventListener('scroll', handleActivity, { passive: true });
     globalThis.addEventListener('click', handleActivity, { capture: true });

@@ -257,12 +257,12 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
             className="animated-border-textarea mb-6"
             onKeyDown={handleKeyDown}
           />
-          <div className="flex justify-between gap-4">
+          <div className="flex flex-col sm:flex-row justify-between gap-4">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => setOpen(false)} 
-              className="w-full h-12"
+              className="w-full h-12 order-first sm:order-none"
             >
               {t('common.cancel')}
             </Button>
@@ -426,19 +426,19 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
           </div>
           
           {/* Footer buttons side by side */}
-          <div className="flex justify-between gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row justify-between gap-4 pt-4">
              <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => setOpen(false)} 
-                className="w-full h-12"
+                className="w-full h-16 sm:h-12 order-first sm:order-none"
              >
                {t('common.cancel')}
              </Button>
              <Button 
                type="submit" 
                disabled={isLoading || isGeneratingTask || (detailsVisible && !title.trim())}
-               className="w-full h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
+               className="w-full h-16 sm:h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
              >
                {isLoading ? <span className="animate-pulse">{t('newTaskDialog.creatingButton')}</span> : t('newTaskDialog.createTaskButton')}
              </Button>

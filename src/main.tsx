@@ -12,17 +12,13 @@ import { SplashScreen } from '@capacitor/splash-screen';
 
 /**
  * Event listener for the `DOMContentLoaded` event.
- * Hides the native splash screen after a short delay once the DOM is fully loaded and parsed.
- * This ensures the webview content is ready before the splash screen disappears, providing a smoother transition.
- * The delay helps accommodate for any initial rendering or setup in the webview.
+ * Hides the native splash screen immediately once the DOM is fully loaded and parsed.
+ * The splash screen duration is already configured in capacitor.config.ts,
+ * so we don't need an additional delay here.
  */
-// Hide the splash screen with a small delay
-// to ensure the app is loaded first
 document.addEventListener('DOMContentLoaded', () => {
   // Capacitor native bridge is already loaded
-  setTimeout(() => {
-    SplashScreen.hide();
-  }, 800);
+  SplashScreen.hide();
 });
 
 /**

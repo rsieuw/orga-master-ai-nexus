@@ -6,9 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.t
 import { Badge } from "@/components/ui/badge.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Task } from "@/types/task.ts";
-import { Button } from "@/components/ui/button.tsx";
-import { Link } from "react-router-dom";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 
 /**
  * `Profile` page component displays user-specific information and task statistics.
@@ -80,20 +78,7 @@ export default function Profile() {
               </Badge>
             </div>
             
-            {user.role === 'free' && (
-              <div className="pt-4">
-                 <Link to="/pricing">
-                   <Button 
-                     className="w-full bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
-                   >
-                     {t('profile.userInfo.upgradeButton')}
-                   </Button>
-                 </Link>
-                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                   {t('profile.userInfo.upgradeDescription')}
-                 </p>
-              </div>
-            )}
+            
           </CardContent>
         </Card>
 
@@ -124,7 +109,7 @@ export default function Profile() {
                   <p className="text-2xl font-bold">{statistics.todo}</p>
                 </div>
                 <div className="p-4 bg-accent/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">{t('profile.stats.inProgress')}</p>
+                  <p className="text-sm text-muted-foreground">{t('profile.stats.in_progress')}</p>
                   <p className="text-2xl font-bold">{statistics.inProgress}</p>
                 </div>
               </div>

@@ -616,6 +616,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const today = startOfDay(new Date());
     
     const grouped: TasksByDate = {
+      completed: [],
       overdue: [],
       today: [],
       tomorrow: [],
@@ -625,6 +626,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     };
     
     tasks.forEach(task => {
+      // Check if task is completed and add to 'completed' category
+      if (task.status === 'done') {
+        grouped.completed.push(task);
+        return; // Skip other categorization if task is completed
+      }
+      
       if (!task.deadline) {
         grouped.later.push(task);
         return;

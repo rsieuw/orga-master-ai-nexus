@@ -132,8 +132,8 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4">
-      <div className="space-y-6 px-2 max-h-[80vh] overflow-y-auto lg:max-h-none lg:overflow-y-visible scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">
+    <form onSubmit={handleSubmit} className="mt-2 md:mt-4">
+      <div className="space-y-4 md:space-y-6 px-2 max-h-[80vh] overflow-y-auto lg:max-h-none lg:overflow-y-visible scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent scrollbar-thumb-rounded">
        <div className="space-y-2">
          <Label htmlFor="edit-title">{t('common.title')}</Label>
          <Input
@@ -171,7 +171,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
            value={description ?? ""}
            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
            placeholder={t('editTaskDialog.descriptionPlaceholder')}
-           rows={4}
+           className="h-24 sm:h-32"
          />
        </div>
 

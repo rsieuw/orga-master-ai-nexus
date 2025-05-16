@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { useAuth } from "@/hooks/useAuth.ts";
-import { PlusCircle, User, LogOut, Settings, CircleUserRound, Shield, Star } from "lucide-react";
+import { PlusCircle, User, LogOut, Settings, CircleUserRound, Shield} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -105,14 +105,7 @@ export default function Navbar({ openNewTaskModal }: NavbarProps) {
                       </Link>
                     </DropdownMenuItem>
                   )}
-                  {user?.role === 'free' && (
-                    <DropdownMenuItem>
-                      <Link to="/pricing" className="flex w-full items-center text-yellow-500 hover:text-yellow-400">
-                         <Star className="mr-2 h-4 w-4" />
-                         {t('navbar.userMenu.upgradeToPremium')}
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
+                  {/* Upgrade to Premium option disabled for demo */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => logout()}>
                     <LogOut className="mr-2 h-4 w-4" />

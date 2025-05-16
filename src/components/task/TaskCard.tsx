@@ -9,8 +9,9 @@ import {
   GlassWater, 
   Heart, 
   Wallet, 
-  Sparkles,
-  User
+  User,
+  BookOpen,
+  Hammer
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
@@ -109,38 +110,51 @@ export default function TaskCard({ task }: TaskCardProps) {
    * @param {string | undefined} category - The category to get an icon for.
    * @returns {JSX.Element | null} The icon component or null if no matching category.
    */
-  const getCategoryBackgroundIcon = (category?: string) => {
-    // Fixed opacity for all icons
-    const getOpacityClass = () => {
-      return "opacity-40"; // One fixed opacity for all icons (40%)
-    };
+  const getCategoryBackgroundIcon = (category?: string, taskStatus?: string) => {
+    let iconColorClass = "text-muted-foreground"; // Default color
+    let opacityClass = "opacity-40";
 
+    if (taskStatus === 'done') {
+      iconColorClass = "text-[#51976a]";
+      opacityClass = "opacity-60";
+    } else {
+      // For non-completed tasks, keep the priority-based or default color
+      // The opacityClass will remain "opacity-40" as set initially
+    }
+    
     const iconProps = { 
-      className: `category-background-icon ${getOpacityClass()}`,
+      className: `category-background-icon ${iconColorClass} ${opacityClass}`,
       size: 62, 
       strokeWidth: 0.6 
     };
     
-    // Gebruik de Nederlandse categorienamen voor de icons
-    // Dit is nodig omdat de database nog steeds de Nederlandse namen gebruikt
-    switch(category) {
-      case "Werk/Studie":
+    const normalizedCategory = category?.toLowerCase();
+
+    switch(normalizedCategory) {
+      case "work":
         return <BriefcaseBusiness {...iconProps} />;
-      case "Persoonlijk":
+      case "personal":
         return <User {...iconProps} />;
-      case "Huishouden":
+      case "home":
         return <Home {...iconProps} />;
-      case "Familie":
+      case "family":
         return <Users {...iconProps} />;
-      case "Sociaal":
+      case "social":
         return <GlassWater {...iconProps} />;
-      case "Gezondheid":
+      case "health":
         return <Heart {...iconProps} />;
-      case "Financiën":
+      case "finances":
         return <Wallet {...iconProps} />;
-      case "Projecten":
-        return <Sparkles {...iconProps} />;
+      case "projects":
+        return <Hammer {...iconProps} />;
+      case "project":
+        return <Hammer {...iconProps} />;
+      case "learning":
+        return <BookOpen {...iconProps} />;
       default:
+        if (category) {
+          console.warn(`[TaskCard] Onbekende categorie voor achtergrondicoon: '${category}' (genormaliseerd naar: '${normalizedCategory}')`);
+        }
         return null;
     }
   };
@@ -169,7 +183,7 @@ export default function TaskCard({ task }: TaskCardProps) {
           `priority-${task.priority}`,
           priorityStyles.backgroundClass,
           priorityStyles.shadowClass,
-          (completedSubtasks === totalSubtasks && totalSubtasks > 0 && task.status === 'done') ? 'auto-completed' : ''
+          task.status === 'done' ? 'auto-completed' : ''
         )}
         data-category={task.category}
       >
@@ -198,18 +212,38 @@ export default function TaskCard({ task }: TaskCardProps) {
         )}
         
         {task.category && (
-          <div className={`absolute ${totalSubtasks > 0 ? 'bottom-[2.7rem]' : 'bottom-6'} right-4 z-0 pointer-events-none`}>
-            {getCategoryBackgroundIcon(task.category)}
+          <div className={cn(
+            `absolute right-4 z-0 pointer-events-none`,
+            "transition-all duration-800 ease-in-out",
+            task.subtasks && task.subtasks.length > 0 ? 'bottom-10' : 'bottom-4'
+          )}>
+            {getCategoryBackgroundIcon(task.category, task.status)} 
           </div>
         )}
         
         <div className="p-3 flex flex-col h-full justify-between relative z-10">
           <div>
             <div className="flex justify-between items-start">
-              <h3 className="font-medium text-base line-clamp-1">
-                {task.emoji && <span className="mr-1.5 text-xl task-emoji">{task.emoji}</span>}
-                {task.title}
-              </h3>
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <h3 className="font-medium text-base line-clamp-1 cursor-default">
+                      {task.emoji && <span className="mr-1.5 text-xl task-emoji">{task.emoji}</span>}
+                      {task.title}
+                    </h3>
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    side="bottom" 
+                    align="start" 
+                    sideOffset={5} 
+                    avoidCollisions
+                    className="bg-popover/90 backdrop-blur-lg px-3 py-2 max-w-[250px] z-50 whitespace-normal break-words"
+                  >
+                    <p>{task.title}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
               {/* Calendar badge */}
               {deadlineDay && deadlineMonth && (
                 <TooltipProvider delayDuration={100}>

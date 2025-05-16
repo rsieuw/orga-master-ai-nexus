@@ -474,9 +474,9 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
               )}
             </div>
             <Button 
-              variant={isSearchingMessages ? "default" : "ghost"}
+              variant={isSearchingMessages ? "outline" : "ghost"}
               size="icon" 
-              className="h-7 w-7"
+              className={`h-7 w-7 ${isSearchingMessages ? 'bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white' : ''}`}
               title={isSearchingMessages ? t('chatPanel.searchingMessages') : t('chatPanel.searchingResearch')}
               onClick={handleSearchModeToggle}
               onMouseDown={(e) => {
@@ -487,8 +487,9 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
               <Search className={`h-4 w-4 ${isSearchingMessages ? "text-primary-foreground" : "text-muted-foreground"}`} />
             </Button>
           </div>
-          <Button variant="ghost" size="icon" className="h-7 w-7 lg:hidden" onClick={handleCloseChat}>
-            <X className="h-4 w-4" />
+          <Button variant="ghost" size="icon" onClick={handleCloseChat} className="h-7 w-7 lg:hidden">
+            <X className="h-4 w-4 text-muted-foreground" />
+            <span className="sr-only">{t('common.closeSR')}</span>
           </Button>
         </div>
       </div>

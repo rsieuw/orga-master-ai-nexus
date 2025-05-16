@@ -90,6 +90,8 @@ export interface AIResearchResult {
  * @interface TasksByDate
  */
 export interface TasksByDate {
+  /** Completed tasks. */
+  completed: Task[];
   /** Tasks that are overdue. */
   overdue: Task[];
   /** Tasks due today. */

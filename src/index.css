@@ -584,17 +584,6 @@ input[type="search"]::-webkit-search-results-decoration {
   }
 }
 
-@keyframes glowPulse {
-  0%, 100% {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.05);
-  }
-}
-
 .custom-dark .task-card:hover {
   transform: translateY(-3px) scale(1.01);
   /* De background voor hover wordt nu ook per prioriteit afgehandeld of hier algemeen als de afbeeldingen moeten blijven blenden */
@@ -902,165 +891,64 @@ input[type="search"]::-webkit-search-results-decoration {
   @apply text-white;
 }
 
-/* Specifieke categorie icoon kleuren in custom-dark theme *//*
-
-/* Styling voor het subtiele achtergrondicoon op taakkaarten */
-
-/* Custom achtergrondkleur voor iconen op rode (high priority) kaarten */
-.custom-dark .task-card.priority-high .category-background-icon {
-  color: rgb(175 36 42);
-}
-
-.custom-dark .task-card:hover.priority-high .category-background-icon {
-  color: rgb(196, 59, 68);
-}
-
-/* Custom achtergrondkleur voor iconen op rode (medium priority) kaarten */
-.custom-dark .task-card.priority-medium .category-background-icon {
-  color: rgb(227, 131, 6);
-}
-
-.custom-dark .task-card:hover.priority-medium .category-background-icon {
-  color: rgb(237, 153, 4);
-}
-
-/* Custom achtergrondkleur voor iconen op rode (low priority) kaarten */
-.custom-dark .task-card.priority-low .category-background-icon {
-  color: #c1ccf5;
-}
-
-.custom-dark .task-card:hover.priority-low .category-background-icon {
-  color: #d1d9f5;
-}
-
-/* Specific min-height for the subtask card's ::before element glow */
-.subtask-card-glow-target.firebase-card::before {
-  min-height: 400px;
-}
-
-/* Specific min-height for the chat card's ::before element glow */
-.chat-card-glow-target.firebase-card::before {
-  min-height: 400px;
-}
-
-.firebase-card:hover::before {
-  opacity: 0.7;
-}
-
-/* ZEER OPVALLEND nieuw effect voor nieuwe taakkaarten */
-.task-card.new-task-highlight {
-  position: relative;
-  overflow: hidden; /* Houdt het patroon binnen de kaart */
-  isolation: isolate; /* Toegevoegd voor stacking context */
-}
-
-/* Hersteld naar shine-effect stijl voor ::before, met correcte z-index en selector */
-.task-card.new-task-highlight::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.05) 25%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 215, 0, 0.6) 75%, /* Subtiele gouden tint uit shine-effect - OPACITEIT VERHOOGD */
-    rgba(255, 255, 255, 0) 100%
-  );
-  z-index: 1; /* Gecorrigeerde z-index: achter content (10), boven categorie-icoon (0) */
-  pointer-events: none;
-  animation: backgroundPulse 3s ease-in-out infinite; /* Animatie van shine-effect */
-}
-
-/* De patternMove keyframes zijn niet nodig, backgroundPulse en glowPulse zijn elders gedefinieerd */
-
-/* De regels voor .new-task-highlight.priority-X::after zijn al eerder verwijderd en blijven weg */
-
-/* Hersteld en aangepast naar shine-effect stijl voor ::after, met correcte z-index en selector */
-.task-card.new-task-highlight::after {
-  content: '';
-  position: absolute;
-  inset: 0; /* Om het hele element te vullen, van shine-effect */
-  background: radial-gradient(
-    circle at center,
-    transparent 50%,
-    rgba(255, 215, 0, 0.6) 80%, /* Gouden glow van shine-effect - OPACITEIT VERHOOGD */
-    rgba(255, 215, 0, 0.8) 100%  /* Gouden glow van shine-effect - OPACITEIT VERHOOGD */
-  );
-  z-index: 1; /* Gecorrigeerde z-index: achter content (10), boven categorie-icoon (0) */
-  opacity: 0; /* Initiele opacity voor glowPulse animatie, van shine-effect */
-  pointer-events: none;
-  animation: glowPulse 4s ease infinite; /* Animatie van shine-effect */
-}
-
-/* De lightSweep keyframes zijn niet nodig, backgroundPulse en glowPulse zijn elders gedefinieerd */
-
-.subtask-card-glow-target.firebase-card {
-  position: relative; /* Zorgt voor juiste positionering van absolute elementen */
-  isolation: isolate; /* Creeert een nieuwe stacking context */
-  overflow: hidden; /* Zorgt ervoor dat de gloed niet buiten de kaart uitsteekt */
-}
-
-.subtask-card-glow-target.firebase-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  border-radius: inherit;
-  pointer-events: none;
-  /* Eenvoudige gradiënt zoals in het chatvenster, nu met dezelfde positie */
-  background-image: radial-gradient(
-    circle at 50% 0%,
-    rgba(255, 255, 255, 0.05) 0%,
-    rgba(255, 255, 255, 0) 70%
-  );
+/* Specifieke categorie icoon kleuren in custom-dark theme */
+.custom-dark .task-card.priority-high .category-background-icon,
+.custom-dark .firebase-card.priority-high .category-background-icon {
+  color: rgb(175, 36, 42); /* Rood */
   opacity: 0.4;
-  transition: opacity 0.3s ease;
-  z-index: 0;
-  /* min-height niet nodig bij vaste hoogte van 80px */
+}
+.custom-dark .task-card.priority-high.auto-completed .category-background-icon,
+.custom-dark .firebase-card.priority-high.auto-completed .category-background-icon {
+  color: #51976a !important; /* Aangepaste groene kleur */
+  opacity: 0.6 !important;
+}
+.custom-dark .task-card:hover.priority-high .category-background-icon,
+.custom-dark .firebase-card:hover.priority-high .category-background-icon {
+  color: rgb(220, 38, 38);
+  opacity: 0.4; /* Kan aangepast worden voor hover effect indien gewenst */
 }
 
-.subtask-card-glow-target.firebase-card:hover::before {
-  opacity: 0.7;
+.custom-dark .task-card.priority-medium .category-background-icon,
+.custom-dark .firebase-card.priority-medium .category-background-icon {
+  color: rgb(219, 123, 11); /* Oranje */
+  opacity: 0.4;
+}
+.custom-dark .task-card.priority-medium.auto-completed .category-background-icon,
+.custom-dark .firebase-card.priority-medium.auto-completed .category-background-icon {
+  color: #51976a !important; /* Aangepaste groene kleur */
+  opacity: 0.6 !important;
+}
+.custom-dark .task-card:hover.priority-medium .category-background-icon,
+.custom-dark .firebase-card:hover.priority-medium .category-background-icon {
+  color: rgb(255, 145, 0);
+  opacity: 0.4; /* Kan aangepast worden voor hover effect indien gewenst */
 }
 
-/* Specifieke min-height voor .chat-card-glow-target.firebase-card::before */
-.chat-card-glow-target.firebase-card::before {
-  min-height: 400px;
+.custom-dark .task-card.priority-low .category-background-icon,
+.custom-dark .firebase-card.priority-low .category-background-icon {
+  color: #b4c7dd; /* Aangepaste blauwe kleur */
+  opacity: 0.4;
+}
+.custom-dark .task-card.priority-low.auto-completed .category-background-icon,
+.custom-dark .firebase-card.priority-low.auto-completed .category-background-icon {
+  color: #51976a !important; /* Aangepaste groene kleur */
+  opacity: 0.6 !important;
+}
+.custom-dark .task-card:hover.priority-low .category-background-icon,
+.custom-dark .firebase-card:hover.priority-low .category-background-icon {
+  color: #b4c7dd; /* Kleur voor hover, kan afwijken indien gewenst */
+  opacity: 0.4; /* Kan aangepast worden voor hover effect indien gewenst */
 }
 
-/* Regenboog rand glow animatie voor nieuwe taken */
-@keyframes rainbowBorderGlow {
-  0% {
-    box-shadow: 0 0 5px 2px rgba(138, 43, 226, 0.5), 0 0 10px 4px rgba(138, 43, 226, 0.3);
-  }
-  25% {
-    box-shadow: 0 0 5px 2px rgba(70, 130, 180, 0.5), 0 0 10px 4px rgba(70, 130, 180, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 5px 2px rgba(72, 209, 204, 0.5), 0 0 10px 4px rgba(72, 209, 204, 0.3);
-  }
-  75% {
-    box-shadow: 0 0 5px 2px rgba(255, 105, 180, 0.5), 0 0 10px 4px rgba(255, 105, 180, 0.3);
-  }
-  100% {
-    box-shadow: 0 0 5px 2px rgba(138, 43, 226, 0.5), 0 0 10px 4px rgba(138, 43, 226, 0.3);
-  }
+/* Fallback voor als er geen specifieke prioriteit is, maar wel auto-completed */
+.custom-dark .task-card.auto-completed .category-background-icon,
+.custom-dark .firebase-card.auto-completed .category-background-icon {
+  color: #51976a !important; /* Aangepaste groene kleur */
+  opacity: 0.6 !important;
 }
 
-/* Aangepast effect voor nieuwe taakkaarten: regenboog rand-gloed */
-.task-card.new-task-highlight {
-  position: relative;
-  overflow: visible !important; /* Belangrijk: laat de gloed buiten de kaart zichtbaar zijn */
-  animation: rainbowBorderGlow 4s ease-in-out infinite;
-  transition: all 0.3s ease;
-}
-
-/* Verwijder het ::before effect voor nieuwe taakkaarten */
-.task-card.new-task-highlight::before {
-  content: none;
+.task-card.priority-high .subtask-progress-bar {
+  background: linear-gradient(to right, #ff416c, #ff4b2b);
 }
 
 /* Neumorfische schaduwklassen voor detailpagina */

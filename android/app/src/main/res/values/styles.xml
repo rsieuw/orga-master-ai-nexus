@@ -15,8 +15,8 @@
         <item name="android:background">@null</item>
     </style>
 
-    <!-- Theme applied to the Android Window while the process is starting -->
-    <style name="AppTheme.Launcher" parent="AppTheme">
-        <item name="android:windowBackground">@drawable/splash_screen</item> 
+    <!-- Voor oudere Android versies (<12), een versie zonder gradient -->
+    <style name="Theme.App.Starting" parent="AppTheme">
+        <item name="android:windowBackground">@drawable/splash_flat</item> 
     </style>
 </resources>

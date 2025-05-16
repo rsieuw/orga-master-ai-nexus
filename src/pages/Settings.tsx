@@ -499,25 +499,25 @@ export default function SettingsPage() {
       <Tabs defaultValue="account" className="space-y-6">
         <div className="max-w-3xl mx-auto">
           <TabsList className="grid w-full grid-cols-5 mb-4">
-            <TabsTrigger value="account" className="flex items-center gap-2">
+            <TabsTrigger value="account" className="flex flex-col items-center justify-center gap-1 p-1 md:flex-row md:gap-2 md:p-2 md:justify-start">
               <User className="h-5 w-5" />
-              {t('settings.tabs.account')}
+              <span className="hidden md:inline text-xs md:text-sm">{t('settings.tabs.account')}</span>
             </TabsTrigger>
-            <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <TabsTrigger value="appearance" className="flex flex-col items-center justify-center gap-1 p-1 md:flex-row md:gap-2 md:p-2 md:justify-start">
               <Palette className="h-5 w-5" />
-              {t('settings.tabs.appearance')}
+              <span className="hidden md:inline text-xs md:text-sm">{t('settings.tabs.appearance')}</span>
             </TabsTrigger>
-            <TabsTrigger value="language" className="flex items-center gap-2">
+            <TabsTrigger value="language" className="flex flex-col items-center justify-center gap-1 p-1 md:flex-row md:gap-2 md:p-2 md:justify-start">
               <Languages className="h-5 w-5" />
-              {t('settings.tabs.language')}
+              <span className="hidden md:inline text-xs md:text-sm">{t('settings.tabs.language')}</span>
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <TabsTrigger value="notifications" className="flex flex-col items-center justify-center gap-1 p-1 md:flex-row md:gap-2 md:p-2 md:justify-start">
               <Settings className="h-5 w-5" />
-              {t('settings.tabs.notifications')}
+              <span className="hidden md:inline text-xs md:text-sm">{t('settings.tabs.notifications')}</span>
             </TabsTrigger>
-            <TabsTrigger value="ai" className="flex items-center gap-2">
+            <TabsTrigger value="ai" className="flex flex-col items-center justify-center gap-1 p-1 md:flex-row md:gap-2 md:p-2 md:justify-start">
               <Brain className="h-5 w-5" />
-              {t('settings.tabs.ai')}
+              <span className="hidden md:inline text-xs md:text-sm">{t('settings.tabs.ai')}</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -753,14 +753,15 @@ export default function SettingsPage() {
                               (user?.role === 'free' && provider.value !== 'gpt4o-mini') ? "opacity-50 cursor-not-allowed" : ""
                             )}
                             onClick={() => {
-                              if (user?.role === 'free' && provider.value !== 'gpt4o-mini') {
-                                toast({
-                                  title: t('settings.toast.errorSavingChatModel.title'),
-                                  description: t('settings.freeUserPremiumFeature'),
-                                  variant: "destructive",
-                                });
-                                return;
-                              }
+                              // Premium restrictions disabled for demo
+                              // if (user?.role === 'free' && provider.value !== 'gpt4o-mini') {
+                              //   toast({
+                              //     title: t('settings.toast.errorSavingChatModel.title'),
+                              //     description: t('settings.freeUserPremiumFeature'),
+                              //     variant: "destructive",
+                              //   });
+                              //   return;
+                              // }
                               handleChatModelProviderChange(provider.value);
                             }}
                           >
@@ -836,14 +837,15 @@ export default function SettingsPage() {
                               (user?.role === 'free' && provider.value !== 'gpt4o-mini') ? "opacity-50 cursor-not-allowed" : ""
                             )}
                             onClick={() => {
-                              if (user?.role === 'free' && provider.value !== 'gpt4o-mini') {
-                                toast({
-                                  title: t('settings.toast.errorSavingResearchModel.title'),
-                                  description: t('settings.freeUserPremiumFeature'),
-                                  variant: "destructive",
-                                });
-                                return;
-                              }
+                              // Premium restrictions disabled for demo
+                              // if (user?.role === 'free' && provider.value !== 'gpt4o-mini') {
+                              //   toast({
+                              //     title: t('settings.toast.errorSavingResearchModel.title'),
+                              //     description: t('settings.freeUserPremiumFeature'),
+                              //     variant: "destructive",
+                              //   });
+                              //   return;
+                              // }
                               handleResearchModelProviderChange(provider.value);
                             }}
                           >

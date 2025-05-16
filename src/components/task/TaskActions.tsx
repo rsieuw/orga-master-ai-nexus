@@ -91,10 +91,10 @@ export default function TaskActions({
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
+                <AlertDialogCancel className="h-16 sm:h-12 bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleDelete}
-                  className="bg-destructive hover:bg-destructive/90"
+                  className="h-16 sm:h-12 bg-destructive hover:bg-destructive/90"
                 >
                   {t('common.delete')}
                 </AlertDialogAction>
@@ -143,10 +143,10 @@ export default function TaskActions({
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel className="bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
+                    <AlertDialogCancel className="h-16 sm:h-12 bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDelete}
-                      className="bg-destructive hover:bg-destructive/90"
+                      className="h-16 sm:h-12 bg-destructive hover:bg-destructive/90"
                     >
                       {t('common.delete')}
                     </AlertDialogAction>

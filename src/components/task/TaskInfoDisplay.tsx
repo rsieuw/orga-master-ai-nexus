@@ -34,7 +34,7 @@ export default function TaskInfoDisplay({
   const { t } = useTranslation();
 
   return (
-    <div className={cn("px-4 lg:px-0", className)}>
+    <div className={cn("px-0", className)}>
       <div className="flex-shrink-0">
         <AnimatePresence mode="sync">
           <motion.div 

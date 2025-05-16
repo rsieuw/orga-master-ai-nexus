@@ -10,10 +10,10 @@
                 android:endColor="@color/splash_background_color" />
         </shape>
     </item>
-    <!-- Nieuwe splash afbeelding -->
-    <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@drawable/splash_new"/>
-    </item>
+    <!-- Nieuwe splash afbeelding - met verbeterde centerInside en inset voor betere schaling -->
+    <item
+        android:gravity="center"
+        android:drawable="@drawable/splash_new"
+        android:width="220dp"
+        android:height="220dp" />
 </layer-list> 

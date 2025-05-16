@@ -26,20 +26,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error("User not logged in");
     }
 
-    const currentAiModePreference = data.ai_mode_preference || user.ai_mode_preference;
-    if (user?.role === 'free' &&
-        (currentAiModePreference === 'creative' ||
-         currentAiModePreference === 'precise')) {
-      toast({
-        title: t('settings.toast.errorSavingAiMode.title'),
-        description: t('settings.freeUserPremiumFeature'),
-        variant: "destructive",
-      });
-      // Restore aiMode state to the previous value if the update is not allowed
-      // This prevents the UI from optimistically updating to a disallowed mode.
-      setAiModeState(user.ai_mode_preference || 'default');
-      return;
-    }
+    // Premium restrictions disabled for demo
+    // if (user?.role === 'free' &&
+    //     (currentAiModePreference === 'creative' ||
+    //      currentAiModePreference === 'precise')) {
+    //   toast({
+    //     title: t('settings.toast.errorSavingAiMode.title'),
+    //     description: t('settings.freeUserPremiumFeature'),
+    //     variant: "destructive",
+    //   });
+    //   // Restore aiMode state to the previous value if the update is not allowed
+    //   // This prevents the UI from optimistically updating to a disallowed mode.
+    //   setAiModeState(user.ai_mode_preference || 'default');
+    //   return;
+    // }
 
     try {
       if (data.name !== undefined && data.name !== user?.name) {

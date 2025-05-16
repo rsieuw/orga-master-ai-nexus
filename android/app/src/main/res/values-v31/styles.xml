@@ -1,9 +1,11 @@
 <resources>
-    <style name="AppTheme.Launcher" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/colorPrimary</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item> 
-        <item name="windowSplashScreenAnimationDuration">1000</item>
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background_color</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_new</item>
+        <item name="windowSplashScreenAnimationDuration">300</item>
         <item name="postSplashScreenTheme">@style/AppTheme</item>
         <item name="windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        <item name="android:windowSplashScreenBrandingImage">@null</item>
+        <item name="android:windowSplashScreenBehavior">icon_preferred</item>
     </style>
 </resources> 

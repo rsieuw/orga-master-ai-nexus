@@ -1,7 +1,10 @@
 /**
  * @fileoverview Capacitor configuration file for the OrgaMaster AI application.
  * This file defines the application ID, name, web directory, and plugin configurations,
- * such as SplashScreen settings and server settings for Android.
+ * such as server settings for Android.
+ * 
+ * Note: Splash screen functionality via Capacitor is now fully disabled, using only
+ * the native Android 12+ splash screen API instead.
  */
 import type { CapacitorConfig } from '@capacitor/cli';
 
@@ -10,16 +13,7 @@ const config: CapacitorConfig = {
   appName: 'OrgaMaster AI',
   webDir: 'dist',
   plugins: {
-    SplashScreen: {
-      launchShowDuration: 3000,
-      launchAutoHide: true,
-      backgroundColor: '#121212',
-      androidSplashResourceName: 'splash_new',
-      androidScaleType: 'CENTER_CROP',
-      showSpinner: false,
-      splashFullScreen: true,
-      splashImmersive: true
-    }
+    // SplashScreen opties zijn volledig verwijderd om dubbele splash screens te voorkomen
   },
   server: {
     androidScheme: 'https'
