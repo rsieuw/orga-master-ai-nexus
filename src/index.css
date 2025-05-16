@@ -926,7 +926,7 @@ input[type="search"]::-webkit-search-results-decoration {
 
 .custom-dark .task-card.priority-low .category-background-icon,
 .custom-dark .firebase-card.priority-low .category-background-icon {
-  color: #b4c7dd; /* Aangepaste blauwe kleur */
+  color: #22d3ee; /* Moet overeenkomen met text-cyan-400 */
   opacity: 0.4;
 }
 .custom-dark .task-card.priority-low.auto-completed .category-background-icon,
@@ -936,7 +936,7 @@ input[type="search"]::-webkit-search-results-decoration {
 }
 .custom-dark .task-card:hover.priority-low .category-background-icon,
 .custom-dark .firebase-card:hover.priority-low .category-background-icon {
-  color: #b4c7dd; /* Kleur voor hover, kan afwijken indien gewenst */
+  color: #22d3ee; /* Moet overeenkomen met text-cyan-400 */
   opacity: 0.4; /* Kan aangepast worden voor hover effect indien gewenst */
 }
 
@@ -1172,4 +1172,11 @@ input[type="search"]::-webkit-search-results-decoration {
 /* Custom card hover effect */
 .firebase-card:hover {
   border-color: hsl(var(--primary) / 0.3) !important; /* Added important to ensure override if needed */
+}
+
+/* Nieuwe regel voor het verbergen van chat acties op mobiel bij input focus */
+@media (max-width: 767px) {
+  .chat-actions-hidden-on-mobile-focus {
+    display: none !important;
+  }
 }

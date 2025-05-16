@@ -89,7 +89,11 @@ export default function TaskCard({ task }: TaskCardProps) {
    */
   const getCategoryTranslationKey = (category: string) => {
     const index = TASK_CATEGORIES.findIndex(cat => cat === category);
-    return index !== -1 ? TASK_CATEGORY_KEYS[index] : category;
+    if (index === -1) {
+      console.warn(`TaskCard: Unknown category encountered: ${category}`);
+      return category;
+    }
+    return TASK_CATEGORY_KEYS[index];
   };
 
   /**
@@ -110,16 +114,27 @@ export default function TaskCard({ task }: TaskCardProps) {
    * @param {string | undefined} category - The category to get an icon for.
    * @returns {JSX.Element | null} The icon component or null if no matching category.
    */
-  const getCategoryBackgroundIcon = (category?: string, taskStatus?: string) => {
+  const getCategoryBackgroundIcon = (category?: string, taskStatus?: string, priority?: string) => {
     let iconColorClass = "text-muted-foreground"; // Default color
     let opacityClass = "opacity-40";
 
     if (taskStatus === 'done') {
-      iconColorClass = "text-[#51976a]";
+      iconColorClass = "text-[#51976a]"; // Groen voor voltooide taken
       opacityClass = "opacity-60";
     } else {
-      // For non-completed tasks, keep the priority-based or default color
-      // The opacityClass will remain "opacity-40" as set initially
+      // Stel prioriteitskleuren in als de taak niet voltooid is
+      switch (priority) {
+        case 'high':
+          iconColorClass = "text-red-400"; // Consistent met subtask icoon
+          break;
+        case 'medium':
+          iconColorClass = "text-amber-400"; // Consistent met subtask icoon
+          break;
+        case 'low':
+          iconColorClass = "text-cyan-400"; // Consistent met subtask icoon
+          break;
+        // 'none' of default blijft text-muted-foreground
+      }
     }
     
     const iconProps = { 
@@ -128,34 +143,49 @@ export default function TaskCard({ task }: TaskCardProps) {
       strokeWidth: 0.6 
     };
     
-    const normalizedCategory = category?.toLowerCase();
+    const normalizedInputCategory = category?.trim().toLowerCase();
 
-    switch(normalizedCategory) {
-      case "work":
-        return <BriefcaseBusiness {...iconProps} />;
-      case "personal":
-        return <User {...iconProps} />;
-      case "home":
-        return <Home {...iconProps} />;
-      case "family":
-        return <Users {...iconProps} />;
-      case "social":
-        return <GlassWater {...iconProps} />;
-      case "health":
-        return <Heart {...iconProps} />;
-      case "finances":
-        return <Wallet {...iconProps} />;
-      case "projects":
-        return <Hammer {...iconProps} />;
-      case "project":
-        return <Hammer {...iconProps} />;
-      case "learning":
-        return <BookOpen {...iconProps} />;
-      default:
-        if (category) {
-          console.warn(`[TaskCard] Onbekende categorie voor achtergrondicoon: '${category}' (genormaliseerd naar: '${normalizedCategory}')`);
-        }
-        return null;
+    // Vergelijk met genormaliseerde TASK_CATEGORIES
+    if (normalizedInputCategory === TASK_CATEGORIES[0].trim().toLowerCase()) { // Werk/Studie
+      return <BriefcaseBusiness {...iconProps} />;
+    } else if (normalizedInputCategory === TASK_CATEGORIES[1].trim().toLowerCase()) { // Persoonlijk
+      return <User {...iconProps} />;
+    } else if (normalizedInputCategory === TASK_CATEGORIES[2].trim().toLowerCase()) { // Huishouden
+      return <Home {...iconProps} />;
+    } else if (normalizedInputCategory === TASK_CATEGORIES[3].trim().toLowerCase()) { // Familie
+      return <Users {...iconProps} />;
+    } else if (normalizedInputCategory === TASK_CATEGORIES[4].trim().toLowerCase()) { // Sociaal
+      return <GlassWater {...iconProps} />;
+    } else if (normalizedInputCategory === TASK_CATEGORIES[5].trim().toLowerCase()) { // Gezondheid
+      return <Heart {...iconProps} />;
+    } else if (normalizedInputCategory === TASK_CATEGORIES[6].trim().toLowerCase()) { // Financiën
+      return <Wallet {...iconProps} />;
+    } else if (normalizedInputCategory === TASK_CATEGORIES[7].trim().toLowerCase()) { // Projecten
+      return <Hammer {...iconProps} />;
+    } else if (normalizedInputCategory === "work") { // Alias
+      return <BriefcaseBusiness {...iconProps} />;
+    } else if (normalizedInputCategory === "personal") { // Alias
+      return <User {...iconProps} />;
+    } else if (normalizedInputCategory === "home") { // Alias for Huishouden
+      return <Home {...iconProps} />;
+    } else if (normalizedInputCategory === "family") { // Alias
+      return <Users {...iconProps} />;
+    } else if (normalizedInputCategory === "social") { // Alias
+      return <GlassWater {...iconProps} />;
+    } else if (normalizedInputCategory === "health") { // Alias
+      return <Heart {...iconProps} />;
+    } else if (normalizedInputCategory === "finances") { // Alias
+      return <Wallet {...iconProps} />;
+    } else if (normalizedInputCategory === "projects" || normalizedInputCategory === "project") { // Alias
+      return <Hammer {...iconProps} />;
+    } else if (normalizedInputCategory === "leren" || normalizedInputCategory === "learning") { // Alias
+      return <BookOpen {...iconProps} />;
+    } else {
+      if (category) {
+        // De console.warn hier is behouden voor het geval er echt een onbekende categorie is.
+        console.warn(`[TaskCard] Onbekende categorie voor achtergrondicoon (na normalisatie en TASK_CATEGORIES check): '${category}' (genormaliseerd naar: '${normalizedInputCategory}')`);
+      }
+      return null;
     }
   };
 
@@ -217,7 +247,7 @@ export default function TaskCard({ task }: TaskCardProps) {
             "transition-all duration-800 ease-in-out",
             task.subtasks && task.subtasks.length > 0 ? 'bottom-10' : 'bottom-4'
           )}>
-            {getCategoryBackgroundIcon(task.category, task.status)} 
+            {getCategoryBackgroundIcon(task.category, task.status, task.priority)} 
           </div>
         )}
         
