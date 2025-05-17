@@ -83,17 +83,72 @@ export default function TaskCard({ task }: TaskCardProps) {
 
   /**
    * Finds the correct translation key for a category.
+   * Handles various input formats:
+   * - Direct English/simplified terms (e.g., "health", "work")
+   * - Dutch display labels from TASK_CATEGORIES (e.g., "Gezondheid")
+   * - Already formatted i18n keys (e.g., "categories.health")
    * 
-   * @param {string} category - The category name to translate.
-   * @returns {string} The translation key for the category.
+   * @param {string} rawCategory - The raw category string from the task data.
+   * @returns {string} The i18n translation key for the category.
    */
-  const getCategoryTranslationKey = (category: string) => {
-    const index = TASK_CATEGORIES.findIndex(cat => cat === category);
-    if (index === -1) {
-      console.warn(`TaskCard: Unknown category encountered: ${category}`);
-      return category;
+  const getCategoryTranslationKey = (rawCategory: string): string => {
+    if (!rawCategory) return ""; // Return empty string if rawCategory is null, undefined, or empty
+    
+    const normalizedInput = rawCategory.trim().toLowerCase();
+
+    // 1. Direct mapping for known English/simplified terms to specific i18n keys
+    // These keys are expected to exist in the translation files (e.g., public/locales/en/translation.json)
+    const simpleToI18nKeyMap: { [key: string]: string } = {
+      "work": "categories.work",
+      "study": "categories.work", 
+      "personal": "categories.personal",
+      "home": "categories.home",
+      "household": "categories.home", 
+      "family": "categories.family",
+      "finance": "categories.finance",
+      "health": "categories.health",
+      "projects": "categories.projects", // Plural form for "Projecten"
+      "project": "categories.projects",
+      "learning": "categories.learning", // Added for 'learning'
+      "travel": "categories.travel",
+      "hobbies": "categories.hobbies",
+      "other": "categories.other",
+      "uncategorized": "categories.other" 
+    };
+
+    if (simpleToI18nKeyMap[normalizedInput]) {
+      return simpleToI18nKeyMap[normalizedInput];
     }
-    return TASK_CATEGORY_KEYS[index];
+
+    // 2. Map from original cased Dutch display names (TASK_CATEGORIES) to i18n keys (TASK_CATEGORY_KEYS)
+    // This loop is a fallback if the lowercase directMap didn't catch it (e.g. due to casing not matching normalizedInput)
+    for (let i = 0; i < TASK_CATEGORIES.length; i++) {
+      if (TASK_CATEGORIES[i].trim().toLowerCase() === normalizedInput) {
+        return TASK_CATEGORY_KEYS[i];
+      }
+    }
+    
+    // 3. Check if the input itself is already a valid i18n key (from the main list or known aliases)
+    const allKnownCategoryI18nKeys = [
+      ...TASK_CATEGORY_KEYS, 
+      "categories.work", 
+      "categories.home", 
+      "categories.learning", 
+      "categories.overdue", // commonly used in dashboard/filters
+      "categories.later"    // commonly used in dashboard/filters
+    ];
+    // Ensure we compare apples to apples (lowercase to lowercase)
+    const lowercasedKnownKeys = allKnownCategoryI18nKeys.map(k => k.toLowerCase());
+    const knownKeyIndex = lowercasedKnownKeys.indexOf(normalizedInput);
+
+    if (knownKeyIndex !== -1) {
+      return allKnownCategoryI18nKeys[knownKeyIndex]; // Return the key with its original casing
+    }
+
+    // 4. If still no match, log a warning and return the normalized input as a fallback.
+    // This might lead to i18next warning if 'normalizedInput' isn't a defined translation key.
+    console.warn(`TaskCard: Category '${rawCategory}' (normalized: '${normalizedInput}') could not be mapped to a known translation key. Passing '${normalizedInput}' to i18n as a fallback.`);
+    return normalizedInput; 
   };
 
   /**
@@ -112,80 +167,70 @@ export default function TaskCard({ task }: TaskCardProps) {
    * Returns the appropriate icon component for a task category.
    * 
    * @param {string | undefined} category - The category to get an icon for.
+   * @param {string | undefined} taskStatus - The status of the task.
    * @returns {JSX.Element | null} The icon component or null if no matching category.
    */
-  const getCategoryBackgroundIcon = (category?: string, taskStatus?: string, priority?: string) => {
+  const getCategoryBackgroundIcon = (category?: string, taskStatus?: string) => {
     let iconColorClass = "text-muted-foreground"; // Default color
     let opacityClass = "opacity-40";
 
     if (taskStatus === 'done') {
-      iconColorClass = "text-[#51976a]"; // Groen voor voltooide taken
+      iconColorClass = "text-[#51976a]"; // Green for completed tasks
       opacityClass = "opacity-60";
     } else {
-      // Stel prioriteitskleuren in als de taak niet voltooid is
-      switch (priority) {
-        case 'high':
-          iconColorClass = "text-red-400"; // Consistent met subtask icoon
-          break;
-        case 'medium':
-          iconColorClass = "text-amber-400"; // Consistent met subtask icoon
-          break;
-        case 'low':
-          iconColorClass = "text-cyan-400"; // Consistent met subtask icoon
-          break;
-        // 'none' of default blijft text-muted-foreground
-      }
+      // Verwijderd: Geen specifieke kleuren voor prioriteiten, alleen standaard kleur
+      // We houden de kleuren alleen bij hover (wordt via CSS gedaan)
     }
     
     const iconProps = { 
       className: `category-background-icon ${iconColorClass} ${opacityClass}`,
-      size: 62, 
+      size: 52, // Aangepast van 62 naar 52
       strokeWidth: 0.6 
     };
     
     const normalizedInputCategory = category?.trim().toLowerCase();
 
-    // Vergelijk met genormaliseerde TASK_CATEGORIES
-    if (normalizedInputCategory === TASK_CATEGORIES[0].trim().toLowerCase()) { // Werk/Studie
+    // Compare with normalized TASK_CATEGORIES
+    if (normalizedInputCategory === TASK_CATEGORIES[0].trim().toLowerCase()) { // Werk/Studie (Work/Study)
       return <BriefcaseBusiness {...iconProps} />;
-    } else if (normalizedInputCategory === TASK_CATEGORIES[1].trim().toLowerCase()) { // Persoonlijk
+    } else if (normalizedInputCategory === TASK_CATEGORIES[1].trim().toLowerCase()) { // Persoonlijk (Personal)
       return <User {...iconProps} />;
-    } else if (normalizedInputCategory === TASK_CATEGORIES[2].trim().toLowerCase()) { // Huishouden
+    } else if (normalizedInputCategory === TASK_CATEGORIES[2].trim().toLowerCase()) { // Huishouden (Household)
       return <Home {...iconProps} />;
-    } else if (normalizedInputCategory === TASK_CATEGORIES[3].trim().toLowerCase()) { // Familie
+    } else if (normalizedInputCategory === TASK_CATEGORIES[3].trim().toLowerCase()) { // Familie (Family)
       return <Users {...iconProps} />;
-    } else if (normalizedInputCategory === TASK_CATEGORIES[4].trim().toLowerCase()) { // Sociaal
+    } else if (normalizedInputCategory === TASK_CATEGORIES[4].trim().toLowerCase()) { // Sociaal (Social)
       return <GlassWater {...iconProps} />;
-    } else if (normalizedInputCategory === TASK_CATEGORIES[5].trim().toLowerCase()) { // Gezondheid
+    } else if (normalizedInputCategory === TASK_CATEGORIES[5].trim().toLowerCase()) { // Gezondheid (Health)
       return <Heart {...iconProps} />;
-    } else if (normalizedInputCategory === TASK_CATEGORIES[6].trim().toLowerCase()) { // Financiën
+    } else if (normalizedInputCategory === TASK_CATEGORIES[6].trim().toLowerCase()) { // Financiën (Finance)
       return <Wallet {...iconProps} />;
-    } else if (normalizedInputCategory === TASK_CATEGORIES[7].trim().toLowerCase()) { // Projecten
+    } else if (normalizedInputCategory === TASK_CATEGORIES[7].trim().toLowerCase()) { // Projecten (Projects)
       return <Hammer {...iconProps} />;
     } else if (normalizedInputCategory === "work") { // Alias
-      return <BriefcaseBusiness {...iconProps} />;
+        return <BriefcaseBusiness {...iconProps} />;
     } else if (normalizedInputCategory === "personal") { // Alias
-      return <User {...iconProps} />;
-    } else if (normalizedInputCategory === "home") { // Alias for Huishouden
-      return <Home {...iconProps} />;
+        return <User {...iconProps} />;
+    } else if (normalizedInputCategory === "home") { // Alias for Huishouden (Household)
+        return <Home {...iconProps} />;
     } else if (normalizedInputCategory === "family") { // Alias
-      return <Users {...iconProps} />;
+        return <Users {...iconProps} />;
     } else if (normalizedInputCategory === "social") { // Alias
-      return <GlassWater {...iconProps} />;
+        return <GlassWater {...iconProps} />;
     } else if (normalizedInputCategory === "health") { // Alias
-      return <Heart {...iconProps} />;
+        return <Heart {...iconProps} />;
     } else if (normalizedInputCategory === "finances") { // Alias
-      return <Wallet {...iconProps} />;
+        return <Wallet {...iconProps} />;
     } else if (normalizedInputCategory === "projects" || normalizedInputCategory === "project") { // Alias
-      return <Hammer {...iconProps} />;
-    } else if (normalizedInputCategory === "leren" || normalizedInputCategory === "learning") { // Alias
-      return <BookOpen {...iconProps} />;
+        return <Hammer {...iconProps} />;
+    } else if (normalizedInputCategory === "leren" || normalizedInputCategory === "learning") { // Alias for Leren/Learning
+        return <BookOpen {...iconProps} />;
     } else {
-      if (category) {
-        // De console.warn hier is behouden voor het geval er echt een onbekende categorie is.
-        console.warn(`[TaskCard] Onbekende categorie voor achtergrondicoon (na normalisatie en TASK_CATEGORIES check): '${category}' (genormaliseerd naar: '${normalizedInputCategory}')`);
-      }
-      return null;
+        if (category) {
+        // This console.warn is kept in case there's a truly unknown category.
+        console.warn(`[TaskCard] Unknown category for background icon (after normalization and TASK_CATEGORIES check): '${category}' (normalized to: '${normalizedInputCategory}')`);
+        }
+        return null;
     }
   };
 
@@ -243,11 +288,11 @@ export default function TaskCard({ task }: TaskCardProps) {
         
         {task.category && (
           <div className={cn(
-            `absolute right-4 z-0 pointer-events-none`,
+            `absolute right-5 z-0 pointer-events-none`,
             "transition-all duration-800 ease-in-out",
-            task.subtasks && task.subtasks.length > 0 ? 'bottom-10' : 'bottom-4'
+            task.subtasks && task.subtasks.length > 0 ? 'bottom-12' : 'bottom-8'
           )}>
-            {getCategoryBackgroundIcon(task.category, task.status, task.priority)} 
+            {getCategoryBackgroundIcon(task.category, task.status)} 
           </div>
         )}
         
@@ -366,8 +411,7 @@ export default function TaskCard({ task }: TaskCardProps) {
                           />
                           {progressValue > 10 && (
                             <span 
-                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold select-none"
-                              style={{ textShadow: '0px 0px 5px rgba(0,0,0,0.6)' }}
+                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold select-none progress-percentage-text"
                             >
                               {Math.round(progressValue)}%
                             </span>

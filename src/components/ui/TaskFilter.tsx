@@ -87,7 +87,12 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ onFilterChange }) => {
    */
   const getCategoryTranslationKey = (category: string) => {
     const index = TASK_CATEGORIES.findIndex(cat => cat === category);
-    return index !== -1 ? TASK_CATEGORY_KEYS[index] : category;
+    if (index === -1) {
+      // Log a warning if an unknown category is encountered
+      console.warn(`TaskFilter: Unknown category encountered: ${category}`);
+      return category;
+    }
+    return TASK_CATEGORY_KEYS[index];
   };
 
   // Gets the translated name for a given category string using its translation key.

@@ -891,64 +891,53 @@ input[type="search"]::-webkit-search-results-decoration {
   @apply text-white;
 }
 
-/* Specifieke categorie icoon kleuren in custom-dark theme */
+/* Specifieke categorie icoon kleuren in custom-dark theme - alleen bij hover */
+/* Verwijder standaard kleurregels, alleen kleuren bij hover behouden */
 .custom-dark .task-card.priority-high .category-background-icon,
-.custom-dark .firebase-card.priority-high .category-background-icon {
-  color: rgb(175, 36, 42); /* Rood */
-  opacity: 0.4;
-}
-.custom-dark .task-card.priority-high.auto-completed .category-background-icon,
-.custom-dark .firebase-card.priority-high.auto-completed .category-background-icon {
-  color: #51976a !important; /* Aangepaste groene kleur */
-  opacity: 0.6 !important;
-}
-.custom-dark .task-card:hover.priority-high .category-background-icon,
-.custom-dark .firebase-card:hover.priority-high .category-background-icon {
-  color: rgb(220, 38, 38);
-  opacity: 0.4; /* Kan aangepast worden voor hover effect indien gewenst */
-}
-
+.custom-dark .firebase-card.priority-high .category-background-icon,
 .custom-dark .task-card.priority-medium .category-background-icon,
-.custom-dark .firebase-card.priority-medium .category-background-icon {
-  color: rgb(219, 123, 11); /* Oranje */
-  opacity: 0.4;
-}
-.custom-dark .task-card.priority-medium.auto-completed .category-background-icon,
-.custom-dark .firebase-card.priority-medium.auto-completed .category-background-icon {
-  color: #51976a !important; /* Aangepaste groene kleur */
-  opacity: 0.6 !important;
-}
-.custom-dark .task-card:hover.priority-medium .category-background-icon,
-.custom-dark .firebase-card:hover.priority-medium .category-background-icon {
-  color: rgb(255, 145, 0);
-  opacity: 0.4; /* Kan aangepast worden voor hover effect indien gewenst */
-}
-
+.custom-dark .firebase-card.priority-medium .category-background-icon,
 .custom-dark .task-card.priority-low .category-background-icon,
 .custom-dark .firebase-card.priority-low .category-background-icon {
-  color: #22d3ee; /* Moet overeenkomen met text-cyan-400 */
-  opacity: 0.4;
+  opacity: 0.3;
 }
-.custom-dark .task-card.priority-low.auto-completed .category-background-icon,
-.custom-dark .firebase-card.priority-low.auto-completed .category-background-icon {
-  color: #51976a !important; /* Aangepaste groene kleur */
-  opacity: 0.6 !important;
+
+.custom-dark .task-card:hover.priority-high .category-background-icon,
+.custom-dark .firebase-card:hover.priority-high .category-background-icon{
+  color: #ff0404;
+  opacity: 1;
 }
+
+.custom-dark .task-card:hover.priority-medium .category-background-icon,
+.custom-dark .firebase-card:hover.priority-medium .category-background-icon{
+  color: #ff9100;
+  opacity: 1;
+}
+
 .custom-dark .task-card:hover.priority-low .category-background-icon,
-.custom-dark .firebase-card:hover.priority-low .category-background-icon {
-  color: #22d3ee; /* Moet overeenkomen met text-cyan-400 */
-  opacity: 0.4; /* Kan aangepast worden voor hover effect indien gewenst */
+.custom-dark .firebase-card:hover.priority-low .category-background-icon{
+  color: #02dafc;
+  opacity: 1;
+}
+
+.custom-dark .task-card.priority-low.auto-completed:hover .category-background-icon,
+.custom-dark .firebase-card.priority-low.auto-completed:hover .category-background-icon,
+.custom-dark .task-card.priority-low.auto-completed:hover .category-background-icon,
+.custom-dark .firebase-card.priority-low.auto-completed:hover .category-background-icon,
+.custom-dark .task-card.auto-completed:hover .category-background-icon,
+.custom-dark .firebase-card.auto-completed:hover .category-background-icon {
+  color: #04ff5c; 
+  opacity: 1;
 }
 
 /* Fallback voor als er geen specifieke prioriteit is, maar wel auto-completed */
-.custom-dark .task-card.auto-completed .category-background-icon,
-.custom-dark .firebase-card.auto-completed .category-background-icon {
-  color: #51976a !important; /* Aangepaste groene kleur */
-  opacity: 0.6 !important;
-}
-
 .task-card.priority-high .subtask-progress-bar {
   background: linear-gradient(to right, #ff416c, #ff4b2b);
+}
+
+/* Text shadow voor percentages in voortgangsbalk */
+.progress-percentage-text {
+  text-shadow: 0px 0px 5px rgba(0,0,0,0.6);
 }
 
 /* Neumorfische schaduwklassen voor detailpagina */
@@ -1017,6 +1006,14 @@ input[type="search"]::-webkit-search-results-decoration {
   border: 1px solid rgba(25, 233, 101, 0.3) !important;
 }
 
+.custom-dark .firebase-card{
+  box-shadow: 5px 5px 12px rgba(10, 7, 3, 0.4), -5px -5px 12px rgba(100, 60, 20, 0.07), inset 1px 1px 0px rgba(255, 255, 255, 0.03);
+}
+
+.custom-dark .firebase-card:hover {
+  box-shadow: 7px 7px 15px rgba(10, 7, 3, 0.5), -7px -7px 15px rgba(100, 60, 20, 0.09), inset 1px 1px 1px rgba(255, 255, 255, 0.04);
+}
+
 .task-card.auto-completed:hover,
 .custom-dark .task-card.auto-completed.priority-high:hover, 
 .custom-dark .task-card.auto-completed.priority-medium:hover, 
@@ -1030,6 +1027,7 @@ input[type="search"]::-webkit-search-results-decoration {
     inset 1px 1px 0px rgba(255, 255, 255, 0.07) !important;
   border-color: rgba(25, 233, 101, 0.5) !important;
 }
+
 
 /* Hover effect voor voltooide kaarten in detail pagina - ALLEEN voor de beschrijving kaart */
 .firebase-card.auto-completed:not(.subtask-card-glow-target):hover,
@@ -1079,17 +1077,6 @@ input[type="search"]::-webkit-search-results-decoration {
 
 .task-card.auto-completed svg[width="20"][height="20"] + span,
 .custom-dark .task-card.auto-completed svg[width="20"][height="20"] + span {
-  color: #19e965 !important;
-}
-
-/* Groene kleur voor subtaken cijfer en checkbox in voltooide taken in detail pagina */
-.firebase-card.auto-completed svg,
-.custom-dark .firebase-card.auto-completed svg {
-  color: #19e965 !important;
-}
-
-.firebase-card.auto-completed svg + span,
-.custom-dark .firebase-card.auto-completed svg + span {
   color: #19e965 !important;
 }
 

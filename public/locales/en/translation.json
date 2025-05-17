@@ -636,16 +636,16 @@
     "toast": {
       "subtaskUpdated": "Subtask updated",
       "updateFailed": "Update failed",
-      "subtaskUpdateFailedDescription": "Could not update subtask.",
+      "subtaskUpdateFailedDescription": "Could not update the subtask.",
       "taskDeleted": "Task deleted",
       "taskDeletedDescription": "Task \"{{taskTitle}}\" has been deleted.",
       "deleteFailed": "Delete failed",
       "taskDeleteFailedDescription": "Could not delete the task.",
       "subtaskStatusUpdateFailedDescription": "Could not update subtask status.",
       "subtaskAdded": "Subtask added",
-      "subtaskAddedDescription": "Subtask \"{{subtaskTitle}}\" has been added.",
+      "subtaskAddedDescription": "Subtask \"{{subtaskTitle}}\" has been successfully added.",
       "addFailed": "Add failed",
-      "subtaskAddFailedDescription": "Could not add the subtask."
+      "subtaskAddFailedDescription": "Could not add the new subtask."
     },
     "noDeadline": "No deadline",
     "invalidDate": "Invalid date",
@@ -721,7 +721,12 @@
     "addingSubtask": "Adding...",
     "noSubtasks": "No subtasks yet",
     "markAsComplete": "Mark as complete",
-    "markAsIncomplete": "Mark as incomplete"
+    "markAsIncomplete": "Mark as incomplete",
+    "subtaskActions": {
+      "research": "Research",
+      "edit": "Edit",
+      "delete": "Delete"
+    }
   },
   "common": {
     "add": "Add",
@@ -1074,11 +1079,8 @@
     "researchForPromptLabel": "Research for prompt: {{prompt}}"
   },
   "chatInput": {
-    "messagePlaceholder": "Type your message...",
-    "placeholderNote": "Type your note...",
-    "sendButton": "Send",
-    "noteModeButton": "Save as note",
-    "chatModeButton": "Back to chat"
+    "messagePlaceholder": "Plan, Search, Make it happen...",
+    "useNoteModeTooltip": "Use note mode"
   },
   "editTaskDialog": {
     "titlePlaceholder": "Enter task title here",

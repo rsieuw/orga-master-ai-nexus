@@ -108,7 +108,6 @@ export default function TaskDetail() {
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [contextMenuSubtaskId, setContextMenuSubtaskId] = useState<string | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState<{ top: number, left: number } | null>(null);
-  const [isInfoCollapsed] = useState(false);
   const [isDescriptionMinimized, setIsDescriptionMinimized] = useState(false);
   const subtaskCardRef = useRef<HTMLDivElement>(null);
   const [subtaskSortOrder, setSubtaskSortOrder] = useState<'default' | 'completedFirst' | 'incompleteFirst'>('default');
@@ -148,31 +147,36 @@ export default function TaskDetail() {
    * Determines the CSS classes for styling based on task priority.
    * 
    * @param {string} priority - The priority level of the task ('high', 'medium', 'low', or 'none').
-   * @returns {{ backgroundClass: string; shadowClass: string }} An object containing the CSS classes for background and shadow effects.
+   * @returns {{ backgroundClass: string; shadowClass: string; directPriorityClass: string }} An object containing the CSS classes for background and shadow effects.
    */
-  const getPriorityClass = (priority: string = 'none'): { backgroundClass: string; shadowClass: string } => {
+  const getPriorityClass = (priority: string = 'none'): { backgroundClass: string; shadowClass: string; directPriorityClass: string } => {
     let backgroundClass = '';
     let shadowClass = '';
+    let directPriorityClass = '';
 
     switch(priority) {
       case 'high':
         backgroundClass = 'bg-gradient-to-br from-[#b12429]/30 via-[#8112a9]/30 to-[#690365]/30 dark:bg-gradient-to-br dark:from-[rgba(220,38,38,0.8)] dark:via-[rgba(150,25,80,0.75)] dark:to-[rgba(70,20,90,0.7)]';
         shadowClass = 'neumorphic-shadow-high';
+        directPriorityClass = 'priority-high';
         break;
       case 'medium':
         backgroundClass = 'bg-gradient-to-br from-[#db7b0b]/30 via-[#9e4829]/30 to-[#651945]/30 dark:bg-gradient-to-br dark:from-[rgba(255,145,0,0.9)] dark:to-[rgba(101,12,78,0.85)]';
         shadowClass = 'neumorphic-shadow-medium';
+        directPriorityClass = 'priority-medium';
         break;
       case 'low':
         backgroundClass = 'bg-gradient-to-br from-blue-500/30 via-cyan-400/30 to-teal-400/30 dark:bg-gradient-to-br dark:from-[rgb(36,74,212)] dark:via-[rgba(15,168,182,0.75)] dark:to-[rgba(16,185,129,0.7)]';
         shadowClass = 'neumorphic-shadow-low';
+        directPriorityClass = 'priority-low';
         break;
       default:
         backgroundClass = 'bg-gradient-to-br from-blue-600/30 to-purple-700/30 dark:bg-gradient-to-br dark:from-[rgba(100,116,139,0.8)] dark:via-[rgba(71,85,105,0.75)] dark:to-[rgba(51,65,85,0.7)]';
         shadowClass = 'neumorphic-shadow-none';
+        directPriorityClass = 'priority-none';
         break;
     }
-    return { backgroundClass, shadowClass };
+    return { backgroundClass, shadowClass, directPriorityClass };
   };
 
   const priorityStyles = task ? getPriorityClass(task.priority) : getPriorityClass();
@@ -342,6 +346,24 @@ export default function TaskDetail() {
     }
   }, [id, task, markTaskAsViewed]);
 
+  // Effect to handle clicks outside the subtask context menu
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
+        closeSubtaskContextMenu();
+      }
+    }
+
+    if (contextMenuSubtaskId) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("touchstart", handleClickOutside);
+      };
+    }
+  }, [contextMenuSubtaskId]); // Only re-run if contextMenuSubtaskId changes
+
   // Function to find the correct translation key for a category
   /**
    * Finds the translation key for a given category string.
@@ -365,14 +387,14 @@ export default function TaskDetail() {
     return t(translationKey);
   };
 
-  // Function for background icon with adjustment for each priority color
   /**
    * Gets the appropriate background icon component for a given task category.
    * The icon's color is adjusted based on the task's priority.
    * @param {string} [category] - The category string.
+   * @param {string} [taskStatus] - The task status.
    * @returns {JSX.Element | null} The icon component or null if the category is not recognized.
    */
-  const getCategoryBackgroundIcon = (category?: string, taskStatus?: string, priority?: string) => {
+  const getCategoryBackgroundIcon = (category?: string, taskStatus?: string) => {
     let iconColorClass = "text-muted-foreground"; // Default color
     let opacityClass = "opacity-40"; // Default opacity
 
@@ -380,53 +402,50 @@ export default function TaskDetail() {
       iconColorClass = "text-[#51976a]"; // Aangepaste groene kleur
       opacityClass = "opacity-60"; // Consistent met TaskCard
     } else {
-      // Kleuren op basis van prioriteit
-      switch(priority) {
-        case 'high':
-          iconColorClass = "text-red-500"; // Tailwind class voor rood
-          break;
-        case 'medium':
-          iconColorClass = "text-orange-500"; // Tailwind class voor oranje
-          break;
-        case 'low':
-          iconColorClass = "text-blue-400"; // Lichtere blauw (Tailwind blue-400)
-          break;
-        // 'none' of default gebruikt de initiële "text-muted-foreground"
-      }
+      // Verwijderd: Geen specifieke kleuren voor prioriteiten, alleen standaard kleur
+      // We houden de kleuren alleen bij hover (wordt via CSS gedaan)
       opacityClass = "opacity-40"; // Standaard opacity voor niet-voltooide taken
     }
     
     const iconProps = { 
       className: `category-background-icon ${iconColorClass} ${opacityClass}`,
-      size: 62, 
+      size: 52, // Aangepast van 62 naar 52
       strokeWidth: 0.6
     };
     
     const normalizedCategory = category?.toLowerCase();
 
     switch(normalizedCategory) {
+      case "werk/studie":
       case "work":
         return <BriefcaseBusiness {...iconProps} />;
+      case "persoonlijk":
       case "personal":
         return <User {...iconProps} />;
-      case "home":
+      case "thuis":
+      case "home": 
         return <Home {...iconProps} />;
+      case "familie":
       case "family":
         return <Users {...iconProps} />;
+      case "sociaal":
       case "social":
         return <GlassWater {...iconProps} />;
+      case "gezondheid":
       case "health":
         return <Heart {...iconProps} />;
+      case "financiën":
       case "finances":
         return <Wallet {...iconProps} />;
+      case "projecten":
       case "projects":
-        return <Hammer {...iconProps} />;
       case "project":
         return <Hammer {...iconProps} />;
+      case "leren":
       case "learning":
         return <BookOpen {...iconProps} />;
       default:
-        if (category) { 
+        if (category) {
           console.warn(`[TaskDetail] Onbekende categorie voor achtergrondicoon: '${category}' (genormaliseerd naar: '${normalizedCategory}')`);
         }
         return null;
@@ -579,28 +598,29 @@ export default function TaskDetail() {
                 "firebase-card flex-col relative overflow-hidden z-10",
                 "rounded-none border-none lg:rounded-lg lg:border lg:border-solid lg:border-white/10",
                 "flex-shrink-0 mb-0 lg:mb-4 bg-card/80 backdrop-blur-md",
-                isDescriptionMinimized ? "max-h-[68px]" : "",
                 task?.status === 'done' 
                   ? 'auto-completed' 
                   : priorityStyles.backgroundClass,
-                priorityStyles.shadowClass
+                priorityStyles.shadowClass,
+                priorityStyles.directPriorityClass
               )}
             >
               {task?.category && (
                 <div className={cn(
-                  `absolute right-4 z-0 pointer-events-none`,
+                  `absolute right-5 z-0 pointer-events-none`,
                   isDescriptionMinimized ? "opacity-0 transform scale-90" : "opacity-100 transform scale-100",
                   "transition-all duration-800 ease-in-out",
-                  task.subtasks && task.subtasks.length > 0 ? 'bottom-10' : 'bottom-4'
+                  task.subtasks && task.subtasks.length > 0 ? 'bottom-12' : 'bottom-8'
                 )}>
-                  {getCategoryBackgroundIcon(task.category, task.status, task.priority)}
+                  {getCategoryBackgroundIcon(task.category, task.status)}
                 </div>
               )}
               <CardHeader className={cn(
-                "px-4",
-                isDescriptionMinimized ? "!pt-2" : "!pt-3", isDescriptionMinimized ? "pb-2" : "pb-3",
-                "lg:px-6",
-                isDescriptionMinimized ? "lg:!pt-2" : "lg:!pt-3", isDescriptionMinimized ? "lg:pb-2" : "lg:pb-3"
+                "px-4 lg:px-6", // Horizontale padding blijft constant
+                "transition-all duration-300 ease-in-out", // Behoud transitie voor padding
+                isDescriptionMinimized 
+                  ? "!pt-2 pb-2 lg:!pt-1 lg:pb-2" // Aangepast: lg:!pt-1 voor 0.25rem padding-top op lg screens
+                  : "!pt-3 pb-3 lg:!pt-3 lg:pb-3"
               )}>
                 <div className="flex items-center justify-between">
                   <CardTitle className={cn(
@@ -652,16 +672,18 @@ export default function TaskDetail() {
               </CardHeader>
               {task && (
                 <CardContent className={cn(
-                  "p-0 flex flex-col flex-grow min-h-0",
-                  "transition-all duration-800 ease-in-out",
-                  isDescriptionMinimized 
-                    ? "opacity-0 max-h-0 transform translate-y-[-10px] overflow-hidden" 
-                    : "opacity-100 transform translate-y-0"
+                  "p-0 flex flex-col flex-grow min-h-0"
                 )}>
-                  <div className="flex flex-col flex-grow min-h-0 px-4 pb-4 pt-0 sm:px-6 sm:pb-6 sm:pt-0">
+                  <div className={cn(
+                    "flex flex-col flex-grow min-h-0", // Basis layout
+                    "overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out", // Animatie
+                    isDescriptionMinimized 
+                      ? "max-h-0 opacity-0 p-0" // Ingeklapt: geen padding, geen hoogte, onzichtbaar
+                      : "px-4 pb-4 pt-0 sm:px-6 sm:pb-6 sm:pt-0 max-h-[1000px] opacity-100" // Uitgeklapt: normale padding, hoogte, zichtbaar
+                  )}>
                     <TaskInfoDisplay
                       task={task}
-                      isInfoCollapsed={isInfoCollapsed}
+                      isInfoCollapsed={isDescriptionMinimized} // Prop is nog aanwezig, maar TaskInfoDisplay gebruikt het niet meer voor animatie
                     />
                     <div className="mt-4 flex flex-wrap items-center gap-2 relative z-10">
                       {task.category && (
@@ -699,7 +721,7 @@ export default function TaskDetail() {
                       </Button>
 
                       <AlertDialog>
-                        <AlertDialogTrigger asChild>
+                        <AlertDialogTrigger asChild data-testid="subtask-delete-trigger">
                           <Button
                             variant="outline"
                             size="sm"
@@ -780,8 +802,7 @@ export default function TaskDetail() {
                           />
                           {progressValue > 10 && (
                             <span 
-                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold select-none"
-                              style={{ textShadow: '0px 0px 5px rgba(0,0,0,0.6)' }}
+                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold select-none progress-percentage-text"
                             >
                               {Math.round(progressValue)}%
                             </span>
@@ -911,26 +932,28 @@ export default function TaskDetail() {
                                       }}
                                     >
                                       <MessageSquareText className="mr-2 h-4 w-4" />
-                                      {t('chatPanel.researchButton')}
+                                      {t('taskDetail.subtaskActions.research')}
                                     </button>
                                     <button
                                       type="button"
                                       className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted/80 disabled:opacity-50"
                                       onClick={() => {
+                                        console.log("Edit subtask:", subtaskItem.id, subtaskItem.title);
                                         closeSubtaskContextMenu();
                                       }}
                                       disabled={subtaskItem.completed}
                                     >
                                       <Edit className="mr-2 h-4 w-4" />
-                                      {t('taskDetail.subtask.edit')}
+                                      {t('taskDetail.subtaskActions.edit')}
                                     </button>
                                     <AlertDialog>
                                       <AlertDialogTrigger asChild>
-                                        <button 
+                                        <button
                                           type="button"
-                                          className="flex items-center w-full text-left px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-b-md focus-visible:ring-destructive">
+                                          className="flex items-center w-full text-left px-3 py-2 text-sm text-red-500 dark:text-red-400 hover:bg-destructive/10 dark:hover:text-red-300 rounded-b-md focus-visible:ring-destructive"
+                                        >
                                           <Trash2 className="mr-2 h-4 w-4" />
-                                          {t('taskDetail.subtask.delete')}
+                                          {t('taskDetail.subtaskActions.delete')}
                                         </button>
                                       </AlertDialogTrigger>
                                       <AlertDialogPortal>

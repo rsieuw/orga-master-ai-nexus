@@ -807,7 +807,11 @@
       "updateFailed": "Bijwerken mislukt",
       "subtaskUpdateFailedDescription": "Kon de subtaak niet bijwerken.",
       "deleteFailed": "Verwijderen mislukt",
-      "taskDeleteFailedDescription": "Kon de subtaak niet verwijderen."
+      "taskDeleteFailedDescription": "Kon de subtaak niet verwijderen.",
+      "subtaskAdded": "Subtaak toegevoegd",
+      "subtaskAddedDescription": "Subtaak \"{{subtaskTitle}}\" is succesvol toegevoegd.",
+      "addFailed": "Toevoegen mislukt",
+      "subtaskAddFailedDescription": "Kon de nieuwe subtaak niet toevoegen."
     },
     "subtasksTitle": "Subtaken",
     "sortSubtasksAriaLabel": "Sorteer subtaken",
@@ -880,7 +884,12 @@
       "fabText": "Nieuwe subtaak"
     },
     "emptySubtasks": "Geen subtaken toegevoegd",
-    "addingSubtask": "Toevoegen..."
+    "addingSubtask": "Toevoegen...",
+    "subtaskActions": {
+      "research": "Onderzoek",
+      "edit": "Bewerken",
+      "delete": "Verwijderen"
+    }
   },
   "common": {
     "add": "Toevoegen",
@@ -1241,11 +1250,8 @@
     "noteSavedTitle": "Notitie opgeslagen"
   },
   "chatInput": {
-    "messagePlaceholder": "Typ je bericht of / voor commando's...",
-    "placeholderNote": "Typ je notitie...",
-    "sendButton": "Versturen",
-    "noteModeButton": "Opslaan als notitie",
-    "chatModeButton": "Terug naar chat"
+    "messagePlaceholder": "Plan, Zoek, Maak het waar...",
+    "useNoteModeTooltip": "Gebruik notitie modus"
   },
   "editTaskDialog": {
     "titlePlaceholder": "Voer hier de titel van de taak in",

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
+const LOCAL_STORAGE_KEY_GREETING = 'hasShownTypedGreeting';
+
 /**
  * Props for the TypedGreeting component.
  *
@@ -29,6 +31,7 @@ interface TypedGreetingProps {
  * Displays text with a typing animation and an animated gradient effect.
  * Includes a blinking cursor during the typing animation.
  * Uses Framer Motion for animations.
+ * Will only show the typing animation on the first visit.
  *
  * @param {TypedGreetingProps} props - The props for the component.
  * @returns {JSX.Element} The rendered TypedGreeting component.
@@ -44,9 +47,25 @@ export function TypedGreeting({
 }: TypedGreetingProps) {
   const [displayText, setDisplayText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
 
   useEffect(() => {
-    if (currentIndex < text.length) {
+    const hasBeenShown = localStorage.getItem(LOCAL_STORAGE_KEY_GREETING);
+    if (!hasBeenShown) {
+      setShouldAnimate(true);
+      // Mark as shown for subsequent visits. 
+      // We can set this immediately or after the animation completes.
+      // Setting it immediately is simpler.
+      localStorage.setItem(LOCAL_STORAGE_KEY_GREETING, 'true');
+    } else {
+      setShouldAnimate(false);
+      setDisplayText(text); // Show full text immediately
+    }
+  }, [text]); // Rerun if text changes, though for greeting it might be static
+
+  useEffect(() => {
+    // Only run typing animation if shouldAnimate is true
+    if (shouldAnimate && currentIndex < text.length) {
       const timer = setTimeout(() => {
         setDisplayText(prev => prev + text[currentIndex]);
         setCurrentIndex(prev => prev + 1);
@@ -54,7 +73,7 @@ export function TypedGreeting({
       
       return () => clearTimeout(timer);
     }
-  }, [currentIndex, text, speed]);
+  }, [shouldAnimate, currentIndex, text, speed]);
 
   return (
     <div className={`typed-greeting ${className}`} style={{ minHeight: '1.2em', display: 'inline-block' }}>
@@ -66,7 +85,7 @@ export function TypedGreeting({
           backgroundClip: 'text',
           color: 'transparent',
           position: 'relative',
-          minWidth: '1ch', // Minimale breedte om verspringing te voorkomen
+          minWidth: '1ch', // Minimum width to prevent jumping
         }}
         animate={{
           backgroundImage: [
@@ -82,8 +101,8 @@ export function TypedGreeting({
         }}
       >
         {displayText}
-        {/* Gebruik een absolute gepositioneerde cursor die niet de layout beïnvloedt */}
-        {currentIndex < text.length && (
+        {/* Use an absolutely positioned cursor that does not affect the layout */}
+        {shouldAnimate && currentIndex < text.length && (
           <motion.span
             className="cursor"
             animate={{ opacity: [1, 0, 1] }}
@@ -91,7 +110,7 @@ export function TypedGreeting({
             style={{ 
               position: 'absolute',
               top: 0,
-              right: '-4px', // Positioneer rechts van de tekst
+              right: '-4px', // Position to the right of the text
               display: 'inline-block',
               width: '2px',
               height: '1em',
@@ -100,7 +119,7 @@ export function TypedGreeting({
             }}
           />
         )}
-        {/* Onzichtbare placeholder die de volledige tekst bevat om de grootte te definiëren */}
+        {/* Invisible placeholder containing the full text to define the size */}
         <span 
           style={{
             position: 'absolute', 

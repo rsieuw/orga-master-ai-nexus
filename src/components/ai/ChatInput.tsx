@@ -1,4 +1,4 @@
-import { KeyboardEvent, ChangeEvent } from "react";
+import { KeyboardEvent, ChangeEvent, FocusEvent } from "react";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Send, Save } from "lucide-react";
@@ -20,6 +20,10 @@ interface ChatInputProps {
   input: string;
   /** Function to update the input text value. */
   setInput: (input: string) => void;
+  /** Optional: Handler for when the input field receives focus. */
+  onFocus?: (event: FocusEvent<HTMLTextAreaElement>) => void;
+  /** Optional: Handler for when the input field loses focus. */
+  onBlur?: (event: FocusEvent<HTMLTextAreaElement>) => void;
 }
 
 /**
@@ -40,7 +44,9 @@ export function ChatInput({
   isLoading, 
   isNoteMode, 
   input, 
-  setInput 
+  setInput,
+  onFocus,
+  onBlur
 }: ChatInputProps) {
   const { t } = useTranslation();
 
@@ -67,7 +73,7 @@ export function ChatInput({
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
-      <div className="relative flex flex-grow items-end gap-2">
+      <div className="relative flex flex-grow items-end gap-2 px-2 sm:px-3">
         <label htmlFor="chat-message-input" className="sr-only">
           {t('chatInput.messagePlaceholder', 'Type je bericht...')}
         </label>
@@ -81,6 +87,8 @@ export function ChatInput({
           onKeyDown={handleKeyDown}
           rows={1}
           disabled={isLoading}
+          onFocus={onFocus}
+          onBlur={onBlur}
         />
         <TooltipProvider delayDuration={300}>
           <Tooltip>
@@ -90,7 +98,7 @@ export function ChatInput({
                 onClick={onSubmit}
                 size="icon"
                 disabled={isLoading || !input.trim()}
-                className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
+                className="absolute right-6 sm:right-8 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
               >
                 {isLoading ? (
                   <GradientLoader size="sm" />

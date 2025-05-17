@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils.ts";
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+// import { motion, AnimatePresence } from 'framer-motion'; // Verwijderd
 import { Task } from "@/types/task.ts";
 
 /**
@@ -28,30 +28,18 @@ export interface TaskInfoDisplayProps {
  */
 export default function TaskInfoDisplay({
   task,
-  isInfoCollapsed,
+  // isInfoCollapsed, // Niet meer direct gebruikt voor animatie hier
   className,
 }: TaskInfoDisplayProps) {
   const { t } = useTranslation();
 
   return (
-    <div className={cn("px-0", className)}>
+    <div className={cn("px-0", className)}> {/* px-0 was hier, maar padding wordt nu door parent in TaskDetail.tsx afgehandeld */}
       <div className="flex-shrink-0">
-        <AnimatePresence mode="sync">
-          <motion.div 
-            initial={false}
-            animate={{ 
-              height: isInfoCollapsed ? 0 : 'auto',
-              opacity: isInfoCollapsed ? 0 : 1,
-              marginBottom: isInfoCollapsed ? 0 : 'auto' 
-            }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className={cn("overflow-hidden")}
-          >
-            <p className="text-sm text-white whitespace-pre-wrap leading-relaxed">
-              {task.description || t('taskDetail.noDescription')}
-            </p>
-          </motion.div>
-        </AnimatePresence>
+        {/* Verwijder AnimatePresence en motion.div; de parent div in TaskDetail.tsx handelt nu de animatie af */}
+        <p className="text-sm text-white whitespace-pre-wrap leading-relaxed pt-1">
+          {task.description || t('taskDetail.noDescription')}
+        </p>
       </div>
     </div>
   );

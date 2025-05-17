@@ -46,6 +46,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
   const [input, setInput] = useState("");
   const [isNoteMode, setIsNoteMode] = useState(false);
   const [isAiResponding, setIsAiResponding] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const [currentResearchMode, setCurrentResearchMode] = useState<ResearchMode>('research');
   const [showSearchInput, setShowSearchInput] = useState(false);
@@ -533,29 +534,33 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       )}
 
       <div className="border-t border-border flex flex-col flex-shrink-0">
-        <div className="p-2">
-          <ChatInput 
-            onSubmit={handleSubmit} 
-            isLoading={messagesLoading || isResearching || isAiResponding}
-            isNoteMode={isNoteMode}
+        <div className="py-2 px-0 sm:px-0 relative">
+          <ChatInput
             input={input}
             setInput={setInput}
+            onSubmit={handleSubmit}
+            isLoading={isAiResponding || isResearching}
+            isNoteMode={isNoteMode}
+            onFocus={() => setIsInputFocused(true)}
+            onBlur={() => setIsInputFocused(false)}
           />
         </div>
-        <ChatControls
-          isNoteMode={isNoteMode}
-          setIsNoteMode={setIsNoteMode}
-          onClearHistory={clearHistory}
-          onExport={handleExportChat}
-          onResearch={handleDeepResearch}
-          researchModeOptions={researchModeOptions}
-          currentResearchMode={currentResearchMode}
-          user={user}
-          isLoading={messagesLoading}
-          isGenerating={isResearching || isAiResponding}
-          onCancelResearch={cancelResearch}
-          showCancelButton={isResearching}
-        />
+        <div className={`px-0 sm:px-0 ${isInputFocused && globalThis.innerWidth < 768 ? 'chat-actions-hidden-on-mobile-focus' : ''}`}>
+          <ChatControls
+            isNoteMode={isNoteMode}
+            setIsNoteMode={setIsNoteMode}
+            onClearHistory={clearHistory}
+            onExport={handleExportChat}
+            onResearch={handleDeepResearch}
+            researchModeOptions={researchModeOptions}
+            currentResearchMode={currentResearchMode}
+            user={user}
+            isLoading={messagesLoading}
+            isGenerating={isResearching || isAiResponding}
+            onCancelResearch={cancelResearch}
+            showCancelButton={isResearching}
+          />
+        </div>
       </div>
     </div>
   );

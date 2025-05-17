@@ -91,7 +91,7 @@ export function ChatControls({
   const activeModel = aiModels.find(model => model.id === aiMode) || aiModels[0];
 
   return (
-    <div className="p-2 border-t border-white/5 flex items-center justify-between gap-2 bg-background/50">
+    <div className="py-2 px-3 border-t border-white/5 flex items-center justify-between gap-2 bg-background/50">
       <div className="flex gap-2">
         <Popover open={isResearchPopoverOpen} onOpenChange={setIsResearchPopoverOpen}>
           <PopoverTrigger asChild>

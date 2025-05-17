@@ -155,6 +155,8 @@ export default function Dashboard() {
   const [showMobileActions, setShowMobileActions] = useState(true);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Voeg een state object toe voor het bijhouden van actieve pagina's per categorie
+  const [activePages, setActivePages] = useState<Record<string, number>>({});
 
   // Update Local Storage when local state changes
   useEffect(() => {
@@ -188,14 +190,10 @@ export default function Dashboard() {
     };
   }, [isNewTaskOpen]);
 
-  // Effect for managing FAB button visibility
+  // Effect for managing FAB button visibility - Hersteld
   useEffect(() => {
     const INACTIVITY_TIMEOUT = 2500;
     
-    /**
-     * Handles user activity events to show/hide the mobile action buttons.
-     * Resets the inactivity timer on user interaction.
-     */
     const handleActivity = () => {
       if (hideTimerRef.current !== null) {
         clearTimeout(hideTimerRef.current);
@@ -327,16 +325,16 @@ export default function Dashboard() {
       }
     };
     
-    // Loop through each category (overdue, today, etc.)
-    (Object.keys(filteredAndSortedTaskGroups) as Array<keyof TasksByDate>).forEach(category => {
-      const tasksInCategory = filteredAndSortedTaskGroups[category];
-      
-      // Only show categories with tasks
+    const categoryOrder: Array<keyof TasksByDate> = [
+      'overdue', 'today', 'tomorrow', 'dayAfterTomorrow', 'nextWeek', 'later'
+    ];
+
+    // Helper function om een sectie te genereren
+    const generateSection = (category: keyof TasksByDate, tasksInCategory: Task[]) => {
       if (tasksInCategory.length > 0) {
-        // Add category title
-        sections.push(
-          <div key={`category-${category}`} className="mt-8 first:mt-0">
-            <h2 className="text-lg sm:text-lg text-xl md:text-lg font-bold sm:font-semibold mb-4 sm:mb-3 text-center md:text-left relative pb-2 sm:pb-0">
+        return (
+          <div key={`category-${category}`} className="mt-4 first:mt-0"> {/* Minder ruimte boven elke sectie */}
+            <h2 className="text-lg sm:text-lg text-xl md:text-lg font-bold sm:font-semibold mb-2 sm:mb-2 text-center md:text-left relative pb-2 sm:pb-0">
               <span className="relative z-10">
                 {getCategoryTitle(category)}{' '}
                 <span className="text-sm font-normal text-muted-foreground">({tasksInCategory.length})</span>
@@ -347,7 +345,7 @@ export default function Dashboard() {
             
             {/* Grid container for tasks - responsive with 1, 2 or 4 columns */}
             <motion.div
-              className="sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 hidden"
+              className="sm:grid md:grid-cols-2 lg:hidden gap-3 md:gap-4 hidden"
               variants={containerVariants}
               initial="hidden"
               animate="visible"
@@ -396,35 +394,197 @@ export default function Dashboard() {
               )}
             </motion.div>
 
+            {/* NEW Desktop grid with horizontal scrolling for 3x4 layout */}
+            <div className="hidden lg:block">
+              {(() => {
+                // Calculate how many pages of 12 cards we need
+                const tasksPerPage = 12; // 3 rows x 4 columns
+                const totalTasks = tasksInCategory.length;
+                const pagesCount = Math.ceil(totalTasks / tasksPerPage);
+                
+                // Alleen weergeven als er minstens 5 taken zijn, anders de standaard grid gebruiken
+                if (totalTasks < 5) {
+                  return (
+                    <motion.div
+                      className="grid grid-cols-4 gap-4"
+                      variants={containerVariants}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      {tasksInCategory.map((task) => (
+                        <motion.div
+                          key={task.id}
+                          variants={cardVariants}
+                          layout="position"
+                          className="mb-2"
+                        >
+                          <TaskCard task={task} />
+                        </motion.div>
+                      ))}
+                      
+                      {/* Add new task placeholder */}
+                      {category === 'today' && (
+                        <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+                          <DialogTrigger asChild>
+                            <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10">
+                              <PlusCircle className="h-10 w-10 text-muted-foreground/70 group-hover:text-primary transition-colors" />
+                              <span className="mt-2 text-sm text-muted-foreground/90 group-hover:text-primary transition-colors">
+                                {t('dashboard.addNewTaskPlaceholder')}
+                              </span>
+                            </Card>
+                          </DialogTrigger>
+                        </Dialog>
+                      )}
+                    </motion.div>
+                  );
+                }
+                
+                // Get or initialize the active page for this category
+                const activePage = activePages[category] || 0;
+                
+                return (
+                  <div className="relative group">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={`page-${category}-${activePage}`}
+                        className="grid grid-cols-4 gap-4 mb-2 grid-rows-[repeat(3,minmax(0,1fr))]"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {tasksInCategory
+                          .slice(activePage * tasksPerPage, (activePage + 1) * tasksPerPage)
+                          .map((task) => (
+                          <motion.div
+                            key={task.id}
+                            variants={cardVariants}
+                            className="mb-2"
+                          >
+                            <TaskCard task={task} />
+                          </motion.div>
+                        ))}
+                        
+                        {/* Add new task placeholder if this is the first page */}
+                        {activePage === 0 && category === 'today' && (
+                          <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+                            <DialogTrigger asChild>
+                              <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10">
+                                <PlusCircle className="h-10 w-10 text-muted-foreground/70 group-hover:text-primary transition-colors" />
+                                <span className="mt-2 text-sm text-muted-foreground/90 group-hover:text-primary transition-colors">
+                                  {t('dashboard.addNewTaskPlaceholder')}
+                                </span>
+                              </Card>
+                            </DialogTrigger>
+                          </Dialog>
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
+                    
+                    {/* Navigation controls */}
+                    {pagesCount > 1 && (
+                      <>
+                        {/* Left arrow */}
+                        {activePage > 0 && (
+                          <button 
+                            type="button"
+                            className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-6 bg-card/80 hover:bg-primary/10 rounded-full p-2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            onClick={() => setActivePages({...activePages, [category]: activePage - 1})}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="m15 18-6-6 6-6"/>
+                            </svg>
+                          </button>
+                        )}
+                        
+                        {/* Right arrow */}
+                        {activePage < pagesCount - 1 && (
+                          <button 
+                            type="button"
+                            className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-6 bg-card/80 hover:bg-primary/10 rounded-full p-2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            onClick={() => setActivePages({...activePages, [category]: activePage + 1})}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="m9 18 6-6-6-6"/>
+                            </svg>
+                          </button>
+                        )}
+                        
+                        {/* Page indicators */}
+                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                          {Array.from({ length: pagesCount }).map((_, i) => (
+                            <button
+                              key={`page-indicator-${i}`}
+                              type="button"
+                              className={`w-2.5 h-2.5 rounded-full transition-all ${i === activePage ? 'bg-primary scale-110' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'}`}
+                              onClick={() => setActivePages({...activePages, [category]: i})}
+                              aria-label={`Pagina ${i+1} van ${pagesCount}`}
+                            ></button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
             {/* Horizontal scrollable container for mobile */}
             <div className="flex flex-col space-y-2 sm:hidden">
               {/* Dynamisch aantal taken per rij op basis van totaal aantal taken */}
               {(() => {
                 // Bereken optimale aantal kaarten per rij
-                let cardsPerRow = 4; // Standaard waarde
                 const totalCards = tasksInCategory.length;
-                
-                // Bereken dynamisch aantal rijen/kaarten
-                if (totalCards <= 6) {
-                  // Voor weinig kaarten: 1 rij
-                  cardsPerRow = totalCards;
-                } else if (totalCards <= 16) {
-                  // Voor middelmatig aantal: ongeveer 4 per rij
-                  cardsPerRow = 4;
-                } else if (totalCards <= 36) {
-                  // Voor groter aantal: ongeveer 6 per rij
-                  cardsPerRow = 6;
+                if (totalCards === 0) return null; // Geen kaarten, geen rijen
+
+                const MIN_CARDS_MOBILE = 3;
+                const ABSOLUTE_MAX_CARDS_MOBILE = 10;
+
+                let optimalCardsPerRow = MIN_CARDS_MOBILE;
+
+                if (totalCards <= MIN_CARDS_MOBILE) {
+                    optimalCardsPerRow = totalCards;
                 } else {
-                  // Voor heel groot aantal: ongeveer wortel uit aantal (ongeveer vierkante indeling)
-                  cardsPerRow = Math.min(8, Math.ceil(Math.sqrt(totalCards)));
+                    // Check voor perfect vierkant
+                    const sqrt = Math.sqrt(totalCards);
+                    if (Number.isInteger(sqrt) && sqrt >= MIN_CARDS_MOBILE && sqrt <= ABSOLUTE_MAX_CARDS_MOBILE) {
+                        optimalCardsPerRow = sqrt;
+                    } else {
+                        // Zoek naar de beste verdeling
+                        let bestOption = {
+                            cards: optimalCardsPerRow,
+                            rows: Math.ceil(totalCards / optimalCardsPerRow),
+                            remainder: totalCards % optimalCardsPerRow,
+                            score: 0 // Hogere score is beter
+                        };
+
+                        for (let cards = MIN_CARDS_MOBILE; cards <= ABSOLUTE_MAX_CARDS_MOBILE; cards++) {
+                            if (cards > totalCards) continue; // Niet meer kaarten per rij dan er zijn
+
+                            const rows = Math.ceil(totalCards / cards);
+                            const remainder = totalCards % cards;
+                            
+                            let currentScore = 0;
+                            currentScore -= rows * 1000; 
+                            if (remainder === 0) {
+                                currentScore += 500; 
+                            }
+                            currentScore += remainder * 10; 
+                            currentScore += cards; 
+
+                            if (currentScore > bestOption.score) {
+                                bestOption = { cards, rows, remainder, score: currentScore };
+                            }
+                        }
+                        optimalCardsPerRow = bestOption.cards;
+                    }
                 }
-                
-                // Zorg voor minimaal 2 kaarten per rij, als er kaarten zijn
-                if (totalCards > 0) {
-                  cardsPerRow = Math.max(2, cardsPerRow);
-                }
-                
-                // Bereken aantal rijen
+
+                optimalCardsPerRow = Math.min(optimalCardsPerRow, totalCards); 
+                optimalCardsPerRow = totalCards <= MIN_CARDS_MOBILE ? totalCards : Math.max(MIN_CARDS_MOBILE, optimalCardsPerRow);
+                optimalCardsPerRow = Math.min(optimalCardsPerRow, ABSOLUTE_MAX_CARDS_MOBILE); 
+
+                const cardsPerRow = optimalCardsPerRow;
                 const numberOfRows = Math.ceil(totalCards / cardsPerRow);
                 
                 return Array.from({ length: numberOfRows }).map((_, rowIndex) => (
@@ -435,7 +595,6 @@ export default function Dashboard() {
                     initial="hidden"
                     animate="visible"
                   >
-                    {/* Lege ruimte aan het begin voor center-snap effect */}
                     <div className="flex-shrink-0 min-w-[8%]"></div>
                     
                     {tasksInCategory.slice(rowIndex * cardsPerRow, rowIndex * cardsPerRow + cardsPerRow).map(task => (
@@ -449,7 +608,6 @@ export default function Dashboard() {
                       </motion.div>
                     ))}
                     
-                    {/* Voeg de placeholder alleen toe aan de eerste rij als het category 'today' is */}
                     {category === 'today' && rowIndex === 0 && (tasksInCategory.length === 0 || tasksInCategory.length % cardsPerRow !== 0) && (
                       <motion.div
                         key="add-new-task-placeholder-mobile"
@@ -470,7 +628,6 @@ export default function Dashboard() {
                       </motion.div>
                     )}
                     
-                    {/* Lege ruimte aan het einde voor center-snap effect */}
                     <div className="flex-shrink-0 min-w-[8%]"></div>
                   </motion.div>
                 ));
@@ -479,10 +636,23 @@ export default function Dashboard() {
           </div>
         );
       }
+      return null;
+    };
+
+    // Loop through de gedefinieerde volgorde
+    categoryOrder.forEach(category => {
+      const tasksInCategory = filteredAndSortedTaskGroups[category];
+      const section = generateSection(category, tasksInCategory);
+      if (section) sections.push(section);
     });
+
+    // Voeg de 'completed' sectie expliciet als laatste toe
+    const completedTasks = filteredAndSortedTaskGroups.completed;
+    const completedSection = generateSection('completed', completedTasks);
+    if (completedSection) sections.push(completedSection);
     
     return sections;
-  }, [filteredAndSortedTaskGroups, t, isNewTaskOpen]);
+  }, [filteredAndSortedTaskGroups, t, isNewTaskOpen, activePages]); // Deze dependencies zijn voldoende
   // --- END NEW HORIZONTAL DISTRIBUTION ---
 
   // Construct the greeting text using user?.name
@@ -604,15 +774,15 @@ export default function Dashboard() {
           )}
         </AnimatePresence>
 
-        {/* Floating Action Button for new task (mobile only) */}
+        {/* FAB button for mobile */}
         <AnimatePresence>
-          {showMobileActions && (
+          {showMobileActions && globalThis.innerWidth < 768 && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 20 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20 }}
               className="fixed bottom-[75.4px] right-6 z-40 lg:hidden"
-              transition={{ duration: 0.2 }}
             >
               <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
                 <DialogTrigger asChild>
@@ -628,6 +798,21 @@ export default function Dashboard() {
                     <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-md bg-background/70 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none">{t('navbar.newTaskButton.text')}</span>
                   </div>
                 </DialogTrigger>
+                <DialogPortal>
+                  <DialogOverlay className="fixed inset-0 z-[100] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                  <DialogContent 
+                    className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-card/90 backdrop-blur-md p-6 shadow-lg sm:rounded-lg z-[101] sm:max-w-[600px] max-h-[80vh] overflow-y-auto"
+                    onOpenAutoFocus={(e) => e.preventDefault()} 
+                  >
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl">{t('appLayout.newTaskDialog.title')}</DialogTitle>
+                      <DialogDescription>
+                        {t('appLayout.newTaskDialog.description')}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <NewTaskDialog setOpen={setIsNewTaskOpen} />
+                  </DialogContent>
+                </DialogPortal>
               </Dialog>
             </motion.div>
           )}
