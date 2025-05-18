@@ -199,6 +199,7 @@ export default function SubtaskRow({
       <div className="flex items-center flex-1 min-w-0">
         <div className="relative mr-3 flex items-center justify-center h-5 w-5 shrink-0">
           <Checkbox
+            id={`subtask-${subtask.id}`}
             checked={subtask.completed}
             onCheckedChange={(checked) => handleSubtaskToggle(subtask.id, !!checked)}
             aria-hidden="true"
@@ -211,12 +212,12 @@ export default function SubtaskRow({
           {!subtask.completed && (
             <span 
               className={cn(
-                "absolute inset-0 flex items-center justify-center text-xs font-medium pointer-events-none",
+            "absolute inset-0 flex items-center justify-center text-xs font-medium pointer-events-none",
                 "text-muted-foreground/90"
               )}
             >
-              {index + 1}
-            </span>
+            {index + 1}
+          </span>
           )}
         </div>
         <div className="flex-grow leading-none">
@@ -270,19 +271,19 @@ export default function SubtaskRow({
           </Button>
         )}
         {!isEditing && (
-          <Button
-            variant="ghost"
-            size="icon"
+              <Button
+                variant="ghost"
+                size="icon"
             className="h-6 w-6 text-muted-foreground hover:text-red-500 dark:text-muted-foreground dark:hover:text-red-400"
             onClick={(e) => {
               e.stopPropagation();
               onInitiateDelete(subtask);
             }}
             aria-label={t('taskDetail.subtask.deleteSubtaskSR')}
-          >
-            <Trash2 className="h-4 w-4" />
-            <span className="sr-only">{t('taskDetail.subtask.deleteSubtaskSR')}</span>
-          </Button>
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">{t('taskDetail.subtask.deleteSubtaskSR')}</span>
+              </Button>
         )}
       </div>
     </div>

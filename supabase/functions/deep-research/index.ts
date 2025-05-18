@@ -174,10 +174,7 @@ Deno.serve(async (req: Request) => {
     if (usePerplexity) {
       apiEndpoint = 'https://api.perplexity.ai/chat/completions';
       apiKey = perplexityApiKey!;
-      externalApiModelUsed = "sonar-medium-online"; // Perplexity model, was "sonar-pro"
-                                                   // sonar-medium-online is a common choice
-                                                   // sonar-small-online is faster
-                                                   // sonar-medium-online is more thorough
+      externalApiModelUsed = "sonar-pro"; // Perplexity model, was "sonar-medium-chat"
     } else {
       apiEndpoint = 'https://api.openai.com/v1/chat/completions';
       apiKey = openAIApiKey!;

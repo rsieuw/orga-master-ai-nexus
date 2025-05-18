@@ -70,14 +70,14 @@ export function MessageItem({
     li: ({node, ...props}) => <li className="mb-1" {...props} />,
     a: ({node, children, ...props}) => <a className="text-blue-400 hover:underline" {...props} target="_blank" rel="noopener noreferrer">{children}</a>,
     table: ({node, ...props}) => (
-      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-blue-600 hover:scrollbar-thumb-blue-500 scrollbar-track-blue-200 scrollbar-thumb-rounded-md">
-        <table className="table-auto w-full border-collapse border border-blue-500/30 mb-4" {...props} />
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-400 hover:scrollbar-thumb-slate-500 dark:scrollbar-thumb-slate-600 dark:hover:scrollbar-thumb-slate-500 scrollbar-track-slate-200 dark:scrollbar-track-slate-700/50 scrollbar-thumb-rounded-md my-4 shadow-lg rounded-xl bg-white dark:bg-slate-800">
+        <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700" {...props} />
       </div>
     ),
-    thead: ({node, ...props}) => <thead className="bg-blue-200 dark:bg-blue-800/70" {...props} />,
-    th: ({node, ...props}) => <th className="border border-blue-500/30 font-semibold p-2 text-left whitespace-normal break-words" {...props} />,
-    td: ({node, ...props}) => <td className="border border-blue-500/30 p-2 whitespace-normal break-words" {...props} />,
-    hr: ({node, ...props}) => <hr className="border-t border-blue-500/30 my-4" {...props} />
+    thead: ({node, ...props}) => <thead className="bg-slate-50 dark:bg-slate-700/50" {...props} />,
+    th: ({node, ...props}) => <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider border-b-2 border-slate-200 dark:border-slate-600 whitespace-normal break-words" {...props} />,
+    td: ({node, ...props}) => <td className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-200 whitespace-normal break-words" {...props} />,
+    hr: ({node, ...props}) => <hr className="border-t border-slate-300 dark:border-slate-700 my-4" {...props} />
   };
 
   // Render specifically for research_loader

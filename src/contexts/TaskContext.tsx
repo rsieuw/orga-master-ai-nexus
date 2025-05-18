@@ -64,6 +64,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isGeneratingAISubtasksMap, setIsGeneratingAISubtasksMap] = useState<Record<string, boolean>>({});
+  const [lastResearchOutputs, setLastResearchOutputs] = useState<Record<string, string>>({});
 
   /**
    * Sets the AI subtask generation status for a specific task to true.
@@ -694,6 +695,26 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   /**
+   * Stores the text output of the last completed deep research for a specific task.
+   *
+   * @param {string} taskId - The ID of the task.
+   * @param {string} researchText - The text content of the research output.
+   */
+  const setLastResearchOutput = (taskId: string, researchText: string) => {
+    setLastResearchOutputs(prev => ({ ...prev, [taskId]: researchText }));
+  };
+
+  /**
+   * Retrieves the text output of the last completed deep research for a specific task.
+   *
+   * @param {string} taskId - The ID of the task.
+   * @returns {string | undefined} The research text if available, otherwise undefined.
+   */
+  const getLastResearchOutput = (taskId: string): string | undefined => {
+    return lastResearchOutputs[taskId];
+  };
+
+  /**
    * Toggles the favorite status of a task.
    * @param {string} taskId - The ID of the task to toggle.
    */
@@ -733,6 +754,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     isAiGenerationLimitReached,
     markTaskAsViewed,
     toggleFavorite,
+    setLastResearchOutput,
+    getLastResearchOutput,
   };
 
   return <TaskContext.Provider value={contextValue}>{children}</TaskContext.Provider>;

@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth.ts";
 import LoginForm from "@/components/auth/LoginForm.tsx";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button.tsx";
 
 /**
  * `Login` page component.
@@ -54,12 +55,14 @@ export default function Login() {
         <LoginForm />
 
         <div className="mt-6 text-center">
-          <p className="text-muted-foreground text-sm">
+          <span className="text-muted-foreground text-sm">
             {t("login.noAccount")}{" "}
-            <Link to="/register" className="text-primary hover:underline">
+          </span>
+          <Button asChild variant="link" size="lg" className="px-1 py-0 align-baseline">
+            <Link to="/register">
               {t("login.registerHere")}
             </Link>
-          </p>
+          </Button>
         </div>
       </div>
     </div>

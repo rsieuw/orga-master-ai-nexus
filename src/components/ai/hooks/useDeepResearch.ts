@@ -2,11 +2,12 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Task } from '@/types/task.ts';
 import { supabase } from '@/integrations/supabase/client.ts';
 import { Message } from "../types.ts";
-import { hasPermission } from "@/lib/permissions.ts";
+import { hasPermission, PermissionResult } from "@/lib/permissions.ts";
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from "@/hooks/useAuth.ts";
 import { useToast } from '@/hooks/use-toast.ts';
 import { useTranslation } from 'react-i18next';
+import { useTask } from "@/contexts/TaskContext.hooks.ts";
 
 export type ResearchMode = 'research' | 'instruction' | 'creative';
 
@@ -34,6 +35,7 @@ export function useDeepResearch({
   const { toast } = useToast();
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { setLastResearchOutput } = useTask();
   const previousTaskId = useRef<string | null>(task?.id ?? null);
   const currentThinkingMessageId = useRef<string | null>(null);
 
@@ -88,22 +90,42 @@ export function useDeepResearch({
 
   const startDeepResearch = useCallback(async (customPrompt?: string, mode: ResearchMode = 'research') => {
     // console.log("=== START Deep Research BEGIN ===");
-    // console.log("startDeepResearch aangeroepen met:", { customPrompt, mode });
-    // console.trace("Aanroepstack voor startDeepResearch");
+    // console.log("startDeepResearch called with:", { customPrompt, mode });
+    // console.trace("Call stack for startDeepResearch");
     
-    // Test permissions
-    const hasAccess = hasPermission(user, 'deepResearch');
-    // console.log("Permissie controle resultaat:", hasAccess);
+    const permissionCheck: PermissionResult = hasPermission(user, 'deepResearch');
+    // console.log("Permission check result:", permissionCheck);
     
-    if (!hasAccess) {
-      // console.log("❌ Geen toestemming voor deepResearch functie");
+    if (!permissionCheck.hasAccess) {
+      if (permissionCheck.reason === 'NEEDS_PAID') {
+        // console.log("❌ Deep research requires a paid plan.");
+        const upgradeMessageId = uuidv4();
+        await addMessage({
+          id: upgradeMessageId,
+          role: 'assistant',
+          content: t('chat.research.upgradeNeeded.description'), // Using a generic content for now, will use specific title/desc from translations
+          messageType: 'error', // Or a new messageType like 'upgrade_prompt'
+          isLoading: false,
+          isError: true, // To make it visually distinct if 'error' type is used
+          // We can add a title property to Message type if we want to display a title like in toasts
+        });
+        setIsResearching(false); // Ensure isResearching is reset
+        currentThinkingMessageId.current = null; // Ensure loader is cleared if one was set
+        // console.log("=== START Deep Research END (needs paid plan) ===");
+        return;
+      } else {
+        // Handle other reasons for no access (e.g., 'NOT_IN_ENABLED_FEATURES', 'NO_USER') with a generic toast
+        // console.log(`❌ Permission denied for deepResearch. Reason: ${permissionCheck.reason || 'Unknown'}`);
       toast({
         variant: "default", 
         title: t('chatPanel.toast.featureNotAvailableTitle'), 
         description: t('chatPanel.toast.featureNotAvailableDescription'), 
       });
-      // console.log("=== START Deep Research EINDE (geen toestemming) ===");
+        setIsResearching(false); // Ensure isResearching is reset
+        currentThinkingMessageId.current = null; // Ensure loader is cleared
+        // console.log("=== START Deep Research END (other permission issue) ===");
       return; 
+      }
     }
 
     if (!task?.id || isResearching) {
@@ -217,6 +239,13 @@ export function useDeepResearch({
           return [...filtered, newResultMessage];
         });
         // console.log(`[useDeepResearch] Nieuw research_result bericht toegevoegd met force en ID: ${newResearchResultId}`);
+
+        // Store the research output in TaskContext
+        if (task?.id && data.researchResult) {
+          setLastResearchOutput(task.id, data.researchResult);
+          // console.log(`[useDeepResearch] Stored research output for task ${task.id}`);
+        }
+
       } else if (data && !localLoaderMessageId) {
         // console.warn("[useDeepResearch] Received data from deep-research, but no localLoaderMessageId was found. Adding as new message. DB-Returned-ID:", data.id);
         addMessage({
@@ -260,7 +289,7 @@ export function useDeepResearch({
       setIsResearching(false);
       setResearchCancelled(false);
     }
-  }, [task, isResearching, user, addMessage, updateMessage, toast, t, setMessages]);
+  }, [task, isResearching, user, addMessage, updateMessage, toast, t, setMessages, setLastResearchOutput]);
 
   const cancelResearch = useCallback(() => {
     // console.log("Attempting to cancel research...");

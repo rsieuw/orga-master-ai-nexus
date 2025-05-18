@@ -122,6 +122,11 @@ export default function TaskDetail() {
   // New state for "Delete All Subtasks" dialog
   const [isDeleteAllSubtasksDialogOpen, setIsDeleteAllSubtasksDialogOpen] = useState(false);
 
+  // State for mobile FAB visibility
+  const [isFabVisibleForMobile, setIsFabVisibleForMobile] = useState(true);
+  const fabScrollTimeout = useRef<number | null>(null);
+  const SCROLL_THRESHOLD = 5; // Only change visibility if scrolled more than 5px
+
   const { user } = useAuth();
 
   /**
@@ -511,6 +516,66 @@ export default function TaskDetail() {
     setContextMenuPosition({ top, left });
   };
 
+  // Effect for mobile FAB visibility on scroll
+  useEffect(() => {
+    const mainContentElement = document.querySelector('.firebase-card.subtask-card-glow-target .overflow-y-auto.scrollbar-thin');
+    let localLastScrollY = 0;
+
+    if (mainContentElement) {
+      localLastScrollY = mainContentElement.scrollTop;
+    } else if (typeof globalThis !== 'undefined' && typeof globalThis.scrollY === 'number') {
+      localLastScrollY = globalThis.scrollY;
+    }
+
+    const handleScroll = () => {
+      let currentScrollY = localLastScrollY;
+      if (mainContentElement) {
+        currentScrollY = mainContentElement.scrollTop;
+      } else if (typeof globalThis !== 'undefined' && typeof globalThis.scrollY === 'number') {
+        currentScrollY = globalThis.scrollY;
+      }
+      const scrollDifference = currentScrollY - localLastScrollY;
+
+      if (Math.abs(scrollDifference) > SCROLL_THRESHOLD) {
+        if (currentScrollY > localLastScrollY && currentScrollY > 50) { // Scrolled down
+          setIsFabVisibleForMobile(false);
+        } else { // Scrolled up or at the top
+          setIsFabVisibleForMobile(true);
+        }
+      }
+      localLastScrollY = currentScrollY;
+    };
+    
+    const throttledHandleScroll = () => {
+      if (typeof globalThis === 'undefined' || typeof globalThis.setTimeout !== 'function') return;
+      if (fabScrollTimeout.current) {
+        clearTimeout(fabScrollTimeout.current);
+      }
+      fabScrollTimeout.current = globalThis.setTimeout(handleScroll, 100);
+    };
+
+    if (typeof globalThis !== 'undefined' && typeof globalThis.innerWidth === 'number' && globalThis.innerWidth < 1024) { // Only apply for mobile
+      if (mainContentElement && typeof mainContentElement.addEventListener === 'function') {
+        mainContentElement.addEventListener('scroll', throttledHandleScroll);
+      } else if (typeof globalThis.addEventListener === 'function'){
+        globalThis.addEventListener('scroll', throttledHandleScroll);
+      }
+    }
+
+    return () => {
+      if (fabScrollTimeout.current && typeof globalThis.clearTimeout === 'function') {
+        clearTimeout(fabScrollTimeout.current);
+      }
+      if (typeof globalThis !== 'undefined' && typeof globalThis.innerWidth === 'number' && globalThis.innerWidth < 1024) {
+        if (mainContentElement && typeof mainContentElement.removeEventListener === 'function') {
+          mainContentElement.removeEventListener('scroll', throttledHandleScroll);
+        } else if (typeof globalThis.removeEventListener === 'function') {
+          globalThis.removeEventListener('scroll', throttledHandleScroll);
+        }
+      }
+    };
+  }, []); // Re-run if the scrollable element might change, or on mount/unmount
+
   if (tasksLoading && !task) {
     return (
       <AppLayout noPadding>
@@ -704,21 +769,29 @@ export default function TaskDetail() {
                       </div>
                     </div>
                     
-                    <TooltipProvider delayDuration={100}>
+                    <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
                             variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0 rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 z-30 flex items-center justify-center backdrop-blur-sm shadow-md"
                             onClick={() => setIsDescriptionMinimized(!isDescriptionMinimized)}
-                            aria-label={isDescriptionMinimized ? t('taskDetail.expandDescription') : t('taskDetail.minimizeDescription')}
+                            className={cn(
+                              "transition-all duration-300 ease-in-out",
+                              "p-0",
+                              "h-10 w-10 text-muted-foreground",
+                              "sm:h-8 sm:w-8"
+                            )}
+                            aria-label={isDescriptionMinimized ? t('taskDetail.buttons.showDescription') : t('taskDetail.buttons.hideDescription')}
                           >
-                            {isDescriptionMinimized ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                            {isDescriptionMinimized ? (
+                              <ChevronDown className="h-6 w-6 sm:h-5 sm:w-5" />
+                            ) : (
+                              <ChevronUp className="h-6 w-6 sm:h-5 sm:w-5" />
+                            )}
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="left" align="center" sideOffset={12}>
-                          <p>{isDescriptionMinimized ? t('taskDetail.expandDescription') : t('taskDetail.minimizeDescription')}</p>
+                        <TooltipContent side="bottom" className="hidden sm:block">
+                          <p>{isDescriptionMinimized ? t('taskDetail.buttons.showDescription') : t('taskDetail.buttons.hideDescription')}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -766,7 +839,7 @@ export default function TaskDetail() {
                                       <Button
                                         type="button"
                                         variant="ghost"
-                                        className="flex items-center w-full text-left px-4 py-2.5 text-sm text-popover-foreground hover:bg-primary/10 rounded-t-md rounded-b-none"
+                                        className="flex items-center w-full text-left justify-start px-4 py-2.5 text-sm text-popover-foreground hover:bg-primary/10 rounded-t-md rounded-b-none"
                                         onClick={() => {
                                           setActiveMobileView('chat');
                                           navigate('#chat', { replace: true });
@@ -781,7 +854,7 @@ export default function TaskDetail() {
                                       <Button
                                         type="button"
                                         variant="ghost"
-                                        className="flex items-center w-full text-left px-4 py-2.5 text-sm text-popover-foreground hover:bg-primary/10 disabled:opacity-50 rounded-none"
+                                        className="flex items-center w-full text-left justify-start px-4 py-2.5 text-sm text-popover-foreground hover:bg-primary/10 disabled:opacity-50 rounded-none"
                                         onClick={() => {
                                           setEditingSubtaskId(subtaskItem.id);
                                           closeSubtaskContextMenu();
@@ -794,7 +867,7 @@ export default function TaskDetail() {
                                       <Button
                                         type="button"
                                         variant="ghost"
-                                        className="flex items-center w-full text-left px-4 py-2.5 text-sm text-red-500 dark:text-red-400 hover:bg-destructive/10 dark:hover:text-red-300 rounded-b-md rounded-t-none focus-visible:ring-destructive"
+                                        className="flex items-center w-full text-left justify-start px-4 py-2.5 text-sm text-red-500 dark:text-red-400 hover:bg-destructive/10 dark:hover:text-red-300 rounded-b-md rounded-t-none focus-visible:ring-destructive"
                                         onClick={() => {
                                           setSubtaskToDelete(subtaskItem);
                                           setIsDeleteSubtaskDialogOpen(true);
@@ -982,7 +1055,7 @@ export default function TaskDetail() {
               <div className="flex-grow min-h-0 h-full">
                 <TaskAIChat
                   task={task}
-                  selectedSubtaskTitle={globalThis.innerWidth >= 1024 ? selectedSubtaskTitle : null}
+                  selectedSubtaskTitle={selectedSubtaskTitle}
                 />
               </div>
             )}
@@ -990,6 +1063,7 @@ export default function TaskDetail() {
         </div>
       </div>
 
+      {/* Mobile FAB for adding subtask: Form */}
       {showAddSubtaskForm && (
         <div className="lg:hidden fixed bottom-16 left-0 right-0 z-[60] p-4 bg-card border-t border-border shadow-lg">
           <form onSubmit={handleAddSubtask} className="flex items-center gap-3">
@@ -1027,6 +1101,51 @@ export default function TaskDetail() {
               {isAddingSubtask ? <GradientLoader size="sm" /> : <Save className="h-5 w-5" />} 
             </Button>
           </form>
+        </div>
+      )}
+
+      {/* Mobile FABs for triggering add/generate */}
+      {!showAddSubtaskForm && activeMobileView === 'details' && (
+        <div 
+          className={cn(
+            "lg:hidden fixed bottom-20 right-6 z-[60] flex flex-col items-center space-y-3 transition-all duration-300 ease-in-out",
+            isFabVisibleForMobile ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+          )}
+        >
+          <div className="flex flex-col items-center">
+            <Button
+              variant="default"
+              size="icon"
+              className="h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900"
+              onClick={() => setShowAddSubtaskForm(true)}
+              aria-label={t('taskDetail.addSubtask.buttonText')}
+            >
+              <PlusCircle className="h-7 w-7" />
+            </Button>
+            <p className="text-xs text-center mt-1 text-muted-foreground bg-background/70 backdrop-blur-sm rounded-md px-2 py-0.5">{t('taskDetail.addSubtask.fabTitle')}</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <Button
+              size="icon"
+              disabled={isGeneratingSubtasksForTask(task.id) || isLimitReached}
+              className="h-14 w-14 rounded-full shadow-lg p-[2px] bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500"
+              onClick={() => setIsMobileGenerateDialogOpen(true)}
+              aria-label={t('taskDetail.generateSubtasks.buttonText')}
+            >
+              <div className="bg-card h-full w-full rounded-full flex items-center justify-center">
+                {isGeneratingSubtasksForTask(task.id) ? (
+                  <Loader2 className="animate-spin h-6 w-6 text-blue-500" />
+                ) : (
+                  <Sparkles className="h-6 w-6 text-blue-500" />
+                )}
+              </div>
+            </Button>
+            {isLimitReached ? (
+              <p className="text-xs text-center mt-1 text-muted-foreground bg-background/70 backdrop-blur-sm rounded-md px-2 py-0.5">{t('taskDetail.generateSubtasks.limitReachedFabTitle')}</p>
+            ) : (
+              <p className="text-xs text-center mt-1 text-muted-foreground bg-background/70 backdrop-blur-sm rounded-md px-2 py-0.5">{t('taskDetail.generateSubtasks.fabTitle')}</p>
+            )}
+          </div>
         </div>
       )}
 

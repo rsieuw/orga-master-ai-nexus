@@ -621,8 +621,8 @@
   },
   "navbar": {
     "newTaskButton": {
-      "ariaLabel": "Nieuwe taak aanmaken",
-      "text": "Nieuwe taak"
+      "text": "Nieuwe taak",
+      "ariaLabel": "Nieuwe taak aanmaken"
     },
     "userMenu": {
       "defaultUserName": "Gebruiker",
@@ -875,7 +875,8 @@
       "addSelectedButton": "Geselecteerde Toevoegen",
       "buttonAriaLabel": "Genereer subtaken",
       "fabText": "Subtaken genereren",
-      "confirmButton": "Ja, genereer subtaken"
+      "confirmButton": "Ja, genereer subtaken",
+      "fabTitle": "Genereer"
     },
     "overdueSR": "(Verlopen)",
     "minimizeDescription": "Beschrijving minimaliseren/maximaliseren",
@@ -895,7 +896,8 @@
       "buttonText": "Subtaak toevoegen",
       "buttonAriaLabel": "Nieuwe subtaak toevoegen",
       "tooltip": "Voeg een nieuwe subtaak toe aan deze hoofdtaak.",
-      "fabText": "Nieuwe subtaak"
+      "fabText": "Nieuwe subtaak",
+      "fabTitle": "Subtaak"
     },
     "emptySubtasks": "Geen subtaken toegevoegd",
     "addingSubtask": "Toevoegen...",
@@ -903,7 +905,7 @@
       "research": "Onderzoek subtaak",
       "edit": "Bewerk subtaak",
       "delete": "Verwijder subtaak",
-      "discussInChat": "Vraag AI over subtaak"
+      "discussInChat": "Bespreken in chat"
     },
     "deleteAllSubtasks": {
       "ariaLabel": "Verwijder alle subtaken",
@@ -970,7 +972,8 @@
     "high": "Hoog",
     "medium": "Gemiddeld",
     "low": "Laag",
-    "unlimited": "onbeperkt"
+    "unlimited": "onbeperkt",
+    "guest": "Gast"
   },
   "pageTitles": {
     "home": "Home",
@@ -1187,6 +1190,7 @@
     "selectModelAriaLabel": "Selecteer AI-onderzoeksmodel",
     "notePlaceholder": "Typ je notitie hier...",
     "searchMessagesPlaceholder": "Zoek in berichten...",
+    "stopResearch": "Stop onderzoek",
     "searchPlaceholder": "Typ om te onderzoeken...",
     "noSearchResults": "Geen berichten gevonden met deze zoekterm.",
     "searchingMessages": "Zoeken in berichten",
@@ -1205,7 +1209,11 @@
       "userRequestPrefix": "Doe onderzoek over:",
       "forSubtaskContinuation": " voor subtaak '{{subtask}}'",
       "instructionPrefixForSubtask": "Voor subtaak '{{subtask}}', help me met:",
-      "errorMessage": "Er is een fout opgetreden tijdens het onderzoek. Probeer het later opnieuw."
+      "errorMessage": "Er is een fout opgetreden tijdens het onderzoek. Probeer het later opnieuw.",
+      "upgradeNeeded": {
+        "title": "Upgrade Vereist",
+        "description": "Voor diepgaand onderzoek is een betaald abonnement nodig. Overweeg te upgraden om deze functie te gebruiken."
+      }
     },
     "researchModePopover": {
       "title": "Kies onderzoeksmodus",
@@ -1261,10 +1269,22 @@
       "pinnedItemsKept": "{{count}} vastgezette berichten",
       "notesItemsKept": "{{count}} notities",
       "researchItemsKept": "{{count}} onderzoeken",
-      "clearHistoryFailed": "Kon de chatgeschiedenis niet wissen"
+      "clearHistoryFailed": "Kon de chatgeschiedenis niet wissen",
+      "allSubtasksDeletedMessage": "Alle subtaken zijn succesvol verwijderd."
     },
     "errors": {
-      "userNotLoggedIn": "Gebruiker niet ingelogd"
+      "userNotLoggedIn": "Gebruiker niet ingelogd. Log in om notities op te slaan.",
+      "saveNoteFailedDefault": "Notitie opslaan mislukt door een onbekende fout.",
+      "genericAiError": "Onbekende AI fout",
+      "specificSubtaskFailed": "Aanmaken specifieke subtaak mislukt",
+      "generalSubtaskGenerationFailed": "Algemene generatie subtaken mislukt",
+      "unknownActionReceived": "Onbekende actie ontvangen",
+      "actionFailedGeneric": "Kon actie niet uitvoeren",
+      "actionFailedSpecific": "Sorry, actie mislukt",
+      "unexpectedResponse": "Sorry, onverwacht antwoord van AI ontvangen",
+      "aiConnectionFailed": "Sorry, verbinding met AI mislukt of AI functie gaf geen data terug.",
+      "invalidPayloadForAction": "Ongeldige payload voor {{action}}",
+      "invalidSubtaskResponseStructure": "Onverwachte antwoordstructuur ontvangen bij het genereren van subtaken."
     },
     "export": {
       "chatConversationForTask": "Chat conversatie voor taak:",
@@ -1273,7 +1293,13 @@
       "roleAssistant": "Assistent"
     },
     "pinnedMessages": "Vastgezette berichten",
-    "noteSavedTitle": "Notitie opgeslagen"
+    "noteSavedTitle": "Notitie opgeslagen",
+    "subtasksAddedConfirmation": {
+      "intro": "Oké, ik heb de volgende subtaken toegevoegd:"
+    },
+    "subtaskAddedConfirmation": {
+      "single": "Oké, ik heb de subtaak \"{{subtaskTitle}}\" toegevoegd."
+    }
   },
   "chatInput": {
     "messagePlaceholder": "Plan, Zoek, Maak het waar...",
@@ -1332,7 +1358,13 @@
     "researchSaved": "Onderzoek succesvol opgeslagen!"
   },
   "chat": {
-    "placeholder": "Typ je bericht of commando hier (bijv., /generate subtasks)..."
+    "placeholder": "Typ je bericht of commando hier (bijv., /generate subtasks)...",
+    "research": {
+      "upgradeNeeded": {
+        "title": "Upgrade Vereist",
+        "description": "Voor diepgaand onderzoek is een betaald abonnement nodig. Overweeg te upgraden om deze functie te gebruiken."
+      }
+    }
   },
   "deepResearch": {
     "title": "Grondig onderzoek",
@@ -1565,5 +1597,9 @@
       "name": "Instructie modus",
       "description": "Stapsgewijze gidsen en gestructureerde instructies voor praktische taken."
     }
+  },
+  "buttons": {
+    "showDescription": "Beschrijving tonen",
+    "hideDescription": "Beschrijving verbergen"
   }
 }

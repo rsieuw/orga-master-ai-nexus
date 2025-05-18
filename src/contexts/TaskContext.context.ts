@@ -114,6 +114,9 @@ export interface TaskContextType {
    * @returns {Promise<void>} A promise that resolves when the favorite status is updated.
    */
   toggleFavorite: (taskId: string) => Promise<void>;
+
+  setLastResearchOutput: (taskId: string, researchText: string) => void;
+  getLastResearchOutput: (taskId: string) => string | undefined;
 }
 
 /**

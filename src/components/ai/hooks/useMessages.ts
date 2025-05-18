@@ -370,12 +370,12 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
     if (selectedSubtaskTitle && taskId) {
       const expectedMessageContent = t('chatPanel.subtaskSelectedMessage', { subtaskTitle: selectedSubtaskTitle ?? '' });
       
-      addMessage({
-        role: "assistant",
+        addMessage({
+          role: "assistant",
         content: expectedMessageContent,
-        messageType: 'system'
-      }, true); // Save this system message
-    }
+          messageType: 'system'
+        }, true); // Save this system message
+      }
   }, [selectedSubtaskTitle, taskId, addMessage, t]);
 
   // Function to clear chat history

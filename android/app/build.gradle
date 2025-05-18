@@ -1,6 +1,4 @@
-plugins {
-    id 'com.android.application'
-}
+apply plugin: 'com.android.application'
 
 android {
     namespace "com.orgamasterai.app"
@@ -45,6 +43,14 @@ dependencies {
 }
 
 apply from: 'capacitor.build.gradle'
+
+// Overschrijf compileOptions naar Java 17 na het toepassen van capacitor.build.gradle
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
 
 try {
     def servicesJSON = file('google-services.json')

@@ -748,7 +748,7 @@
       "research": "Research subtask",
       "edit": "Edit subtask",
       "delete": "Delete subtask",
-      "discussInChat": "Ask AI about subtask"
+      "discussInChat": "Discuss in chat"
     },
     "deleteAllSubtasks": {
       "ariaLabel": "Delete all subtasks",
@@ -758,6 +758,11 @@
       "title": "Delete all subtasks?",
       "description": "Are you sure you want to delete all {{count}} subtasks from '{{taskTitle}}'? This action cannot be undone.",
       "confirmButton": "Delete All"
+    },
+    "generatingText": "Generating...",
+    "buttons": {
+      "showDescription": "Show description",
+      "hideDescription": "Hide description"
     }
   },
   "common": {
@@ -814,7 +819,8 @@
     "high": "High",
     "medium": "Medium",
     "low": "Low",
-    "unlimited": "unlimited"
+    "unlimited": "unlimited",
+    "guest": "Guest"
   },
   "pageTitles": {
     "home": "Home",
@@ -1053,10 +1059,22 @@
       "pinnedItemsKept": "{{count}} pinned messages",
       "notesItemsKept": "{{count}} notes",
       "researchItemsKept": "{{count}} research items",
-      "clearHistoryFailed": "Could not clear chat history"
+      "clearHistoryFailed": "Could not clear chat history",
+      "allSubtasksDeletedMessage": "All subtasks have been successfully deleted."
     },
     "errors": {
-      "userNotLoggedIn": "User not logged in"
+      "userNotLoggedIn": "User not logged in. Please log in to save notes.",
+      "saveNoteFailedDefault": "Failed to save note due to an unknown error.",
+      "genericAiError": "Unknown AI error",
+      "specificSubtaskFailed": "Creating specific subtask failed",
+      "generalSubtaskGenerationFailed": "General subtask generation failed",
+      "unknownActionReceived": "Unknown action received",
+      "actionFailedGeneric": "Could not perform action",
+      "actionFailedSpecific": "Sorry, action failed",
+      "unexpectedResponse": "Sorry, received an unexpected response from AI",
+      "aiConnectionFailed": "Sorry, connection to AI failed or AI function returned no data.",
+      "invalidPayloadForAction": "Invalid payload for {{action}}",
+      "invalidSubtaskResponseStructure": "Received an unexpected response structure when trying to generate subtasks."
     },
     "export": {
       "chatConversationForTask": "Chat conversation for task:",
@@ -1068,7 +1086,11 @@
       "instructionPrefixForSubtask": "For subtask '{{subtask}}', help me with:",
       "userRequestPrefix": "Research about:",
       "forSubtaskContinuation": " for subtask '{{subtask}}'",
-      "errorMessage": "An error occurred during research. Please try again later."
+      "errorMessage": "An error occurred during research. Please try again later.",
+      "upgradeNeeded": {
+        "title": "Upgrade Required",
+        "description": "Deep research functionality requires a paid subscription. Please consider upgrading to use this feature."
+      }
     },
     "defaultTaskTitle": "this task",
     "researchModePopover": {
@@ -1111,7 +1133,13 @@
     "researchForSubtaskLabel": "Research for subtask: {{subtaskTitle}}",
     "researchForPromptLabel": "Research for prompt: {{prompt}}",
     "pinnedMessages": "Pinned messages",
-    "subtaskSelectedMessage": "Okay, focusing on subtask: {{subtaskTitle}}."
+    "subtaskSelectedMessage": "Okay, focusing on subtask: {{subtaskTitle}}.",
+    "subtasksAddedConfirmation": {
+      "intro": "Okay, I have added the following subtasks:"
+    },
+    "subtaskAddedConfirmation": {
+      "single": "Okay, I have added the subtask: \"{{subtaskTitle}}\"."
+    }
   },
   "chatInput": {
     "messagePlaceholder": "Plan, Search, Make it happen...",
@@ -1236,7 +1264,13 @@
     "researchSaved": "Research saved successfully!"
   },
   "chat": {
-    "placeholder": "Type your message or command here (e.g., /generate subtasks)..."
+    "placeholder": "Type your message or command here (e.g., /generate subtasks)...",
+    "research": {
+      "upgradeNeeded": {
+        "title": "Upgrade Required",
+        "description": "Deep research functionality requires a paid subscription. Please consider upgrading to use this feature."
+      }
+    }
   },
   "deepResearch": {
     "title": "Deep Research",

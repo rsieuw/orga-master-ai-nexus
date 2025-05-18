@@ -373,24 +373,70 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         return;
       }
 
-      const dutchVerbs = ["genere", "maak", "splits", "deel ", "aanmaken"];
-      const dutchNouns = ["subta", "taken"]; 
+      // Regex for specific subtask creation: "maak subtaak: 'titel'", "voeg subtaak 'titel' toe", "subtaak 'titel'"
+      // It captures the title of the subtask.
+      const specificSubtaskRegex = /(?:maak subtaak(?: aan)?|voeg subtaak toe|subtaak)[:\s]*["']?(.*?)["']?$/i;
+      const specificSubtaskMatch = currentInput.match(specificSubtaskRegex);
+
+      if (specificSubtaskMatch && specificSubtaskMatch[1] && specificSubtaskMatch[1].trim().length > 0) {
+        const subtaskTitle = specificSubtaskMatch[1].trim();
+        // Call generate-chat-response with ADD_SUBTASK action
+        setIsAiResponding(true);
+        try {
+          const historyToInclude = messages.filter(msg => msg.role === 'user' || (msg.role === 'assistant' && msg.messageType === 'standard')).slice(-8).map(msg => ({ role: msg.role, content: msg.content }));
+          const languagePreference = user?.language_preference || i18n.language || 'nl';
+          
+          // Construct a query that makes it clear to the AI what to do
+          const aiQuery = `Voeg de volgende subtaak toe: "${subtaskTitle}"`;
+
+          const { data: aiResponseData, error: functionError } = await supabase.functions.invoke('generate-chat-response', {
+            body: { 
+              query: aiQuery, // Pass the specific instruction to the AI
+              mode: 'instruction', // Use instruction mode for direct commands
+              taskId: task.id, 
+              chatHistory: historyToInclude, 
+              languagePreference: languagePreference,
+              requestedAction: { // Explicitly request an action
+                action: "ADD_SUBTASK",
+                payload: { title: subtaskTitle }
+              }
+            },
+          });
+
+          if (functionError) throw functionError;
+          if (!aiResponseData) throw new Error("AI function returned no data for specific subtask creation.");
+
+          // The existing action handling block will process ADD_SUBTASK
+          // Ensure that block uses the translated confirmation.
+          // (No direct addMessage here, it's handled by the action processing switch case)
+
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : t("chatPanel.errors.genericAiError");
+          addMessage(ensureMessageHasId({ role: "assistant", content: `${t("chatPanel.errors.specificSubtaskFailed")}: ${errorMsg}`, messageType: 'error' }), true);
+          toast({ variant: "destructive", title: t('chatPanel.toast.subtaskGenerationFailedTitle'), description: errorMsg });
+        } finally {
+          setIsAiResponding(false);
+        }
+        return; // Important to return after handling specific subtask creation
+      }
+
+      // General subtask generation detection (existing logic)
+      const dutchVerbs = ["genereer", "maak", "splits", "deel ", "aanmaken"];
       const englishVerbs = ["generate", "create", "split", "break "];
-      const englishNouns = ["subtask", "tasks"];
 
       const hasDutchVerb = dutchVerbs.some(verb => inputLower.includes(verb));
       const hasEnglishVerb = englishVerbs.some(verb => inputLower.includes(verb));
-      const hasDutchNoun = dutchNouns.some(noun => inputLower.includes(noun));
-      const hasEnglishNoun = englishNouns.some(noun => inputLower.includes(noun));
       
-      const requiresSubtaskGeneration = (hasDutchVerb && hasDutchNoun) || (hasEnglishVerb && hasEnglishNoun);
+      const requiresGeneralSubtaskGeneration = 
+        (inputLower.includes("genereer subtaken") || inputLower.includes("generate subtasks")) ||
+        ((hasDutchVerb && inputLower.includes("subtaken")) || (hasEnglishVerb && inputLower.includes("subtasks")));
       
       const researchKeywords = ["onderzoek", "research", "zoek op", "find out", "investigate"];
       const requiresResearch = researchKeywords.some(keyword => inputLower.includes(keyword));
 
-      if (requiresSubtaskGeneration) {
+      if (requiresGeneralSubtaskGeneration) {
         try {
-          const { data: subtaskData, error: subtaskError } = await supabase.functions.invoke('generate-subtasks', { 
+          const { data: subtaskResponseData, error: subtaskError } = await supabase.functions.invoke('generate-subtasks', { 
             body: { 
               taskId: task.id,
               taskTitle: task.title,
@@ -400,22 +446,42 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
               existingSubtaskTitles: task.subtasks?.map(st => st.title) || []
             } 
           });
-          if (subtaskError) throw subtaskError;
-          if (!subtaskData || typeof subtaskData !== 'object' || !Array.isArray(subtaskData.subtasks)) throw new Error("Invalid response structure from generate-subtasks function.");
-          const existingSubtasks = task.subtasks || []; 
-          const newSubtasks = subtaskData.subtasks.map((st: { title: string }) => ({ id: uuidv4(), title: st.title, completed: false, createdAt: new Date().toISOString() }));
-          const combinedSubtasks = [...existingSubtasks, ...newSubtasks];
-          await updateTask(task.id, { subtasks: combinedSubtasks });
+
+          if (subtaskError) throw subtaskError; // Echte functie-aanroep error
+
+          if (subtaskResponseData && Array.isArray(subtaskResponseData.subtasks) && subtaskResponseData.subtasks.length > 0) {
+            // We hebben een array met subtaken, verwerk zoals voorheen
+            const existingSubtasks = task.subtasks || []; 
+            const newSubtasks = subtaskResponseData.subtasks.map((st: { title: string }) => ({ id: uuidv4(), title: st.title, completed: false, createdAt: new Date().toISOString() }));
+            const combinedSubtasks = [...existingSubtasks, ...newSubtasks];
+            await updateTask(task.id, { subtasks: combinedSubtasks });
+            
+            let confirmationContent = t('chatPanel.subtasksAddedConfirmation.intro') + "\n<ul>\n";
+            newSubtasks.forEach((st: { title: string }) => { confirmationContent += `  <li>${st.title}</li>\n`; });
+            confirmationContent += "</ul>";
+            
+            addMessage(ensureMessageHasId({ role: "assistant", content: confirmationContent, messageType: 'action_confirm' }), true);
+            toast({ title: t('chatPanel.toast.subtasksGeneratedTitle') });
+
+          } else if (subtaskResponseData && typeof subtaskResponseData.message === 'string' && subtaskResponseData.message.trim() !== '') {
+            // De functie gaf een direct tekstbericht terug (bv. vraag om meer info)
+            addMessage(ensureMessageHasId({ role: "assistant", content: subtaskResponseData.message, messageType: 'standard' }), true);
           
-          let confirmationContent = "Okay, I have added the following subtasks:\n<ul>\n";
-          newSubtasks.forEach((st: { title: string }) => { confirmationContent += `  <li>${st.title}</li>\n`; });
-          confirmationContent += "</ul>";
-          
-          addMessage(ensureMessageHasId({ role: "assistant", content: confirmationContent, messageType: 'action_confirm' }), true);
-          toast({ title: t('chatPanel.toast.subtasksGeneratedTitle') });
+          } else if (subtaskResponseData && Array.isArray(subtaskResponseData.subtasks) && subtaskResponseData.subtasks.length === 0) {
+            // De functie gaf een lege array subtaken terug, mogelijk met een (optioneel) bericht
+            const messageToShow = subtaskResponseData.message || t('taskContext.toast.noSubtasksGeneratedDescription'); // Fallback naar een algemeen bericht
+            addMessage(ensureMessageHasId({ role: "assistant", content: messageToShow, messageType: 'standard' }), true);
+            toast({ title: t('taskContext.toast.noSubtasksGeneratedTitle')});
+
+          } else {
+            // Onverwachte structuur
+            console.error("Unexpected response from generate-subtasks:", subtaskResponseData);
+            throw new Error(t("chatPanel.errors.invalidSubtaskResponseStructure"));
+          }
+
         } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : "Unknown error";
-          addMessage(ensureMessageHasId({ role: "assistant", content: `Sorry, generating subtasks failed: ${errorMsg}`, messageType: 'error' }), true);
+          const errorMsg = error instanceof Error ? error.message : t("chatPanel.errors.genericAiError");
+          addMessage(ensureMessageHasId({ role: "assistant", content: `${t("chatPanel.errors.generalSubtaskGenerationFailed")}: ${errorMsg}`, messageType: 'error' }), true);
           toast({ variant: "destructive", title: t('chatPanel.toast.subtaskGenerationFailedTitle'), description: errorMsg });
         }
         return;
@@ -424,6 +490,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         return; 
       }
 
+      // Fallback to general AI chat response
       setIsAiResponding(true);
       try {
         const historyToInclude = messages.filter(msg => msg.role === 'user' || (msg.role === 'assistant' && msg.messageType === 'standard')).slice(-8).map(msg => ({ role: msg.role, content: msg.content }));
@@ -432,15 +499,15 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
           body: { query: currentInput, mode: currentResearchMode, taskId: task.id, chatHistory: historyToInclude, languagePreference: languagePreference },
         });
         if (functionError) throw functionError;
-        if (!aiResponseData) throw new Error("AI function returned no data.");
+        if (!aiResponseData) throw new Error(t("chatPanel.errors.aiConnectionFailed"));
         let messageToSave: Omit<Message, 'id' | 'timestamp' | 'createdAt'>;
         if (aiResponseData.action) {
           let assistantMessageContent = "";
           try {
             switch (aiResponseData.action) {
-              case "UPDATE_TASK_TITLE": { if (!aiResponseData.payload?.newTitle) throw new Error("Invalid payload"); await updateTask(task.id, { title: aiResponseData.payload.newTitle }); assistantMessageContent = `Task title updated to "${aiResponseData.payload.newTitle}".`; toast({ title: t('chatPanel.toast.taskUpdatedTitle') }); break; }
+              case "UPDATE_TASK_TITLE": { if (!aiResponseData.payload?.newTitle) throw new Error(t('chatPanel.errors.invalidPayloadForAction', {action: "UPDATE_TASK_TITLE"})); await updateTask(task.id, { title: aiResponseData.payload.newTitle }); assistantMessageContent = t('chatPanel.toast.taskTitleUpdatedTo', {newTitle: aiResponseData.payload.newTitle }); toast({ title: t('chatPanel.toast.taskUpdatedTitle') }); break; }
               case "UPDATE_SUBTASK": { 
-                if (!task?.id || !aiResponseData.payload?.subtaskId || !aiResponseData.payload?.updates?.title) throw new Error("Invalid payload"); 
+                if (!task?.id || !aiResponseData.payload?.subtaskId || !aiResponseData.payload?.updates?.title) throw new Error(t('chatPanel.errors.invalidPayloadForAction', {action: "UPDATE_SUBTASK"})); 
                 const validUpdates: Partial<Pick<SubTask, 'title' | 'completed'>> = { 
                   title: aiResponseData.payload.updates.title 
                 };
@@ -448,32 +515,39 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
                   validUpdates.completed = aiResponseData.payload.updates.completed; 
                 } 
                 await updateSubtask(task.id, aiResponseData.payload.subtaskId, validUpdates);
-                assistantMessageContent = `Subtask updated to "${aiResponseData.payload.updates.title}".`; 
+                assistantMessageContent = t('chatPanel.toast.subtaskUpdatedTo', {newTitle: aiResponseData.payload.updates.title}); 
                 toast({ title: t('chatPanel.toast.taskUpdatedTitle') }); 
                 break; 
               }
-              case "ADD_SUBTASK": { if (!aiResponseData.payload?.title) throw new Error("Invalid payload"); await addSubtask(task.id, aiResponseData.payload.title); assistantMessageContent = `Subtask "${aiResponseData.payload.title}" added.`; toast({ title: t('chatPanel.toast.subtaskAddedTitle') }); break; }
-              case "DELETE_SUBTASK": { if (!aiResponseData.payload?.subtaskId) throw new Error("Invalid payload"); await deleteSubtask(task.id, aiResponseData.payload.subtaskId); assistantMessageContent = `Subtask (ID: ${aiResponseData.payload.subtaskId}) deleted.`; break; }
-              case "DELETE_ALL_SUBTASKS": { if (!aiResponseData.payload?.taskId || aiResponseData.payload.taskId !== task.id) throw new Error("Invalid payload"); await deleteAllSubtasks(task.id); assistantMessageContent = `All subtasks deleted.`; toast({ title: t('chatPanel.toast.allSubtasksDeletedTitle') }); break; }
-              default: // console.warn("Unknown AI action:", aiResponseData.action); 
-                assistantMessageContent = aiResponseData.content || `Action "${aiResponseData.action}" received, unknown how to process.`;
+              case "ADD_SUBTASK": { 
+                if (!aiResponseData.payload?.title) throw new Error(t('chatPanel.errors.invalidPayloadForAction', {action: "ADD_SUBTASK"})); 
+                await addSubtask(task.id, aiResponseData.payload.title); 
+                assistantMessageContent = t('chatPanel.subtaskAddedConfirmation.single', { subtaskTitle: aiResponseData.payload.title }); 
+                toast({ title: t('chatPanel.toast.subtaskAddedTitle') }); 
+                break; 
+              }
+              case "DELETE_SUBTASK": { if (!aiResponseData.payload?.subtaskId) throw new Error(t('chatPanel.errors.invalidPayloadForAction', {action: "DELETE_SUBTASK"})); await deleteSubtask(task.id, aiResponseData.payload.subtaskId); assistantMessageContent = t('chatPanel.toast.subtaskDeleted', {subtaskId: aiResponseData.payload.subtaskId}); break; }
+              case "DELETE_ALL_SUBTASKS": { if (!aiResponseData.payload?.taskId || aiResponseData.payload.taskId !== task.id) throw new Error(t('chatPanel.errors.invalidPayloadForAction', {action: "DELETE_ALL_SUBTASKS"})); await deleteAllSubtasks(task.id); assistantMessageContent = t('chatPanel.toast.allSubtasksDeletedMessage'); toast({ title: t('chatPanel.toast.allSubtasksDeletedTitle') }); break; }
+              default: 
+                assistantMessageContent = aiResponseData.content || `${t('chatPanel.errors.unknownActionReceived')}: "${aiResponseData.action}"`;
             }
             messageToSave = { role: "assistant", content: assistantMessageContent, messageType: 'action_confirm' };
           } catch (actionError) {
-             let errorDesc = "Could not perform action."; if (actionError instanceof Error) errorDesc = actionError.message; toast({ variant: "destructive", title: t('chatPanel.toast.actionFailedTitle'), description: errorDesc });
-             messageToSave = { role: "assistant", content: `Sorry, action failed: ${errorDesc}`, messageType: 'error' };
+             let errorDesc = t("chatPanel.errors.actionFailedGeneric"); if (actionError instanceof Error) errorDesc = actionError.message; toast({ variant: "destructive", title: t('chatPanel.toast.actionFailedTitle'), description: errorDesc });
+             messageToSave = { role: "assistant", content: `${t("chatPanel.errors.actionFailedSpecific")}: ${errorDesc}`, messageType: 'error' };
           }
         } else if (aiResponseData.response) {
            messageToSave = { role: "assistant", content: aiResponseData.response, messageType: 'standard' };
         } else {
-           messageToSave = { role: "assistant", content: "Sorry, received an unexpected response.", messageType: 'error' };
+           messageToSave = { role: "assistant", content: t("chatPanel.errors.unexpectedResponse"), messageType: 'error' };
         }
         if (messageToSave) {
           await addMessage(messageToSave, true);
           scrollToBottom();
         }
       } catch (error) {
-        await addMessage(ensureMessageHasId({ role: "assistant", content: "Sorry, connection to AI failed.", messageType: 'error' }), true);
+        const errorMsg = error instanceof Error ? error.message : t("chatPanel.errors.genericAiError");
+        await addMessage(ensureMessageHasId({ role: "assistant", content: `${t("chatPanel.errors.aiConnectionFailed")}: ${errorMsg}`, messageType: 'error' }), true);
         scrollToBottom();
       } finally { 
         setIsAiResponding(false);

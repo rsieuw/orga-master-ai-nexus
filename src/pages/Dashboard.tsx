@@ -24,7 +24,12 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence, Variants } from 'framer-motion'; // Framer Motion import and Variants
 import { Card } from "@/components/ui/card.tsx";
 import { TypedGreeting } from "@/components/ui/TypedGreeting.tsx";
+import { cn } from "@/lib/utils.ts";
 
+/**
+ * @constant LOCAL_STORAGE_KEYS
+ * @description Object containing keys for local storage items.
+ */
 const LOCAL_STORAGE_KEYS = {
   SEARCH_TERM: 'dashboardSearchTerm',
   FILTER_STATUS: 'dashboardFilterStatus',
@@ -45,6 +50,11 @@ const LOCAL_STORAGE_KEYS = {
 // };
 
 // Priority mapping for sorting
+/**
+ * @constant priorityOrder
+ * @description Maps task priority levels to numerical values for sorting.
+ * Higher numbers indicate higher priority.
+ */
 const priorityOrder: Record<TaskPriority, number> = {
   high: 3,
   medium: 2,
@@ -89,9 +99,8 @@ const cardVariants: Variants = {
     y: 0,
     scale: 1,
     transition: {
-      type: "spring",
-      stiffness: 260,
-      damping: 20,
+      type: "tween",
+      ease: "easeInOut",
       duration: 0.3,
     },
   },
@@ -152,10 +161,11 @@ export default function Dashboard() {
     return (localStorage.getItem(LOCAL_STORAGE_KEYS.FILTER_CATEGORY) as TaskFilterCategory) || 'all';
   });
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
-  const [showMobileActions, setShowMobileActions] = useState(true);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isFabVisible, setIsFabVisible] = useState(true);
+  const fabScrollTimeoutDashboard = useRef<number | null>(null);
+  const FAB_SCROLL_THRESHOLD = 5;
 
-  // Voeg een state object toe voor het bijhouden van actieve pagina's per categorie
+  // State object for tracking active pages per category
   const [activePages, setActivePages] = useState<Record<string, number>>({});
 
   // Update Local Storage when local state changes
@@ -190,42 +200,53 @@ export default function Dashboard() {
     };
   }, [isNewTaskOpen]);
 
-  // Effect for managing FAB button visibility - Hersteld
+  // NEW: Effect for managing FAB visibility on scroll direction
   useEffect(() => {
-    const INACTIVITY_TIMEOUT = 2500;
-    
-    const handleActivity = () => {
-      if (hideTimerRef.current !== null) {
-        clearTimeout(hideTimerRef.current);
+    let localLastScrollY = typeof globalThis !== 'undefined' && typeof globalThis.scrollY === 'number' ? globalThis.scrollY : 0;
+
+    const handleFabScroll = () => {
+      if (typeof globalThis === 'undefined' || typeof globalThis.scrollY !== 'number') return; // Guard against globalThis or scrollY not being available
+      const currentScrollY = globalThis.scrollY;
+      const scrollDifference = currentScrollY - localLastScrollY;
+
+      if (Math.abs(scrollDifference) > FAB_SCROLL_THRESHOLD) {
+        if (currentScrollY > localLastScrollY && currentScrollY > 50) { // Scrolled down
+          setIsFabVisible(false);
+        } else { // Scrolled up or at the top
+          setIsFabVisible(true);
+        }
       }
-      setShowMobileActions(true);
-      hideTimerRef.current = setTimeout(() => {
-        setShowMobileActions(false);
-      }, INACTIVITY_TIMEOUT) as ReturnType<typeof setTimeout>;
+      localLastScrollY = currentScrollY;
     };
-    
-    handleActivity();
-    globalThis.addEventListener('scroll', handleActivity, { passive: true });
-    globalThis.addEventListener('click', handleActivity, { capture: true });
-    globalThis.addEventListener('mousemove', handleActivity, { passive: true });
-    globalThis.addEventListener('touchmove', handleActivity, { passive: true });
+
+    const throttledHandleFabScroll = () => {
+      if (typeof globalThis === 'undefined' || typeof globalThis.setTimeout !== 'function') return; // Guard against globalThis or setTimeout not being available
+      if (fabScrollTimeoutDashboard.current) {
+        clearTimeout(fabScrollTimeoutDashboard.current);
+      }
+      fabScrollTimeoutDashboard.current = globalThis.setTimeout(handleFabScroll, 100);
+    };
+
+    if (typeof globalThis !== 'undefined' && typeof globalThis.innerWidth === 'number' && globalThis.innerWidth < 768 && typeof globalThis.addEventListener === 'function') { // Only apply for mobile (md breakpoint)
+        globalThis.addEventListener('scroll', throttledHandleFabScroll, { passive: true });
+    }
+
     return () => {
-      globalThis.removeEventListener('scroll', handleActivity);
-      globalThis.removeEventListener('click', handleActivity, { capture: true });
-      globalThis.removeEventListener('mousemove', handleActivity);
-      globalThis.removeEventListener('touchmove', handleActivity);
-      if (hideTimerRef.current !== null) { 
-        clearTimeout(hideTimerRef.current);
+      if (fabScrollTimeoutDashboard.current && typeof globalThis.clearTimeout === 'function') { // check clearTimeout availability
+        clearTimeout(fabScrollTimeoutDashboard.current);
+      }
+      if (typeof globalThis !== 'undefined' && typeof globalThis.innerWidth === 'number' && globalThis.innerWidth < 768 && typeof globalThis.removeEventListener === 'function') { // Check globalThis for removal as well
+          globalThis.removeEventListener('scroll', throttledHandleFabScroll);
       }
     };
-  }, []);
+  }, []); // Empty dependency array means this effect runs once on mount and cleanup on unmount
 
   // Effect to add the gradient animation style to the document
   useEffect(() => {
     // Add the style to the document
     const styleElement = document.createElement('style');
     styleElement.textContent = gradientAnimationStyle + `
-      /* Verberg scrollbars op mobiel maar behoud functionaliteit */
+      /* Hide scrollbars on mobile but retain functionality */
       @media (max-width: 640px) {
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
@@ -332,18 +353,18 @@ export default function Dashboard() {
       'overdue', 'today', 'tomorrow', 'dayAfterTomorrow', 'nextWeek', 'later'
     ];
 
-    // Helper function om een sectie te genereren
+    // Helper function to generate a section
     const generateSection = (category: keyof TasksByDate, tasksInCategory: Task[]) => {
-      // Toon de sectie als er taken zijn, OF als het de 'today' categorie is (om de placeholder te kunnen tonen)
+      // Show the section if there are tasks, OR if it's the 'today' category (to be able to show the placeholder)
       if (tasksInCategory.length > 0 || category === 'today') {
         return (
-          <div key={`category-${category}`} className="mt-4 first:mt-0"> {/* Minder ruimte boven elke sectie */}
+          <div key={`category-${category}`} className="mt-4 first:mt-0"> {/* Less space above each section */}
             <h2 className="text-lg sm:text-lg text-xl md:text-lg font-bold sm:font-semibold mb-2 sm:mb-2 text-center md:text-left relative pb-2 sm:pb-0">
               <span className="relative z-10">
                 {getCategoryTitle(category)}{' '}
                 <span className="text-sm font-normal text-muted-foreground">({tasksInCategory.length})</span>
               </span>
-              {/* Decoratieve lijn onder categorie titel - alleen op mobiel */}
+              {/* Decorative line under category title - mobile only */}
               <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-0.5 bg-gradient-to-r from-blue-700 to-purple-800 rounded sm:hidden"></span>
             </h2>
             
@@ -406,7 +427,7 @@ export default function Dashboard() {
                 const totalTasks = tasksInCategory.length;
                 const pagesCount = Math.ceil(totalTasks / tasksPerPage);
                 
-                // Alleen weergeven als er minstens 5 taken zijn, anders de standaard grid gebruiken
+                // Only render if there are at least 5 tasks, otherwise use the standard grid
                 if (totalTasks < 5) {
                   return (
                     <motion.div
@@ -524,7 +545,7 @@ export default function Dashboard() {
                               type="button"
                               className={`w-2.5 h-2.5 rounded-full transition-all ${i === activePage ? 'bg-primary scale-110' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'}`}
                               onClick={() => setActivePages({...activePages, [category]: i})}
-                              aria-label={`Pagina ${i+1} van ${pagesCount}`}
+                              aria-label={`Page ${i+1} of ${pagesCount}`}
                             ></button>
                           ))}
                         </div>
@@ -537,12 +558,48 @@ export default function Dashboard() {
 
             {/* Horizontal scrollable container for mobile */}
             <div className="flex flex-col space-y-2 sm:hidden">
-              {/* Dynamisch aantal taken per rij op basis van totaal aantal taken */}
               {(() => {
-                // Bereken optimale aantal kaarten per rij
                 const totalCards = tasksInCategory.length;
-                if (totalCards === 0) return null; // Geen kaarten, geen rijen
 
+                // Special case: If it's 'today' and there are no tasks, render only the placeholder.
+                if (category === 'today' && totalCards === 0) {
+                  return (
+                    <motion.div
+                      key={`row-${category}-placeholder-only`}
+                      className="flex overflow-x-auto pb-3 px-4 -mx-4 gap-3 snap-x snap-mandatory hide-scrollbar lg:pb-3"
+                      variants={containerVariants}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      <div className="flex-shrink-0 min-w-[8%]"></div>
+                      <motion.div
+                        key="add-new-task-placeholder-mobile"
+                        variants={cardVariants}
+                        layout="position"
+                        className="flex-shrink-0 w-[85vw] max-w-[300px] snap-center shadow-md mt-1 mb-2.5 mx-1 h-full"
+                      >
+                        <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+                          <DialogTrigger asChild>
+                            <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10 min-h-[208px]">
+                              <PlusCircle className="h-10 w-10 text-muted-foreground/70 group-hover:text-primary transition-colors" />
+                              <span className="mt-2 text-sm text-muted-foreground/90 group-hover:text-primary transition-colors">
+                                {t('dashboard.addNewTaskPlaceholder')}
+                              </span>
+                            </Card>
+                          </DialogTrigger>
+                        </Dialog>
+                      </motion.div>
+                      <div className="flex-shrink-0 min-w-[8%]"></div>
+                    </motion.div>
+                  );
+                }
+
+                // If there are no tasks and it's not 'today', render nothing.
+                if (totalCards === 0) { // category !== 'today' is implied here due to the check above
+                  return null;
+                }
+
+                // Calculate optimal cards per row
                 const MIN_CARDS_MOBILE = 3;
                 const ABSOLUTE_MAX_CARDS_MOBILE = 10;
 
@@ -551,32 +608,32 @@ export default function Dashboard() {
                 if (totalCards <= MIN_CARDS_MOBILE) {
                     optimalCardsPerRow = totalCards;
                 } else {
-                    // Check voor perfect vierkant
+                    // Check for perfect square
                     const sqrt = Math.sqrt(totalCards);
                     if (Number.isInteger(sqrt) && sqrt >= MIN_CARDS_MOBILE && sqrt <= ABSOLUTE_MAX_CARDS_MOBILE) {
                         optimalCardsPerRow = sqrt;
                     } else {
-                        // Zoek naar de beste verdeling
+                        // Find the best distribution
                         let bestOption = {
                             cards: optimalCardsPerRow,
                             rows: Math.ceil(totalCards / optimalCardsPerRow),
                             remainder: totalCards % optimalCardsPerRow,
-                            score: 0 // Hogere score is beter
+                            score: 0 // Higher score is better (prefer fewer rows, then fewer remainder, then more cards per row)
                         };
 
                         for (let cards = MIN_CARDS_MOBILE; cards <= ABSOLUTE_MAX_CARDS_MOBILE; cards++) {
-                            if (cards > totalCards) continue; // Niet meer kaarten per rij dan er zijn
+                            if (cards > totalCards) continue; // Not more cards per row than available
 
                             const rows = Math.ceil(totalCards / cards);
                             const remainder = totalCards % cards;
                             
                             let currentScore = 0;
-                            currentScore -= rows * 1000; 
+                            currentScore -= rows * 1000; // Heavily penalize more rows
                             if (remainder === 0) {
-                                currentScore += 500; 
+                                currentScore += 500; // Reward no remainder
                             }
-                            currentScore += remainder * 10; 
-                            currentScore += cards; 
+                            currentScore += remainder * 10; // Slightly penalize remainder
+                            currentScore += cards; // Prefer more cards per row if other factors are equal
 
                             if (currentScore > bestOption.score) {
                                 bestOption = { cards, rows, remainder, score: currentScore };
@@ -614,9 +671,9 @@ export default function Dashboard() {
                       </motion.div>
                     ))}
                     
-                    {/* Placeholder voor mobiele weergave, wordt na de taken getoond als de categorie 'today' is */}
-                    {/* De conditie (tasksInCategory.length === 0 || true) is equivalent aan true, dus altijd tonen voor 'today' */}
-                    {category === 'today' && rowIndex === 0 && (tasksInCategory.length === 0 || tasksInCategory.length % cardsPerRow !== 0) && (
+                    {/* Placeholder for mobile view, shown after the tasks if the category is 'today' */}
+                    {/* This condition should now correctly display the placeholder alongside tasks if it's the first row of 'today' */}
+                    {category === 'today' && rowIndex === 0 && (
                       <motion.div
                         key="add-new-task-placeholder-mobile"
                         variants={cardVariants}
@@ -644,23 +701,23 @@ export default function Dashboard() {
           </div>
         );
       }
-      return null; // Geen taken en niet 'today'
+      return null; // No tasks and not 'today'
     };
 
-    // Loop through de gedefinieerde volgorde
+    // Loop through the defined order
     categoryOrder.forEach(category => {
       const tasksInCategory = filteredAndSortedTaskGroups[category];
       const section = generateSection(category, tasksInCategory);
       if (section) sections.push(section);
     });
 
-    // Voeg de 'completed' sectie expliciet als laatste toe
+    // Explicitly add the 'completed' section last
     const completedTasks = filteredAndSortedTaskGroups.completed;
     const completedSection = generateSection('completed', completedTasks);
     if (completedSection) sections.push(completedSection);
     
     return sections;
-  }, [filteredAndSortedTaskGroups, t, isNewTaskOpen, activePages]); // Deze dependencies zijn voldoende
+  }, [filteredAndSortedTaskGroups, t, isNewTaskOpen, activePages]); // These dependencies are sufficient
   // --- END NEW HORIZONTAL DISTRIBUTION ---
 
   // Construct the greeting text using user?.name
@@ -784,13 +841,12 @@ export default function Dashboard() {
 
         {/* FAB button for mobile */}
         <AnimatePresence>
-          {showMobileActions && globalThis.innerWidth < 768 && (
+          {typeof globalThis !== 'undefined' && typeof globalThis.innerWidth === 'number' && globalThis.innerWidth < 768 && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: 20 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="fixed bottom-[75.4px] right-6 z-40 lg:hidden"
+              className={cn(
+                "fixed bottom-[75.4px] right-6 z-40 lg:hidden transition-all duration-300 ease-in-out",
+                isFabVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+              )}
             >
               <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
                 <DialogTrigger asChild>

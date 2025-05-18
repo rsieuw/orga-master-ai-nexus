@@ -148,6 +148,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
         <div className="space-y-2">
           <Label htmlFor="edit-category">Categorie</Label>
           <Select
+            name="edit-category-select"
             value={category}
             onValueChange={(value: string) => setCategory(value as TaskCategory)}
           >
@@ -179,6 +180,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
          <div className="space-y-2">
            <Label htmlFor="edit-priority">{t('common.priority')}</Label>
            <Select
+             name="edit-priority-select"
              value={priority}
              onValueChange={(value: string) => setPriority(value as TaskPriority)}
            >
@@ -196,6 +198,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
          <div className="space-y-2">
            <Label htmlFor="edit-status">{t('common.status')}</Label>
            <Select
+             name="edit-status-select"
              value={status}
              onValueChange={(value: string) => setStatus(value as TaskStatus)}
            >
@@ -219,6 +222,7 @@ export default function EditTaskDialog({ task, setOpen }: EditTaskDialogProps) {
                 <Popover>
                     <PopoverTrigger asChild>
                         <Button
+                            id="edit-deadline"
                             variant="outline"
                             className={cn(
                                 "w-full justify-start text-left font-normal",
