@@ -6,7 +6,7 @@
  * Represents the priority levels for a task.
  * @typedef {"high" | "medium" | "low" | "none"} TaskPriority
  */
-export type TaskPriority = "high" | "medium" | "low" | "none";
+export type TaskPriority = 'high' | 'medium' | 'low' | 'none';
 
 /**
  * Represents the status of a task.
@@ -31,6 +31,8 @@ export interface SubTask {
   taskId?: string;
   /** Optional creation timestamp of the subtask (ISO string). */
   createdAt?: string;
+  /** Optional last update timestamp of the subtask (ISO string). */
+  updatedAt?: string;
 }
 
 /**
@@ -63,9 +65,13 @@ export interface Task {
   /** Optional flag indicating if the task is new and has not been opened yet. */
   isNew?: boolean; // Geeft aan of de taak nieuw en nog niet geopend is
   /** Optional category for the task. */
-  category?: string; // Nieuw veld voor categorie
+  category?: string | null; // Nieuw veld voor categorie
   /** Optional emoji representation for the task. */
-  emoji?: string; // Added field for task emoji representation
+  emoji?: string | null; // Added field for task emoji representation
+  /** Optional last viewed timestamp of the task (ISO string). */
+  lastViewedAt?: string | null;
+  /** Optional flag indicating if the task is a favorite. */
+  isFavorite?: boolean; // ***** NIEUW VELD *****
 }
 
 /**
@@ -104,4 +110,30 @@ export interface TasksByDate {
   nextWeek: Task[];
   /** Tasks due at a later date (beyond next week). */
   later: Task[];
+  /** Favoriete taken. */
+  favorites: Task[];
+  /** Potentieel hier ook alvast 'favorites': Task[]; toevoegen */
+}
+
+/**
+ * Interface representing a task in the database.
+ * @interface DbTask
+ */
+export interface DbTask {
+  id: string;
+  user_id: string;
+  title: string;
+  description?: string | null;
+  status: 'todo' | 'inprogress' | 'done';
+  priority: TaskPriority;
+  deadline?: string | null;
+  category?: string | null;
+  created_at: string;
+  updated_at: string;
+  subtasks: SubTask[] | null; // Aangepast van Json/any naar SubTask[] | null
+  is_new?: boolean;
+  ai_subtask_generation_count?: number;
+  last_viewed_at?: string | null;
+  emoji?: string | null;
+  is_favorite?: boolean; // ***** NIEUW VELD *****
 }

@@ -8,7 +8,17 @@
     "high": "High",
     "medium": "Medium",
     "low": "Low",
-    "categoryTitle": "Category"
+    "categoryTitle": "Category",
+    "toast": {
+      "aiGenerationFailed": {
+        "title": "AI Generation Failed",
+        "description": "The AI could not generate results. Please try again later."
+      },
+      "aiGenerationSuccess": {
+        "title": "AI Generation Successful",
+        "description": "{{count}} new subtask(s) successfully generated."
+      }
+    }
   },
   "project": "Project",
   "categories": {
@@ -24,7 +34,8 @@
     "later": "Later",
     "work": "Work",
     "learning": "Learning",
-    "home": "Home"
+    "home": "Home",
+    "favorites": "Favorites"
   },
   "bottomNavigation": {
     "tasks": "Tasks",
@@ -600,7 +611,8 @@
       "tomorrow": "Tomorrow",
       "dayAfterTomorrow": "Day After Tomorrow",
       "nextWeek": "Next Week",
-      "later": "Later"
+      "later": "Later",
+      "favorites": "Favorites"
     },
     "addNewTaskPlaceholder": "Add new task",
     "emptyState": {
@@ -614,7 +626,11 @@
     "new": "New",
     "tooltip": {
       "subtasksCompleted_singular": "{{completed}} of {{total}} subtask completed",
-      "subtasksCompleted_plural": "{{completed}} of {{total}} subtasks completed"
+      "subtasksCompleted_plural": "{{completed}} of {{total}} subtasks completed",
+      "markAsFavorite": "Mark as favorite",
+      "unmarkAsFavorite": "Unmark as favorite",
+      "markAsComplete": "Mark as complete",
+      "markAsIncomplete": "Mark as incomplete"
     }
   },
   "taskDetail": {
@@ -645,7 +661,14 @@
       "subtaskAdded": "Subtask added",
       "subtaskAddedDescription": "Subtask \"{{subtaskTitle}}\" has been successfully added.",
       "addFailed": "Add failed",
-      "subtaskAddFailedDescription": "Could not add the new subtask."
+      "subtaskAddFailedDescription": "Could not add the new subtask.",
+      "allSubtasksDeleted": {
+        "title": "All subtasks deleted",
+        "description": "{{count}} subtasks were successfully deleted."
+      },
+      "allSubtasksDeleteFailed": {
+        "description": "Failed to delete all subtasks."
+      }
     },
     "noDeadline": "No deadline",
     "invalidDate": "Invalid date",
@@ -670,7 +693,6 @@
     "deleteTask": "Delete task",
     "overdueSR": "(Overdue)",
     "noDescription": "No description",
-    "noSubtasks": "No subtasks",
     "addSubtask": {
       "titleDesktopSR": "Title for new subtask (desktop)",
       "titleMobileSR": "Title for new subtask (mobile)",
@@ -723,9 +745,19 @@
     "markAsComplete": "Mark as complete",
     "markAsIncomplete": "Mark as incomplete",
     "subtaskActions": {
-      "research": "Research",
-      "edit": "Edit",
-      "delete": "Delete"
+      "research": "Research subtask",
+      "edit": "Edit subtask",
+      "delete": "Delete subtask",
+      "discussInChat": "Ask AI about subtask"
+    },
+    "deleteAllSubtasks": {
+      "ariaLabel": "Delete all subtasks",
+      "tooltip": "Delete all subtasks"
+    },
+    "deleteAllSubtasksDialog": {
+      "title": "Delete all subtasks?",
+      "description": "Are you sure you want to delete all {{count}} subtasks from '{{taskTitle}}'? This action cannot be undone.",
+      "confirmButton": "Delete All"
     }
   },
   "common": {
@@ -781,7 +813,8 @@
     "todo": "To do",
     "high": "High",
     "medium": "Medium",
-    "low": "Low"
+    "low": "Low",
+    "unlimited": "unlimited"
   },
   "pageTitles": {
     "home": "Home",
@@ -1076,7 +1109,9 @@
     "selectModelAriaLabel": "Select AI research model",
     "initialAssistantMessage": "Hello {{username}}! I'm ready to help you with your task: {{taskTitle}}. What can I do for you?",
     "researchForSubtaskLabel": "Research for subtask: {{subtaskTitle}}",
-    "researchForPromptLabel": "Research for prompt: {{prompt}}"
+    "researchForPromptLabel": "Research for prompt: {{prompt}}",
+    "pinnedMessages": "Pinned messages",
+    "subtaskSelectedMessage": "Okay, focusing on subtask: {{subtaskTitle}}."
   },
   "chatInput": {
     "messagePlaceholder": "Plan, Search, Make it happen...",
@@ -1252,6 +1287,14 @@
       "priorityRestored": {
         "title": "Task Reactivated",
         "description": "The task has been reactivated because not all subtasks are completed"
+      },
+      "aiGenerationFailed": {
+        "title": "AI Generation Failed",
+        "description": "The AI could not generate results. Please try again later."
+      },
+      "aiGenerationSuccess": {
+        "title": "AI Generation Successful",
+        "description": "{{count}} new subtask(s) successfully generated."
       }
     },
     "errors": {

@@ -1,0 +1,354 @@
+import React from 'react';
+import { Task } from "@/types/task.ts";
+import { cn } from "@/lib/utils.ts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogOverlay,
+  AlertDialogPortal,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog.tsx";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip.tsx";
+import { Edit, Trash2, Star, CheckSquare, XSquare } from "lucide-react";
+import TaskInfoDisplay from "@/components/task/TaskInfoDisplay.tsx";
+import { TFunction } from 'i18next';
+
+interface TaskDisplayCardProps {
+  task: Task;
+  isDescriptionMinimized: boolean;
+  priorityStyles: {
+    backgroundClass: string;
+    shadowClass: string;
+    directPriorityClass: string;
+  };
+  deadlineDay: string | null;
+  deadlineMonth: string | null;
+  deadlineText: string | null;
+  getTranslatedCategory: (category?: string) => string;
+  getCategoryBackgroundIcon: (category?: string, taskStatus?: string) => JSX.Element | null;
+  onToggleStatus: () => void;
+  onEdit: () => void;
+  onConfirmDelete: () => Promise<void>;
+  totalSubtasks: number;
+  completedSubtasks: number;
+  progressValue: number;
+  isGeneratingSubtasks: boolean;
+  t: TFunction;
+  toggleFavorite: (taskId: string) => void;
+}
+
+const TaskDisplayCard: React.FC<TaskDisplayCardProps> = ({
+  task,
+  isDescriptionMinimized,
+  priorityStyles,
+  deadlineDay,
+  deadlineMonth,
+  deadlineText,
+  getTranslatedCategory,
+  getCategoryBackgroundIcon,
+  onToggleStatus,
+  onEdit,
+  onConfirmDelete,
+  totalSubtasks,
+  completedSubtasks,
+  progressValue,
+  isGeneratingSubtasks,
+  t,
+  toggleFavorite,
+}) => {
+  return (
+    <Card
+      className={cn(
+        "firebase-card flex-col relative overflow-hidden z-10",
+        "rounded-none border-none lg:rounded-lg lg:border lg:border-solid lg:border-white/10",
+        "flex-shrink-0 mb-0 lg:mb-4 bg-card/80 backdrop-blur-md",
+        task?.status === 'done'
+          ? 'auto-completed'
+          : priorityStyles.backgroundClass,
+        priorityStyles.shadowClass,
+        priorityStyles.directPriorityClass
+      )}
+    >
+      {task?.category && (
+        <div className={cn(
+          `absolute right-5 z-0 pointer-events-none`,
+          isDescriptionMinimized ? "opacity-0 transform scale-90" : "opacity-100 transform scale-100",
+          "transition-all duration-800 ease-in-out",
+          task.subtasks && task.subtasks.length > 0 ? 'bottom-12' : 'bottom-8'
+        )}>
+          {getCategoryBackgroundIcon(task.category, task.status)}
+        </div>
+      )}
+      <CardHeader className={cn(
+        "px-4 lg:px-6",
+        "transition-all duration-300 ease-in-out",
+        isDescriptionMinimized
+          ? "!pt-2 pb-2 lg:!pt-1 lg:pb-2"
+          : "!pt-3 pb-3 lg:!pt-3 lg:pb-3"
+      )}>
+        <div className="flex items-center justify-between">
+          <CardTitle className={cn(
+            "font-semibold",
+            isDescriptionMinimized ? "text-lg" : "text-xl",
+            "lg:text-xl"
+          )}>
+            {task?.emoji && <span className="mr-1.5 text-xl task-emoji">{task.emoji}</span>}
+            {task?.title}
+          </CardTitle>
+
+          {deadlineDay && deadlineMonth && (
+            <div className="transition-all duration-500 ease-in-out">
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center">
+                      <div className={`w-8 h-8 flex flex-col items-center justify-center gap-[6px] rounded-full border border-white/10 overflow-hidden shadow-md calendar-badge ${
+                        task?.priority === 'high' ? 'bg-gradient-to-br from-red-600/90 to-rose-700/90' :
+                        task?.priority === 'medium' ? 'bg-gradient-to-br from-amber-500/90 to-orange-600/90' :
+                        task?.priority === 'low' ? 'bg-gradient-to-br from-blue-500/90 to-cyan-600/90' :
+                        'bg-gradient-to-br from-slate-500/90 to-slate-600/90'
+                      }`}>
+                        <div className="text-[0.875rem] font-bold text-white leading-none">
+                          {deadlineDay}
+                        </div>
+                        <div className="!text-[0.7rem] font-medium uppercase tracking-tight text-white/80 mt-[-8px] leading-none">
+                          {deadlineMonth.substring(0, 3)}
+                        </div>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="left"
+                    align="center"
+                    sideOffset={8}
+                    alignOffset={0}
+                    avoidCollisions
+                    className="bg-popover/90 backdrop-blur-lg px-3 py-2 max-w-[300px] z-50 whitespace-normal break-words"
+                  >
+                    <p className="text-sm font-medium">{deadlineText}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          )}
+        </div>
+      </CardHeader>
+      {task && (
+        <CardContent className={cn(
+          "p-0 flex flex-col flex-grow min-h-0"
+        )}>
+          <div className={cn(
+            "flex flex-col flex-grow min-h-0",
+            "overflow-hidden transition-[max-height,opacity,padding-top,padding-bottom] duration-300 ease-in-out",
+            isDescriptionMinimized
+              ? "max-h-0 opacity-0 pt-0 pb-0"
+              : "pt-0 pb-4 sm:pt-0 sm:pb-6 max-h-[1000px] opacity-100"
+          )}>
+            <div className="px-4 sm:px-6">
+              <TaskInfoDisplay
+                task={task}
+                isInfoCollapsed={isDescriptionMinimized}
+              />
+              <div className="mt-4 flex flex-wrap items-center gap-2 relative z-10">
+                {task.category && (
+                  <Badge variant="outline" className="text-xs h-6 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-sm text-white border-white/10 shadow-md">
+                    {getTranslatedCategory(task.category)}
+                  </Badge>
+                )}
+                <TooltipProvider delayDuration={300}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className={cn(
+                          "h-7 w-7 p-1.5 rounded-full backdrop-blur-sm shadow-md flex items-center justify-center",
+                          task?.status === 'done'
+                            ? 'bg-green-500/20 text-green-300 border-green-500/30'
+                            : 'bg-white/10 text-white border-white/10'
+                        )}
+                        onClick={onToggleStatus}
+                        disabled={isGeneratingSubtasks}
+                        aria-label={task?.status === 'done' ? t('taskDetail.markAsIncomplete') : t('taskDetail.markAsComplete')}
+                      >
+                        {task?.status === 'done'
+                          ? <XSquare className="h-4 w-4" />
+                          : <CheckSquare className="h-4 w-4" />
+                        }
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="center" sideOffset={5}>
+                      <p>{task?.status === 'done' ? t('taskDetail.markAsIncomplete') : t('taskDetail.markAsComplete')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider delayDuration={300}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 p-1.5 rounded-full bg-white/10 backdrop-blur-sm text-white border-white/10 shadow-md focus-visible:ring-1 focus-visible:ring-ring flex items-center justify-center"
+                        onClick={(e) => {
+                          e.preventDefault(); 
+                          e.stopPropagation(); 
+                          toggleFavorite(task.id);
+                        }}
+                        aria-label={task.isFavorite ? t('taskCard.tooltip.unmarkAsFavorite') : t('taskCard.tooltip.markAsFavorite')}
+                      >
+                        <Star 
+                          className={cn(
+                            "h-4 w-4 transition-colors",
+                            task.isFavorite 
+                              ? "fill-amber-400 stroke-amber-400 group-hover:fill-amber-500 group-hover:stroke-amber-500"
+                              : "fill-none stroke-white group-hover:stroke-white"
+                          )}
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="center" sideOffset={5}>
+                      <p>{task.isFavorite ? t('taskCard.tooltip.unmarkAsFavorite') : t('taskCard.tooltip.markAsFavorite')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider delayDuration={300}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 p-1.5 rounded-full bg-white/10 backdrop-blur-sm text-white border-white/10 shadow-md"
+                        onClick={onEdit}
+                        aria-label={t('common.edit')}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="center" sideOffset={5}>
+                      <p>{t('common.edit')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <AlertDialog>
+                  <TooltipProvider delayDuration={300}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <AlertDialogTrigger asChild data-testid="task-delete-trigger">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7 p-1.5 rounded-full bg-red-500/10 backdrop-blur-sm text-red-300 border-red-500/20 shadow-md hover:bg-red-500/20 hover:text-red-200"
+                            aria-label={t('common.delete')}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" align="center" sideOffset={5}>
+                        <p>{t('common.delete')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <AlertDialogPortal>
+                    <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                    <AlertDialogContent className="bg-card/90 backdrop-blur-md border-white/10 z-[90]">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('taskDetail.deleteConfirmation.title')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('taskDetail.deleteConfirmation.description')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="mt-4 flex flex-col sm:flex-row gap-3">
+                        <AlertDialogCancel className="order-first sm:order-none flex-1 h-12 py-3 sm:py-2 bg-secondary/80 border-white/10">
+                          {t('common.cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={onConfirmDelete}
+                          className="flex-1 h-12 py-3 sm:py-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                        >
+                          {t('common.delete')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialogPortal>
+                </AlertDialog>
+              </div>
+              {totalSubtasks > 0 && (
+                <div className="flex items-center gap-2 mt-4 w-full">
+                  <div className="flex items-center gap-1.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                      className={`
+                        ${(completedSubtasks === totalSubtasks && totalSubtasks > 0 && task?.status === 'done')
+                          ? 'text-[#19e965]'
+                          : `
+                            ${task?.priority === 'high' ? 'text-red-400' : ''}
+                            ${task?.priority === 'medium' ? 'text-amber-400' : ''}
+                            ${task?.priority === 'low' ? 'text-cyan-400' : ''}
+                            ${task?.priority !== 'high' && task?.priority !== 'medium' && task?.priority !== 'low' ? 'text-slate-400' : ''}
+                          `
+                        }
+                      `}>
+                      <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+                      <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span className={`text-xs flex-shrink-0 mr-2
+                        ${(completedSubtasks === totalSubtasks && totalSubtasks > 0 && task?.status === 'done')
+                          ? 'text-[#19e965]'
+                          : `
+                            ${task?.priority === 'high' ? 'text-red-400' : ''}
+                            ${task?.priority === 'medium' ? 'text-amber-400' : ''}
+                            ${task?.priority === 'low' ? 'text-cyan-400' : ''}
+                            ${task?.priority !== 'high' && task?.priority !== 'medium' && task?.priority !== 'low' ? 'text-slate-400' : ''}
+                          `
+                        }
+                      `}>
+                      {completedSubtasks}/{totalSubtasks}
+                    </span>
+                  </div>
+                  <div className="relative w-full h-3.5 bg-white/20 backdrop-blur-md rounded-full overflow-hidden flex-grow shadow-md">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300
+                        ${(completedSubtasks === totalSubtasks && totalSubtasks > 0 && task?.status === 'done')
+                          ? 'bg-gradient-to-r from-[#19e965] to-[#074a47] shadow-[0_0_8px_2px_rgba(25,233,101,0.4)]'
+                          : `
+                            ${task?.priority === 'high' ? 'bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 shadow-[0_0_8px_2px_rgba(244,63,94,0.4)]' : ''}
+                            ${task?.priority === 'medium' ? 'bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.4)]' : ''}
+                            ${task?.priority === 'low' ? 'bg-gradient-to-r from-blue-500 via-cyan-400 to-teal-400 shadow-[0_0_8px_2px_rgba(34,211,238,0.4)]' : ''}
+                            ${task?.priority !== 'high' && task?.priority !== 'medium' && task?.priority !== 'low' ? 'bg-gradient-to-r from-slate-400 to-slate-500 shadow-[0_0_8px_2px_rgba(100,116,139,0.3)]' : ''}
+                          `
+                        }
+                      `}
+                      style={{ width: `${progressValue}%` }}
+                    />
+                    {progressValue > 10 && (
+                      <span
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold select-none progress-percentage-text"
+                      >
+                        {Math.round(progressValue)}%
+                      </span>
+                    )}
+                  </div>
+                  <span className="sr-only">
+                    ({Math.round(progressValue)}%)
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  );
+};
+
+export default TaskDisplayCard; 

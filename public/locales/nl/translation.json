@@ -24,7 +24,8 @@
     "later": "Binnenkort",
     "work": "Werk",
     "learning": "Leren",
-    "home": "Thuis"
+    "home": "Thuis",
+    "favorites": "Favorieten"
   },
   "bottomNavigation": {
     "tasks": "Taken",
@@ -720,6 +721,7 @@
     "dayAfterTomorrow": "Overmorgen",
     "nextWeek": "Volgende week",
     "later": "Binnenkort",
+    "favorites": "Favorieten",
     "categories": {
       "completed": "Voltooid",
       "overdue": "Verlopen",
@@ -727,7 +729,8 @@
       "tomorrow": "Morgen",
       "dayAfterTomorrow": "Overmorgen",
       "nextWeek": "Volgende week",
-      "later": "Binnenkort"
+      "later": "Binnenkort",
+      "favorites": "Favorieten"
     },
     "workStudy": "Werk/Studie",
     "personal": "Persoonlijk",
@@ -737,7 +740,7 @@
     "health": "Gezondheid",
     "finances": "Financiën",
     "projects": "Projecten",
-    "addNewTaskPlaceholder": "Nieuwe taak toevoegen",
+    "addNewTaskPlaceholder": "Nieuwe taak toevoegen...",
 
     "tooltips": {
       "addNewTask": "Nieuwe taak toevoegen"
@@ -757,7 +760,11 @@
     "new": "Nieuw",
     "tooltip": {
       "subtasksCompleted_singular": "{{completed}} van {{total}} subtaak voltooid",
-      "subtasksCompleted_plural": "{{completed}} van {{total}} subtaken voltooid"
+      "subtasksCompleted_plural": "{{completed}} van {{total}} subtaken voltooid",
+      "markAsFavorite": "Markeer als favoriet",
+      "unmarkAsFavorite": "Verwijder als favoriet",
+      "markAsComplete": "Markeer als voltooid",
+      "markAsIncomplete": "Markeer als onvoltooid"
     }
   },
   "taskDetail": {
@@ -811,7 +818,14 @@
       "subtaskAdded": "Subtaak toegevoegd",
       "subtaskAddedDescription": "Subtaak \"{{subtaskTitle}}\" is succesvol toegevoegd.",
       "addFailed": "Toevoegen mislukt",
-      "subtaskAddFailedDescription": "Kon de nieuwe subtaak niet toevoegen."
+      "subtaskAddFailedDescription": "Kon de nieuwe subtaak niet toevoegen.",
+      "allSubtasksDeleted": {
+        "title": "Alle subtaken verwijderd",
+        "description": "{{count}} subtaken zijn succesvol verwijderd."
+      },
+      "allSubtasksDeleteFailed": {
+        "description": "Het verwijderen van alle subtaken is mislukt."
+      }
     },
     "subtasksTitle": "Subtaken",
     "sortSubtasksAriaLabel": "Sorteer subtaken",
@@ -886,9 +900,20 @@
     "emptySubtasks": "Geen subtaken toegevoegd",
     "addingSubtask": "Toevoegen...",
     "subtaskActions": {
-      "research": "Onderzoek",
-      "edit": "Bewerken",
-      "delete": "Verwijderen"
+      "research": "Onderzoek subtaak",
+      "edit": "Bewerk subtaak",
+      "delete": "Verwijder subtaak",
+      "discussInChat": "Vraag AI over subtaak"
+    },
+    "deleteAllSubtasks": {
+      "ariaLabel": "Verwijder alle subtaken",
+      "tooltip": "Verwijder alle subtaken"
+    },
+    "deleteAllSubtasksDialog": {
+      "title": "Weet je zeker dat je alle subtaken wilt verwijderen?",
+      "description": "Deze actie kan niet ongedaan worden gemaakt. Alle subtaken zullen permanent verwijderd worden.",
+      "confirmButton": "Ja, verwijder alle subtaken",
+      "cancelButton": "Annuleren"
     }
   },
   "common": {
@@ -944,7 +969,8 @@
     "todo": "Te doen",
     "high": "Hoog",
     "medium": "Gemiddeld",
-    "low": "Laag"
+    "low": "Laag",
+    "unlimited": "onbeperkt"
   },
   "pageTitles": {
     "home": "Home",
@@ -1359,6 +1385,14 @@
       "priorityRestored": {
         "title": "Taak opnieuw actief",
         "description": "De taak is opnieuw actief gemaakt omdat niet alle subtaken voltooid zijn"
+      },
+      "aiGenerationFailed": {
+        "title": "AI Generatie Mislukt",
+        "description": "De AI kon geen resultaten genereren. Probeer het later opnieuw."
+      },
+      "aiGenerationSuccess": {
+        "title": "AI Generatie Succesvol",
+        "description": "{{count}} nieuwe subta(a)k(en) succesvol gegenereerd."
       }
     },
     "errors": {

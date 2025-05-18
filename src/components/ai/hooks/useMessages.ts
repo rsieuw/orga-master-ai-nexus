@@ -7,7 +7,7 @@ import { Database } from "@/types/supabase.ts";
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from "@/hooks/useAuth.ts";
 
-// Helper function to ensure a message has an ID - BOVENAAN EN GEEXPORTEERD
+// Helper function to ensure a message has an ID
 export const ensureMessageHasId = (message: Omit<Message, 'id'> & { id?: string }): Message => {
   return { ...message, id: message.id || uuidv4() } as Message;
 };
@@ -145,7 +145,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
             localStorage.setItem(localStorageKey, JSON.stringify([...existingResearch, newMessage]));
           }
         } catch (e) {
-          // Fout bij localStorage synchronisatie voor research
+          // Error during localStorage synchronization for research
         }
         return updatedMessages;
       });
@@ -165,7 +165,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
             localStorage.setItem(localStorageKey, JSON.stringify(updatedMessages));
           }
         } catch (e) {
-          // Fout bij localStorage synchronisatie
+          // Error during localStorage synchronization
         }
         return updatedMessages;
       });
@@ -196,7 +196,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
       const msgIndex = prevMessages.findIndex(msg => msg.id === messageId);
       
       if (msgIndex === -1) {
-        return prevMessages; // Geen wijziging als bericht niet bestaat
+        return prevMessages; // No change if message does not exist
       }
 
       const updatedMessage = {
@@ -216,7 +216,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
           localStorage.setItem(localStorageKey, JSON.stringify(newMessages));
         }
       } catch (e) {
-        // Fout bij localStorage synchronisatie
+        // Error during localStorage synchronization
       }
       
       return newMessages;
@@ -271,7 +271,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
           .order('created_at', { ascending: true });
         if (chatError) throw chatError;
 
-        // Haal specifiek alle vastgepinde berichten op, zelfs als ze niet in de standaard query zitten
+        // Specifically fetch all pinned messages, even if they are not in the standard query
         const { data: pinnedMessages, error: pinnedError } = await supabase
           .from('chat_messages')
           .select('id, role, content, created_at, message_type, is_pinned')
@@ -308,12 +308,12 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
           isPinned: msg.is_pinned ?? false
         }));
 
-        // Verwerk specifiek vastgepinde berichten (deze hebben voorrang)
+        // Specifically process pinned messages (these take precedence)
         const pinnedMessageIds = new Set((pinnedMessages || []).map(msg => msg.id));
         
-        // Update bestaande berichten als ze vastgepind zijn
+        // Update existing messages if they are pinned
         const updatedChatMessages = loadedChatMessages.map(msg => {
-          // Als dit bericht in de pinnedMessages lijst staat, maar niet als vastgepind is gemarkeerd
+          // If this message is in the pinnedMessages list, but not marked as pinned
           if (pinnedMessageIds.has(msg.id) && !msg.isPinned) {
             return { ...msg, isPinned: true };
           }
@@ -368,22 +368,15 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
   // Handle selected subtask
   useEffect(() => {
     if (selectedSubtaskTitle && taskId) {
-      // Controleer of er al een system-bericht is voor deze subtaak
-      const alreadyExists = messages.some(
-        (msg) =>
-          msg.messageType === 'system' &&
-          msg.content &&
-          msg.content.includes(selectedSubtaskTitle)
-      );
-      if (!alreadyExists) {
-        addMessage({
-          role: "assistant",
-          content: t('chatPanel.subtaskSelectedMessage', { subtaskTitle: selectedSubtaskTitle ?? '' }),
-          messageType: 'system'
-        }, true); // Save this system message
-      }
+      const expectedMessageContent = t('chatPanel.subtaskSelectedMessage', { subtaskTitle: selectedSubtaskTitle ?? '' });
+      
+      addMessage({
+        role: "assistant",
+        content: expectedMessageContent,
+        messageType: 'system'
+      }, true); // Save this system message
     }
-  }, [selectedSubtaskTitle, taskId, addMessage, t, messages]);
+  }, [selectedSubtaskTitle, taskId, addMessage, t]);
 
   // Function to clear chat history
   const clearHistory = async () => {

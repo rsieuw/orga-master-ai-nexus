@@ -12,8 +12,6 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from "../_shared/cors.ts";
-import { format, parseISO } from 'date-fns';
-import { enUS, nl } from 'date-fns/locale';
 import OpenAI from 'https://esm.sh/openai@^4.26.0';
 
 // --- CORS Headers ---
@@ -27,17 +25,14 @@ import OpenAI from 'https://esm.sh/openai@^4.26.0';
  * Interface for a suggested subtask.
  * @interface SubtaskSuggestion
  * @property {string} title - The action-oriented title of the subtask.
- * @property {string} [description] - An optional 1-2 sentence description for clarification.
  */
 interface SubtaskSuggestion {
   title: string;
-  description?: string;
 }
 
 // Interface voor de items zoals ze mogelijk uit de AI komen (voor validatie)
 interface RawSubtaskItem {
   title?: unknown;
-  description?: unknown;
   [key: string]: unknown; // To allow other properties that will be ignored
 }
 
@@ -125,6 +120,7 @@ const errorMessages = {
  * @returns {Promise<Response>} A promise that resolves to an HTTP response object.
  */
 serve(async (req) => {
+  console.log("generate-subtasks function invoked!", new Date().toISOString());
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -165,11 +161,14 @@ serve(async (req) => {
 
 
   try {
+    console.log("Attempting to parse request body...");
+    const requestBody = await req.json() as RequestBody;
+    console.log("Successfully parsed request body:", requestBody);
+
     // Get user for logging
     const { data: { user } } = await userSpecificSupabaseClient.auth.getUser();
     userIdForLogging = user?.id;
 
-    const requestBody = await req.json() as RequestBody;
     const { 
       taskId,
       taskTitle, 
@@ -204,17 +203,16 @@ serve(async (req) => {
     const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openAIApiKey) throw new Error(currentLangErrorMessages.missingOpenAiKey);
 
-    const locale = languagePreference.startsWith('nl') ? nl : enUS;
-    const formattedDeadline = taskDeadline ? format(parseISO(taskDeadline), 'PPP', { locale }) : currentLangErrorMessages.noDeadline;
+    const deadlineForPrompt = taskDeadline ? `Deadline: ${taskDeadline}` : currentLangErrorMessages.noDeadline;
 
-    let systemPrompt = `You are an AI assistant specialized in breaking down tasks into actionable subtasks. Your goal is to provide a concise list of 5-7 relevant subtasks. Each subtask must have a "title" (string, action-oriented) and may have a "description" (string, 1-2 sentences for clarification). Consider priority and deadline if provided. Output a valid JSON object with a single key "subtasks", which is an array of these subtask objects. Example: {"subtasks": [{"title": "Titel 1", "description": "Beschrijving 1."}]}. The language for subtasks should match the task title's language (${languagePreference.startsWith('nl') ? 'Dutch' : 'English'}).`;
+    let systemPrompt = `You are an AI assistant specialized in breaking down tasks into actionable subtasks. Your goal is to provide a concise list of 5-7 relevant subtasks. Each subtask must have only a "title" (string, action-oriented). Consider priority and deadline if provided. Output a valid JSON object with a single key "subtasks", which is an array of these subtask objects, where each object only has a "title" key. Example: {"subtasks": [{"title": "Titel 1"}, {"title": "Titel 2"}]}. The language for subtasks should match the task title's language (${languagePreference.startsWith('nl') ? 'Dutch' : 'English'}).`;
     if (existingSubtaskTitles && existingSubtaskTitles.length > 0) {
       systemPrompt += `\n\nIMPORTANT: The following subtasks already exist. Do NOT generate duplicates. Focus on NEW, UNIQUE, and COMPLEMENTARY subtasks:\n- ${existingSubtaskTitles.join('\n- ')}\nIf many subtasks exist, refine or add what's missing. If the task is well-divided, generate fewer or no new subtasks.`;
     }
     let userPromptContent = `**Main Task:**\nTitle: "${taskTitle}"\n`;
     if (taskDescription) userPromptContent += `Description: "${taskDescription}"\n`;
     if (taskPriority && taskPriority !== 'none') userPromptContent += `Priority: ${taskPriority}\n`;
-    if (taskDeadline) userPromptContent += `Deadline: ${formattedDeadline}\n`;
+    if (taskDeadline) userPromptContent += `${deadlineForPrompt}\n`;
 
     // Context appending logic (chatMessages, notes, researchResults) - condensed for brevity
     if (chatMessages && chatMessages.length > 0) {
@@ -333,9 +331,6 @@ serve(async (req) => {
     generatedSubtasksForLogging = rawSubtasksArray.reduce((acc: SubtaskSuggestion[], item: RawSubtaskItem) => {
       if (item && typeof item.title === 'string' && item.title.trim() !== '') {
         const subtask: SubtaskSuggestion = { title: item.title.trim() };
-        if (typeof item.description === 'string' && item.description.trim() !== '') {
-          subtask.description = item.description.trim();
-        }
         acc.push(subtask);
       }
       return acc;
@@ -370,6 +365,15 @@ serve(async (req) => {
     const errorMessagesForLang = errorMessages[lang as keyof typeof errorMessages] || errorMessages.en;
     let displayError = errorMessagesForLang.functionExecError;
     const errorDetails = error instanceof Error ? error.message : String(error);
+
+    // Nieuwe, meer gedetailleerde error log in de catch
+    console.error("ERROR in generate-subtasks:", {
+      errorMessage: errorDetails,
+      errorObject: JSON.stringify(error, Object.getOwnPropertyNames(error)), // Probeer de error beter te serialiseren
+      requestBodyAtError: requestBodyForLogging, // Log de request body die we hadden
+      userIdAtError: userIdForLogging,
+      timestamp: new Date().toISOString()
+    });
 
     // Use specific error messages if they were thrown
     if (Object.values(errorMessagesForLang).includes(errorDetails)) {

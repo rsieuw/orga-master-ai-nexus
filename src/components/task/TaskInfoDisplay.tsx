@@ -38,8 +38,8 @@ export default function TaskInfoDisplay({
       <div className="flex-shrink-0">
         {/* Verwijder AnimatePresence en motion.div; de parent div in TaskDetail.tsx handelt nu de animatie af */}
         <p className="text-sm text-white whitespace-pre-wrap leading-relaxed pt-1">
-          {task.description || t('taskDetail.noDescription')}
-        </p>
+              {task.description || t('taskDetail.noDescription')}
+            </p>
       </div>
     </div>
   );

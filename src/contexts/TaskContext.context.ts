@@ -20,10 +20,10 @@ export interface TaskContextType {
   getTaskById: (id: string) => Task | undefined;
   /** 
    * Adds a new task.
-   * @param {Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'subtasks' | 'userId' | 'aiSubtaskGenerationCount' | 'isNew'>} task - The task data for the new task.
+   * @param {Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'subtasks' | 'userId' | 'aiSubtaskGenerationCount' | 'isNew'> & { category?: string | null, emoji?: string | null }} task - The task data for the new task.
    * @returns {Promise<Task | undefined>} A promise that resolves with the newly created task or undefined on failure.
    */
-  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'subtasks' | 'userId' | 'aiSubtaskGenerationCount' | 'isNew'>) => Promise<Task | undefined>;
+  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'subtasks' | 'userId' | 'aiSubtaskGenerationCount' | 'isNew'> & { category?: string | null, emoji?: string | null }) => Promise<Task | undefined>;
   /** 
    * Updates an existing task.
    * @param {string} id - The ID of the task to update.
@@ -107,6 +107,13 @@ export interface TaskContextType {
    * @returns {Promise<void>} A promise that resolves when the task is marked as viewed.
    */
   markTaskAsViewed: (id: string) => Promise<void>;
+
+  /** 
+   * Toggles the favorite status of a task.
+   * @param {string} taskId - The ID of the task to toggle.
+   * @returns {Promise<void>} A promise that resolves when the favorite status is updated.
+   */
+  toggleFavorite: (taskId: string) => Promise<void>;
 }
 
 /**

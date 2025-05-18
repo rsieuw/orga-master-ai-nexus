@@ -18,11 +18,23 @@ import { PinnedMessagesSection } from "./PinnedMessagesSection.tsx";
 import { useDeepResearch, ResearchMode } from "./hooks/useDeepResearch.ts";
 import { Input } from "@/components/ui/input.tsx";
 
+/**
+ * Props for the ChatPanel component.
+ */
 interface ChatPanelProps {
+  /** The current task object, or null if no task is selected. */
   task: Task | null;
+  /** The title of the currently selected subtask, if any. */
   selectedSubtaskTitle?: string | null;
 }
 
+/**
+ * ChatPanel component provides the main chat interface for interacting with the AI regarding a task.
+ * It handles message display, input, AI responses, research initiation, note-taking, and other chat-related functionalities.
+ * 
+ * @param {ChatPanelProps} props - The props for the component.
+ * @returns {JSX.Element} The ChatPanel component.
+ */
 export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps) {
   const { updateTask, addSubtask, deleteSubtask, deleteAllSubtasks, updateSubtask } = useTask();
   const {
@@ -46,12 +58,12 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
   const [input, setInput] = useState("");
   const [isNoteMode, setIsNoteMode] = useState(false);
   const [isAiResponding, setIsAiResponding] = useState(false);
-  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false); // Tracks if the main chat input is focused
 
   const [currentResearchMode, setCurrentResearchMode] = useState<ResearchMode>('research');
-  const [showSearchInput, setShowSearchInput] = useState(false);
-  const [searchInputText, setSearchInputText] = useState("");
-  const [isSearchingMessages, setIsSearchingMessages] = useState(false);
+  const [showSearchInput, setShowSearchInput] = useState(false); // Controls visibility of the search input field
+  const [searchInputText, setSearchInputText] = useState(""); // Text content of the search input
+  const [isSearchingMessages, setIsSearchingMessages] = useState(false); // True if search is for messages, false for research
 
   const filteredMessages = useMemo(() => {
     if (!isSearchingMessages || !searchInputText.trim()) {
@@ -94,8 +106,15 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     }
   }, [selectedSubtaskTitle, scrollToBottom]);
 
+  /**
+   * Navigates to the home page to close the chat panel.
+   */
   const handleCloseChat = () => navigate('/');
 
+  /**
+   * Copies the given text to the clipboard and shows a toast notification.
+   * @param {string} text - The text to copy.
+   */
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
       toast({ title: t('chatPanel.toast.copiedTitle'), description: t('chatPanel.toast.copiedDescription') });
@@ -104,6 +123,11 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     });
   };
 
+  /**
+   * Saves a new note to the database and adds a confirmation message to the chat.
+   * @param {string} noteContent - The content of the note to save.
+   * @returns {Promise<boolean>} True if the note was saved successfully, false otherwise.
+   */
   const handleSaveNote = async (noteContent: string) => {
     if (!task?.id) return false;
     let success = false;
@@ -135,16 +159,27 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     return success;
   };
 
+  /**
+   * Deletes a note by its ID.
+   * @param {string} noteIdToDelete - The ID of the note to delete.
+   */
   const handleDeleteNote = (noteIdToDelete: string) => {
     if (!task?.id) return;
     deleteNote(noteIdToDelete);
   };
 
+  /**
+   * Deletes a saved research item by its ID.
+   * @param {string} researchIdToDelete - The ID of the research item to delete.
+   */
   const handleDeleteResearch = (researchIdToDelete: string) => {
     if (!task?.id) return;
     deleteResearch(researchIdToDelete);
   };
 
+  /**
+   * Exports the current chat conversation to a text file.
+   */
   const handleExportChat = () => {
     if (!task) {
       toast({ variant: "destructive", title: t('chatPanel.toast.exportFailedTitle'), description: t('chatPanel.toast.exportFailedDescriptionNoTask') });
@@ -181,6 +216,12 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     toast({ title: t('chatPanel.toast.exportStartedTitle'), description: t('chatPanel.toast.exportStartedDescription') });
   };
 
+  /**
+   * Initiates a deep research process based on the provided mode and prompt.
+   * Adds user request and AI response/error messages to the chat.
+   * @param {ResearchMode} [mode='research'] - The mode of research (e.g., 'research', 'instruction').
+   * @param {string} [prompt] - The specific prompt for the research. Defaults to task title or a generic title.
+   */
   const handleDeepResearch = useCallback(async (mode: ResearchMode = 'research', prompt?: string) => {
     if (!task) {
       return;
@@ -219,6 +260,11 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     scrollToBottom();
   }, [task, selectedSubtaskTitle, t, toast, startDeepResearch, addMessage, setCurrentResearchMode, scrollToBottom]);
 
+  /**
+   * Handles the submission of the search input.
+   * If in message search mode, applies the filter.
+   * If in research mode, initiates deep research with the input text.
+   */
   const handleSearchSubmit = () => {
     if (searchInputText.trim()) {
       if (isSearchingMessages) {
@@ -233,6 +279,10 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     }
   };
 
+  /**
+   * Toggles the search mode between searching messages and initiating research.
+   * Shows the search input and focuses it.
+   */
   const handleSearchModeToggle = () => {
     // Force showing the search field
     setShowSearchInput(true);
@@ -255,6 +305,11 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     }, 100);
   };
 
+  /**
+   * Updates the search input text state.
+   * Shows the search input if typing and in message search mode.
+   * @param {React.ChangeEvent<HTMLInputElement>} e - The input change event.
+   */
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInputText(e.target.value);
     if (isSearchingMessages && !showSearchInput) {
@@ -262,6 +317,10 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     }
   };
 
+  /**
+   * Clears the search input text.
+   * If not in message search mode, also hides the search input field.
+   */
   const handleClearSearch = () => {
     setSearchInputText("");
     if (isSearchingMessages) {
@@ -271,6 +330,10 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     }
   };
 
+  /**
+   * Handles the blur event of the search input.
+   * Hides the search input if it's empty and not in message search mode.
+   */
   const handleSearchBlur = () => {
     // If there's no text and we're not searching in messages, collapse the search field
     setTimeout(() => {
@@ -280,6 +343,10 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
     }, 200); // Small delay to allow clicking buttons
   };
 
+  /**
+   * Handles the submission of the main chat input.
+   * Processes user input for notes, research, subtask generation, or standard AI chat.
+   */
   const handleSubmit = async () => {
     if (!input.trim() || !task?.id) return;
     const currentInput = input;
@@ -422,6 +489,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       );
   }
 
+  /** Options for the research mode dropdown. */
   const researchModeOptions: { labelKey: string; value: ResearchMode; icon?: React.ElementType, descriptionKey: string }[] = [
     { value: 'research', labelKey: 'chatPanel.researchModePopover.researchMode', icon: Brain, descriptionKey: 'chatPanel.researchModePopover.descriptionResearch' },
     { value: 'instruction', labelKey: 'chatPanel.researchModePopover.instructionMode', icon: ListChecks, descriptionKey: 'chatPanel.researchModePopover.descriptionInstruction' },

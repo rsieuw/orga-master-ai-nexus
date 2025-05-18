@@ -11,7 +11,10 @@ import {
   Wallet, 
   User,
   BookOpen,
-  Hammer
+  Hammer,
+  Star,
+  CheckSquare,
+  XSquare
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
@@ -21,6 +24,8 @@ import AnimatedBadge from "@/components/ui/AnimatedBadge.tsx";
 import { cn } from "@/lib/utils.ts";
 import { motion } from "framer-motion";
 import { TASK_CATEGORIES, TASK_CATEGORY_KEYS } from "@/constants/categories.ts";
+import { useTask } from "@/contexts/TaskContext.hooks.ts";
+import { Button } from "@/components/ui/button.tsx";
 
 /**
  * Props for the TaskCard component.
@@ -73,6 +78,7 @@ const getPriorityClass = (priority: string = 'none'): { backgroundClass: string;
  */
 export default function TaskCard({ task }: TaskCardProps) {
   const { i18n, t } = useTranslation();
+  const { toggleFavorite, toggleTaskCompletion } = useTask();
   const priorityStyles = getPriorityClass(task.priority);
   const completedSubtasks = task.subtasks.filter((st: SubTask) => st.completed).length;
   const totalSubtasks = task.subtasks.length;
@@ -251,17 +257,29 @@ export default function TaskCard({ task }: TaskCardProps) {
   }
 
   return (
-    <Link to={`/task/${task.id}`}>
+    <Link to={`/task/${task.id}`} className="block group task-card-link">
       <Card 
         className={cn(
           "task-card h-full flex flex-col relative overflow-hidden",
           `priority-${task.priority}`,
           priorityStyles.backgroundClass,
           priorityStyles.shadowClass,
-          task.status === 'done' ? 'auto-completed' : ''
+          task.status === 'done' ? 'auto-completed' : '',
+          task.isNew ? 'border-2 border-primary/70' : 'border border-transparent',
+          'dark:border-slate-700/50'
         )}
         data-category={task.category}
       >
+        {task.category && (
+          <div className={cn(
+            `absolute right-5 z-0 pointer-events-none`,
+            "transition-all duration-800 ease-in-out",
+            task.subtasks && task.subtasks.length > 0 ? 'bottom-12' : 'bottom-4'
+          )}>
+            {getCategoryBackgroundIcon(task.category, task.status)} 
+          </div>
+        )}
+        
         {/* Keep only the gleam effect */}
         {task.isNew && (
           <motion.div
@@ -286,45 +304,37 @@ export default function TaskCard({ task }: TaskCardProps) {
           </motion.div>
         )}
         
-        {task.category && (
-          <div className={cn(
-            `absolute right-5 z-0 pointer-events-none`,
-            "transition-all duration-800 ease-in-out",
-            task.subtasks && task.subtasks.length > 0 ? 'bottom-12' : 'bottom-8'
-          )}>
-            {getCategoryBackgroundIcon(task.category, task.status)} 
-          </div>
-        )}
-        
         <div className="p-3 flex flex-col h-full justify-between relative z-10">
           <div>
-            <div className="flex justify-between items-start">
-              <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <h3 className="font-medium text-base line-clamp-1 cursor-default">
-                      {task.emoji && <span className="mr-1.5 text-xl task-emoji">{task.emoji}</span>}
-                      {task.title}
-                    </h3>
-                  </TooltipTrigger>
-                  <TooltipContent 
-                    side="bottom" 
-                    align="start" 
-                    sideOffset={5} 
-                    avoidCollisions
-                    className="bg-popover/90 backdrop-blur-lg px-3 py-2 max-w-[250px] z-50 whitespace-normal break-words"
-                  >
-                    <p>{task.title}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+            <div className="flex justify-between items-start gap-2">
+              <div className="flex items-center flex-grow min-w-0">
+                <TooltipProvider delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <h3 className="font-medium text-base cursor-default min-w-0 truncate mb-[0.4rem]">
+                        {task.emoji && <span className="mr-1.5 text-xl task-emoji">{task.emoji}</span>}
+                        {task.title}
+                      </h3>
+                    </TooltipTrigger>
+                    <TooltipContent 
+                      side="bottom" 
+                      align="start" 
+                      sideOffset={5} 
+                      avoidCollisions
+                      className="bg-popover/90 backdrop-blur-lg px-3 py-2 max-w-[250px] z-50 whitespace-normal break-words"
+                    >
+                      <p>{task.title}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
 
-              {/* Calendar badge */}
+              {/* Alleen de Kalenderbadge blijft hier, als deze bestaat */}
               {deadlineDay && deadlineMonth && (
                 <TooltipProvider delayDuration={100}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="flex items-center">
+                      <div className="flex items-center flex-shrink-0">
                         <div className={`w-8 h-8 flex flex-col items-center justify-center rounded-full border border-white/10 overflow-hidden shadow-md calendar-badge ${
                           task.priority === 'high' ? 'bg-gradient-to-br from-red-600/90 to-rose-700/90' :
                           task.priority === 'medium' ? 'bg-gradient-to-br from-amber-500/90 to-orange-600/90' :
@@ -359,7 +369,7 @@ export default function TaskCard({ task }: TaskCardProps) {
                 {task.description}
               </p>
             )}
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               {task.isNew && (
                 <AnimatedBadge 
                   sparkleEffect
@@ -372,6 +382,69 @@ export default function TaskCard({ task }: TaskCardProps) {
                   {getTranslatedCategory(task.category)}
                 </Badge>
               )}
+              {/* FAVORIETEN-BADGE/KNOP */}
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline" 
+                      size="sm" 
+                      className="p-0 h-5 w-auto px-1.5 rounded-full bg-white/10 backdrop-blur-sm text-white border-white/10 shadow-md focus-visible:ring-1 focus-visible:ring-ring flex items-center justify-center"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleFavorite(task.id);
+                      }}
+                      aria-label={task.isFavorite ? t('taskCard.tooltip.unmarkAsFavorite') : t('taskCard.tooltip.markAsFavorite')}
+                    >
+                      <Star 
+                        className={cn(
+                          "h-3 w-3 transition-colors",
+                          task.isFavorite 
+                            ? "fill-amber-400 stroke-amber-400 group-hover:fill-amber-500 group-hover:stroke-amber-500"
+                            : "fill-none stroke-white group-hover:stroke-white"
+                        )}
+                      />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" align="center" sideOffset={5}>
+                    <p>{task.isFavorite ? t('taskCard.tooltip.unmarkAsFavorite') : t('taskCard.tooltip.markAsFavorite')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {/* TOGGLE COMPLETION STATUS BUTTON/BADGE START */}
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm" // Consistent with other badges
+                      className={cn(
+                        "p-0 h-5 w-auto px-1.5 rounded-full bg-white/10 backdrop-blur-sm text-white border-white/10 shadow-md focus-visible:ring-1 focus-visible:ring-ring flex items-center justify-center",
+                        task.status === 'done' 
+                          ? 'bg-green-500/20 text-green-300 border-green-500/30' 
+                          : 'bg-white/10 text-white border-white/10' // Default style from TaskDisplayCard
+                      )}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleTaskCompletion(task.id, task.status !== 'done');
+                      }}
+                      aria-label={task.status === 'done' ? t('taskCard.tooltip.markAsIncomplete') : t('taskCard.tooltip.markAsComplete')}
+                    >
+                      {task.status === 'done' 
+                        ? <XSquare className="h-3 w-3" /> 
+                        : <CheckSquare className="h-3 w-3 stroke-white" />
+                      }
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" align="center" sideOffset={5}>
+                    <p>{task.status === 'done' ? t('taskCard.tooltip.markAsIncomplete') : t('taskCard.tooltip.markAsComplete')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              {/* TOGGLE COMPLETION STATUS BUTTON/BADGE END */}
             </div>
           </div>
           {totalSubtasks > 0 && (

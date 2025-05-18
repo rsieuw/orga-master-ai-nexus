@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { Card, CardContent, CardHeader } from "@/components/ui/card.tsx";
-import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, Loader2, ChevronUp, ChevronDown, ArrowUpDown, MessageSquareText } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
+import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, Loader2, ChevronUp, ChevronDown, ArrowUpDown, MessageSquareText, Check } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +16,7 @@ import {
   AlertDialogOverlay,
   AlertDialogPortal,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog.tsx";
 import {
   Dialog,
@@ -40,7 +40,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from "@/hooks/useAuth.ts";
 import SubtaskRow from "@/components/task/SubtaskRow.tsx";
 import { useResizableLayout } from "@/hooks/useResizableLayout.ts";
-import TaskDisplayCard from "@/components/task/TaskDisplayCard.tsx";
+import TaskInfoDisplay from "@/components/task/TaskInfoDisplay.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
 import { 
   BriefcaseBusiness,
   Home, 
@@ -89,9 +90,7 @@ export default function TaskDetail() {
     getMaxAiGenerationsForUser,
     isAiGenerationLimitReached,
     markTaskAsViewed,
-    toggleTaskCompletion,
-    toggleFavorite,
-    deleteAllSubtasks,
+    toggleTaskCompletion
   } = useTask();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -105,6 +104,8 @@ export default function TaskDetail() {
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [isGenerateSubtasksDialogOpen, setIsGenerateSubtasksDialogOpen] = useState(false);
   const [isMobileGenerateDialogOpen, setIsMobileGenerateDialogOpen] = useState(false);
+  const [showMobileActions, setShowMobileActions] = useState(true);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [contextMenuSubtaskId, setContextMenuSubtaskId] = useState<string | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState<{ top: number, left: number } | null>(null);
   const [isDescriptionMinimized, setIsDescriptionMinimized] = useState(false);
@@ -112,25 +113,8 @@ export default function TaskDetail() {
   const [subtaskSortOrder, setSubtaskSortOrder] = useState<'default' | 'completedFirst' | 'incompleteFirst'>('default');
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // New state for centralized subtask deletion dialog
-  const [subtaskToDelete, setSubtaskToDelete] = useState<SubTask | null>(null);
-  const [isDeleteSubtaskDialogOpen, setIsDeleteSubtaskDialogOpen] = useState(false);
-
-  // New state for triggering subtask edit from context menu
-  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
-
-  // New state for "Delete All Subtasks" dialog
-  const [isDeleteAllSubtasksDialogOpen, setIsDeleteAllSubtasksDialogOpen] = useState(false);
-
   const { user } = useAuth();
 
-  /**
-   * Hook for managing resizable layout columns (details and chat panels).
-   * @property {object} columnSizes - Current sizes of the left and right columns.
-   * @property {React.RefObject<HTMLDivElement>} containerRef - Ref for the container HTMLScDivElement of the resizable layout.
-   * @property {(e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void} startResize - Function to initiate resizing.
-   * @property {boolean} isResizing - Boolean indicating if resizing is currently active.
-   */
   const { 
     columnSizes, 
     containerRef, 
@@ -159,14 +143,10 @@ export default function TaskDetail() {
     }
   }
 
-  // Estimated height of the context menu in pixels
-  const ESTIMATED_CONTEXT_MENU_HEIGHT = 160; 
-  const MENU_OFFSET = 5; 
-
   /**
    * Determines the CSS classes for styling based on task priority.
    * 
-   * @param {string} [priority='none'] - The priority level of the task ('high', 'medium', 'low', or 'none').
+   * @param {string} priority - The priority level of the task ('high', 'medium', 'low', or 'none').
    * @returns {{ backgroundClass: string; shadowClass: string; directPriorityClass: string }} An object containing the CSS classes for background and shadow effects.
    */
   const getPriorityClass = (priority: string = 'none'): { backgroundClass: string; shadowClass: string; directPriorityClass: string } => {
@@ -204,10 +184,7 @@ export default function TaskDetail() {
   const maxGenerations = getMaxAiGenerationsForUser();
   const isLimitReached = task ? isAiGenerationLimitReached(task) : false;
   
-  /**
-   * Memoized array of subtasks, sorted based on the `subtaskSortOrder` state.
-   * @type {SubTask[]}
-   */
+  // Memoized sorted subtasks
   const sortedSubtasks = useMemo(() => {
     if (!task?.subtasks) return [];
     const subtasksCopy = [...task.subtasks]; 
@@ -223,7 +200,7 @@ export default function TaskDetail() {
         return a.completed ? 1 : -1;
       });
     }
-    return subtasksCopy; // Default order (as fetched or previously sorted)
+    return subtasksCopy; // Default order
   }, [task?.subtasks, subtaskSortOrder]);
 
   /**
@@ -231,6 +208,7 @@ export default function TaskDetail() {
    * 
    * @param {string} subtaskId - The ID of the subtask to toggle.
    * @param {boolean} completed - The new completion status of the subtask.
+   * @returns {Promise<void>} A promise that resolves when the subtask is updated.
    */
   const handleSubtaskToggle = async (subtaskId: string, completed: boolean) => {
     if (!task) return;
@@ -245,6 +223,7 @@ export default function TaskDetail() {
    * Adds a new subtask to the current task.
    * 
    * @param {React.FormEvent} e - The form event triggering the addition.
+   * @returns {Promise<void>} A promise that resolves when the subtask is added.
    */
   const handleAddSubtask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,9 +244,8 @@ export default function TaskDetail() {
 
   /**
    * Initiates AI-based subtask generation for the current task.
-   * It calls the `expandTask` function from context and handles dialog states.
-   * Logs an error if the task is undefined.
-   * @async
+   * 
+   * @returns {Promise<void>} A promise that resolves when the subtasks generation process is complete.
    */
   const handleGenerateSubtasks = async () => {
     if (task) {
@@ -296,21 +274,57 @@ export default function TaskDetail() {
 
   /**
    * Locks or unlocks body scroll based on the state of various dialogs.
-   * This prevents background scrolling when a dialog (edit, generate subtasks, etc.) is open.
+   * This prevents background scrolling when a dialog (edit, generate subtasks) is open.
    */
   useEffect(() => {
-    const shouldLock = isEditDialogOpen || isGenerateSubtasksDialogOpen || isMobileGenerateDialogOpen || isDeleteSubtaskDialogOpen || isDeleteAllSubtasksDialogOpen;
+    const shouldLock = isEditDialogOpen || isGenerateSubtasksDialogOpen || isMobileGenerateDialogOpen;
     document.body.style.overflow = shouldLock ? 'hidden' : 'auto';
     return () => { document.body.style.overflow = 'auto'; };
-  }, [isEditDialogOpen, isGenerateSubtasksDialogOpen, isMobileGenerateDialogOpen, isDeleteSubtaskDialogOpen, isDeleteAllSubtasksDialogOpen]);
+  }, [isEditDialogOpen, isGenerateSubtasksDialogOpen, isMobileGenerateDialogOpen]);
 
   /**
    * Sets the active mobile view (details or chat) based on the URL hash.
-   * Allows linking directly to the chat view on mobile by checking `location.hash`.
+   * Allows linking directly to the chat view on mobile.
    */
   useEffect(() => {
     setActiveMobileView(location.hash === '#chat' ? 'chat' : 'details');
   }, [location.hash]);
+
+  /**
+   * Manages the visibility of mobile action buttons based on user activity.
+   * Buttons are shown on interaction and hidden after a period of inactivity.
+   */
+  useEffect(() => {
+    const INACTIVITY_TIMEOUT = 2500;
+    const handleActivity = () => {
+      if (hideTimerRef.current !== null) {
+        clearTimeout(hideTimerRef.current);
+      }
+      setShowMobileActions(true);
+      hideTimerRef.current = setTimeout(() => {
+        setShowMobileActions(false);
+      }, INACTIVITY_TIMEOUT) as ReturnType<typeof setTimeout>;
+    };
+    handleActivity();
+    globalThis.addEventListener('scroll', handleActivity, { passive: true });
+    globalThis.addEventListener('click', handleActivity, { capture: true });
+    globalThis.addEventListener('mousemove', handleActivity, { passive: true });
+    globalThis.addEventListener('touchmove', handleActivity, { passive: true });
+    return () => {
+      globalThis.removeEventListener('scroll', handleActivity);
+      globalThis.removeEventListener('click', handleActivity, { capture: true });
+      globalThis.removeEventListener('mousemove', handleActivity);
+      globalThis.removeEventListener('touchmove', handleActivity);
+    };
+  }, []);
+
+  /**
+   * Sets the selected subtask title for potential AI chat interaction.
+   * @param {string} title - The title of the subtask selected by the user.
+   */
+  const handleSubtaskLabelClick = (title: string) => {
+    setSelectedSubtaskTitle(title);
+  };
 
   const totalSubtasks = task?.subtasks.length ?? 0;
   const completedSubtasks = task?.subtasks.filter(st => st.completed).length ?? 0;
@@ -320,8 +334,7 @@ export default function TaskDetail() {
 
   /**
    * Marks the task as viewed when the component mounts or the task/ID changes,
-   * but only if the task is marked as `isNew` (not previously viewed).
-   * Relies on `markTaskAsViewed` from `useTask` context.
+   * but only if the task is marked as new.
    */
   useEffect(() => {
     if (id && task && !task.isNew) {
@@ -334,15 +347,7 @@ export default function TaskDetail() {
   }, [id, task, markTaskAsViewed]);
 
   // Effect to handle clicks outside the subtask context menu
-  /**
-   * Effect to set up and tear down event listeners for clicks outside the subtask context menu.
-   * Closes the context menu if a click occurs outside of it.
-   */
   useEffect(() => {
-    /**
-     * Closes the subtask context menu if a click occurs outside of it.
-     * @param {MouseEvent | TouchEvent} event - The click or touch event.
-     */
     function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
         closeSubtaskContextMenu();
@@ -357,11 +362,12 @@ export default function TaskDetail() {
         document.removeEventListener("touchstart", handleClickOutside);
       };
     }
-  }, [contextMenuSubtaskId]);
+  }, [contextMenuSubtaskId]); // Only re-run if contextMenuSubtaskId changes
 
+  // Function to find the correct translation key for a category
   /**
    * Finds the translation key for a given category string.
-   * @param {string} category - The category string (e.g., "Work/Study").
+   * @param {string} category - The category string (e.g., "Werk/Studie").
    * @returns {string} The translation key (e.g., "categories.workStudy") or the original category string if not found.
    */
   const getCategoryTranslationKey = (category: string) => {
@@ -383,9 +389,9 @@ export default function TaskDetail() {
 
   /**
    * Gets the appropriate background icon component for a given task category.
-   * The icon's color is adjusted based on the task's priority and status.
+   * The icon's color is adjusted based on the task's priority.
    * @param {string} [category] - The category string.
-   * @param {string} [taskStatus] - The task status ('done' or other).
+   * @param {string} [taskStatus] - The task status.
    * @returns {JSX.Element | null} The icon component or null if the category is not recognized.
    */
   const getCategoryBackgroundIcon = (category?: string, taskStatus?: string) => {
@@ -393,54 +399,54 @@ export default function TaskDetail() {
     let opacityClass = "opacity-40"; // Default opacity
 
     if (taskStatus === 'done') {
-      iconColorClass = "text-[#51976a]"; // Custom green color for done tasks
-      opacityClass = "opacity-60"; // Consistent with TaskCard
+      iconColorClass = "text-[#51976a]"; // Aangepaste groene kleur
+      opacityClass = "opacity-60"; // Consistent met TaskCard
     } else {
-      // No specific colors for priorities here, only default color
-      // Hover colors are handled via CSS
-      opacityClass = "opacity-40"; // Default opacity for non-completed tasks
+      // Verwijderd: Geen specifieke kleuren voor prioriteiten, alleen standaard kleur
+      // We houden de kleuren alleen bij hover (wordt via CSS gedaan)
+      opacityClass = "opacity-40"; // Standaard opacity voor niet-voltooide taken
     }
     
     const iconProps = { 
       className: `category-background-icon ${iconColorClass} ${opacityClass}`,
-      size: 52, 
+      size: 52, // Aangepast van 62 naar 52
       strokeWidth: 0.6
     };
     
     const normalizedCategory = category?.toLowerCase();
 
     switch(normalizedCategory) {
-      case "werk/studie": // Dutch
-      case "work": // English
+      case "werk/studie":
+      case "work":
         return <BriefcaseBusiness {...iconProps} />;
-      case "persoonlijk": // Dutch
-      case "personal": // English
+      case "persoonlijk":
+      case "personal":
         return <User {...iconProps} />;
-      case "thuis": // Dutch
-      case "home": // English 
+      case "thuis":
+      case "home": 
         return <Home {...iconProps} />;
-      case "familie": // Dutch
-      case "family": // English
+      case "familie":
+      case "family":
         return <Users {...iconProps} />;
-      case "sociaal": // Dutch
-      case "social": // English
+      case "sociaal":
+      case "social":
         return <GlassWater {...iconProps} />;
-      case "gezondheid": // Dutch
-      case "health": // English
+      case "gezondheid":
+      case "health":
         return <Heart {...iconProps} />;
-      case "financiën": // Dutch
-      case "finances": // English
+      case "financiën":
+      case "finances":
         return <Wallet {...iconProps} />;
-      case "projecten": // Dutch
-      case "projects": // English
-      case "project": // English (singular)
+      case "projecten":
+      case "projects":
+      case "project":
         return <Hammer {...iconProps} />;
-      case "leren": // Dutch
-      case "learning": // English
+      case "leren":
+      case "learning":
         return <BookOpen {...iconProps} />;
       default:
         if (category) {
-          console.warn(`[TaskDetail] Unknown category for background icon: '${category}' (normalized to: '${normalizedCategory}')`);
+          console.warn(`[TaskDetail] Onbekende categorie voor achtergrondicoon: '${category}' (genormaliseerd naar: '${normalizedCategory}')`);
         }
         return null;
     }
@@ -455,60 +461,63 @@ export default function TaskDetail() {
     setContextMenuPosition(null);
   };
 
-  /**
-   * Opens the action menu for a subtask, calculating its position relative to the subtask row and viewport.
-   * @param {string} subtaskId - The ID of the subtask for which to open the menu.
-   * @param {React.MouseEvent} event - The mouse event that triggered the menu opening.
-   */
-  const handleOpenSubtaskActionMenu = (subtaskId: string, event: React.MouseEvent) => {
-    const subtaskRowElement = event.currentTarget as HTMLElement;
+  const handleSubtaskMobileClick = (subtaskId: string, event: React.MouseEvent | React.TouchEvent, subtaskTitle: string) => {
+    const targetElement = (event.currentTarget as HTMLElement).closest<HTMLElement>('[data-role="subtask-row"]');
+    if (!targetElement) {
+      console.error("[TaskDetail] handleSubtaskMobileClick: targetElement is null. CurrentTarget:", event.currentTarget);
+      return; // Stop uitvoering als targetElement niet gevonden is
+    }
 
-    if (contextMenuSubtaskId === subtaskId && contextMenuPosition !== null) {
+    // Toggle-logica: als dezelfde subtaak wordt aangeklikt, sluit het menu
+    if (contextMenuSubtaskId === subtaskId) {
       closeSubtaskContextMenu();
       return;
     }
 
-    const subtaskRowRect = subtaskRowElement.getBoundingClientRect();
-    const viewportHeight = globalThis.innerHeight;
-    const viewportWidth = globalThis.innerWidth;
-    const menuHeight = ESTIMATED_CONTEXT_MENU_HEIGHT; // 160
-    const menuWidth = 224; // w-56
-
-    console.log("[TaskDetail] Viewport:", { width: viewportWidth, height: viewportHeight });
-    console.log("[TaskDetail] SubtaskRow Rect:", subtaskRowRect);
-    console.log("[TaskDetail] Menu Dimensions:", { width: menuWidth, height: menuHeight, offset: MENU_OFFSET });
-
-    let top: number;
-    // Try to position below the element
-    if (subtaskRowRect.bottom + menuHeight + MENU_OFFSET <= viewportHeight) {
-      top = subtaskRowRect.bottom + MENU_OFFSET;
-    // Try to position above the element
-    } else if (subtaskRowRect.top - menuHeight - MENU_OFFSET >= 0) {
-      top = subtaskRowRect.top - menuHeight - MENU_OFFSET;
-    } else {
-      // Fallback: if neither fits, try at the top of the viewport (or as close as possible)
-      top = MENU_OFFSET;
-    }
-
-    let left: number;
-    // If the item is more than halfway across the screen to the right, try to open to the left if possible
-    if (subtaskRowRect.left > viewportWidth / 2 && subtaskRowRect.left - menuWidth - MENU_OFFSET > 0) {
-      left = subtaskRowRect.right - menuWidth - MENU_OFFSET; // Align with right edge of item
-    // Default: try to the right of the element
-    } else if (subtaskRowRect.left + menuWidth + MENU_OFFSET <= viewportWidth) {
-      left = subtaskRowRect.left + MENU_OFFSET;
-    // Try to the left of the element if right does not fit (and the previous check did not apply)
-    } else if (subtaskRowRect.right - menuWidth - MENU_OFFSET >= 0) {
-      left = subtaskRowRect.right - menuWidth - MENU_OFFSET;
-    } else {
-      // Fallback: if neither fits horizontally, try to the left in the viewport
-      left = MENU_OFFSET;
-    }
+    // Voordat we een nieuw menu openen, eerst eventuele bestaande menu's sluiten
+    setContextMenuSubtaskId(null);
+    setContextMenuPosition(null);
     
-    console.log("[TaskDetail] Calculated Coords:", { top, left });
-
-    setContextMenuSubtaskId(subtaskId);
-    setContextMenuPosition({ top, left });
+    // Even wachten met het openen van het nieuwe menu zodat het oude menu kan sluiten
+    setTimeout(() => {
+      // Haal de positiegegevens van de aangeklikte subtaak op
+      const rect = targetElement.getBoundingClientRect();
+      
+      // Centreer het menu horizontaal
+      const screenWidth = globalThis.innerWidth;
+      const menuWidth = 192; // Tailwind w-48
+      const horizontalPosition = Math.max(10, (screenWidth - menuWidth) / 2);
+      
+      // Bepaal de verticale positie op basis van de subtaak positie
+      // Pas een correctie toe van 300px zoals aangegeven door gebruiker
+      const menuHeight = 118; // Gemeten hoogte van het menu
+      const safeBottomMargin = 20; // Marge vanaf onderkant scherm
+      
+      // Startpositie is de bovenkant van de subtaak met een offset van -300px
+      let verticalPosition = rect.top - 300;
+      
+      // Zorg ervoor dat het menu niet buiten het scherm valt (zowel boven als onder)
+      verticalPosition = Math.max(10, verticalPosition); // Minimum 10px vanaf de bovenkant
+      
+      // Zorg ervoor dat het menu volledig zichtbaar is (niet onder de rand van het scherm)
+      if (verticalPosition + menuHeight + safeBottomMargin > globalThis.innerHeight) {
+        // Als het menu onder de schermrand zou vallen, plaats het dan hoger
+        verticalPosition = Math.max(10, globalThis.innerHeight - menuHeight - safeBottomMargin);
+      }
+      
+      console.log('Menu Toggle Positionering:', {
+        subtaskId,
+        rectTop: rect.top,
+        offsetApplied: -300,
+        correctieVerticalPosition: verticalPosition,
+        horizontalPosition
+      });
+    
+      // Stel de context menu positie en ID in
+      setContextMenuPosition({ top: verticalPosition, left: horizontalPosition });
+      setContextMenuSubtaskId(subtaskId);
+      setSelectedSubtaskTitle(subtaskTitle);
+    }, 10);
   };
 
   if (tasksLoading && !task) {
@@ -559,32 +568,6 @@ export default function TaskDetail() {
     }
   };
 
-  /**
-   * Handles the deletion of all subtasks for the current task.
-   * Displays toast notifications for success or failure and closes the confirmation dialog.
-   * @async
-   */
-  const handleDeleteAllSubtasks = async () => {
-    if (task) {
-      const subtaskCount = task.subtasks.length; // Store count before deletion
-      try {
-        await deleteAllSubtasks(task.id);
-        toast({ 
-          title: t('taskDetail.toast.allSubtasksDeleted.title'), 
-          description: t('taskDetail.toast.allSubtasksDeleted.description', { count: subtaskCount }) 
-        });
-      } catch (error) {
-        toast({ 
-          variant: "destructive", 
-          title: t('common.error'), 
-          description: t('taskDetail.toast.allSubtasksDeleteFailed.description') 
-        });
-      } finally {
-        setIsDeleteAllSubtasksDialogOpen(false);
-      }
-    }
-  };
-
   return (
     <AppLayout noPadding>
       <div className="relative pb-20 mb-4 md:container md:mx-auto md:px-4 md:pt-8 md:pb-4 max-sm:pb-0 max-sm:mb-0">
@@ -610,27 +593,230 @@ export default function TaskDetail() {
             )}
             style={globalThis.innerWidth >= 1024 ? { width: `${columnSizes.left}%` } : {}}
           >
-            {task && (
-              <TaskDisplayCard
-                task={task}
-                isDescriptionMinimized={isDescriptionMinimized}
-                priorityStyles={priorityStyles}
-                deadlineDay={deadlineDay}
-                deadlineMonth={deadlineMonth}
-                deadlineText={deadlineText}
-                getTranslatedCategory={getTranslatedCategory}
-                getCategoryBackgroundIcon={getCategoryBackgroundIcon}
-                onToggleStatus={() => toggleTaskCompletion(task.id, task?.status !== 'done')}
-                onEdit={() => setIsEditDialogOpen(true)}
-                onConfirmDelete={handleDelete}
-                totalSubtasks={totalSubtasks}
-                completedSubtasks={completedSubtasks}
-                progressValue={progressValue}
-                isGeneratingSubtasks={isGeneratingSubtasksForTask(task.id)}
-                t={t}
-                toggleFavorite={toggleFavorite}
-              />
-            )}
+            <Card 
+              className={cn(
+                "firebase-card flex-col relative overflow-hidden z-10",
+                "rounded-none border-none lg:rounded-lg lg:border lg:border-solid lg:border-white/10",
+                "flex-shrink-0 mb-0 lg:mb-4 bg-card/80 backdrop-blur-md",
+                task?.status === 'done' 
+                  ? 'auto-completed' 
+                  : priorityStyles.backgroundClass,
+                priorityStyles.shadowClass,
+                priorityStyles.directPriorityClass
+              )}
+            >
+              {task?.category && (
+                <div className={cn(
+                  `absolute right-5 z-0 pointer-events-none`,
+                  isDescriptionMinimized ? "opacity-0 transform scale-90" : "opacity-100 transform scale-100",
+                  "transition-all duration-800 ease-in-out",
+                  task.subtasks && task.subtasks.length > 0 ? 'bottom-12' : 'bottom-8'
+                )}>
+                  {getCategoryBackgroundIcon(task.category, task.status)}
+                </div>
+              )}
+              <CardHeader className={cn(
+                "px-4 lg:px-6", // Horizontale padding blijft constant
+                "transition-all duration-300 ease-in-out", // Behoud transitie voor padding
+                isDescriptionMinimized 
+                  ? "!pt-2 pb-2 lg:!pt-1 lg:pb-2" // Aangepast: lg:!pt-1 voor 0.25rem padding-top op lg screens
+                  : "!pt-3 pb-3 lg:!pt-3 lg:pb-3"
+              )}>
+                <div className="flex items-center justify-between">
+                  <CardTitle className={cn(
+                    "font-semibold",
+                    isDescriptionMinimized ? "text-lg" : "text-xl",
+                    "lg:text-xl"
+                  )}>
+                    {task?.emoji && <span className="mr-1.5 text-xl task-emoji">{task.emoji}</span>}
+                    {task?.title}
+                  </CardTitle>
+                  
+                  {/* Deadline calendar badge */}
+                  {deadlineDay && deadlineMonth && (
+                    <div className="transition-all duration-500 ease-in-out">
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center">
+                              <div className={`w-8 h-8 flex flex-col items-center justify-center gap-[6px] rounded-full border border-white/10 overflow-hidden shadow-md calendar-badge ${
+                                task?.priority === 'high' ? 'bg-gradient-to-br from-red-600/90 to-rose-700/90' :
+                                task?.priority === 'medium' ? 'bg-gradient-to-br from-amber-500/90 to-orange-600/90' :
+                                task?.priority === 'low' ? 'bg-gradient-to-br from-blue-500/90 to-cyan-600/90' :
+                                'bg-gradient-to-br from-slate-500/90 to-slate-600/90'
+                              }`}>
+                                <div className="text-[0.875rem] font-bold text-white leading-none">
+                                  {deadlineDay}
+                                </div>
+                                <div className="!text-[0.7rem] font-medium uppercase tracking-tight text-white/80 mt-[-8px] leading-none">
+                                  {deadlineMonth.substring(0, 3)}
+                                </div>
+                              </div>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent 
+                            side="left" 
+                            align="center" 
+                            sideOffset={8} 
+                            alignOffset={0}
+                            avoidCollisions
+                            className="bg-popover/90 backdrop-blur-lg px-3 py-2 max-w-[300px] z-50 whitespace-normal break-words"
+                          >
+                            <p className="text-sm font-medium">{deadlineText}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              {task && (
+                <CardContent className={cn(
+                  "p-0 flex flex-col flex-grow min-h-0"
+                )}>
+                  <div className={cn(
+                    "flex flex-col flex-grow min-h-0", // Basis layout
+                    "overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out", // Animatie
+                    isDescriptionMinimized 
+                      ? "max-h-0 opacity-0 p-0" // Ingeklapt: geen padding, geen hoogte, onzichtbaar
+                      : "px-4 pb-4 pt-0 sm:px-6 sm:pb-6 sm:pt-0 max-h-[1000px] opacity-100" // Uitgeklapt: normale padding, hoogte, zichtbaar
+                  )}>
+                    <TaskInfoDisplay
+                      task={task}
+                      isInfoCollapsed={isDescriptionMinimized} // Prop is nog aanwezig, maar TaskInfoDisplay gebruikt het niet meer voor animatie
+                    />
+                    <div className="mt-4 flex flex-wrap items-center gap-2 relative z-10">
+                      {task.category && (
+                        <Badge variant="outline" className="text-xs h-6 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-sm text-white border-white/10 shadow-md">
+                          {getTranslatedCategory(task.category)}
+                        </Badge>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`text-xs h-6 px-2.5 py-0.5 rounded-full ${task?.status === 'done' 
+                          ? 'bg-green-500/20 text-green-300 border-green-500/30' 
+                          : 'bg-white/10 text-white border-white/10'} 
+                          backdrop-blur-sm shadow-md flex items-center gap-1`}
+                        onClick={() => toggleTaskCompletion(task.id, task?.status !== 'done')}
+                        disabled={isGeneratingSubtasksForTask(task.id)}
+                      >
+                        {task?.status === 'done' 
+                          ? <X className="h-3 w-3" /> 
+                          : <Check className="h-3 w-3" />
+                        }
+                        {task?.status === 'done' 
+                          ? t('taskDetail.markAsIncomplete') 
+                          : t('taskDetail.markAsComplete')
+                        }
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-6 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-sm text-white border-white/10 shadow-md flex items-center gap-1"
+                        onClick={() => setIsEditDialogOpen(true)}
+                      >
+                        <Edit className="h-3 w-3" />
+                        {t('common.edit')}
+                      </Button>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild data-testid="subtask-delete-trigger">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-6 px-2.5 py-0.5 rounded-full bg-red-500/10 backdrop-blur-sm text-red-300 border-red-500/20 shadow-md flex items-center gap-1"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            {t('common.delete')}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogPortal>
+                          <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                          <AlertDialogContent className="bg-card/90 backdrop-blur-md border-white/10 z-[90]">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{t('taskDetail.deleteConfirmation.title')}</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t('taskDetail.deleteConfirmation.description')}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="h-16 sm:h-12 bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="h-16 sm:h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white bg-none"
+                                onClick={handleDelete}
+                              >
+                                {t('common.delete')}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialogPortal>
+                      </AlertDialog>
+                    </div>
+                    {totalSubtasks > 0 && (
+                      <div className="flex items-center gap-2 mt-4 w-full">
+                        <div className="flex items-center gap-1.5">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" 
+                            className={`
+                              ${(completedSubtasks === totalSubtasks && totalSubtasks > 0 && task?.status === 'done') 
+                                ? 'text-[#19e965]' 
+                                : `
+                                  ${task?.priority === 'high' ? 'text-red-400' : ''}
+                                  ${task?.priority === 'medium' ? 'text-amber-400' : ''}
+                                  ${task?.priority === 'low' ? 'text-cyan-400' : ''}
+                                  ${task?.priority !== 'high' && task?.priority !== 'medium' && task?.priority !== 'low' ? 'text-slate-400' : ''}
+                                `
+                              }
+                            `}>
+                            <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+                            <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          <span className={`text-xs flex-shrink-0 mr-2
+                              ${(completedSubtasks === totalSubtasks && totalSubtasks > 0 && task?.status === 'done') 
+                                ? 'text-[#19e965]' 
+                                : `
+                                  ${task?.priority === 'high' ? 'text-red-400' : ''}
+                                  ${task?.priority === 'medium' ? 'text-amber-400' : ''}
+                                  ${task?.priority === 'low' ? 'text-cyan-400' : ''}
+                                  ${task?.priority !== 'high' && task?.priority !== 'medium' && task?.priority !== 'low' ? 'text-slate-400' : ''}
+                                `
+                              }
+                            `}>
+                            {completedSubtasks}/{totalSubtasks}
+                          </span>
+                        </div>
+                        <div className="relative w-full h-3.5 bg-white/20 backdrop-blur-md rounded-full overflow-hidden flex-grow shadow-md">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300
+                              ${(completedSubtasks === totalSubtasks && totalSubtasks > 0 && task?.status === 'done') 
+                                ? 'bg-gradient-to-r from-[#19e965] to-[#074a47] shadow-[0_0_8px_2px_rgba(25,233,101,0.4)]' 
+                                : `
+                                  ${task?.priority === 'high' ? 'bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 shadow-[0_0_8px_2px_rgba(244,63,94,0.4)]' : ''}
+                                  ${task?.priority === 'medium' ? 'bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.4)]' : ''}
+                                  ${task?.priority === 'low' ? 'bg-gradient-to-r from-blue-500 via-cyan-400 to-teal-400 shadow-[0_0_8px_2px_rgba(34,211,238,0.4)]' : ''}
+                                  ${task?.priority !== 'high' && task?.priority !== 'medium' && task?.priority !== 'low' ? 'bg-gradient-to-r from-slate-400 to-slate-500 shadow-[0_0_8px_2px_rgba(100,116,139,0.3)]' : ''}
+                                `
+                              }
+                            `}
+                            style={{ width: `${progressValue}%` }}
+                          />
+                          {progressValue > 10 && (
+                            <span 
+                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold select-none progress-percentage-text"
+                            >
+                              {Math.round(progressValue)}%
+                            </span>
+                          )}
+                        </div>
+                        <span className="sr-only">
+                          ({Math.round(progressValue)}%)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              )}
+            </Card>
 
             {task && (
               <Card 
@@ -645,91 +831,73 @@ export default function TaskDetail() {
               >
                 <CardHeader className="px-4 pt-2 pb-0.5 lg:px-4 lg:pt-2 lg:pb-0.5 relative">
                   <div className="flex justify-between items-center px-1">
-                    <div className="flex items-center">
-                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-0.5 mr-2">
-                        {t('taskDetail.subtasksTitle')} ({completedSubtasks}/{totalSubtasks})
-                      </h3>
-                      <div className="flex items-center space-x-1">
-                        {task.subtasks && task.subtasks.length > 0 && (
-                          <TooltipProvider delayDuration={100}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setIsDeleteAllSubtasksDialogOpen(true)}
-                                  className="h-6 w-6 text-muted-foreground/60 hover:text-red-500 dark:text-muted-foreground/60 dark:hover:text-red-400"
-                                  aria-label={t('taskDetail.deleteAllSubtasks.ariaLabel')}
-                                  disabled={task.subtasks.length === 0}
-                                >
-                                  <Trash2 size={14} />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="bottom" align="center">
-                                <p>{t('taskDetail.deleteAllSubtasks.tooltip')}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                        <TooltipProvider delayDuration={100}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  if (subtaskSortOrder === 'default') {
-                                    setSubtaskSortOrder('incompleteFirst');
-                                  } else if (subtaskSortOrder === 'incompleteFirst') {
-                                    setSubtaskSortOrder('completedFirst');
-                                  } else {
-                                    setSubtaskSortOrder('default');
-                                  }
-                                }}
-                                className="h-6 w-6 text-muted-foreground/60 hover:text-muted-foreground"
-                                aria-label={t('taskDetail.sortSubtasksAriaLabel')}
-                              >
-                                <ArrowUpDown size={14} />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" align="center">
-                              <p>
-                                {subtaskSortOrder === 'default' ? t('taskDetail.sort.currentSortDefault') :
-                                subtaskSortOrder === 'incompleteFirst' ? t('taskDetail.sort.currentSortIncompleteFirst') :
-                                t('taskDetail.sort.currentSortCompletedFirst')}
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">
+                      {t('taskDetail.subtasksTitle')} ({completedSubtasks}/{totalSubtasks})
+                    </h3>
+                    <div className="flex items-center space-x-2">
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                if (subtaskSortOrder === 'default') {
+                                  setSubtaskSortOrder('incompleteFirst');
+                                } else if (subtaskSortOrder === 'incompleteFirst') {
+                                  setSubtaskSortOrder('completedFirst');
+                                } else {
+                                  setSubtaskSortOrder('default');
+                                }
+                              }}
+                              className="h-6 w-6 text-muted-foreground/60 hover:text-muted-foreground"
+                              aria-label={t('taskDetail.sortSubtasksAriaLabel')}
+                            >
+                              <ArrowUpDown size={14} />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" align="center" alignOffset={5}>
+                            <p>
+                              {subtaskSortOrder === 'default' ? t('taskDetail.sort.currentSortDefault') :
+                              subtaskSortOrder === 'incompleteFirst' ? t('taskDetail.sort.currentSortIncompleteFirst') :
+                              t('taskDetail.sort.currentSortCompletedFirst')}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      {/* Toggle button (right positioned) */}
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 z-30 flex items-center justify-center backdrop-blur-sm shadow-md"
+                              onClick={() => setIsDescriptionMinimized(!isDescriptionMinimized)}
+                              aria-label={isDescriptionMinimized ? t('taskDetail.expandDescription') : t('taskDetail.minimizeDescription')}
+                            >
+                              {isDescriptionMinimized ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" align="center">
+                            <p>{isDescriptionMinimized ? t('taskDetail.expandDescription') : t('taskDetail.minimizeDescription')}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
-                    
-                    <TooltipProvider delayDuration={100}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0 rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 z-30 flex items-center justify-center backdrop-blur-sm shadow-md"
-                            onClick={() => setIsDescriptionMinimized(!isDescriptionMinimized)}
-                            aria-label={isDescriptionMinimized ? t('taskDetail.expandDescription') : t('taskDetail.minimizeDescription')}
-                          >
-                            {isDescriptionMinimized ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="left" align="center" sideOffset={12}>
-                          <p>{isDescriptionMinimized ? t('taskDetail.expandDescription') : t('taskDetail.minimizeDescription')}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0 flex flex-col flex-grow h-full overflow-hidden relative max-h-[calc(100%-25px)]">
+                  {/* Scrollable container with flex-grow for subtasks */}
                   <div className={cn(
-                    "pl-4 pt-1 pb-2",
-                    "pr-4",
-                    task.subtasks.length > 9 ? "lg:pr-2" : "lg:pr-4",
+                    // Base padding
+                    "pl-4 pt-1 pb-2", // Left and vertical padding remain constant
+                    "pr-4", // Altijd 1rem padding-rechts op mobiel
+                    task.subtasks.length > 9 ? "lg:pr-2" : "lg:pr-4", // Conditional right padding for desktop
+                    // Scrollable container that automatically grows but shrinks on overflow
                     "flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-primary scrollbar-track-neutral-200 dark:scrollbar-track-neutral-800 scrollbar-thumb-rounded max-h-full lg:max-h-[calc(100%-80px)]",
+                    // Conditional styling
                     task.subtasks.length === 0 && "flex items-center justify-center"
                   )}>
                     <AnimatePresence mode='wait'>
@@ -742,72 +910,80 @@ export default function TaskDetail() {
                                 subtask={subtaskItem}
                                 index={index}
                                 handleSubtaskToggle={handleSubtaskToggle}
-                                onOpenActionMenu={(subId, ev) => handleOpenSubtaskActionMenu(subId, ev)}
-                                onInitiateDelete={(subtaskToDel) => {
-                                  setSubtaskToDelete(subtaskToDel);
-                                  setIsDeleteSubtaskDialogOpen(true);
-                                }}
-                                editingSubtaskIdFromDetail={editingSubtaskId}
-                                onEditStarted={() => setEditingSubtaskId(null)}
+                                handleSubtaskLabelClick={handleSubtaskLabelClick} 
+                                onMobileClick={globalThis.innerWidth < 1024 ? handleSubtaskMobileClick : undefined}
                               />
                               {contextMenuSubtaskId === subtaskItem.id && contextMenuPosition && (
-                                createPortal(
-                                  <motion.div
-                                    ref={contextMenuRef}
-                                    initial={{ opacity: 0, scale: 0.95, y: -5 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                                    transition={{ duration: 0.15 }}
-                                    className="fixed z-50 w-56 rounded-md bg-popover/95 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none py-1.5 border border-border/70 subtask-context-menu"
-                                    style={{ top: `${contextMenuPosition.top}px`, left: `${contextMenuPosition.left}px` }}
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <div className="px-0 py-0 divide-y divide-border/50" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        className="flex items-center w-full text-left px-4 py-2.5 text-sm text-popover-foreground hover:bg-primary/10 rounded-t-md rounded-b-none"
-                                        onClick={() => {
-                                          setActiveMobileView('chat');
-                                          navigate('#chat', { replace: true });
-                                          console.log("[TaskDetail] 'Bespreken in chat' clicked. Subtask title:", subtaskItem.title);
-                                          setSelectedSubtaskTitle(subtaskItem.title);
-                                          closeSubtaskContextMenu();
-                                        }}
-                                      >
-                                        <MessageSquareText className="mr-2 h-4 w-4" />
-                                        {t('taskDetail.subtaskActions.discussInChat')}
-                                      </Button>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        className="flex items-center w-full text-left px-4 py-2.5 text-sm text-popover-foreground hover:bg-primary/10 disabled:opacity-50 rounded-none"
-                                        onClick={() => {
-                                          setEditingSubtaskId(subtaskItem.id);
-                                          closeSubtaskContextMenu();
-                                        }}
-                                        disabled={subtaskItem.completed}
-                                      >
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        {t('taskDetail.subtaskActions.edit')}
-                                      </Button>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        className="flex items-center w-full text-left px-4 py-2.5 text-sm text-red-500 dark:text-red-400 hover:bg-destructive/10 dark:hover:text-red-300 rounded-b-md rounded-t-none focus-visible:ring-destructive"
-                                        onClick={() => {
-                                          setSubtaskToDelete(subtaskItem);
-                                          setIsDeleteSubtaskDialogOpen(true);
-                                          closeSubtaskContextMenu();
-                                        }}
-                                      >
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        {t('taskDetail.subtaskActions.delete')}
-                                      </Button>
-                                    </div>
-                                  </motion.div>,
-                                  document.body
-                                )
+                                <Card 
+                                  ref={contextMenuRef}
+                                  data-subtask-id={subtaskItem.id}
+                                  className="fixed z-50 w-48 bg-popover shadow-xl border border-border lg:hidden rounded-md"
+                                  style={{ top: `${contextMenuPosition.top}px`, left: `${contextMenuPosition.left}px` }}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <div className="py-1">
+                                    <button
+                                      type="button"
+                                      className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted/80 rounded-t-md"
+                                      onClick={() => {
+                                        setActiveMobileView('chat');
+                                        navigate('#chat', { replace: true });
+                                        closeSubtaskContextMenu();
+                                      }}
+                                    >
+                                      <MessageSquareText className="mr-2 h-4 w-4" />
+                                      {t('taskDetail.subtaskActions.research')}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted/80 disabled:opacity-50"
+                                      onClick={() => {
+                                        console.log("Edit subtask:", subtaskItem.id, subtaskItem.title);
+                                        closeSubtaskContextMenu();
+                                      }}
+                                      disabled={subtaskItem.completed}
+                                    >
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      {t('taskDetail.subtaskActions.edit')}
+                                    </button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <button
+                                          type="button"
+                                          className="flex items-center w-full text-left px-3 py-2 text-sm text-red-500 dark:text-red-400 hover:bg-destructive/10 dark:hover:text-red-300 rounded-b-md focus-visible:ring-destructive"
+                                        >
+                                          <Trash2 className="mr-2 h-4 w-4" />
+                                          {t('taskDetail.subtaskActions.delete')}
+                                        </button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogPortal>
+                                        <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                                        <AlertDialogContent className="bg-card/90 backdrop-blur-md border-white/10 z-[90]">
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>{t('taskDetail.subtask.deleteConfirmation.title')}</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              {t('taskDetail.subtask.deleteConfirmation.description', { subtaskTitle: subtaskItem.title })}
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel onClick={closeSubtaskContextMenu} className="h-16 sm:h-12 bg-secondary/80 border-white/10">{t('common.cancel')}</AlertDialogCancel>
+                                            <AlertDialogAction
+                                              className="h-16 sm:h-12 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white bg-none"
+                                              onClick={() => {
+                                                if (task && contextMenuSubtaskId) {
+                                                   deleteSubtaskFromContext(task.id, contextMenuSubtaskId);
+                                                }
+                                                closeSubtaskContextMenu();
+                                              }}
+                                            >
+                                              {t('common.delete')}
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialogPortal>
+                                    </AlertDialog>
+                                  </div>
+                                </Card>
                               )}
                             </div>
                           ))}
@@ -826,6 +1002,7 @@ export default function TaskDetail() {
                     </AnimatePresence>
                   </div>
                   
+                  {/* Button bar as separate flex item so it stays at the bottom and doesn't scroll */}
                   <div className="hidden lg:flex lg:flex-col flex-shrink-0 px-4 pt-2 pb-3 lg:px-6 lg:pt-3 lg:pb-3 border-t border-border bg-card/80 backdrop-blur-md">
                     <div className="flex items-center flex-wrap gap-3 justify-center mb-1">
                       {showAddSubtaskForm ? (
@@ -909,6 +1086,7 @@ export default function TaskDetail() {
                                   {t('common.generateSubtasksDialogDescription', { taskTitle: task?.title })}
                                 </DialogDescription>
                               </DialogHeader>
+                              {/* Desktop Dialog - Knoppen blijven naast elkaar */}
                               <div className="mt-4 flex flex-row gap-3">
                                 <DialogClose asChild>
                                   <Button 
@@ -946,6 +1124,7 @@ export default function TaskDetail() {
             )}
           </div>
 
+          {/* Draggable divider - only visible on desktop */}
           <div
             className={cn(
               "hidden lg:flex items-center justify-center cursor-ew-resize bg-transparent transition-all duration-300 relative z-30 mx-1 shrink-0",
@@ -1030,6 +1209,52 @@ export default function TaskDetail() {
         </div>
       )}
 
+      <AnimatePresence>
+        {showMobileActions && !showAddSubtaskForm && globalThis.innerWidth < 1024 && activeMobileView === 'details' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className={cn(
+              "fixed bottom-16 left-0 right-0 z-40 flex justify-between items-start p-3",
+              'transition-opacity duration-300 ease-in-out'
+            )}
+          >
+            <div className="flex flex-col items-center">
+              <Button 
+                variant="default"
+                size="icon" 
+                className="aspect-square rounded-full h-14 w-14 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white shadow-lg mb-1"
+                disabled={isGeneratingSubtasksForTask(task.id) || isLimitReached}
+                onClick={() => setIsMobileGenerateDialogOpen(true)}
+                aria-label={t('taskDetail.generateSubtasks.buttonAriaLabel')}
+              >
+                {isGeneratingSubtasksForTask(task.id) ? (
+                  <Loader2 className="animate-spin h-6 w-6" />
+                ) : (
+                  <Sparkles className="h-6 w-6" />
+                )}
+              </Button>
+              <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-md bg-background/70 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none">{t('taskDetail.generateSubtasks.fabText')}</span>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <Button 
+                variant="default"
+                size="icon" 
+                className="aspect-square rounded-full h-14 w-14 bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 shadow-lg mb-1"
+                onClick={() => setShowAddSubtaskForm(true)}
+                disabled={isAddingSubtask || isGeneratingSubtasksForTask(task.id) || isLimitReached}
+                aria-label={t('taskDetail.addSubtask.buttonAriaLabel')}
+              >
+                <PlusCircle className="h-7 w-7" />
+              </Button>
+              <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-md bg-background/70 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none">{t('taskDetail.addSubtask.fabText')}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AlertDialog open={isMobileGenerateDialogOpen} onOpenChange={setIsMobileGenerateDialogOpen}>
         <AlertDialogPortal>
           <AlertDialogOverlay className="fixed inset-0 z-[100] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
@@ -1040,6 +1265,7 @@ export default function TaskDetail() {
                 {t('common.generateSubtasksDialogDescription', { taskTitle: task?.title })}
               </AlertDialogDescription>
             </AlertDialogHeader>
+            {/* Mobiele AlertDialog - Knoppen onder elkaar op mobiel, naast elkaar op sm en groter */}
             <div className="mt-4 flex flex-col sm:flex-row gap-3">
               <AlertDialogCancel className="order-first sm:order-none flex-1 h-12 py-3 sm:py-2 bg-secondary/80 border-white/10">
                 {t('common.cancel')}
@@ -1082,77 +1308,6 @@ export default function TaskDetail() {
             </DialogContent>
           </DialogPortal>
         </Dialog>
-      )}
-
-      <AlertDialog open={isDeleteAllSubtasksDialogOpen} onOpenChange={setIsDeleteAllSubtasksDialogOpen}>
-        <AlertDialogPortal>
-          <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-          <AlertDialogContent className="bg-card/90 backdrop-blur-md border-white/10 z-[90] sm:max-w-xl p-6 shadow-lg sm:rounded-lg">
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t('taskDetail.deleteAllSubtasksDialog.title')}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {t('taskDetail.deleteAllSubtasksDialog.description', { taskTitle: task?.title, count: task?.subtasks?.length })}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="mt-4 flex flex-col sm:flex-row gap-3">
-              <AlertDialogCancel 
-                className="order-first sm:order-none flex-1 h-12 py-3 sm:py-2 bg-secondary/80 border-white/10"
-              >
-                {t('common.cancel')}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                className="flex-1 h-12 py-3 sm:py-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                onClick={handleDeleteAllSubtasks}
-              >
-                {t('common.delete')}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogPortal>
-      </AlertDialog>
-
-      {subtaskToDelete && (
-        <AlertDialog open={isDeleteSubtaskDialogOpen} onOpenChange={(open) => {
-          setIsDeleteSubtaskDialogOpen(open);
-          if (!open) {
-            setSubtaskToDelete(null);
-          }
-        }}>
-          <AlertDialogPortal>
-            <AlertDialogOverlay className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-            <AlertDialogContent className="bg-card/90 backdrop-blur-md border-white/10 z-[90] sm:max-w-xl p-6 shadow-lg sm:rounded-lg">
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t('taskDetail.subtask.deleteConfirmation.title')}</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {t('taskDetail.subtask.deleteConfirmation.description', { subtaskTitle: subtaskToDelete.title })}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="mt-4 flex flex-col sm:flex-row gap-3">
-                <AlertDialogCancel 
-                  onClick={() => {
-                    setIsDeleteSubtaskDialogOpen(false);
-                    setSubtaskToDelete(null);
-                  }} 
-                  className="order-first sm:order-none flex-1 h-12 py-3 sm:py-2 bg-secondary/80 border-white/10"
-                >
-                  {t('common.cancel')}
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  className="flex-1 h-12 py-3 sm:py-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                  onClick={() => {
-                    if (task && subtaskToDelete) {
-                       deleteSubtaskFromContext(task.id, subtaskToDelete.id);
-                    }
-                    setIsDeleteSubtaskDialogOpen(false);
-                    setSubtaskToDelete(null);
-                  }}
-                >
-                  {t('common.delete')}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialogPortal>
-        </AlertDialog>
       )}
     </AppLayout>
   );

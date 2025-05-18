@@ -255,6 +255,7 @@ export default function Dashboard() {
       dayAfterTomorrow: [],
       nextWeek: [],
       later: [],
+      favorites: [],
     };
 
     for (const key in rawTaskGroups) {
@@ -314,6 +315,7 @@ export default function Dashboard() {
     // Function placed inside useMemo to prevent unnecessary re-renders
     const getCategoryTitle = (category: keyof TasksByDate): string => {
       switch (category) {
+        case 'favorites': return t('dashboard.categories.favorites');
         case 'completed': return t('dashboard.categories.completed');
         case 'overdue': return t('dashboard.categories.overdue');
         case 'today': return t('dashboard.categories.today');
@@ -326,12 +328,14 @@ export default function Dashboard() {
     };
     
     const categoryOrder: Array<keyof TasksByDate> = [
+      'favorites',
       'overdue', 'today', 'tomorrow', 'dayAfterTomorrow', 'nextWeek', 'later'
     ];
 
     // Helper function om een sectie te genereren
     const generateSection = (category: keyof TasksByDate, tasksInCategory: Task[]) => {
-      if (tasksInCategory.length > 0) {
+      // Toon de sectie als er taken zijn, OF als het de 'today' categorie is (om de placeholder te kunnen tonen)
+      if (tasksInCategory.length > 0 || category === 'today') {
         return (
           <div key={`category-${category}`} className="mt-4 first:mt-0"> {/* Minder ruimte boven elke sectie */}
             <h2 className="text-lg sm:text-lg text-xl md:text-lg font-bold sm:font-semibold mb-2 sm:mb-2 text-center md:text-left relative pb-2 sm:pb-0">
@@ -360,17 +364,17 @@ export default function Dashboard() {
                   <TaskCard task={task} />
                 </motion.div>
               ))}
-              {/* Custom condition for the placeholder card */}
-              {category === 'today' && (tasksInCategory.length === 0 || tasksInCategory.length % 4 !== 0) && (
+              {/* Custom condition for the placeholder card on tablet */}
+              {category === 'today' && (tasksInCategory.length === 0 || tasksInCategory.length % 2 !== 0) && (
                 <motion.div
                   key="add-new-task-placeholder"
                   variants={cardVariants}
                   layout="position"
-                  className="mb-2"
+                  className="mb-2 h-full"
                 >
                   <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
                     <DialogTrigger asChild>
-                      <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10">
+                      <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10 min-h-[208px]">
                         <PlusCircle className="h-10 w-10 text-muted-foreground/70 group-hover:text-primary transition-colors" />
                         <span className="mt-2 text-sm text-muted-foreground/90 group-hover:text-primary transition-colors">
                           {t('dashboard.addNewTaskPlaceholder')}
@@ -422,11 +426,11 @@ export default function Dashboard() {
                         </motion.div>
                       ))}
                       
-                      {/* Add new task placeholder */}
-                      {category === 'today' && (
+                      {/* Add new task placeholder for desktop < 5 tasks */}
+                      {category === 'today' && (tasksInCategory.length === 0 || tasksInCategory.length % 4 !== 0) && (
                         <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
                           <DialogTrigger asChild>
-                            <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10">
+                            <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10 min-h-[208px]">
                               <PlusCircle className="h-10 w-10 text-muted-foreground/70 group-hover:text-primary transition-colors" />
                               <span className="mt-2 text-sm text-muted-foreground/90 group-hover:text-primary transition-colors">
                                 {t('dashboard.addNewTaskPlaceholder')}
@@ -447,7 +451,7 @@ export default function Dashboard() {
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={`page-${category}-${activePage}`}
-                        className="grid grid-cols-4 gap-4 mb-2 grid-rows-[repeat(3,minmax(0,1fr))]"
+                        className="grid grid-cols-4 gap-4 mb-2"
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
@@ -465,18 +469,20 @@ export default function Dashboard() {
                           </motion.div>
                         ))}
                         
-                        {/* Add new task placeholder if this is the first page */}
+                        {/* Add new task placeholder if this is the first page and category is 'today' */}
                         {activePage === 0 && category === 'today' && (
-                          <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
-                            <DialogTrigger asChild>
-                              <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10">
-                                <PlusCircle className="h-10 w-10 text-muted-foreground/70 group-hover:text-primary transition-colors" />
-                                <span className="mt-2 text-sm text-muted-foreground/90 group-hover:text-primary transition-colors">
-                                  {t('dashboard.addNewTaskPlaceholder')}
-                                </span>
-                              </Card>
-                            </DialogTrigger>
-                          </Dialog>
+                          <motion.div className="h-full"> {/* Wrapper to take full height */}
+                            <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+                              <DialogTrigger asChild>
+                                <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10 min-h-[208px]">
+                                  <PlusCircle className="h-10 w-10 text-muted-foreground/70 group-hover:text-primary transition-colors" />
+                                  <span className="mt-2 text-sm text-muted-foreground/90 group-hover:text-primary transition-colors">
+                                    {t('dashboard.addNewTaskPlaceholder')}
+                                  </span>
+                                </Card>
+                              </DialogTrigger>
+                            </Dialog>
+                          </motion.div>
                         )}
                       </motion.div>
                     </AnimatePresence>
@@ -608,16 +614,18 @@ export default function Dashboard() {
                       </motion.div>
                     ))}
                     
+                    {/* Placeholder voor mobiele weergave, wordt na de taken getoond als de categorie 'today' is */}
+                    {/* De conditie (tasksInCategory.length === 0 || true) is equivalent aan true, dus altijd tonen voor 'today' */}
                     {category === 'today' && rowIndex === 0 && (tasksInCategory.length === 0 || tasksInCategory.length % cardsPerRow !== 0) && (
                       <motion.div
                         key="add-new-task-placeholder-mobile"
                         variants={cardVariants}
                         layout="position"
-                        className="flex-shrink-0 w-[85vw] max-w-[300px] snap-center shadow-md mt-1 mb-2.5 mx-1"
+                        className="flex-shrink-0 w-[85vw] max-w-[300px] snap-center shadow-md mt-1 mb-2.5 mx-1 h-full"
                       >
                         <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
                           <DialogTrigger asChild>
-                            <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10">
+                            <Card className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors cursor-pointer bg-card/50 hover:bg-muted/10 min-h-[208px]">
                               <PlusCircle className="h-10 w-10 text-muted-foreground/70 group-hover:text-primary transition-colors" />
                               <span className="mt-2 text-sm text-muted-foreground/90 group-hover:text-primary transition-colors">
                                 {t('dashboard.addNewTaskPlaceholder')}
@@ -636,7 +644,7 @@ export default function Dashboard() {
           </div>
         );
       }
-      return null;
+      return null; // Geen taken en niet 'today'
     };
 
     // Loop through de gedefinieerde volgorde
