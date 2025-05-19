@@ -11,7 +11,7 @@ import { corsHeaders } from '../_shared/cors.ts' // Using alias defined in deno.
 import { Database } from '@/types/supabase.ts' // Using alias defined in deno.jsonc
 
 // Type alias
-// type Customer = Database['public']['Tables']['customers']['Row'] // Verwijderd want ongebruikt
+// type Customer = Database['public']['Tables']['customers']['Row'] // Removed as unused
 
 /**
  * Stripe client instance initialized with the secret key and API version.
@@ -54,7 +54,21 @@ serve(async (req) => {
   let userIdForLogging: string | undefined;
   const functionNameForLogging = 'create-checkout-session';
   let requestBodyForLogging: Record<string, unknown> = {};
-  let supabaseLoggingClient: ReturnType<typeof createClient<Database>> | undefined; // For logging attempts
+  // let supabaseLoggingClient: ReturnType<typeof createClient<Database>> | undefined; // Removed, using supabaseAdmin for logging
+
+  // Client specifiek voor logging naar user_api_logs met service_role rechten
+  // Wordt alleen geïnitialiseerd als we daadwerkelijk gaan loggen.
+  let supabaseAdminLoggingClient: ReturnType<typeof createClient<Database>> | null = null;
+  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!supabaseServiceRoleKey) {
+    console.error("[create-checkout-session] SUPABASE_SERVICE_ROLE_KEY is not set. Internal API call logging will be skipped.");
+  } else {
+    supabaseAdminLoggingClient = createClient<Database>(
+      Deno.env.get('SUPABASE_URL')!,
+      supabaseServiceRoleKey
+    );
+  }
 
   try {
     // 1. Get User from JWT
@@ -68,8 +82,8 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_ANON_KEY') ?? '',
         { global: { headers: { Authorization: authHeader } } }
     )
-    // Also use this client for logging
-    supabaseLoggingClient = supabaseClient;
+    // Also use this client for logging // Removed, using supabaseAdmin
+    // supabaseLoggingClient = supabaseClient; // Removed
     
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     if (userError || !user) {
@@ -134,7 +148,7 @@ serve(async (req) => {
     // 4. Create Stripe Checkout Session
     const siteUrl = Deno.env.get('SITE_URL') || 'http://localhost:8080' // Fallback for local dev
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'ideal'], // Voeg evt. andere methoden toe
+      payment_method_types: ['card', 'ideal'], // Add other methods if needed
       customer: customerId,
       line_items: [
         {
@@ -143,9 +157,9 @@ serve(async (req) => {
         },
       ],
       mode: 'subscription',
-      success_url: `${siteUrl}/profile?checkout=success`, // Redirect naar profiel pagina (succes)
-      cancel_url: `${siteUrl}/profile`, // Redirect terug naar profiel pagina (annulering)
-      // Optioneel: trial periode, metadata, etc.
+      success_url: `${siteUrl}/profile?checkout=success`, // Redirect to profile page (success)
+      cancel_url: `${siteUrl}/profile`, // Redirect back to profile page (cancellation)
+      // Optional: trial period, metadata, etc.
       // subscription_data: {
       //   trial_period_days: 14
       // }
@@ -160,16 +174,18 @@ serve(async (req) => {
     // Add logging at the end of the try block, right before returning response
     // Log SUCCESS to user_api_logs
     try {
-      await supabaseLoggingClient.from('user_api_logs').insert({
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { 
-          ...requestBodyForLogging, 
-          success: true, 
-          sessionId: session.id,
-          customerId
-        },
-      });
+      if (supabaseAdminLoggingClient && userIdForLogging) { // Check of admin client en userId bestaan
+        await supabaseAdminLoggingClient.from('user_api_logs').insert({ // Gebruik admin client
+          user_id: userIdForLogging,
+          function_name: functionNameForLogging,
+          metadata: { 
+            ...requestBodyForLogging, 
+            success: true, 
+            sessionId: session.id,
+            customerId
+          },
+        });
+      }
     } catch (logError) {
       console.error('Failed to log SUCCESS to user_api_logs:', logError);
     }
@@ -212,9 +228,9 @@ serve(async (req) => {
     }
 
     // Log FAILURE to user_api_logs
-    if (supabaseLoggingClient && userIdForLogging) {
+    if (supabaseAdminLoggingClient && userIdForLogging) {
       try {
-        await supabaseLoggingClient.from('user_api_logs').insert({
+        await supabaseAdminLoggingClient.from('user_api_logs').insert({ // Gebruik admin client
           user_id: userIdForLogging,
           function_name: functionNameForLogging,
           metadata: { 
@@ -247,4 +263,5 @@ serve(async (req) => {
 - **Frontend Integration:** Call this function from your UI (e.g., on a button click), passing the selected `priceId` in the request body. Use the returned `session.url` to redirect the user to Stripe's checkout page: `window.location.href = session.url`.
 - **Success/Cancel URLs:** Update the `success_url` and `cancel_url` in `stripe.checkout.sessions.create` to point to the appropriate pages in your application that will handle the checkout outcome.
 - **RLS (Row Level Security):** Ensure RLS policies on the `customers` table allow the admin client (using `service_role`) to read and write customer data as needed by this function.
+  And ensure RLS on `user_api_logs` allows the `service_role` to insert.
 */ 

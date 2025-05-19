@@ -311,7 +311,7 @@ export default function TaskCard({ task }: TaskCardProps) {
                 <TooltipProvider delayDuration={100}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <h3 className="font-medium text-base cursor-default min-w-0 truncate mb-[0.4rem]">
+                      <h3 className="font-medium text-base cursor-pointer min-w-0 truncate mb-[0.4rem]">
                         {task.emoji && <span className="mr-1.5 text-xl task-emoji">{task.emoji}</span>}
                         {task.title}
                       </h3>

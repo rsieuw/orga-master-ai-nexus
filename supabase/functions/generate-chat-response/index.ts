@@ -12,7 +12,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // import { supabaseAdmin } from "../_shared/supabaseAdmin.ts"; // Commented out as it's not directly used in this function and causes load/lint issues
 // import { OpenAI } from "https://deno.land/x/openai@v4.52.7/mod.ts"; // OpenAI class not used, direct fetch is used
 
@@ -193,27 +193,47 @@ serve(async (req) => {
 
   let userIdForLogging: string | undefined;
   const functionNameForLogging = 'generate-chat-response';
-  let requestBodyForContext: Record<string, unknown> = {}; // For logging context
+  let requestBodyForContext: Record<string, unknown> = {};
 
-  // Initialize Supabase client with the Auth context of the user making the request.
-  const supabase = createClient(
+  // Client voor gebruikersauthenticatie en data fetchen (zoals subtasks)
+  const supabaseUserClient = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
   );
 
+  // Client specifiek voor logging naar user_api_logs met service_role rechten
+  // Wordt alleen geïnitialiseerd als we daadwerkelijk gaan loggen.
+  let supabaseAdminLoggingClient: SupabaseClient | null = null;
+  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!supabaseServiceRoleKey) {
+    console.error("SUPABASE_SERVICE_ROLE_KEY is not set. Internal API call logging will be skipped.");
+    // Overweeg of je hier een harde fout wilt gooien of doorgaan zonder logging.
+  } else {
+    supabaseAdminLoggingClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      supabaseServiceRoleKey
+    );
+  }
+
   let openaiModelUsed: string | undefined;
   let promptTokens: number | undefined;
   let completionTokens: number | undefined;
   let totalTokens: number | undefined;
+  let externalCallResponseTimeMs: number | undefined; // Added for response time
 
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    userIdForLogging = user?.id;
+    const { data: { user } } = await supabaseUserClient.auth.getUser();
+    if (!user) { // Toegevoegde check voor het geval user null is (bv. token verlopen/ongeldig)
+        throw new Error("User not authenticated or session expired.");
+    }
+    userIdForLogging = user.id;
 
     // 1. Extract data from request
-    const { query, mode, taskId, chatHistory, languagePreference = 'en' } = await req.json();
-    requestBodyForContext = { query, mode, taskId, languagePreference, chatHistoryLength: chatHistory?.length || 0 }; // Store for logging
+    const body = await req.json();
+    const { query, mode, taskId, chatHistory, languagePreference = 'en' } = body;
+    requestBodyForContext = { query, mode, taskId, languagePreference, chatHistoryLength: chatHistory?.length || 0 };
     const langKey = languagePreference === 'nl' ? 'nl' : 'en';
     
     if (!query) throw new Error(t('errors.chatResponse.queryRequired', langKey));
@@ -230,10 +250,10 @@ serve(async (req) => {
     if (!supabaseUrl) throw new Error(t('errors.chatResponse.supabaseUrlMissing', langKey));
     if (!supabaseAnonKey) throw new Error(t('errors.chatResponse.supabaseAnonKeyMissing', langKey));
 
-    // 4. Fetch current subtasks for context (Moved before OpenAI call)
+    // 4. Fetch current subtasks for context
     let currentSubtasks: { title: string; is_completed: boolean }[] = [];
     try {
-        const { data: taskData, error: taskError } = await supabase
+        const { data: taskData, error: taskError } = await supabaseUserClient
             .from('tasks')
             .select('subtasks')
             .eq('id', taskId)
@@ -311,107 +331,130 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
     const languageInstruction = `\n\n**IMPORTANT: Always respond in ${preferredLanguage}.**`;
     const finalSystemPrompt = `${baseSystemPrompt}\n${mainTaskInstructions}\n${subtaskInstructions}${languageInstruction}`;
 
-    const completion = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openAIApiKey}`
-      },
-      body: JSON.stringify({
-        model: openaiModelUsed, // Use the determined model
-        messages: [
-          { role: "system", content: finalSystemPrompt },
-          ...Array.isArray(chatHistory) ? chatHistory.map(msg => ({ role: msg.role, content: msg.content })) : [],
-          { role: "user", content: query }
-        ],
-        temperature: temperature,
-        response_format: { type: "json_object" }
-      })
-    });
+    // 5. Call OpenAI API
+    let aiResponseContent: string | null = null; // Initialize to null
+    let openAIError = null; // Variable to store any error from OpenAI call
+    let aiSuccess = false;
+    let structuredData: OpenAIChatCompletion | null = null; // Declare structuredData in a higher scope
 
-    let openAIError = null;
-    if (!completion.ok) {
-      const errorBody = await completion.json().catch(()=>({ message: t('errors.chatResponse.failedParseErrorBody', langKey) }));
-      const errorMessage = `${t('errors.chatResponse.openAIRequestFailed', langKey)} ${completion.statusText} - ${errorBody?.error?.message || JSON.stringify(errorBody)}`;
-      openAIError = {
-        status: completion.status,
-        message: errorMessage,
-        body: errorBody
-      };
-      console.error("V2: OpenAI API Error Response:", errorBody);
-      // throw new Error(errorMessage); // We will throw later after logging
-    }
-
-    const rawData = await completion.text(); 
-    let structuredData: OpenAIChatCompletion | null = null; // Use specific type
+    const startTime = performance.now(); // Start timing before the fetch call
 
     try {
-      if (completion.ok) { // Only parse if completion was ok
+      const openAIResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openAIApiKey}`
+        },
+        body: JSON.stringify({
+          model: openaiModelUsed,
+          messages: [
+            { role: "system", content: finalSystemPrompt },
+            ...Array.isArray(chatHistory) ? chatHistory.map(msg => ({ role: msg.role, content: msg.content })) : [],
+            { role: "user", content: query }
+          ],
+          temperature: temperature,
+          response_format: { type: "json_object" }
+        })
+      });
+
+      const endTime = performance.now(); // End timing immediately after fetch returns
+      externalCallResponseTimeMs = Math.round(endTime - startTime); // Calculate duration
+
+      if (!openAIResponse.ok) {
+        const errorBody = await openAIResponse.json().catch(()=>({ message: t('errors.chatResponse.failedParseErrorBody', langKey) }));
+        const errorMessage = `${t('errors.chatResponse.openAIRequestFailed', langKey)} ${openAIResponse.statusText} - ${errorBody?.error?.message || JSON.stringify(errorBody)}`;
+        openAIError = { status: openAIResponse.status, message: errorMessage, body: errorBody };
+        console.error("V2: OpenAI API Error Response:", errorBody);
+        // throw new Error(errorMessage); // We will throw later after logging
+      } else {
+        const rawData = await openAIResponse.text(); // Use openAIResponse here
+        // structuredData was already declared, just assign here
+        try {
           structuredData = JSON.parse(rawData) as OpenAIChatCompletion;
-          openaiModelUsed = structuredData?.model ?? openaiModelUsed; // Update model from response if available
-          promptTokens = structuredData?.usage?.prompt_tokens;
-          completionTokens = structuredData?.usage?.completion_tokens;
-          totalTokens = structuredData?.usage?.total_tokens;
+          openaiModelUsed = structuredData.model ?? openaiModelUsed;
+          if (structuredData?.usage) {
+            promptTokens = structuredData.usage.prompt_tokens;
+            completionTokens = structuredData.usage.completion_tokens;
+            totalTokens = structuredData.usage.total_tokens;
+          }
+          // Corrected assignment for aiResponseContent
+          if (structuredData?.choices && structuredData.choices.length > 0 && structuredData.choices[0].message && typeof structuredData.choices[0].message.content === 'string') {
+            aiResponseContent = structuredData.choices[0].message.content.trim();
+          } else {
+            aiResponseContent = null;
+          }
+
+          if (aiResponseContent !== null) { // Check if content was successfully extracted
+             aiSuccess = true; // Mark as success if we have content
+          } else if (!(structuredData?.choices && structuredData.choices.length > 0 && structuredData.choices[0].finish_reason === 'stop')){
+            // If no content AND finish_reason is not 'stop' (or choices are missing), it might be an issue.
+            // However, allow empty content if finish_reason is 'stop'.
+            console.warn("AI response content is null, but not due to finish_reason='stop' or choices structure.");
+            // Consider if this should set openAIError or aiSuccess = false depending on strictness
+          }
+
+        } catch (parseError) {
+          openAIError = { message: t('errors.chatResponse.nonJsonResponseFromAI', langKey), details: rawData.substring(0,1000) };
+          console.error("V2: Failed to parse OpenAI JSON response:", parseError, "Raw data:", rawData);
+          aiSuccess = false; // Parsing failed
+        }
       }
-    } catch (parseError) {
-       // If parsing fails even on an OK response, it's an issue.
-       openAIError = {
-         status: completion.status, // Could still be 200 but invalid JSON
-         message: t('errors.chatResponse.nonJsonResponseFromAI', langKey),
-         body: rawData // Log the raw data that failed to parse
-       };
-       console.error("V2: Failed to parse OpenAI JSON response:", parseError, "Raw data:", rawData);
-       // We will throw later after logging
+    } catch (fetchError) {
+      const endTime = performance.now(); // Also record end time in case of fetch error
+      externalCallResponseTimeMs = Math.round(endTime - startTime);
+      console.error("Error during fetch to OpenAI:", fetchError);
+      // It's important to cast fetchError to Error to access the message property safely.
+      const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
+      openAIError = { message: `${t('errors.chatResponse.openAIRequestFailed', langKey)} ${errorMessage}` };
+      // throw fetchError; // Re-throw if you want the main try-catch to handle it as a general error
     }
     
     // Log external API call (OpenAI)
-    try {
-      await supabase.from('external_api_usage_logs').insert({
-        user_id: userIdForLogging,
-        task_id: taskId,
-        service_name: 'OpenAI',
-        function_name: 'chatCompletions',
-        tokens_prompt: promptTokens,
-        tokens_completion: completionTokens,
-        tokens_total: totalTokens,
-        // cost: calculateCost(openaiModelUsed, promptTokens, completionTokens), // Placeholder for cost calculation
-        metadata: { 
-          model: openaiModelUsed, 
-          mode,
-          languagePreference,
-          success: !openAIError, 
-          error: openAIError ? openAIError : undefined,
-          response_id: structuredData?.id 
-        },
-      });
-    } catch (e) {
-      console.error('Failed to log to external_api_usage_logs', e);
-      // Do not crash the main function for logging failure
+    if (supabaseAdminLoggingClient) {
+        try {
+          const logEntry = {
+            user_id: userIdForLogging,
+            function_name: functionNameForLogging,
+            service_name: 'OpenAI',
+            tokens_prompt: promptTokens,
+            tokens_completion: completionTokens,
+            tokens_total: totalTokens,
+            cost: 0, // Assuming cost is not available in the API response
+            metadata: { 
+              success: aiSuccess, 
+              error: openAIError ? JSON.stringify(openAIError) : undefined, 
+              model: openaiModelUsed, 
+              response_id: structuredData?.id, // Now structuredData is in scope
+              requestBody: requestBodyForContext,
+            },
+            response_time_ms: externalCallResponseTimeMs, 
+          };
+
+          await supabaseAdminLoggingClient.from('external_api_usage_logs').insert([logEntry]);
+        } catch (e: unknown) {
+          const errorMessage = e instanceof Error ? e.message : String(e);
+          console.error('Failed to log to external_api_usage_logs', errorMessage);
+        }
+    } else {
+        console.warn("Skipping external_api_usage_logs due to missing service_role key.");
     }
 
     // Now, if there was an OpenAI error, throw it to be caught by the main catch block
     if (openAIError) {
       throw new Error(openAIError.message);
     }
-    if (!structuredData) { // Should not happen if openAIError wasn't thrown, but as a safeguard
+    if (!aiResponseContent) { // Should not happen if openAIError wasn't thrown, but as a safeguard
        throw new Error(t('errors.chatResponse.nonJsonResponseFromAI', langKey)); 
-    }
-
-
-    let aiContentString: string | null = null;
-    if (structuredData.choices && structuredData.choices.length > 0 && structuredData.choices[0].message) {
-      aiContentString = structuredData.choices[0].message.content?.trim() ?? null;
-    } else {
-      console.warn(t('errors.chatResponse.structureMismatchOrChoicesMissing', langKey));
     }
 
     let finalAction: string | null = null;
     let finalPayload: Record<string, unknown> | null = null;
     let finalResponse: string = preferredLanguage === 'Dutch' ? t('responses.defaultError', 'nl') : t('responses.defaultError', 'en');
 
-    if (aiContentString) {
+    if (aiResponseContent) {
         try {
-            const aiResponseParsed: unknown = JSON.parse(aiContentString);
+            const aiResponseParsed: unknown = JSON.parse(aiResponseContent);
             if (typeof aiResponseParsed === 'object' && aiResponseParsed !== null) {
                 const action = (aiResponseParsed as { action?: unknown }).action;
                 const payloadFromAI = (aiResponseParsed as { payload?: unknown }).payload;
@@ -428,13 +471,13 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
                 } else if (finalAction) {
                     finalResponse = preferredLanguage === 'Dutch' ? t('responses.defaultAction', 'nl') : t('responses.defaultAction', 'en');
                 } else {
-                   finalResponse = aiContentString; 
+                   finalResponse = aiResponseContent; 
                 }
             } else {
-                finalResponse = aiContentString;
+                finalResponse = aiResponseContent;
             }
         } catch (e) {
-            finalResponse = aiContentString;
+            finalResponse = aiResponseContent;
         }
     } else {
         // console.warn("V2: AI response content was missing or empty.");
@@ -445,14 +488,19 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
     if (finalPayload !== null) finalResponseObject.payload = finalPayload;
     
     // Log internal API call SUCCESS
-    try {
-      await supabase.from('user_api_logs').insert({
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { ...requestBodyForContext, success: true, openaiModelUsed, promptTokens, completionTokens },
-      });
-    } catch (e) {
-      console.error('Failed to log SUCCESS to user_api_logs', e);
+    if (supabaseAdminLoggingClient && userIdForLogging) {
+        try {
+          await supabaseAdminLoggingClient.from('user_api_logs').insert({
+            user_id: userIdForLogging,
+            function_name: functionNameForLogging,
+            metadata: { ...requestBodyForContext, success: true, openaiModelUsed, promptTokens, completionTokens, response_time_ms: externalCallResponseTimeMs },
+          });
+        } catch (e: unknown) {
+          const errorMessage = e instanceof Error ? e.message : String(e);
+          console.error('Failed to log SUCCESS to user_api_logs', errorMessage);
+        }
+    } else {
+        console.warn("Skipping SUCCESS user_api_logs due to missing service_role key or userId.");
     }
 
     return new Response(JSON.stringify(finalResponseObject), {
@@ -460,39 +508,47 @@ If the user **explicitly asks to add, update, or delete a 'subtask'**:
       status: 200,
     });
 
-  } catch (e) {
+  } catch (e: unknown) {
     const langKeyForError = req.headers.get('accept-language')?.includes('nl') ? 'nl' : 'en';
-    const errorMessage = t('errors.chatResponse.functionExecError', langKeyForError);
-    console.error("Error in generate-chat-response:", e);
+    const functionNameForLogging = 'generate-chat-response';
+    const errorMessageDisplay = t('errors.chatResponse.functionExecError', langKeyForError);
     
     let details = t('errors.chatResponse.unknownError', langKeyForError);
     if (e instanceof Error) {
       details = e.message;
-    } else if (typeof e === 'string') {
-      details = e;
+      console.error(`Error in ${functionNameForLogging}:`, e.message);
+    } else {
+      details = String(e);
+      console.error(`Error in ${functionNameForLogging}:`, String(e));
     }
 
     // Log internal API call FAILURE
-    try {
-      await supabase.from('user_api_logs').insert({
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { 
-            ...requestBodyForContext, 
-            success: false, 
-            error: (e instanceof Error) ? e.message : String(e),
-            rawError: String(e), // Include the raw error string
-            openaiModelUsed, // Log model even on failure if known
-            promptTokens,    // Log tokens if available
-            completionTokens 
-        },
-      });
-    } catch (finalLogErr) {
-      console.error('Failed to log FAILURE to user_api_logs', finalLogErr);
+    if (supabaseAdminLoggingClient && userIdForLogging) {
+        try {
+          await supabaseAdminLoggingClient.from('user_api_logs').insert({
+            user_id: userIdForLogging,
+            function_name: functionNameForLogging,
+            metadata: { 
+                ...requestBodyForContext, 
+                success: false, 
+                error: details,
+                rawError: String(e),
+                openaiModelUsed,
+                promptTokens,
+                completionTokens,
+                response_time_ms: externalCallResponseTimeMs
+            },
+          });
+        } catch (finalLogErr: unknown) {
+          const finalLogErrorMessage = finalLogErr instanceof Error ? finalLogErr.message : String(finalLogErr);
+          console.error('Failed to log FAILURE to user_api_logs', finalLogErrorMessage);
+        }
+    } else {
+        console.warn("Skipping FAILURE user_api_logs due to missing service_role key or userId.");
     }
     
-    const errorStatus = (e instanceof Error && e.message.includes("OpenAI API request failed with status 429")) ? 429 : 500;
-    return new Response(JSON.stringify({ error: errorMessage, details: details }), {
+    const errorStatus = (e instanceof Error && e.message.includes("OpenAI API request failed") && e.message.includes("429")) ? 429 : 500;
+    return new Response(JSON.stringify({ error: errorMessageDisplay, details: details }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: errorStatus,
     });

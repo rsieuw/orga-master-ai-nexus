@@ -263,3 +263,43 @@ Na een grondige analyse van de codebase zijn de volgende verbeteringen essentiee
 
 14. **Deno Lint Fouten:**
     - De hardnekkige Deno lint fouten moeten structureel worden opgelost.
+
+## Taak: Google OAuth-scherm Verbeteren met Custom Domain
+
+**Probleem:**
+Het huidige Google OAuth-toestemmingsscherm toont de standaard Supabase project URL (bijv. `wzoeijpdtpysbkmxbcld.supabase.co`), wat minder professioneel oogt.
+
+**Doel:**
+De weergave op het Google OAuth-scherm verbeteren zodat het de domeinnaam van de applicatie toont in plaats van de Supabase project URL.
+
+**Actiepunten:**
+
+1.  **Onderzoek Custom Domain voor Supabase:**
+    *   Controleer de Supabase documentatie en projectinstellingen voor de mogelijkheden en vereisten voor het instellen van een custom domain (meestal beschikbaar op betaalde abonnementen).
+    *   Bepaal de kosten en baten.
+
+2.  **Domeinnaam (indien nodig):**
+    *   Indien nog niet aanwezig, registreer een geschikte domeinnaam voor de applicatie (bijv. `jouwappnaam.nl` of `jouwbedrijf.com`).
+
+3.  **Configureer Custom Domain in Supabase:**
+    *   Volg de Supabase-instructies om het custom domain (bijv. `auth.jouwappnaam.nl`) te koppelen aan het Supabase-project.
+    *   Dit omvat meestal het aanmaken/aanpassen van DNS-records (CNAME of A-records) bij je domeinregistrar.
+
+4.  **Update Google Cloud Console OAuth-instellingen:**
+    *   Navigeer naar de Google Cloud Console -> API's & Services -> Credentials.
+    *   Selecteer de betreffende OAuth 2.0 Client ID.
+    *   Pas de "Authorised JavaScript origins" aan naar het nieuwe custom domain (bijv. `https://auth.jouwappnaam.nl`).
+    *   Pas de "Authorised redirect URIs" aan naar de nieuwe callback URL (bijv. `https://auth.jouwappnaam.nl/auth/v1/callback`).
+
+5.  **Update Supabase Client in Frontend:**
+    *   Indien nodig, pas de Supabase client initialisatie in de frontend code (`src/integrations/supabase/client.ts`) aan zodat deze de custom domain URL gebruikt voor de `SUPABASE_URL`.
+
+6.  **Testen:**
+    *   Test de Google OAuth-inlogflow grondig om te controleren of:
+        *   Het OAuth-scherm nu het custom domain correct weergeeft.
+        *   De authenticatie en redirect nog steeds correct werken.
+
+**Optioneel (Verificatie door Google):**
+*   Afhankelijk van de configuratie en het type applicatie, kan Google aanvullende verificatiestappen vereisen voor je OAuth-toestemmingsscherm, vooral als je een custom domain en logo gebruikt.
+
+**Prioriteit:** Medium (verbetering van gebruikerservaring en professionaliteit)

@@ -111,7 +111,7 @@ const TaskDisplayCard: React.FC<TaskDisplayCardProps> = ({
           `absolute right-5 z-0 pointer-events-none`,
           isDescriptionMinimized ? "opacity-0 transform scale-90" : "opacity-100 transform scale-100",
           "transition-all duration-800 ease-in-out",
-          task.subtasks && task.subtasks.length > 0 ? 'bottom-12' : 'bottom-8'
+          task.subtasks && task.subtasks.length > 0 ? 'bottom-12' : 'bottom-4'
         )}>
           {getCategoryBackgroundIcon(task.category, task.status)}
         </div>

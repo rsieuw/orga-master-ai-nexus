@@ -19,8 +19,8 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-6">
+      <div className="w-full max-w-md bg-gray-800 bg-opacity-50 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-2xl border border-gray-700">
+        <div className="text-center mb-8">
           <h1 className="text-3xl font-bold flex items-center justify-center gap-2">
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
@@ -52,7 +52,7 @@ export default function Register() {
 
         <RegisterForm />
 
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center">
           <p className="text-muted-foreground text-sm">
             {t("register.haveAccount")}{" "}
             <Link to="/login" className="text-primary hover:underline">

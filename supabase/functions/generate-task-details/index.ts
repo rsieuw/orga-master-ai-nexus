@@ -12,7 +12,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Import Supabase client
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Import Supabase client & SupabaseClient type
 import { corsHeaders } from "../_shared/cors.ts";
 import { OpenAI } from "https://deno.land/x/openai@v4.52.7/mod.ts";
 
@@ -66,6 +66,18 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
   );
+
+  // Admin client for logging to user_api_logs
+  let supabaseAdminLoggingClient: SupabaseClient | null = null;
+  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (supabaseServiceRoleKey) {
+    supabaseAdminLoggingClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      supabaseServiceRoleKey
+    );
+  } else {
+    console.warn("[generate-task-details] SUPABASE_SERVICE_ROLE_KEY not set. Logging to user_api_logs might be restricted by RLS.");
+  }
 
   let openaiModelUsed: string = "gpt-4o-mini"; // Default model for this function
   let promptTokens: number | undefined;
@@ -241,7 +253,8 @@ Deno.serve(async (req) => {
     
     // Log internal API call SUCCESS
     try {
-      await supabase.from('user_api_logs').insert({
+      const loggingClient = supabaseAdminLoggingClient || supabase; // Gebruik admin client indien beschikbaar
+      await loggingClient.from('user_api_logs').insert({
         user_id: userIdForLogging,
         function_name: functionNameForLogging,
         metadata: { 
@@ -277,7 +290,8 @@ Deno.serve(async (req) => {
     
     // Log internal API call FAILURE
     try {
-      await supabase.from('user_api_logs').insert({
+      const loggingClient = supabaseAdminLoggingClient || supabase; // Gebruik admin client indien beschikbaar
+      await loggingClient.from('user_api_logs').insert({
         user_id: userIdForLogging,
         function_name: functionNameForLogging,
         metadata: { 

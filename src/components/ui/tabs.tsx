@@ -3,8 +3,19 @@ import * as TabsPrimitive from "@radix-ui/react-tabs"
 
 import { cn } from "@/lib/utils.ts"
 
+/**
+ * @component Tabs
+ * @description A set of layered sections of content—known as tab panels—that are displayed one at a time.
+ * This is the root component for the tabs.
+ * @see https://www.radix-ui.com/docs/primitives/components/tabs#root
+ */
 const Tabs = TabsPrimitive.Root
 
+/**
+ * @component TabsList
+ * @description Contains the trigger elements that are used to activate the tab panels.
+ * @see https://www.radix-ui.com/docs/primitives/components/tabs#list
+ */
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
@@ -20,6 +31,11 @@ const TabsList = React.forwardRef<
 ))
 TabsList.displayName = TabsPrimitive.List.displayName
 
+/**
+ * @component TabsTrigger
+ * @description An interactive element that users can click to activate a tab panel.
+ * @see https://www.radix-ui.com/docs/primitives/components/tabs#trigger
+ */
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
@@ -27,7 +43,7 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+      "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-slate-700 data-[state=active]:text-white data-[state=active]:shadow-sm",
       className
     )}
     {...props}
@@ -35,6 +51,11 @@ const TabsTrigger = React.forwardRef<
 ))
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 
+/**
+ * @component TabsContent
+ * @description Contains the content associated with a tab trigger.
+ * @see https://www.radix-ui.com/docs/primitives/components/tabs#content
+ */
 const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>

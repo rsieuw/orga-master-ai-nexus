@@ -64,6 +64,11 @@ export interface AuthContextProps {
    * @param {AiChatMode} mode - The AI chat mode to set.
    */
   setAiMode: (mode: AiChatMode) => void;
+  /** 
+   * Signs in a user with Google OAuth.
+   * @returns {Promise<void>} A promise that resolves on successful sign-in initiation.
+   */
+  signInWithGoogle: () => Promise<void>;
 }
 
 /**

@@ -4,25 +4,28 @@ import LoginForm from "@/components/auth/LoginForm.tsx";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button.tsx";
+import { FaGoogle } from 'react-icons/fa';
 
 /**
  * `Login` page component.
- * This page displays the login form for existing users.
- * If the user is already authenticated, it redirects them to the homepage.
- * It uses the `LoginForm` component to handle the actual login logic.
+ * This page displays the login form for existing users and an option for Google Sign-In.
+ * If the user is already authenticated, it redirects them to the application's homepage.
+ * It utilizes the `LoginForm` component for traditional email/password authentication
+ * and provides a button for `signInWithGoogle` functionality from `useAuth` hook.
  */
 export default function Login() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, signInWithGoogle } = useAuth();
   const { t } = useTranslation();
 
+  // If the user is already authenticated, redirect to the homepage.
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-6">
+      <div className="w-full max-w-md bg-gray-800 bg-opacity-50 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-2xl border border-gray-700">
+        <div className="text-center mb-8">
           <h1 className="text-3xl font-bold flex items-center justify-center gap-2">
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
@@ -54,7 +57,43 @@ export default function Login() {
 
         <LoginForm />
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 flex flex-row items-center justify-center space-x-4">
+          <Button 
+            variant="outline" 
+            size="lg"
+            className="flex items-center justify-center gap-2 border-gray-500 hover:border-gray-400"
+            onClick={async () => {
+              try {
+                await signInWithGoogle();
+                // Supabase handles redirection by default upon successful Google Sign-In.
+                // Additional client-side success handling can be added here if needed.
+              } catch (error) {
+                // Error handling for Google Sign-In is primarily managed within the AuthContext.
+                // Specific UI feedback for this page can be added here if necessary.
+                console.error("Google Sign-In failed on LoginPage:", error);
+              }
+            }}
+          >
+            <FaGoogle className="h-5 w-5" /> 
+            {t("login.signInWithGoogle")}
+          </Button>
+
+          <a 
+            href="#" // TODO: Replace with actual Google Play Store link
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="inline-block"
+            aria-label="Download on Google Play"
+          >
+            <img 
+              src="/assets/icons/google-play-badge.svg"
+              alt="Get it on Google Play" 
+              className="h-12 hover:opacity-90 transition-opacity"
+            />
+          </a>
+        </div>
+
+        <div className="mt-8 text-center">
           <span className="text-muted-foreground text-sm">
             {t("login.noAccount")}{" "}
           </span>

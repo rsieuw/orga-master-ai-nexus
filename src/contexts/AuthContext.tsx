@@ -305,6 +305,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${globalThis.location.origin}/`,
+        },
+      });
+      if (error) throw error;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : t('auth.toast.signInFailed.descriptionDefault');
+      toast({
+        variant: "destructive",
+        title: t('auth.toast.signInFailed.title'),
+        description: message,
+      });
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -320,6 +340,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updateUser,
         aiMode,
         setAiMode,
+        signInWithGoogle,
       }}
     >
       {children}

@@ -75,6 +75,18 @@ serve(async (req) => {
   let requestBodyForLogging: Record<string, unknown> = {};
   let supabaseClient: SupabaseClient | undefined;
 
+  // Admin client for logging to user_api_logs
+  let supabaseAdminLoggingClient: SupabaseClient | null = null;
+  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (supabaseServiceRoleKey) {
+    supabaseAdminLoggingClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      supabaseServiceRoleKey
+    );
+  } else {
+    console.warn("[update-theme-settings] SUPABASE_SERVICE_ROLE_KEY not set. Logging to user_api_logs might be restricted by RLS or done by the calling admin user context.");
+  }
+
   try {
     // Create a Supabase client with the Authorization header
     supabaseClient = createClient(
@@ -110,15 +122,18 @@ serve(async (req) => {
     if (userError || !userData || userData.role !== 'admin') {
       // Log unauthorized attempt to user_api_logs
       try {
-        await supabaseClient.from('user_api_logs').insert({
-          user_id: userIdForLogging,
-          function_name: functionNameForLogging,
-          metadata: { 
-            success: false, 
-            error: 'Unauthorized: Only administrators can update theme settings',
-            userRole: userData?.role 
-          },
-        });
+        const loggingClient = supabaseAdminLoggingClient || supabaseClient;
+        if (loggingClient) {
+          await loggingClient.from('user_api_logs').insert({
+            user_id: userIdForLogging,
+            function_name: functionNameForLogging,
+            metadata: { 
+              success: false, 
+              error: 'Unauthorized: Only administrators can update theme settings',
+              userRole: userData?.role 
+            },
+          });
+        }
       } catch (logError) {
         console.error('Failed to log unauthorized attempt to user_api_logs:', logError);
       }
@@ -141,15 +156,18 @@ serve(async (req) => {
     if (!requestData.settings || !Array.isArray(requestData.settings)) {
       // Log invalid request to user_api_logs
       try {
-        await supabaseClient.from('user_api_logs').insert({
-          user_id: userIdForLogging,
-          function_name: functionNameForLogging,
-          metadata: { 
-            ...requestBodyForLogging,
-            success: false, 
-            error: 'Invalid input: settings array is required' 
-          },
-        });
+        const loggingClient = supabaseAdminLoggingClient || supabaseClient;
+        if (loggingClient) {
+          await loggingClient.from('user_api_logs').insert({
+            user_id: userIdForLogging,
+            function_name: functionNameForLogging,
+            metadata: { 
+              ...requestBodyForLogging,
+              success: false, 
+              error: 'Invalid input: settings array is required' 
+            },
+          });
+        }
       } catch (logError) {
         console.error('Failed to log invalid request to user_api_logs:', logError);
       }
@@ -203,15 +221,18 @@ serve(async (req) => {
     // All successful
     // Log successful updates to user_api_logs
     try {
-      await supabaseClient.from('user_api_logs').insert({
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { 
-          ...requestBodyForLogging,
-          success: true,
-          rolesUpdated: requestData.settings.map(s => s.role)
-        },
-      });
+      const loggingClient = supabaseAdminLoggingClient || supabaseClient;
+      if (loggingClient) {
+        await loggingClient.from('user_api_logs').insert({
+          user_id: userIdForLogging,
+          function_name: functionNameForLogging,
+          metadata: { 
+            ...requestBodyForLogging,
+            success: true,
+            rolesUpdated: requestData.settings.map(s => s.role)
+          },
+        });
+      }
     } catch (logError) {
       console.error('Failed to log successful updates to user_api_logs:', logError);
     }
@@ -227,7 +248,8 @@ serve(async (req) => {
     // Log error to user_api_logs if we have the client and user ID
     if (supabaseClient && userIdForLogging) {
       try {
-        await supabaseClient.from('user_api_logs').insert({
+        const loggingClient = supabaseAdminLoggingClient || supabaseClient;
+        await loggingClient.from('user_api_logs').insert({
           user_id: userIdForLogging,
           function_name: functionNameForLogging,
           metadata: { 

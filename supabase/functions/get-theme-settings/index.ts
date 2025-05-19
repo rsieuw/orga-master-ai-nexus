@@ -52,6 +52,18 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
   const requestIp = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip'); // Get IP for logging
   const userAgent = req.headers.get('user-agent');
 
+  // Admin client for logging to user_api_logs
+  let supabaseAdminLoggingClient: SupabaseClient | null = null;
+  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (supabaseServiceRoleKey) {
+    supabaseAdminLoggingClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      supabaseServiceRoleKey
+    );
+  } else {
+    console.warn("[get-theme-settings] SUPABASE_SERVICE_ROLE_KEY not set. Logging to user_api_logs might be restricted by RLS or done by user/anon client.");
+  }
+
   try {
     // Create a client for logging the calling user, if auth header is present
     const authHeader = req.headers.get('Authorization');
@@ -90,7 +102,6 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
     );
 
     let settingsToReturn = data;
-    let usedDefaults = false;
     let logData: Record<string, unknown> = { requestIp, userAgent }; // Base log data
 
     if (rpcError) {
@@ -100,7 +111,6 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
     }
 
     if (!settingsToReturn || (Array.isArray(settingsToReturn) && settingsToReturn.length === 0) || rpcError) {
-      usedDefaults = true;
       settingsToReturn = [
         { role: 'admin', available_themes: ['light', 'dark', 'custom-dark'], default_theme: 'custom-dark' },
         { role: 'paid', available_themes: ['light', 'dark', 'custom-dark'], default_theme: 'custom-dark' },
@@ -119,9 +129,9 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
     }
 
     // Perform the log operation
-    const clientForLogging = loggingSupabaseClient || createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '');
+    const actualLoggingClient = supabaseAdminLoggingClient || loggingSupabaseClient || createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '');
     try {
-      await clientForLogging.from('user_api_logs').insert({
+      await actualLoggingClient.from('user_api_logs').insert({
         user_id: userIdForLogging,
         function_name: functionNameForLogging,
         metadata: logData,
@@ -142,9 +152,10 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
     console.error('Error fetching theme settings (main catch block):', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error fetching theme settings';
     
-    const clientForErrorLogging = loggingSupabaseClient || rpcSupabaseClient || createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '');
+    // rpcSupabaseClient is omitted from the fallback chain here as it might not be initialized if an error occurred before its assignment.
+    const actualErrorLoggingClient = supabaseAdminLoggingClient || loggingSupabaseClient || createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '');
     try {
-      await clientForErrorLogging.from('user_api_logs').insert({
+      await actualErrorLoggingClient.from('user_api_logs').insert({
         user_id: userIdForLogging,
         function_name: functionNameForLogging,
         metadata: { success: false, error: 'General error in function', rawErrorMessage: errorMessage, requestIp, userAgent },

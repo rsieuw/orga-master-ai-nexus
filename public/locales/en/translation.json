@@ -42,7 +42,8 @@
     "profile": "Profile",
     "settings": "Settings",
     "taskDetails": "Task Details",
-    "chat": "Chat"
+    "chat": "Chat",
+    "support": "Support"
   },
   "messageItem": {
     "sources": "Sources",
@@ -167,8 +168,8 @@
     "desktopLayout": {
       "label": "Interface layout (Desktop)",
       "description": "Choose the default arrangement for the task detail and chat window on desktop.",
-      "option5050": "Balanced (50% / 50%)",
-      "option3367": "Chat focused (33% / 67%)"
+      "option5050": "Balanced",
+      "option3367": "Chat focused"
     },
     "toast": {
       "aiLanguageChanged": {
@@ -901,8 +902,8 @@
       "desktopLayout": {
         "label": "Interface Layout (Desktop)",
         "description": "Choose the default arrangement for the task detail and chat window on desktop.",
-        "option5050": "Balanced (50% / 50%)",
-        "option3367": "Chat Focused (33% / 67%)"
+        "option5050": "Balanced",
+        "option3367": "Chat Focused"
       },
       "notifications": {
         "label": "Email Notifications",
@@ -1482,11 +1483,26 @@
       "callCount": "Call Count",
       "lastCalledAt": "Last Called At"
     },
-    "noLogs": "No API usage logs found."
+    "noLogs": "No API usage logs found.",
+    "toastTitles": {
+      "fetchError": "Error Fetching Logs",
+      "fetchUsersError": "Error Fetching Users"
+    },
+    "errors": {
+      "unknownError": "An unknown error occurred.",
+      "fetchLogsError": "Could not fetch internal API logs."
+    },
+    "logsTableTitle": "Internal API Usage Log Details",
+    "loadingLogs": "Loading logs...",
+    "errorLoadingLogs": "Error loading logs",
+    "noDataAvailable": "No API Usage Data Available",
+    "noDataDescription": "There are currently no internal API calls logged in the system. This could be because the application is new or no users have triggered any internal API functions yet.",
+    "noAggregationTitle": "Data Structure Issue",
+    "noAggregationDescription": "The API returned raw logs but no aggregated data. Please contact the system administrator as there may be an issue with the API endpoint."
   },
   "adminExternalApiUsagePage": {
     "title": "External API Usage",
-    "loadingMore": "Loading more logs...",
+    "description": "Monitor and analyze usage of external APIs.",
     "tableHeaders": {
       "timestamp": "Timestamp",
       "user": "User",
@@ -1497,7 +1513,7 @@
       "totalTokens": "Total Tokens",
       "cost": "Cost",
       "status": "Status",
-      "details": "Details"
+      "details": "Details/Error"
     },
     "status": {
       "success": "Success",
@@ -1505,14 +1521,24 @@
       "unknown": "Unknown"
     },
     "noLogs": "No external API usage logs found.",
+    "loadingMore": "Loading more entries...",
     "toastTitles": {
       "fetchError": "Error Fetching Logs",
       "fetchUsersError": "Error Fetching Users"
     },
     "errors": {
       "unknownError": "An unknown error occurred.",
-      "fetchLogsError": "Error fetching external API logs."
-    }
+      "fetchLogsError": "Could not fetch external API logs."
+    },
+    "logsTableTitle": "External API Usage Log Details",
+    "loadingLogs": "Loading logs...",
+    "errorLoadingLogs": "Error loading logs",
+    "viewError": "View Error",
+    "noRawDataAvailable": "No Raw API Usage Data Available",
+    "noRawDataDescription": "There are currently no raw external API call logs in the system. This could mean no external services have been called yet.",
+    "noAggregationDataAvailable": "No Aggregated API Usage Data Available",
+    "noAggregationDataDescription": "Although raw logs might exist, no aggregated data could be generated. This might indicate an issue with the aggregation process or simply no data to aggregate for the selected filters.",
+    "noAggregationDataForChart": "No aggregated data available to display this chart."
   },
   "taskForm": {
     "title": "Edit task",
@@ -1613,5 +1639,332 @@
     "hidePassword": "Hide password",
     "submitButton": "Register",
     "submitButtonLoading": "Registering..."
+  },
+  "adminDocumentation": {
+    "title": "Admin Documentation",
+    "description": "Overview of admin functionalities and how to manage the application."
+  },
+  "charts": {
+    "noTokenData": "No token usage data available to display.",
+    "tokenUsageOverTime": "Token Usage Over Time",
+    "errorLoadingChartData": "Error loading chart data",
+    "noTokenDataForChart": "No token data available to display chart.",
+    "tokenTypes": {
+      "promptTokens": "Prompt Tokens",
+      "completionTokens": "Completion Tokens",
+      "totalTokens": "Total Tokens"
+    },
+    "noPopularFunctionsData": "No data available for popular functions.",
+    "popularInternalFunctions": "Most Called Internal Functions",
+    "popularExternalFunctions": "Most Called External Functions/Services",
+    "callCount": "Call Count",
+    "callCountLegend": "Number of Calls",
+    "noCostDataForChart": "No cost data available to display chart.",
+    "costDistributionByService": "Cost Distribution by Service",
+    "noTopUsersData": "No data available to display top API users.",
+    "topApiUsers": "Top API Users by Call Count",
+    "totalCalls": "Total Calls",
+    "totalCallsLegend": "Total Calls",
+    "tokenUsageByFunction": "Token Usage by Function/Service",
+    "tokenUsageByFunctionYAxisLabel": "Total Tokens",
+    "tokenUsageByFunctionLegendPrompt": "Prompt Tokens",
+    "tokenUsageByFunctionLegendCompletion": "Completion Tokens",
+    "tokenUsageByFunctionLegendTotal": "Total Tokens",
+    "avgResponseTimeByServiceTitle": "Avg. Response Time by Service",
+    "avgResponseTimeLabel": "Avg. Response Time (ms)",
+    "avgResponseTimeTooltip": "Avg. Response Time",
+    "avgResponseTimeLegend": "Avg. Response Time (ms)",
+    "noAvgResponseTimeData": "No data available to display average response times.",
+    "costDistributionCustomLabelNoData": "No data",
+
+    "tokenUsageByFunctionTitle": "Token Usage by Function/Service",
+    "tokenUsageByFunctionYAxisLabel": "Total Tokens",
+    "tokenUsageByFunctionLegendPrompt": "Prompt Tokens",
+    "tokenUsageByFunctionLegendCompletion": "Completion Tokens",
+    "tokenUsageByFunctionLegendTotal": "Total Tokens",
+
+    "avgResponseTimeByServiceTitle": "Avg. Response Time by Service",
+    "avgResponseTimeLabel": "Avg. Response Time (ms)",
+    "avgResponseTimeTooltip": "Avg. Response Time",
+    "avgResponseTimeLegend": "Avg. Response Time (ms)",
+    "noAvgResponseTimeData": "No data available to display average response times.",
+
+    "topUsersInternalTitle": "Top API Users (Internal)",
+    "topUsersYAxisLabel": "User (Email / ID)",
+    "topUsersXAxisLabel": "Number of Calls",
+
+    "tokenTypes": {
+      "prompt": "Prompt Tokens",
+      "completion": "Completion Tokens",
+      "total": "Total Tokens"
+    }
+  },
+  "adminInternalApiUsagePage": {
+    "title": "Internal API Usage",
+    "description": "Monitor and analyze usage of internal APIs.",
+    "tableHeaders": {
+      "timestamp": "Timestamp",
+      "user": "User",
+      "function": "Function Name",
+      "status": "Status",
+      "details": "Details/Error",
+      "ipAddress": "IP Address"
+    },
+    "status": {
+      "success": "Success",
+      "failed": "Failed",
+      "unknown": "Unknown"
+    },
+    "noLogs": "No internal API usage logs found.",
+    "toastTitles": {
+      "fetchError": "Error Fetching Logs",
+      "fetchUsersError": "Error Fetching Users"
+    },
+    "errors": {
+      "unknownError": "An unknown error occurred.",
+      "fetchLogsError": "Could not fetch internal API logs."
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "tasks": "Tasks",
+    "discover": "Discover",
+    "chat": "Chat",
+    "research": "Research",
+    "admin": "Admin",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register",
+    "themeEditor": "Theme Editor"
+  },
+  "languages": {
+    "en": "English",
+    "nl": "Nederlands"
+  },
+  "placeholders": {
+    "search": "Search...",
+    "chatInput": "Type your message here...",
+    "taskName": "Task Name",
+    "taskDescription": "Task Description",
+    "subtaskName": "Subtask Name"
+  },
+  "buttons": {
+    "add": "Add",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "complete": "Complete",
+    "reopen": "Reopen",
+    "submit": "Submit",
+    "upload": "Upload",
+    "clear": "Clear",
+    "loadMore": "Load More",
+    "showLess": "Show Less",
+    "export": "Export",
+    "import": "Import",
+    "startResearch": "Start Deep Research",
+    "stopResearch": "Stop Research",
+    "saveResearch": "Save Research",
+    "deleteResearch": "Delete Research",
+    "deleteAll": "Delete All",
+    "generateDetails": "Generate Details",
+    "generateSubtasks": "Generate Subtasks",
+    "confirm": "Confirm",
+    "remove": "Remove",
+    "change": "Change",
+    "view": "View",
+    "close": "Close",
+    "create": "Create",
+    "send": "Send"
+  },
+  "alerts": {
+    "success": "Success!",
+    "error": "Error!",
+    "warning": "Warning!",
+    "info": "Info",
+    "unsavedChanges": "You have unsaved changes. Are you sure you want to leave?",
+    "deleteConfirmation": "Are you sure you want to delete this item? This action cannot be undone.",
+    "researchTopicMissing": "Please enter a research topic.",
+    "researchInProgress": "Research is already in progress. Please wait for it to complete or stop it before starting a new one.",
+    "researchStartError": "Failed to start research.",
+    "researchStopError": "Failed to stop research.",
+    "researchStatusError": "Failed to get research status.",
+    "researchSaveError": "Failed to save research results.",
+    "researchDeleteError": "Failed to delete research results.",
+    "researchLoadError": "Failed to load research results.",
+    "chatResponseError": "Error getting chat response.",
+    "noResearchData": "No research data available.",
+    "fieldRequired": "This field is required."
+  },
+  "labels": {
+    "status": "Status",
+    "priority": "Priority",
+    "dueDate": "Due Date",
+    "description": "Description",
+    "notes": "Notes",
+    "subtasks": "Subtasks",
+    "completed": "Completed",
+    "pending": "Pending",
+    "overdue": "Overdue",
+    "category": "Category",
+    "tags": "Tags",
+    "assignee": "Assignee",
+    "progress": "Progress",
+    "title": "Title",
+    "content": "Content",
+    "url": "URL",
+    "score": "Score",
+    "type": "Type",
+    "name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "lastLogin": "Last Login",
+    "actions": "Actions",
+    "theme": "Theme",
+    "customCss": "Custom CSS",
+    "primaryColor": "Primary Color",
+    "secondaryColor": "Secondary Color",
+    "accentColor": "Accent Color",
+    "backgroundColor": "Background Color",
+    "textColor": "Text Color",
+    "headingColor": "Heading Color",
+    "fontFamily": "Font Family",
+    "researchTopic": "Research Topic",
+    "filters": "Filters",
+    "filterBy": "Filter by...",
+    "all": "All",
+    "sortBy": "Sort by...",
+    "dateAdded": "Date Added",
+    "relevance": "Relevance",
+    "searchQuery": "Search Query",
+    "results": "Results",
+    "noResults": "No results found.",
+    "loading": "Loading...",
+    "userId": "User ID",
+    "functionName": "Function Name",
+    "serviceName": "Service Name",
+    "timestamp": "Timestamp",
+    "metadata": "Metadata",
+    "totalCalls": "Total Calls",
+    "cost": "Cost",
+    "tokens": "Tokens",
+    "promptTokens": "Prompt Tokens",
+    "completionTokens": "Completion Tokens",
+    "totalTokens": "Total Tokens",
+    "apiUsage": "API Usage",
+    "internalApiUsage": "Internal API Usage",
+    "externalApiUsage": "External API Usage",
+    "selectDateRange": "Select date range",
+    "totalCost": "Total Cost",
+    "totalUsers": "Total Users",
+    "totalRequests": "Total Requests"
+  },
+  "tooltips": {
+    "toggleSidebar": "Toggle Sidebar",
+    "toggleTheme": "Toggle Theme",
+    "viewDetails": "View Details",
+    "editItem": "Edit Item",
+    "deleteItem": "Delete Item"
+  },
+  "errors": {
+    "generic": "An unexpected error occurred. Please try again.",
+    "notFound": "The requested resource was not found.",
+    "unauthorized": "You are not authorized to perform this action.",
+    "taskDetailsGenerationError": "Error generating task details.",
+    "subtaskGenerationError": "Error generating subtasks.",
+    "chatResponse": {
+      "generic": "An error occurred while fetching the chat response.",
+      "missingApiKey": "OpenAI API key is not configured.",
+      "apiError": "OpenAI API returned an error.",
+      "userNotAuthenticated": "User not authenticated.",
+      "payloadMissing": "Request payload is missing.",
+      "messageMissing": "Message is missing in the payload.",
+      "supabaseUrlMissing": "Supabase URL is not set.",
+      "supabaseAnonKeyMissing": "Supabase anonymous key is not set.",
+      "researchDataSaveFailed": "Failed to save research data to Supabase.",
+      "subtaskRetrievalFailed": "Failed to retrieve subtasks for context.",
+      "databaseError": "Database error occurred.",
+      "completionProcessingError": "Error processing chat completion response.",
+      "contentExtractionFailed": "Failed to extract content from AI response.",
+      "loggingFailed": "Failed to log API usage."
+    }
+  },
+  "tasks": {
+    "newTask": "New Task",
+    "editTask": "Edit Task",
+    "taskDetails": "Task Details",
+    "noTasks": "No tasks yet. Create one!",
+    "uncompleted": "Uncompleted",
+    "searchTasks": "Search tasks...",
+    "filterByCategory": "Filter by category...",
+    "filterByPriority": "Filter by priority...",
+    "filterByStatus": "Filter by status...",
+    "sortByTitle": "Sort by title",
+    "sortByDueDate": "Sort by due date",
+    "sortByPriority": "Sort by priority",
+    "noSubtasks": "No subtasks for this task.",
+    "addSubtask": "Add Subtask",
+    "taskNameRequired": "Task name is required."
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "apiUsage": "API Usage",
+    "userManagement": "User Management",
+    "systemSettings": "System Settings",
+    "themeEditor": "Theme Editor",
+    "users": "Users",
+    "roles": "Roles",
+    "permissions": "Permissions",
+    "apiKeys": "API Keys",
+    "logs": "Logs",
+    "noData": "No data available."
+  },
+  "responses": {
+    "noSubtasks": "No subtasks available for this task at the moment.",
+    "subtasksGenerated": "Subtasks have been generated based on the task description.",
+    "taskDetailsGenerated": "Task details have been generated."
+  },
+  "charts": {
+    "popularFunctionsInternalTitle": "Most Called Internal Functions",
+    "popularFunctionsExternalTitle": "Most Called External Services",
+    "popularFunctionsXAxisLabel": "Function/Service Name",
+    "popularFunctionsYAxisLabel": "Number of Calls",
+    "popularFunctionsTooltipCalls": "Calls",
+    "popularFunctionsLegendCalls": "Number of Calls",
+    "noDataForChart": "No data available to display chart.",
+    "noTokenDataForChart": "No token data available to display chart.", 
+
+    "costDistributionTitle": "Cost Distribution by Service",
+    "costDistributionTooltipCost": "Cost",
+    "costDistributionLegendCost": "Cost (%)",
+    "costDistributionCustomLabelValue": "{name} ({value})",
+    "costDistributionCustomLabelNoData": "No data",
+
+    "tokenUsageByFunctionTitle": "Token Usage by Function/Service",
+    "tokenUsageByFunctionYAxisLabel": "Total Tokens",
+    "tokenUsageByFunctionLegendPrompt": "Prompt Tokens",
+    "tokenUsageByFunctionLegendCompletion": "Completion Tokens",
+    "tokenUsageByFunctionLegendTotal": "Total Tokens",
+
+    "avgResponseTimeByServiceTitle": "Avg. Response Time by Service",
+    "avgResponseTimeLabel": "Avg. Response Time (ms)",
+    "avgResponseTimeTooltip": "Avg. Response Time",
+    "avgResponseTimeLegend": "Avg. Response Time (ms)",
+    "noAvgResponseTimeData": "No data available to display average response times.",
+
+    "topUsersInternalTitle": "Top API Users (Internal)",
+    "topUsersYAxisLabel": "User (Email / ID)",
+    "topUsersXAxisLabel": "Number of Calls",
+
+    "tokenTypes": {
+      "prompt": "Prompt Tokens",
+      "completion": "Completion Tokens",
+      "total": "Total Tokens"
+    }
   }
 }

@@ -50,6 +50,18 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
   const functionNameForLogging = 'get-all-users';
   let userSpecificSupabaseClient: SupabaseClient | undefined;
 
+  // Admin client for logging to user_api_logs
+  let supabaseAdminLoggingClient: SupabaseClient | null = null;
+  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (supabaseServiceRoleKey) {
+    supabaseAdminLoggingClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      supabaseServiceRoleKey
+    );
+  } else {
+    console.warn("[get-all-users] SUPABASE_SERVICE_ROLE_KEY not set. Logging to user_api_logs might be restricted by RLS or done by userSpecificSupabaseClient.");
+  }
+
   try {
     // Create a client with the user's auth context for logging who is calling this admin function
     const authHeader = req.headers.get('Authorization');
@@ -97,8 +109,9 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
     }));
 
     // Log success to user_api_logs
-    if (userSpecificSupabaseClient) { // Check if client was initialized
-      await userSpecificSupabaseClient.from('user_api_logs').insert({
+    if (userSpecificSupabaseClient || supabaseAdminLoggingClient) { // Check if any client is available for logging
+      const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient!;
+      await loggingClient.from('user_api_logs').insert({
         user_id: userIdForLogging, // This might be undefined if auth header was missing
         function_name: functionNameForLogging,
         metadata: { success: true, profilesFetched: profiles.length, authUsersFetched: authUsersData?.users.length },
@@ -121,9 +134,10 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
     }
 
     // Log failure to user_api_logs
-    if (userSpecificSupabaseClient) { // Check if client was initialized
+    if (userSpecificSupabaseClient || supabaseAdminLoggingClient) { // Check if any client is available for logging
       try {
-        await userSpecificSupabaseClient.from('user_api_logs').insert({
+        const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient!;
+        await loggingClient.from('user_api_logs').insert({
           user_id: userIdForLogging, // Might be undefined
           function_name: functionNameForLogging,
           metadata: { success: false, error: errorKey, rawErrorMessage: error instanceof Error ? error.message : String(error), requestIp: req.headers.get('x-forwarded-for') },

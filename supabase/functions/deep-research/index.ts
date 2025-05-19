@@ -16,6 +16,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 // Import standard libraries if needed (e.g., for CORS)
 import { corsHeaders } from "../_shared/cors.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 /**
  * Interface for a single choice in the API response.
@@ -86,6 +87,18 @@ Deno.serve(async (req: Request) => {
     }
   );
 
+  // Admin client for logging to user_api_logs
+  let supabaseAdminLoggingClient: SupabaseClient | null = null;
+  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (supabaseServiceRoleKey) {
+    supabaseAdminLoggingClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      supabaseServiceRoleKey
+    );
+  } else {
+    console.warn("[deep-research] SUPABASE_SERVICE_ROLE_KEY not set. Logging to user_api_logs might be restricted by RLS.");
+  }
+
   let userIdForLogging: string | undefined;
   const functionNameForLogging = 'deep-research';
   let requestBodyForLogging: Record<string, unknown> = {};
@@ -109,7 +122,9 @@ Deno.serve(async (req: Request) => {
       // Log failure if possible
       if (userIdForLogging) {
         try {
-            await userSpecificSupabaseClient.from('user_api_logs').insert({
+            // Try to log with admin client if it exists, otherwise user client
+            const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient;
+            await loggingClient.from('user_api_logs').insert({
                 user_id: userIdForLogging,
                 function_name: functionNameForLogging,
                 metadata: { success: false, error: 'Invalid JSON in request body', rawError: String(parseError) },
@@ -294,7 +309,9 @@ Deno.serve(async (req: Request) => {
     
     // Log internal API call SUCCESS
     try {
-      await userSpecificSupabaseClient.from('user_api_logs').insert({
+      // Use admin client for user_api_logs if available
+      const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient;
+      await loggingClient.from('user_api_logs').insert({
         user_id: userIdForLogging,
         function_name: functionNameForLogging,
         metadata: { 
@@ -331,7 +348,9 @@ Deno.serve(async (req: Request) => {
     
     // Log internal API call FAILURE
     try {
-      await userSpecificSupabaseClient.from('user_api_logs').insert({
+      // Use admin client for user_api_logs if available
+      const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient;
+      await loggingClient.from('user_api_logs').insert({
         user_id: userIdForLogging,
         function_name: functionNameForLogging,
         metadata: { 

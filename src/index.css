@@ -28,12 +28,12 @@
     --accent: 217 32% 17%;
     --accent-foreground: 0 0% 95%;
 
-    --destructive: 0 62% 30%;
+    --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 95%;
 
     --border: 217 32% 22%;
     --input: 217 32% 22%;
-    --ring: 224 76% 48%;
+    --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
 
@@ -62,7 +62,7 @@
     --accent: 210 40% 96%;
     --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 84% 68%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214 32% 91%;
@@ -92,7 +92,7 @@
     --accent: 217 32% 17%;
     --accent-foreground: 0 0% 95%;
 
-    --destructive: 0 62% 30%;
+    --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 95%;
 
     --border: 217 32% 22%;
@@ -241,6 +241,18 @@
     /* We only set the track color explicitly here as a fallback */
     /* If --scrollbar-thumb doesn't work, you can also enter a fixed color here */
     scrollbar-color: var(--scrollbar-thumb, #60a5fa) #bfdbfe; /* default thumb blue-400, track blue-200 */
+  }
+
+  .settings-tabs-list [data-state='active'] {
+    background-color: #334155 !important;
+    color: white !important;
+  }
+}
+
+@layer components {
+  .settings-tabs-list [data-state='active'] {
+    background-color: #334155 !important;
+    color: white !important;
   }
 }
 
