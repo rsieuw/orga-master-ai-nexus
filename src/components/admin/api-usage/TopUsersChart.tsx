@@ -70,17 +70,17 @@ const TopUsersChart: React.FC<TopUsersChartProps> = ({ logs, title }) => {
       <ResponsiveContainer>
         <BarChart
           data={chartData}
-          layout="vertical"
+          layout="horizontal"
           margin={{
             top: 5,
             right: 30,
-            left: 100, // Adjust for user names
-            bottom: 5,
+            left: 20,
+            bottom: 120,
           }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" allowDecimals={false} />
-          <YAxis dataKey="userName" type="category" width={150} interval={0} />
+          <XAxis dataKey="userName" type="category" interval={0} angle={-45} textAnchor="end" height={100} />
+          <YAxis type="number" allowDecimals={false} />
           <Tooltip 
             cursor={{ fill: 'transparent' }}
             contentStyle={{ 
@@ -94,8 +94,13 @@ const TopUsersChart: React.FC<TopUsersChartProps> = ({ logs, title }) => {
             itemStyle={{ color: 'hsl(var(--popover-foreground))' }}
             formatter={(value: number) => [value, t('charts.totalCalls')]} 
           />
-          <Legend formatter={() => t('charts.totalCallsLegend')} />
-          <Bar dataKey="totalCalls" fill="hsl(var(--primary-foreground))" name={t('charts.totalCallsLegend')} /> 
+          <Legend 
+            verticalAlign="top" 
+            align="center" 
+            wrapperStyle={{ paddingBottom: '20px' }} 
+            formatter={() => t('charts.totalCallsLegend')}
+          />
+          <Bar dataKey="totalCalls" fill="hsl(var(--primary))" name={t('charts.totalCallsLegend')} />
         </BarChart>
       </ResponsiveContainer>
     </div>

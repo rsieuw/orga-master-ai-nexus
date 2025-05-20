@@ -14,7 +14,7 @@ interface TaskAIChatProps {
   /** The task object for which the AI chat is displayed. */
   task: Task;
   /** The title of the currently selected subtask, if any. */
-  selectedSubtaskTitle: string | null;
+  selectedSubtaskTitle?: string | null;
   // onSubtaskHandled: () => void; // Example of a potential prop
 }
 

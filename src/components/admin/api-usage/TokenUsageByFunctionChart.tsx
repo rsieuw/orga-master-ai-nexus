@@ -12,45 +12,80 @@ import {
 } from 'recharts';
 import { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import { useTranslation } from 'react-i18next';
-import { ExternalApiLogDisplayEntry } from '@/pages/admin/AdminExternalApiUsagePage.tsx'; // Assuming this type has token fields
+// Importeer de gedeelde interface als die bestaat, of definieer lokaal indien nodig.
+// Voor nu, ervan uitgaande dat AggregatedExternalServiceUsage beschikbaar is via AdminExternalApiUsagePage.tsx
+// Dit kan een directe import zijn als AggregatedExternalServiceUsage daar geëxporteerd wordt,
+// of we kopiëren de definitie hier.
+// import { AggregatedExternalServiceUsage } from '@/pages/admin/AdminExternalApiUsagePage.tsx';
 
+/**
+ * @interface AggregatedExternalServiceUsage
+ * @description Defines the structure for aggregated external service usage data,
+ * typically received from an API endpoint like 'get-api-usage-stats'.
+ */
+interface AggregatedExternalServiceUsage {
+  /** The name of the external service. */
+  service_name: string;
+  /** The total number of calls made to this service. */
+  total_calls: number;
+  /** The average response time in milliseconds for this service, if available. */
+  avg_response_time_ms: number | null;
+  /** The total number of prompt tokens used by this service, if applicable. */
+  total_tokens_prompt?: number;
+  /** The total number of completion tokens used by this service, if applicable. */
+  total_tokens_completion?: number;
+  /** The overall total number of tokens (prompt + completion) used by this service, if applicable. */
+  total_tokens_total?: number;
+  /** The total cost associated with the usage of this service, if applicable. */
+  total_cost?: number;
+}
+
+/**
+ * @interface ChartDataPoint
+ * @description Defines the structure for a data point used in the token usage chart.
+ */
 interface ChartDataPoint {
+  /** The name of the service (or service:function combination) for the chart's X-axis label. */
   name: string; // Service name or Service:Function name
+  /** The total tokens used. */
   totalTokens: number;
+  /** The number of prompt tokens used. */
   promptTokens: number;
+  /** The number of completion tokens used. */
   completionTokens: number;
 }
 
+/**
+ * @interface TokenUsageByFunctionChartProps
+ * @description Defines the props for the TokenUsageByFunctionChart component.
+ */
 interface TokenUsageByFunctionChartProps {
-  logs: ExternalApiLogDisplayEntry[];
+  /** 
+   * Array of aggregated external service usage data. 
+   * This data is expected to be pre-aggregated per service. 
+   */
+  logs: AggregatedExternalServiceUsage[]; // CHANGED: Using the correct input type
+  /** An optional title for the chart. */
   title?: string;
 }
 
+/**
+ * TokenUsageByFunctionChart component.
+ * @description Renders a bar chart displaying token usage (total, prompt, completion) by function or service.
+ * @param {TokenUsageByFunctionChartProps} props - The props for the component.
+ * @returns {React.FC<TokenUsageByFunctionChartProps>} The TokenUsageByFunctionChart component.
+ */
 const TokenUsageByFunctionChart: React.FC<TokenUsageByFunctionChartProps> = ({ logs, title }) => {
   const { t } = useTranslation();
 
-  const aggregatedData = logs.reduce<Record<string, { totalTokens: number; promptTokens: number; completionTokens: number }>>((acc, log) => {
-    // Use service_name as primary key, can be extended to service_name + function_name if needed for more granularity
-    const key = log.service_name || 'Unknown Service';
-    const total = log.tokens_total || 0;
-    const prompt = log.tokens_prompt || 0;
-    const completion = log.tokens_completion || 0;
-
-    if (!acc[key]) {
-      acc[key] = { totalTokens: 0, promptTokens: 0, completionTokens: 0 };
-    }
-    acc[key].totalTokens += total;
-    acc[key].promptTokens += prompt;
-    acc[key].completionTokens += completion;
-    return acc;
-  }, {});
-
-  const chartData: ChartDataPoint[] = Object.entries(aggregatedData)
-    .map(([name, data]) => ({ 
-      name,
-      totalTokens: data.totalTokens,
-      promptTokens: data.promptTokens,
-      completionTokens: data.completionTokens,
+  // The .reduce() step is not necessary here because the 'logs' prop 
+  // is expected to already contain data aggregated per service.
+  const chartData: ChartDataPoint[] = logs
+    .map(log => ({ 
+      name: log.service_name || 'Unknown Service',
+      totalTokens: log.total_tokens_total || 0,
+      promptTokens: log.total_tokens_prompt || 0,
+      completionTokens: log.total_tokens_completion || 0,
     }))
     .sort((a, b) => b.totalTokens - a.totalTokens) // Sort by total tokens descending
     .slice(0, 15); // Show top 15, adjust as needed
@@ -82,26 +117,28 @@ const TokenUsageByFunctionChart: React.FC<TokenUsageByFunctionChartProps> = ({ l
       <h3 className="text-lg font-semibold mb-4">
         {title || t('charts.tokenUsageByFunction')}
       </h3>
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%">
         <BarChart
           data={chartData}
-          layout="vertical"
+          layout="horizontal"
           margin={{
-            top: 5,
+            top: 20,
             right: 30,
-            left: 100, // Adjust for longer service/function names
-            bottom: 5,
+            left: 20,
+            bottom: 80,
           }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" allowDecimals={false} />
-          <YAxis dataKey="name" type="category" width={150} interval={0} tick={{ fontSize: 12 }} />
+          <XAxis dataKey="name" type="category" interval={0} angle={0} textAnchor="middle" height={60} tick={{ fontSize: 12 }} />
+          <YAxis type="number" allowDecimals={false} />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
-          {/* Pass the raw key to the formatter. The value will be the dataKey of the Bar ('total', 'prompt', etc.) */}
-          <Legend formatter={(value) => t(`charts.tokenTypes.${value}` as `charts.tokenTypes.${string}`) || value} />
-          {/* Use the un-translated key for the name, so the formatter receives it correctly */}
+          <Legend 
+            verticalAlign="top" 
+            align="center" 
+            wrapperStyle={{ paddingBottom: '20px' }} 
+            formatter={(value) => t(`charts.tokenTypes.${value}` as `charts.tokenTypes.${string}`) || value}
+          />
           <Bar dataKey="totalTokens" fill="hsl(var(--primary))" name="total" />
-          {/* We could stack prompt and completion tokens if desired, but totalTokens gives a clearer overview for "most expensive" */}
         </BarChart>
       </ResponsiveContainer>
     </div>

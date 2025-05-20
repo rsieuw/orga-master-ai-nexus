@@ -184,14 +184,11 @@ const AdminExternalApiUsagePage: React.FC = () => {
   }, [usersFetched, fetchExternalApiLogs]);
 
   // Transformations for chart data
-  const popularFunctionsChartInput = aggregatedExternalLogs.flatMap((aggLog) =>
-    Array(aggLog.total_calls ?? 0)
-      .fill(null)
-      .map(() => ({
-        service_name: aggLog.service_name,
-        // function_name is not available in AggregatedExternalServiceUsage, chart handles its absence for external type
-      }))
-  );
+  const popularFunctionsChartInput = aggregatedExternalLogs.map(aggLog => ({
+    service_name: aggLog.service_name,
+    call_count: aggLog.total_calls,
+    // function_name is hier niet relevant voor de popular functions chart op service niveau
+  }));
 
   // const costDistributionChartInput = aggregatedExternalLogs.map((log) => ({
   //   service_name: log.service_name,
@@ -207,7 +204,7 @@ const AdminExternalApiUsagePage: React.FC = () => {
 
   return (
     <div className="">
-      <h1 className="text-2xl font-semibold mb-6">{t('adminExternalApiUsagePage.title')}</h1>
+      {/* <h1 className="text-2xl font-semibold mb-6">{t('adminExternalApiUsagePage.title')}</h1> */}
       
       {/* API Logs Table Section */}
       <h2 className="text-xl font-semibold mb-4">{t('adminExternalApiUsagePage.logsTableTitle')}</h2>
@@ -232,6 +229,7 @@ const AdminExternalApiUsagePage: React.FC = () => {
               <h3 className="font-semibold mb-1">{t('adminExternalApiUsagePage.errorLoadingLogs')}</h3>
               <p className="text-sm">{error.substring(6)}</p>
               <button 
+                type="button"
                 onClick={() => fetchExternalApiLogs()} 
                 className="mt-2 px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-md transition-colors"
               >

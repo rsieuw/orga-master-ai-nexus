@@ -859,7 +859,7 @@ export default function Dashboard() {
                     >
                       <PlusCircle className="h-7 w-7" />
                     </Button>
-                    <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-md bg-background/70 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none">{t('navbar.newTaskButton.text')}</span>
+                    <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-md bg-background/70 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none">{t('navbar.newTaskButton.fabText')}</span>
                   </div>
                 </DialogTrigger>
                 <DialogPortal>

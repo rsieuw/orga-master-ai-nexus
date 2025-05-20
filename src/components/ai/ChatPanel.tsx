@@ -91,20 +91,39 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       if (scrollAreaRef.current) {
         scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
       }
-    }, 100);  // Korte vertraging om ervoor te zorgen dat de DOM volledig is bijgewerkt
+    }, 100);  // Short delay to ensure the DOM is fully updated
   }, []);
   
-  // Scroll naar beneden wanneer berichten veranderen
+  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
   
-  // Scroll naar beneden wanneer een subtaak wordt geselecteerd
+  // Scroll to bottom when a subtask is selected
   useEffect(() => {
     if (selectedSubtaskTitle) {
       scrollToBottom();
     }
   }, [selectedSubtaskTitle, scrollToBottom]);
+
+  // Effect to hide the main navigation when chat input is focused on mobile
+  useEffect(() => {
+    // Check if we're on a mobile device
+    if (typeof globalThis !== 'undefined' && typeof globalThis.innerWidth === 'number' && globalThis.innerWidth < 768) {
+      if (isInputFocused) {
+        // Add CSS class to body element to hide navigation
+        document.body.classList.add('chat-input-focused');
+      } else {
+        // Remove CSS class from body element
+        document.body.classList.remove('chat-input-focused');
+      }
+    }
+
+    // Cleanup function to ensure the class is removed on unmount
+    return () => {
+      document.body.classList.remove('chat-input-focused');
+    };
+  }, [isInputFocused]);
 
   /**
    * Navigates to the home page to close the chat panel.
@@ -219,7 +238,9 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
   /**
    * Initiates a deep research process based on the provided mode and prompt.
    * Adds user request and AI response/error messages to the chat.
-   * @param {ResearchMode} [mode='research'] - The mode of research (e.g., 'research', 'instruction').
+   * This is a key function that leverages AI to do in-depth analysis on a specific topic.
+   * 
+   * @param {ResearchMode} [mode='research'] - The mode of research (e.g., 'research', 'instruction', 'creative').
    * @param {string} [prompt] - The specific prompt for the research. Defaults to task title or a generic title.
    */
   const handleDeepResearch = useCallback(async (mode: ResearchMode = 'research', prompt?: string) => {
@@ -369,7 +390,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
 
       if (specificSubtaskMatch && specificSubtaskMatch[1] && specificSubtaskMatch[1].trim().length > 0) {
         const subtaskTitle = specificSubtaskMatch[1].trim();
-        // Call generate-chat-response with ADD_SUBTASK action
+        // Call generate-chat-response with ADD_SUBTASK action to create a specific subtask
         setIsAiResponding(true);
         try {
           const historyToInclude = messages.filter(msg => msg.role === 'user' || (msg.role === 'assistant' && msg.messageType === 'standard')).slice(-8).map(msg => ({ role: msg.role, content: msg.content }));
@@ -420,14 +441,14 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         (inputLower.includes("genereer subtaken") || inputLower.includes("generate subtasks")) ||
         ((hasDutchVerb && inputLower.includes("subtaken")) || (hasEnglishVerb && inputLower.includes("subtasks")));
       
-      // Zoek naar onderzoek met specifieke zoekterm
+      // Look for research request with specific search term
       const researchPrefixes = ["onderzoek naar:", "onderzoek over:", "research:", "research about:", "zoek op over:", "find out about:", "investigate:"];
       let researchTerm: string | undefined = undefined;
       
-      // Check of één van de prefixes in de input zit
+      // Check if any of the prefixes are in the input
       for (const prefix of researchPrefixes) {
         if (inputLower.includes(prefix.toLowerCase())) {
-          // Extraheer de tekst na de prefix
+          // Extract the text after the prefix
           const prefixIndex = inputLower.indexOf(prefix.toLowerCase());
           if (prefixIndex !== -1) {
             researchTerm = currentInput.substring(prefixIndex + prefix.length).trim();
@@ -436,8 +457,8 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         }
       }
 
-      // Als geen exacte prefix is gevonden, maar wel het woord "onderzoek" of "research"
-      // Probeer te detecteren of er een patroon is zoals "doe onderzoek naar belastingregels"
+      // If no exact prefix is found, but the word "onderzoek" or "research" is present
+      // Try to detect if there's a pattern like "do research on tax rules"
       const researchKeywords = ["onderzoek", "research", "zoek op", "find out", "investigate"];
       const requiresResearch = researchKeywords.some(keyword => inputLower.includes(keyword));
 
@@ -463,6 +484,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
             const combinedSubtasks = [...existingSubtasks, ...newSubtasks];
             await updateTask(task.id, { subtasks: combinedSubtasks });
             
+            // Create a formatted confirmation message with the list of new subtasks
             let confirmationContent = t('chatPanel.subtasksAddedConfirmation.intro') + "\n<ul>\n";
             newSubtasks.forEach((st: { title: string }) => { confirmationContent += `  <li>${st.title}</li>\n`; });
             confirmationContent += "</ul>";
@@ -493,19 +515,19 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         }
         return;
       } else if (requiresResearch) {
-        // Als we een specifieke term hebben gevonden, gebruik die voor het onderzoek
+        // If we found a specific term, use it for the research
         if (researchTerm && researchTerm.length > 0) {
           handleDeepResearch(currentResearchMode, researchTerm); 
         } else {
-          // Als er geen specifieke term is gevonden, probeer het onderwerp te extraheren na 'naar', 'over', etc.
+          // If no specific term was found, try to extract the topic after 'naar', 'over', 'about', etc.
           const postfixRegex = /(?:onderzoek|research|zoek op|find out|investigate)(?:\s+(?:naar|over|about|on|for))?\s+(.+?)(?:\?|\.|$)/i;
           const match = currentInput.match(postfixRegex);
           
           if (match && match[1] && match[1].trim().length > 0) {
-            // We hebben een onderzoeksonderwerp gevonden
+            // We found a research topic
             handleDeepResearch(currentResearchMode, match[1].trim());
           } else {
-            // Geen specifiek onderwerp gevonden, val terug op de standaardactie
+            // No specific topic found, fall back to the default action
             handleDeepResearch(currentResearchMode);
           }
         }

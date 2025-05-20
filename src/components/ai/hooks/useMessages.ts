@@ -364,7 +364,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
           } else if (research.citations) {
             console.warn(`[useMessages] Research ID ${research.id}: DB citations is not an array:`, research.citations);
           }
-          
+
           return ensureMessageHasId({
             dbId: research.id,
             id: research.id, 

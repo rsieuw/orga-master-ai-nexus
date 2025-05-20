@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card, CardContent, CardHeader } from "@/components/ui/card.tsx";
-import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, Loader2, ChevronUp, ChevronDown, ArrowUpDown, MessageSquareText } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, PlusCircle, Sparkles, X, Save, Loader2, ChevronUp, ChevronDown, ArrowUpDown, CornerUpRight, MessageSquareText } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,6 +55,7 @@ import { format, parseISO } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
 import EditTaskDialog from "@/components/tasks/EditTaskDialog.tsx";
 import { TASK_CATEGORIES, TASK_CATEGORY_KEYS } from "@/constants/categories.ts";
+import { createPortal } from 'react-dom';
 
 /**
  * Task detail page component that displays comprehensive information about a task.
@@ -92,6 +92,7 @@ export default function TaskDetail() {
     toggleTaskCompletion,
     toggleFavorite,
     deleteAllSubtasks,
+    promoteSubtaskToTask,
   } = useTask();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -99,7 +100,6 @@ export default function TaskDetail() {
   const { toast } = useToast();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [activeMobileView, setActiveMobileView] = useState(location.hash === '#chat' ? 'chat' : 'details');
-  const [selectedSubtaskTitle, setSelectedSubtaskTitle] = useState<string | null>(null);
   const [showAddSubtaskForm, setShowAddSubtaskForm] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
@@ -108,9 +108,13 @@ export default function TaskDetail() {
   const [contextMenuSubtaskId, setContextMenuSubtaskId] = useState<string | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState<{ top: number, left: number } | null>(null);
   const [isDescriptionMinimized, setIsDescriptionMinimized] = useState(false);
+  const [selectedSubtaskTitle, setSelectedSubtaskTitle] = useState<string | null>(null);
   const subtaskCardRef = useRef<HTMLDivElement>(null);
   const [subtaskSortOrder, setSubtaskSortOrder] = useState<'default' | 'completedFirst' | 'incompleteFirst'>('default');
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
+  
+  // State for showing progress instead of deadline
+  const [showProgressInsteadOfDeadline, setShowProgressInsteadOfDeadline] = useState(false);
 
   // New state for centralized subtask deletion dialog
   const [subtaskToDelete, setSubtaskToDelete] = useState<SubTask | null>(null);
@@ -564,6 +568,31 @@ export default function TaskDetail() {
     };
   }, []); // Re-run if the scrollable element might change, or on mount/unmount
 
+  const handlePromoteSubtaskToTask = async (subtaskId: string | null) => {
+    if (!task || !subtaskId) return;
+    closeSubtaskContextMenu();
+    try {
+      const promotedTask = await promoteSubtaskToTask(task.id, subtaskId);
+      if (promotedTask) {
+        toast({
+          title: t('taskDetail.toast.subtaskPromotedSuccessTitle'),
+          description: t('taskDetail.toast.subtaskPromotedSuccessDescription'),
+        });
+        // Optional: navigate to the new main task
+        // navigate(`/task/${promotedTask.id}`);
+      } else {
+        throw new Error("Promotion returned undefined task");
+      }
+    } catch (error) {
+      console.error("Failed to promote subtask:", error);
+      toast({
+        variant: "destructive",
+        title: t('common.error'),
+        description: t('taskDetail.toast.subtaskPromotionFailedDescription'),
+      });
+    }
+  };
+
   if (tasksLoading && !task) {
     return (
       <AppLayout noPadding>
@@ -682,6 +711,8 @@ export default function TaskDetail() {
                 isGeneratingSubtasks={isGeneratingSubtasksForTask(task.id)}
                 t={t}
                 toggleFavorite={toggleFavorite}
+                showProgressInsteadOfDeadline={showProgressInsteadOfDeadline}
+                toggleProgressDisplay={() => setShowProgressInsteadOfDeadline(prev => !prev)}
               />
             )}
 
@@ -757,16 +788,20 @@ export default function TaskDetail() {
                       </div>
                     </div>
                     
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
+                      <div className="flex items-center">
+                        <span className="hidden sm:inline-block mr-2 text-xs text-muted-foreground px-1 py-0.5 rounded bg-background/50 border border-border/30">
+                          {isDescriptionMinimized ? t('taskDetail.buttons.showDescription') : t('taskDetail.buttons.hideDescription')}
+                        </span>
                           <Button
                             variant="ghost"
-                            onClick={() => setIsDescriptionMinimized(!isDescriptionMinimized)}
+                          onClick={() => {
+                            setIsDescriptionMinimized(!isDescriptionMinimized);
+                            setShowProgressInsteadOfDeadline(!isDescriptionMinimized);
+                          }}
                             className={cn(
                               "transition-all duration-300 ease-in-out",
                               "p-0",
-                              "h-10 w-10 text-muted-foreground",
+                            "h-10 w-10 text-muted-foreground hover:text-foreground",
                               "sm:h-8 sm:w-8"
                             )}
                             aria-label={isDescriptionMinimized ? t('taskDetail.buttons.showDescription') : t('taskDetail.buttons.hideDescription')}
@@ -777,12 +812,7 @@ export default function TaskDetail() {
                               <ChevronUp className="h-6 w-6 sm:h-5 sm:w-5" />
                             )}
                           </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="hidden sm:block">
-                          <p>{isDescriptionMinimized ? t('taskDetail.buttons.showDescription') : t('taskDetail.buttons.hideDescription')}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                      </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0 flex flex-col flex-grow h-full overflow-hidden relative max-h-[calc(100%-25px)]">
@@ -811,7 +841,7 @@ export default function TaskDetail() {
                                 editingSubtaskIdFromDetail={editingSubtaskId}
                                 onEditStarted={() => setEditingSubtaskId(null)}
                               />
-                              {contextMenuSubtaskId === subtaskItem.id && contextMenuPosition && (
+                              {contextMenuSubtaskId === subtaskItem.id && contextMenuPosition && 
                                 createPortal(
                                   <motion.div
                                     ref={contextMenuRef}
@@ -854,6 +884,18 @@ export default function TaskDetail() {
                                       <Button
                                         type="button"
                                         variant="ghost"
+                                        className="flex items-center w-full text-left justify-start px-4 py-2.5 text-sm text-popover-foreground hover:bg-primary/10 disabled:opacity-50 rounded-none"
+                                        onClick={() => {
+                                          handlePromoteSubtaskToTask(subtaskItem.id);
+                                          closeSubtaskContextMenu();
+                                        }}
+                                      >
+                                        <CornerUpRight className="mr-2 h-4 w-4" />
+                                        {t('taskDetail.subtaskActions.promoteToTask')}
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
                                         className="flex items-center w-full text-left justify-start px-4 py-2.5 text-sm text-red-500 dark:text-red-400 hover:bg-destructive/10 dark:hover:text-red-300 rounded-b-md rounded-t-none focus-visible:ring-destructive"
                                         onClick={() => {
                                           setSubtaskToDelete(subtaskItem);
@@ -868,7 +910,7 @@ export default function TaskDetail() {
                                   </motion.div>,
                                   document.body
                                 )
-                              )}
+                              }
                             </div>
                           ))}
                         </motion.div>
@@ -1038,14 +1080,15 @@ export default function TaskDetail() {
             )}
             style={globalThis.innerWidth >= 1024 ? { width: `${columnSizes.right}%` } : { /* Do not explicitly set height here, let flexbox do the work */ }}
           >
-            {task && (
-              <div className="flex-grow min-h-0 h-full">
+            <div className="relative w-full h-full flex flex-col">
+              {tasksLoading && <GradientLoader />}
+              {!tasksLoading && task && (
                 <TaskAIChat
                   task={task}
                   selectedSubtaskTitle={selectedSubtaskTitle}
                 />
-              </div>
             )}
+            </div>
           </Card>
         </div>
       </div>

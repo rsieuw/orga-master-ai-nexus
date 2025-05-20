@@ -168,7 +168,7 @@ const AdminApiUsagePage: React.FC = () => {
 
   return (
     <div className="">
-      <h1 className="text-2xl font-semibold mb-6">{t('adminApiUsagePage.title')}</h1>
+      {/* <h1 className="text-2xl font-semibold mb-6">{t('adminApiUsagePage.title')}</h1> */}
 
       {/* API Logs Table Section */}
       <h2 className="text-xl font-semibold mb-4">{t('adminApiUsagePage.logsTableTitle')}</h2>

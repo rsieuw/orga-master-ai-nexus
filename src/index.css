@@ -1179,3 +1179,16 @@ input[type="search"]::-webkit-search-results-decoration {
     display: none !important;
   }
 }
+
+/* Verberg de hoofdnavigatie wanneer de chat input gefocust is op mobiel */
+.chat-input-focused nav.fixed.bottom-[-1px] {
+  transform: translateY(200%) !important; /* Verhoogde waarde en !important toegevoegd */
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 767px) {
+  .chat-actions-hidden-on-mobile-focus {
+    display: none;
+  }
+}

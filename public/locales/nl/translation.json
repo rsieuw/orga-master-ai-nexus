@@ -156,7 +156,8 @@
     "title": "OrgaMaster AI",
     "subtitle": "Log in om je taken te beheren",
     "noAccount": "Heb je nog geen account?",
-    "registerHere": "Registreer hier"
+    "registerHere": "Registreer hier",
+    "signInWithGoogle": "Inloggen met Google"
   },
   "register": {
     "title": "OrgaMaster AI",
@@ -383,7 +384,8 @@
       "themes": "Thema's",
       "feedback": "Berichten",
       "internalApiUsage": "Intern API Gebruik",
-      "externalApiUsage": "Extern API Gebruik"
+      "externalApiUsage": "Extern API Gebruik",
+      "aiLimits": "AI Limieten"
     },
     "users": {
       "title": "Gebruikersbeheer",
@@ -418,6 +420,10 @@
     "externalApiUsage": {
       "title": "Extern API Verbruik",
       "description": "Monitor het verbruik van externe AI diensten door de API functies."
+    },
+    "aiLimits": {
+      "title": "AI-limietinstellingen",
+      "description": "Beheer de limieten voor AI-functiegebruik per gebruikerstype."
     }
   },
   "adminUsersPage": {
@@ -628,7 +634,8 @@
   "navbar": {
     "newTaskButton": {
       "text": "Nieuwe taak",
-      "ariaLabel": "Nieuwe taak aanmaken"
+      "ariaLabel": "Nieuwe taak aanmaken",
+      "fabText": "Taak"
     },
     "userMenu": {
       "defaultUserName": "Gebruiker",
@@ -806,7 +813,17 @@
       },
       "taskDeleted": "Taak verwijderd",
       "taskDeletedDescription": "De taak is succesvol verwijderd",
-      "subtaskStatusUpdateFailedDescription": "Kon de status van de subtaak niet bijwerken. Probeer het opnieuw."
+      "subtaskStatusUpdateFailedDescription": "Kon de status van de subtaak niet bijwerken. Probeer het opnieuw.",
+      "taskLoadFailedTitle": "Fout bij laden taak",
+      "taskLoadFailedDescription": "Kon de taakdetails niet laden. Probeer het opnieuw.",
+      "subtaskAddedSuccessTitle": "Subtaak toegevoegd",
+      "subtaskAddedSuccessDescription": "De nieuwe subtaak is succesvol toegevoegd.",
+      "generateSubtasksFailed": "Kon subtaken niet genereren. Probeer het opnieuw.",
+      "maxAiSubtaskGenerationReached": "Je hebt het maximaal aantal AI-subtaakgeneraties bereikt.",
+      "taskUpdateError": "Fout bij bijwerken taak",
+      "subtaskPromotedSuccessTitle": "Subtaak gepromoveerd",
+      "subtaskPromotedSuccessDescription": "Subtaak is gepromoveerd tot hoofdtaak.",
+      "subtaskPromotionFailedDescription": "Kon de subtaak niet promoveren tot hoofdtaak."
     },
     "subtasksTitle": "Subtaken",
     "sortSubtasksAriaLabel": "Sorteer subtaken",
@@ -828,7 +845,7 @@
       "modalDescription": "Bekijk en selecteer de subtaken die je wilt toevoegen.",
       "addSelectedButton": "Geselecteerde Toevoegen",
       "buttonAriaLabel": "Genereer subtaken",
-      "fabText": "Subtaken genereren",
+      "fabText": "Genereren",
       "confirmButton": "Ja, genereer subtaken",
       "limitReachedTooltip": "Je hebt de limiet voor AI-generaties bereikt",
       "limitReachedFabText": "Limiet bereikt"
@@ -851,14 +868,15 @@
       "buttonText": "Subtaak toevoegen",
       "buttonAriaLabel": "Nieuwe subtaak toevoegen",
       "tooltip": "Voeg een nieuwe subtaak toe aan deze hoofdtaak.",
-      "fabText": "Nieuwe subtaak"
+      "fabText": "Subtaak"
     },
     "emptySubtasks": "Geen subtaken toegevoegd",
     "addingSubtask": "Toevoegen...",
     "subtaskActions": {
       "research": "Onderzoek subtaak",
-      "edit": "Bewerk subtaak",
-      "delete": "Verwijder subtaak",
+      "edit": "Bewerken",
+      "delete": "Verwijderen",
+      "promoteToTask": "Maak hoofdtaak",
       "discussInChat": "Bespreken in chat"
     },
     "deleteAllSubtasks": {
@@ -884,7 +902,11 @@
     "buttons": {
       "showDescription": "Beschrijving tonen",
       "hideDescription": "Beschrijving verbergen"
-    }
+    },
+    "searchPlaceholder": "Zoek taken op titel of beschrijving...",
+    "statusFilterAll": "Alle Statussen",
+    "showDeadline": "Toon deadline",
+    "showProgress": "Toon voortgang"
   },
   "common": {
     "add": "Toevoegen",
@@ -1246,7 +1268,21 @@
       "featureNotAvailableTitle": "Functie Niet Beschikbaar",
       "featureNotAvailableDescription": "Deze functie is momenteel niet beschikbaar of je hebt geen toestemming om deze te gebruiken.",
       "researchSavedTitle": "Onderzoek Opgeslagen",
-      "researchSavedDescription": "Het onderzoek is succesvol opgeslagen."
+      "researchSavedDescription": "Het onderzoek is succesvol opgeslagen.",
+      "taskLoadFailedTitle": "Fout bij laden taak",
+      "taskLoadFailedDescription": "Kon de taakdetails niet laden. Probeer het opnieuw.",
+      "subtaskAddedSuccessTitle": "Subtaak toegevoegd",
+      "subtaskAddedSuccessDescription": "De nieuwe subtaak is succesvol toegevoegd.",
+      "subtaskAddFailedDescription": "Kon de subtaak niet toevoegen.",
+      "subtaskDeleteFailedDescription": "Kon de subtaak niet verwijderen.",
+      "generateSubtasksFailed": "Kon subtaken niet genereren. Probeer het opnieuw.",
+      "maxAiGenerationsReachedTitle": "AI-generatielimiet bereikt",
+      "maxAiGenerationsReachedDescription": "U heeft het maximale aantal AI-generaties voor deze taak bereikt.",
+      "allSubtasksDeletedDescription": "Alle subtaken voor deze taak zijn verwijderd.",
+      "deleteAllSubtasksFailed": "Kon niet alle subtaken verwijderen.",
+      "subtaskPromotedSuccessTitle": "Subtaak gepromoveerd",
+      "subtaskPromotedSuccessDescription": "De subtaak is nu een hoofdtaak.",
+      "subtaskPromotionFailedDescription": "Kon subtaak niet promoveren."
     },
     "errors": {
       "userNotLoggedIn": "Gebruiker niet ingelogd. Log in om notities op te slaan.",
@@ -1288,7 +1324,32 @@
     "inputPlaceholder": "Stel een vraag of typ / voor commando's...",
     "inputPlaceholderWithContext": "Vraag over {{taskTitle}} of typ / voor commando's...",
     "sendCommand": "Verstuur",
-    "generatingResponse": "Antwoord genereren..."
+    "generatingResponse": "Antwoord genereren...",
+    "mobileNav": {
+      "title": "Navigatie",
+      "home": "Home",
+      "tasks": "Mijn taken",
+      "calendar": "Kalender",
+      "settings": "Instellingen",
+      "profile": "Profiel",
+      "adminDashboard": "Beheerderspaneel",
+      "adminUsers": "Gebruikers",
+      "adminSettings": "Beheerdersinstellingen",
+      "adminApiUsage": "API Gebruik",
+      "adminExternalApiUsage": "Extern API-gebruik",
+      "adminFeedback": "Feedback",
+      "adminDocumentation": "Admin Documentation",
+      "adminInternalApiUsage": "Intern API-gebruik"
+    },
+    "aiChat": {
+      "title": "AI-chat",
+      "description": "Chat met de AI-assistent",
+      "inputPlaceholder": "Typ je bericht of commando hier...",
+      "sendButton": "Verstuur",
+      "generatingResponse": "Antwoord genereren...",
+      "responsePlaceholder": "AI-antwoord...",
+      "error": "Fout bij AI-chat"
+    }
   },
   "chatInput": {
     "messagePlaceholder": "Plan, Zoek, Maak het waar...",
@@ -1667,7 +1728,34 @@
     },
     "errors": {
       "unknownError": "Er is een onbekende fout opgetreden.",
-      "fetchLogsError": "Could not fetch internal API logs."
+            "fetchLogsError": "Could not fetch internal API logs."
+    }
+  },
+  "adminAiLimitsPage": {
+    "title": "AI Generatie Limieten",
+    "description": "Configureer het maximale aantal keren dat gebruikers AI kunnen gebruiken om subtaken te genereren per taak.",
+    "freeUserLimit": "Limiet voor gratis gebruikers",
+    "paidUserLimit": "Limiet voor premium gebruikers",
+    "adminLimitNote": "Beheerders hebben geen limiet op het gebruik van AI-generatie",
+    "generationsPerTask": "generaties per taak",
+    "freeUserLimitHelp": "Het maximale aantal keren dat een gratis gebruiker AI kan gebruiken voor één taak",
+    "paidUserLimitHelp": "Het maximale aantal keren dat een premium gebruiker AI kan gebruiken voor één taak",
+    "buttons": {
+      "saveChanges": "Wijzigingen opslaan",
+      "saving": "Opslaan..."
+    },
+    "loading": "AI-limieten laden...",
+    "errors": {
+      "fetchError": "Fout bij het ophalen van AI-limieten: {message}",
+      "saveError": "Fout bij het opslaan van AI-limieten: {message}"
+    },
+    "toastTitles": {
+      "fetchFailed": "Laden mislukt",
+      "saveFailed": "Opslaan mislukt",
+      "saveSuccess": "Opgeslagen"
+    },
+    "toastMessages": {
+      "saveSuccess": "AI-generatielimieten zijn succesvol bijgewerkt"
     }
   }
 }

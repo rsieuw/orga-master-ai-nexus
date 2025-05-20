@@ -11,25 +11,50 @@ import {
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 
+/**
+ * @interface ApiLog
+ * @description Defines the structure for an API log entry, adaptable for internal or external logs.
+ */
 interface ApiLog {
-  // Internal logs structure
+  /** The name of the function called (for internal logs). */
   function_name?: string | null; 
-  // External logs structure
+  /** The name of the external service called (for external logs). */
   service_name?: string | null;
+  /** The aggregated call count, typically provided by the parent component if data is pre-aggregated. */
+  call_count?: number; // ADDED: To receive the already aggregated count from the parent
   // Common or other fields if needed for more detailed grouping/tooltips
 }
 
+/**
+ * @interface ChartDataPoint
+ * @description Defines the structure for a data point used in the chart.
+ */
 interface ChartDataPoint {
+  /** The name of the function or service, used as the label on the chart axis. */
   name: string; // Function name or Service:Function name
+  /** The count of calls for this function or service. */
   count: number;
 }
 
+/**
+ * @interface PopularFunctionsChartProps
+ * @description Defines the props for the PopularFunctionsChart component.
+ */
 interface PopularFunctionsChartProps {
+  /** The array of API log data to display. */
   logs: ApiLog[];
+  /** The type of logs being displayed ('internal' or 'external'). */
   logType: 'internal' | 'external';
+  /** An optional title for the chart. */
   title?: string; // Optional title for the chart
 }
 
+/**
+ * PopularFunctionsChart component.
+ * @description Renders a bar chart displaying the most popular functions or services based on call count.
+ * @param {PopularFunctionsChartProps} props - The props for the component.
+ * @returns {React.FC<PopularFunctionsChartProps>} The PopularFunctionsChart component.
+ */
 const PopularFunctionsChart: React.FC<PopularFunctionsChartProps> = ({ logs, logType, title }) => {
   const { t } = useTranslation();
 
@@ -49,7 +74,7 @@ const PopularFunctionsChart: React.FC<PopularFunctionsChartProps> = ({ logs, log
       if (!acc[key]) {
         acc[key] = 0;
       }
-      acc[key]++;
+      acc[key] += log.call_count || 0;
     }
     return acc;
   }, {});
@@ -71,32 +96,37 @@ const PopularFunctionsChart: React.FC<PopularFunctionsChartProps> = ({ logs, log
       <ResponsiveContainer>
         <BarChart
           data={chartData}
-          layout="vertical" // Vertical bar chart for better readability of function names
+          layout="horizontal"
           margin={{
             top: 5,
             right: 30,
-            left: 150, // Increased left margin for YAxis labels
-            bottom: 5,
+            left: 20,
+            bottom: 120,
           }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" allowDecimals={false} />
-          <YAxis dataKey="name" type="category" width={200} interval={0} /> {/* Increased width, ensure all labels are shown */}
+          <XAxis dataKey="name" type="category" interval={0} angle={-45} textAnchor="end" height={100} />
+          <YAxis type="number" allowDecimals={false} />
           <Tooltip 
             cursor={{ fill: 'transparent' }}
             contentStyle={{ 
               backgroundColor: 'hsl(var(--popover))', 
               color: 'hsl(var(--popover-foreground))', 
-              borderRadius: 'var(--radius)', // Using theme variable for border radius
+              borderRadius: 'var(--radius)',
               padding: '0.5rem 0.75rem',
-              boxShadow: 'var(--shadow-md)' // Using theme variable for shadow
+              boxShadow: 'var(--shadow-md)'
             }}
             labelStyle={{ color: 'hsl(var(--popover-foreground))', marginBottom: '0.25rem', fontWeight: '600'}}
             itemStyle={{ color: 'hsl(var(--popover-foreground))' }}
             formatter={(value: number) => [value, t('charts.callCount')]} 
           />
-          <Legend formatter={() => t('charts.callCountLegend')} />
-          <Bar dataKey="count" fill="hsl(var(--primary))" name={t('charts.callCountLegend')} /> {/* Using theme primary color */}
+          <Legend 
+            verticalAlign="top" 
+            align="center" 
+            wrapperStyle={{ paddingBottom: '20px' }}
+            formatter={() => t('charts.callCountLegend')} 
+          />
+          <Bar dataKey="count" fill="hsl(var(--primary))" name={t('charts.callCountLegend')} />
         </BarChart>
       </ResponsiveContainer>
     </div>

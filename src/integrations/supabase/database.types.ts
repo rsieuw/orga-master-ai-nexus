@@ -453,6 +453,30 @@ export type Database = {
           },
         ]
       }
+      system_settings: {
+        Row: {
+          id: string
+          setting_name: string
+          setting_value: Json
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          setting_name: string
+          setting_value: Json
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          setting_name?: string
+          setting_value?: Json
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       task_notes: {
         Row: {
           content: string

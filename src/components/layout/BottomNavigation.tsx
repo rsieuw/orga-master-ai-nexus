@@ -113,7 +113,7 @@ const BottomNavigation: React.FC = () => {
   };
 
   return (
-    <nav className="fixed bottom-[-1px] left-0 right-0 h-16 bg-card/80 backdrop-blur-sm border-t border-border shadow-md flex justify-around items-center md:hidden z-[70]">
+    <nav className="fixed bottom-[-1px] left-0 right-0 h-16 bg-card/80 backdrop-blur-sm border-t border-border shadow-md flex justify-around items-center md:hidden z-[70] transition-transform duration-300 ease-in-out">
       {navItems.map((item) => {
         // Determine if the current item is active.
         // For path-based items, it checks if the current pathname matches the item's path.

@@ -117,6 +117,14 @@ export interface TaskContextType {
 
   setLastResearchOutput: (taskId: string, researchText: string) => void;
   getLastResearchOutput: (taskId: string) => string | undefined;
+
+  /**
+   * Promotes a subtask to a new main task.
+   * @param {string} parentTaskId - The ID of the parent task from which the subtask originates.
+   * @param {string} subtaskId - The ID of the subtask to promote.
+   * @returns {Promise<Task | undefined>} A promise that resolves with the newly created main task, or undefined on failure.
+   */
+  promoteSubtaskToTask: (parentTaskId: string, subtaskId: string) => Promise<Task | undefined>;
 }
 
 /**

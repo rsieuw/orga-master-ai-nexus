@@ -1,21 +1,32 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { Task, SubTask, TaskStatus, TaskPriority, TasksByDate, DbTask } from '@/types/task.ts';
-import { supabase } from '../integrations/supabase/client.ts';
-import { Json } from '@/types/supabase.ts';
-import { useToast } from '@/hooks/use-toast.ts';
-import { useTranslation } from 'react-i18next';
-import { MAX_FREE_USER_AI_SUBTASK_GENERATIONS, MAX_PAID_USER_AI_SUBTASK_GENERATIONS } from '@/constants/taskConstants.ts';
+import React, { useState, useEffect, useCallback } from "react";
+import { v4 as uuidv4 } from "uuid";
+import {
+  Task,
+  SubTask,
+  TaskStatus,
+  TaskPriority,
+  TasksByDate,
+  DbTask,
+} from "@/types/task.ts";
+import { supabase } from "../integrations/supabase/client.ts";
+import { Json } from "@/types/supabase.ts";
+import { useToast } from "@/hooks/use-toast.ts";
+import { useTranslation } from "react-i18next";
+import {
+  MAX_FREE_USER_AI_SUBTASK_GENERATIONS,
+  MAX_PAID_USER_AI_SUBTASK_GENERATIONS,
+} from "@/constants/taskConstants.ts";
+import { AiGenerationLimits } from "@/constants/databaseTables.ts";
 import { 
   isToday, 
   isTomorrow, 
   isPast, 
   parseISO, 
   startOfDay, 
-  differenceInCalendarDays
-} from 'date-fns';
-import { TaskContext } from './TaskContext.context.ts';
-import { useAuth } from '@/hooks/useAuth.ts';
+  differenceInCalendarDays,
+} from "date-fns";
+import { TaskContext } from "./TaskContext.context.ts";
+import { useAuth } from "@/hooks/useAuth.ts";
 
 /**
  * Represents the structure for updating a task in the database.
@@ -63,15 +74,25 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isGeneratingAISubtasksMap, setIsGeneratingAISubtasksMap] = useState<Record<string, boolean>>({});
-  const [lastResearchOutputs, setLastResearchOutputs] = useState<Record<string, string>>({});
+  const [isGeneratingAISubtasksMap, setIsGeneratingAISubtasksMap] = useState<
+    Record<string, boolean>
+  >({});
+  const [lastResearchOutputs, setLastResearchOutputs] = useState<
+    Record<string, string>
+  >({});
+
+  // State to store AI generation limits from database
+  const [aiGenerationLimits, setAiGenerationLimits] = useState<AiGenerationLimits>({
+    free_user_limit: MAX_FREE_USER_AI_SUBTASK_GENERATIONS,
+    paid_user_limit: MAX_PAID_USER_AI_SUBTASK_GENERATIONS,
+  });
 
   /**
    * Sets the AI subtask generation status for a specific task to true.
    * @param {string} taskId - The ID of the task.
    */
   const setIsGeneratingAISubtasks = (taskId: string) => {
-    setIsGeneratingAISubtasksMap(prev => ({ ...prev, [taskId]: true }));
+    setIsGeneratingAISubtasksMap((prev) => ({ ...prev, [taskId]: true }));
   };
 
   /**
@@ -79,7 +100,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    * @param {string} taskId - The ID of the task.
    */
   const clearIsGeneratingAISubtasks = (taskId: string) => {
-    setIsGeneratingAISubtasksMap(prev => ({ ...prev, [taskId]: false }));
+    setIsGeneratingAISubtasksMap((prev) => ({ ...prev, [taskId]: false }));
   };
 
   /**
@@ -103,14 +124,19 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     try {
       if (Array.isArray(dbTask.subtasks)) {
         parsedSubtasks = dbTask.subtasks;
-      } else if (dbTask.subtasks && typeof dbTask.subtasks === 'string') {
+      } else if (dbTask.subtasks && typeof dbTask.subtasks === "string") {
         parsedSubtasks = JSON.parse(dbTask.subtasks);
       } else {
         // If it's an object but not an array (unlikely now, but for safety)
         // Or if it's null, parsedSubtasks remains an empty array.
       }
     } catch (error) {
-      console.error('Error parsing subtasks in mapDbTaskToTask:', error, 'Subtasks received:', dbTask.subtasks);
+      console.error(
+        "Error parsing subtasks in mapDbTaskToTask:",
+        error,
+        "Subtasks received:",
+        dbTask.subtasks
+      );
       parsedSubtasks = [];
     }
     
@@ -118,23 +144,30 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
     
-    const viewedTaskIds = localStorage.getItem('viewedTaskIds');
+    const viewedTaskIds = localStorage.getItem("viewedTaskIds");
     const viewedTasks = viewedTaskIds ? JSON.parse(viewedTaskIds) : [];
     const isViewedInLocalStorage = viewedTasks.includes(dbTask.id);
     
-    const isNewTask = !dbTask.last_viewed_at && !isViewedInLocalStorage && createdAtDate > twentyFourHoursAgo;
+    const isNewTask =
+      !dbTask.last_viewed_at &&
+      !isViewedInLocalStorage &&
+      createdAtDate > twentyFourHoursAgo;
     
     return {
       id: dbTask.id,
       userId: dbTask.user_id,
       title: dbTask.title,
-      description: dbTask.description || '',
-      priority: (dbTask.priority || 'low') as TaskPriority,
-      status: (dbTask.status || 'todo') as TaskStatus,
+      description: dbTask.description || "",
+      priority: (dbTask.priority || "low") as TaskPriority,
+      status: (dbTask.status || "todo") as TaskStatus,
       category: dbTask.category || undefined,
-      deadline: dbTask.deadline ? new Date(dbTask.deadline).toISOString() : null,
+      deadline: dbTask.deadline
+        ? new Date(dbTask.deadline).toISOString()
+        : null,
       createdAt: new Date(dbTask.created_at).toISOString(),
-      updatedAt: dbTask.updated_at ? new Date(dbTask.updated_at).toISOString() : new Date(dbTask.created_at).toISOString(),
+      updatedAt: dbTask.updated_at
+        ? new Date(dbTask.updated_at).toISOString()
+        : new Date(dbTask.created_at).toISOString(),
       subtasks: parsedSubtasks,
       aiSubtaskGenerationCount: dbTask.ai_subtask_generation_count || 0,
       isNew: isNewTask,
@@ -151,7 +184,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    */
   const fetchTasks = useCallback(async () => {
     setIsLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session?.user) {
       setTasks([]);
       setIsLoading(false);
@@ -159,17 +194,22 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
 
     const { data, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false });
+      .from("tasks")
+      .select("*")
+      .eq("user_id", session.user.id)
+      .order("created_at", { ascending: false });
 
     if (error) {
-      toast({ variant: "destructive", title: t('taskContext.toast.fetchError') });
+      toast({
+        variant: "destructive",
+        title: t("taskContext.toast.fetchError"),
+      });
       setTasks([]);
     } else {
       const dbTasks = data as DbTask[] | null;
-      const transformedTasks: Task[] = (dbTasks || []).map((dbTask) => mapDbTaskToTask(dbTask));
+      const transformedTasks: Task[] = (dbTasks || []).map((dbTask) =>
+        mapDbTaskToTask(dbTask)
+      );
       setTasks(transformedTasks);
     }
     setIsLoading(false);
@@ -184,10 +224,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchTasks();
     const subscription = supabase
-      .channel('public:tasks')
+      .channel("public:tasks")
       .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'tasks' },
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tasks" },
         () => fetchTasks()
       )
       .subscribe();
@@ -196,6 +236,43 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       supabase.removeChannel(subscription);
     };
   }, [fetchTasks]);
+
+  /**
+   * Fetches AI generation limits from the database when the component mounts
+   */
+  useEffect(() => {
+    const fetchAiGenerationLimits = async () => {
+      try {
+        // System_settings exists in the database but not in the TypeScript definitions
+        const { data, error } = await supabase
+          // @ts-expect-error - "system_settings" table exists in the database but not in type definitions
+          .from("system_settings")
+          .select("setting_value")
+          .eq("setting_name", "ai_generation_limits")
+          .single();
+
+        if (error) {
+          console.error("Error fetching AI generation limits:", error);
+          return; // Use default values from constants
+        }
+
+        if (data) {
+          interface SystemSettings {
+            setting_value: AiGenerationLimits;
+          }
+          const settings = (data as unknown as SystemSettings).setting_value;
+          if (settings) {
+            setAiGenerationLimits(settings);
+          }
+        }
+      } catch (err) {
+        console.error("Exception fetching AI generation limits:", err);
+        // Keep default values from constants
+      }
+    };
+
+    fetchAiGenerationLimits();
+  }, []);
 
   /**
    * Retrieves a specific task by its ID from the local state.
@@ -212,15 +289,32 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    * @returns {Promise<Task | undefined>} A promise that resolves with the newly created Task object or undefined if an error occurs.
    * @throws {Error} If the user is not authenticated or if a database error occurs.
    */
-  const addTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'subtasks' | 'userId' | 'aiSubtaskGenerationCount' | 'isNew'> & { category?: string | null | undefined, emoji?: string | null | undefined }) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) throw new Error(t('taskContext.toast.notAuthenticated'));
+  const addTask = async (
+    task: Omit<
+      Task,
+      | "id"
+      | "createdAt"
+      | "updatedAt"
+      | "subtasks"
+      | "userId"
+      | "aiSubtaskGenerationCount"
+      | "isNew"
+    > & {
+      category?: string | null | undefined;
+      emoji?: string | null | undefined;
+    }
+  ) => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user)
+      throw new Error(t("taskContext.toast.notAuthenticated"));
     
     const dbTask = {
       title: task.title,
       description: task.description || null,
-      priority: task.priority || 'low',
-      status: task.status || 'todo',
+      priority: task.priority || "low",
+      status: task.status || "todo",
       category: task.category || null,
       deadline: task.deadline || null,
       user_id: session.user.id,
@@ -230,11 +324,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       emoji: task.emoji || null,
     };
     
-    const { data, error } = await supabase.from('tasks').insert([dbTask]).select().single();
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert([dbTask])
+      .select()
+      .single();
     if (error) throw error;
     if (data) {
       const newTask = mapDbTaskToTask(data as DbTask);
-      setTasks(prevTasks => [ ...prevTasks, newTask ]);
+      setTasks((prevTasks) => [...prevTasks, newTask]);
       return newTask;
     }
     return undefined;
@@ -248,28 +346,36 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const mapTaskToDbUpdate = (taskUpdates: Partial<Task>): DbTaskUpdate => {
     const dbRecord: DbTaskUpdate = {};
     if (taskUpdates.title !== undefined) dbRecord.title = taskUpdates.title;
-    if (taskUpdates.description !== undefined) dbRecord.description = taskUpdates.description;
-    if (taskUpdates.priority !== undefined) dbRecord.priority = taskUpdates.priority;
+    if (taskUpdates.description !== undefined)
+      dbRecord.description = taskUpdates.description;
+    if (taskUpdates.priority !== undefined)
+      dbRecord.priority = taskUpdates.priority;
     if (taskUpdates.status !== undefined) dbRecord.status = taskUpdates.status;
-    if (taskUpdates.category !== undefined) dbRecord.category = taskUpdates.category;
-    if (taskUpdates.deadline !== undefined) dbRecord.deadline = taskUpdates.deadline;
+    if (taskUpdates.category !== undefined)
+      dbRecord.category = taskUpdates.category;
+    if (taskUpdates.deadline !== undefined)
+      dbRecord.deadline = taskUpdates.deadline;
     if (taskUpdates.emoji !== undefined) dbRecord.emoji = taskUpdates.emoji;
     if (taskUpdates.isFavorite !== undefined) {
       dbRecord.is_favorite = taskUpdates.isFavorite;
     }
     if (taskUpdates.subtasks !== undefined) {
         try {
-            if (typeof taskUpdates.subtasks === 'string') {
+        if (typeof taskUpdates.subtasks === "string") {
                 JSON.parse(taskUpdates.subtasks);
                 dbRecord.subtasks = taskUpdates.subtasks as unknown as Json;
             } else {
-                dbRecord.subtasks = JSON.stringify(taskUpdates.subtasks) as unknown as Json;
+          dbRecord.subtasks = JSON.stringify(
+            taskUpdates.subtasks
+          ) as unknown as Json;
             }
         } catch (error) {
             dbRecord.subtasks = JSON.stringify([]) as unknown as Json;
         }
     }
-    if (taskUpdates.aiSubtaskGenerationCount !== undefined) dbRecord.ai_subtask_generation_count = taskUpdates.aiSubtaskGenerationCount;
+    if (taskUpdates.aiSubtaskGenerationCount !== undefined)
+      dbRecord.ai_subtask_generation_count =
+        taskUpdates.aiSubtaskGenerationCount;
     return dbRecord;
   };
 
@@ -280,33 +386,54 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    * @param {Partial<Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId'>>} updates - An object containing the properties to update.
    * @throws {Error} If the task is not found or if a database error occurs.
    */
-  const updateTask = async (id: string, updates: Partial<Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId'>>) => {
-    const taskIndex = tasks.findIndex(t => t.id === id);
+  const updateTask = async (
+    id: string,
+    updates: Partial<Omit<Task, "id" | "createdAt" | "updatedAt" | "userId">>
+  ) => {
+    const taskIndex = tasks.findIndex((t) => t.id === id);
     if (taskIndex === -1) {
-      toast({ variant: "destructive", title: t('common.error'), description: t('taskContext.toast.taskNotFound', { taskId: id }) });
-      throw new Error(t('taskContext.toast.taskNotFound', { taskId: id }));
+      toast({
+        variant: "destructive",
+        title: t("common.error"),
+        description: t("taskContext.toast.taskNotFound", { taskId: id }),
+      });
+      throw new Error(t("taskContext.toast.taskNotFound", { taskId: id }));
     }
     const originalTask = tasks[taskIndex];
     const now = new Date().toISOString();
-    const updatedTaskForUI: Task = { ...originalTask, ...updates, updatedAt: now };
+    const updatedTaskForUI: Task = {
+      ...originalTask,
+      ...updates,
+      updatedAt: now,
+    };
 
-    setTasks(prevTasks => prevTasks.map(t => t.id === id ? updatedTaskForUI : t));
+    setTasks((prevTasks) =>
+      prevTasks.map((t) => (t.id === id ? updatedTaskForUI : t))
+    );
 
     try {
       const dbUpdates = mapTaskToDbUpdate(updates);
       
       const { error } = await supabase
-        .from('tasks')
+        .from("tasks")
         .update(dbUpdates)
-        .eq('id', id)
-        .select('*');
+        .eq("id", id)
+        .select("*");
 
       if (error) {
-        toast({ variant: "destructive", title: t('common.error'), description: t('taskContext.toast.updateTaskFailedSimple') });
+        toast({
+          variant: "destructive",
+          title: t("common.error"),
+          description: t("taskContext.toast.updateTaskFailedSimple"),
+        });
         throw error;
       }
     } catch (exception) {
-      toast({ variant: "destructive", title: t('common.error'), description: t('taskContext.toast.updateTaskFailedGeneral') });
+      toast({
+        variant: "destructive",
+        title: t("common.error"),
+        description: t("taskContext.toast.updateTaskFailedGeneral"),
+      });
       throw exception;
     }
   };
@@ -318,10 +445,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    * @throws {Error} If a database error occurs.
    */
   const deleteTask = async (id: string) => {
-    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    const { error } = await supabase.from("tasks").delete().eq("id", id);
     if (error) throw error;
     
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
+    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
   };
   
   /**
@@ -331,7 +458,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    * @param {string} [subtaskDescription] - Optional description for the new subtask.
    * @throws {Error} If the parent task is not found or if a database error occurs.
    */
-  const addSubtask = async (taskId: string, subtaskTitle: string, subtaskDescription?: string) => {
+  const addSubtask = async (
+    taskId: string,
+    subtaskTitle: string,
+    subtaskDescription?: string
+  ) => {
     const task = getTaskById(taskId);
     if (!task) throw new Error(`Task with id ${taskId} not found.`);
     
@@ -339,7 +470,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       id: uuidv4(),
       taskId,
       title: subtaskTitle,
-      description: subtaskDescription || '',
+      description: subtaskDescription || "",
       completed: false,
       createdAt: new Date().toISOString(),
     };
@@ -355,46 +486,64 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    * @param {Partial<Omit<SubTask, 'id' | 'taskId' | 'createdAt'>>} updates - An object containing the properties to update on the subtask.
    * @throws {Error} If the parent task or subtask is not found, or if a database error occurs.
    */
-  const updateSubtask = async (taskId: string, subtaskId: string, updates: Partial<Omit<SubTask, 'id' | 'taskId' | 'createdAt'>>) => {
+  const updateSubtask = async (
+    taskId: string,
+    subtaskId: string,
+    updates: Partial<Omit<SubTask, "id" | "taskId" | "createdAt">>
+  ) => {
     const task = getTaskById(taskId);
     if (!task) throw new Error(`Task with id ${taskId} not found.`);
     
-    const updatedSubtasks = task.subtasks.map(st => 
-      st.id === subtaskId ? { ...st, ...updates, updatedAt: new Date().toISOString() } : st
+    const updatedSubtasks = task.subtasks.map((st) =>
+      st.id === subtaskId
+        ? { ...st, ...updates, updatedAt: new Date().toISOString() }
+        : st
     );
     
     await updateTask(taskId, { subtasks: updatedSubtasks });
 
     // Check if all subtasks are completed
     if (updatedSubtasks.length > 0) {
-      const allSubtasksCompleted = updatedSubtasks.every(subtask => subtask.completed);
+      const allSubtasksCompleted = updatedSubtasks.every(
+        (subtask) => subtask.completed
+      );
       
       // If all subtasks are completed and the task itself is not yet completed
-      if (allSubtasksCompleted && task.status !== 'done') {
+      if (allSubtasksCompleted && task.status !== "done") {
         // Mark the task as completed and set priority to 'none'
         await updateTask(taskId, {
-          status: 'done',
-          priority: 'none'
+          status: "done",
+          priority: "none",
         });
 
         // Show a confirmation message
         toast({
-          title: t('taskContext.toast.autoCompleted.title'),
-          description: t('taskContext.toast.autoCompleted.description')
+          title: t("taskContext.toast.autoCompleted.title"),
+          description: t("taskContext.toast.autoCompleted.description"),
         });
       } 
       // If NOT all subtasks are completed and the task was automatically completed (i.e., status=done and priority=none)
-      else if (!allSubtasksCompleted && task.status === 'done' && task.priority === 'none') {
+      else if (
+        !allSubtasksCompleted &&
+        task.status === "done" &&
+        task.priority === "none"
+      ) {
         // Restore the task to 'in_progress' status with 'medium' priority
         await updateTask(taskId, {
-          status: 'in_progress',
-          priority: 'medium'
+          status: "in_progress",
+          priority: "medium",
         });
 
         // Show a confirmation message
         toast({
-          title: t('taskContext.toast.priorityRestored.title', 'Taak opnieuw actief'),
-          description: t('taskContext.toast.priorityRestored.description', 'De taak is opnieuw actief gemaakt omdat niet alle subtaken voltooid zijn')
+          title: t(
+            "taskContext.toast.priorityRestored.title",
+            "Taak opnieuw actief"
+          ),
+          description: t(
+            "taskContext.toast.priorityRestored.description",
+            "De taak is opnieuw actief gemaakt omdat niet alle subtaken voltooid zijn"
+          ),
         });
       }
     }
@@ -410,7 +559,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const task = getTaskById(taskId);
     if (!task) throw new Error(`Task with id ${taskId} not found.`);
     
-    const updatedSubtasks = task.subtasks.filter(st => st.id !== subtaskId);
+    const updatedSubtasks = task.subtasks.filter((st) => st.id !== subtaskId);
     await updateTask(taskId, { subtasks: updatedSubtasks });
   };
   
@@ -429,7 +578,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    * @param {boolean} completed - The new completion status (true for completed, false for incomplete).
    */
   const toggleTaskCompletion = async (taskId: string, completed: boolean) => {
-    await updateTask(taskId, { status: completed ? 'done' : 'todo' });
+    await updateTask(taskId, { status: completed ? "done" : "todo" });
   };
   
   /**
@@ -443,7 +592,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     if (!user) {
       toast({ 
         variant: "destructive", 
-        title: t('taskContext.toast.notAuthenticated')
+        title: t("taskContext.toast.notAuthenticated"),
       });
       return;
     }
@@ -461,11 +610,19 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     if (currentGenerationCount >= maxGenerations) {
       toast({ 
         variant: "destructive", 
-        title: t('taskContext.toast.aiLimitReached.title'),
-        description: t('taskContext.toast.aiLimitReached.description', { 
-          maxGenerations: maxGenerations === Number.MAX_SAFE_INTEGER ? t('common.unlimited') : maxGenerations, // Show 'unlimited' for admins
-          userType: user.role === 'admin' ? t('profile.role.administrator') : (user.role === 'free' ? t('profile.role.freeUser') : t('profile.role.premiumUser'))
-        })
+        title: t("taskContext.toast.aiLimitReached.title"),
+        description: t("taskContext.toast.aiLimitReached.description", {
+          maxGenerations:
+            maxGenerations === Number.MAX_SAFE_INTEGER
+              ? t("common.unlimited")
+              : maxGenerations, // Show 'unlimited' for admins
+          userType:
+            user.role === "admin"
+              ? t("profile.role.administrator")
+              : user.role === "free"
+              ? t("profile.role.freeUser")
+              : t("profile.role.premiumUser"),
+        }),
       });
       return;
     }
@@ -474,8 +631,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     if (isGeneratingSubtasksForTask(taskId)) {
       toast({ 
         variant: "default", 
-        title: t('taskContext.toast.alreadyGenerating.title'),
-        description: t('taskContext.toast.alreadyGenerating.description')
+        title: t("taskContext.toast.alreadyGenerating.title"),
+        description: t("taskContext.toast.alreadyGenerating.description"),
       });
       return;
     }
@@ -483,11 +640,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setIsGeneratingAISubtasks(taskId);
     
     // Check for existing subtask titles (to prevent duplicates)
-    const existingSubtaskTitles = task.subtasks.map(st => st.title.toLowerCase());
+    const existingSubtaskTitles = task.subtasks.map((st) =>
+      st.title.toLowerCase()
+    );
     
     try {
       // Get the current language preference
-      const languagePreferenceValue = user.language_preference || 'en';
+      const languagePreferenceValue = user.language_preference || "en";
       
       const requestBody = {
         taskTitle: task.title,
@@ -498,15 +657,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       };
       
       const { data, error: functionError } = await supabase.functions.invoke(
-        'generate-subtasks', 
+        "generate-subtasks",
         { body: requestBody }
       );
       
       if (functionError) {
         toast({ 
           variant: "destructive", 
-          title: t('taskContext.toast.aiGenerationFailed.title'),
-          description: t('taskContext.toast.aiGenerationFailed.description')
+          title: t("taskContext.toast.aiGenerationFailed.title"),
+          description: t("taskContext.toast.aiGenerationFailed.description"),
         });
         clearIsGeneratingAISubtasks(taskId);
         return;
@@ -514,17 +673,16 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       
       // Process the result
       if (data?.subtasks && Array.isArray(data.subtasks)) {
-        const newSubtasks: SubTask[] = data.subtasks.map((item: { 
-          title: string; 
-          description: string 
-        }) => ({
+        const newSubtasks: SubTask[] = data.subtasks.map(
+          (item: { title: string; description: string }) => ({
           id: uuidv4(),
           taskId,
           title: item.title,
           description: item.description,
           completed: false,
           createdAt: new Date().toISOString(),
-        }));
+          })
+        );
         
         // Add the new subtasks to the existing ones
         const updatedSubtasks = [...task.subtasks, ...newSubtasks];
@@ -544,31 +702,85 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         // Update the task with the new subtasks and increment the counter
         await updateTask(taskId, { 
           subtasks: uniqueSubtasks,
-          aiSubtaskGenerationCount: (task.aiSubtaskGenerationCount || 0) + 1
+          aiSubtaskGenerationCount: (task.aiSubtaskGenerationCount || 0) + 1,
         });
         
         // Show a success message
         toast({ 
-          title: t('taskContext.toast.aiGenerationSuccess.title'),
-          description: t('taskContext.toast.aiGenerationSuccess.description', { 
-            count: newSubtasks.length
-          })
+          title: t("taskContext.toast.aiGenerationSuccess.title"),
+          description: t("taskContext.toast.aiGenerationSuccess.description", {
+            count: newSubtasks.length,
+          }),
         });
       } else {
         toast({ 
           variant: "destructive", 
-          title: t('taskContext.toast.aiGenerationFailed.title'),
-          description: t('taskContext.toast.aiGenerationFailed.invalidResponse')
+          title: t("taskContext.toast.aiGenerationFailed.title"),
+          description: t(
+            "taskContext.toast.aiGenerationFailed.invalidResponse"
+          ),
         });
       }
     } catch (error) {
       toast({ 
         variant: "destructive", 
-        title: t('taskContext.toast.aiGenerationFailed.title'),
-        description: t('taskContext.toast.aiGenerationFailed.description')
+        title: t("taskContext.toast.aiGenerationFailed.title"),
+        description: t("taskContext.toast.aiGenerationFailed.description"),
       });
     } finally {
       clearIsGeneratingAISubtasks(taskId);
+    }
+  };
+
+  /**
+   * Promotes a subtask to a new main task.
+   * @param {string} parentTaskId - The ID of the parent task from which the subtask originates.
+   * @param {string} subtaskId - The ID of the subtask to promote.
+   * @returns {Promise<Task | undefined>} A promise that resolves with the newly created main task, or undefined on failure.
+   * @throws {Error} If subtask cannot be found or task creation fails.
+   */
+  const promoteSubtaskToTask = async (
+    parentTaskId: string,
+    subtaskId: string
+  ): Promise<Task | undefined> => {
+    const task = getTaskById(parentTaskId);
+    if (!task) {
+      throw new Error("Parent task not found");
+    }
+
+    const subtask = task.subtasks.find((s) => s.id === subtaskId);
+    if (!subtask) {
+      throw new Error("Subtask not found");
+    }
+
+    // Create a new main task based on the subtask
+    try {
+      // Maintain the priority, category, etc. of the main task
+      // If there is no description, use the title as the description
+      const subtaskDescription =
+        subtask.description && subtask.description.trim() !== ""
+          ? subtask.description
+          : subtask.title;
+
+      const newTask = await addTask({
+        title: subtask.title,
+        description: subtaskDescription,
+        priority: task.priority,
+        status: subtask.completed ? "done" : "todo",
+        category: task.category,
+        deadline: task.deadline,
+        emoji: task.emoji,
+      });
+
+      if (newTask) {
+        // Remove the subtask from the original task
+        await deleteSubtask(parentTaskId, subtaskId);
+        return newTask;
+      }
+      return undefined;
+    } catch (error) {
+      console.error("Error promoting subtask to task:", error);
+      throw error;
     }
   };
 
@@ -590,9 +802,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       favorites: [],
     };
     
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       // First, check if task is completed and add to 'completed' category
-      if (task.status === 'done') {
+      if (task.status === "done") {
         grouped.completed.push(task);
         return;
       }
@@ -641,24 +853,24 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    * @param {string} id - The ID of the task to mark as viewed.
    */
   const markTaskAsViewed = (id: string) => {
-    const taskIndex = tasks.findIndex(t => t.id === id);
+    const taskIndex = tasks.findIndex((t) => t.id === id);
     if (taskIndex === -1) {
       return Promise.resolve(); // Task not found, return empty Promise
     }
     
     // Update local state immediately for responsiveness
-    setTasks(prevTasks => prevTasks.map(t => 
-      t.id === id ? { ...t, isNew: false } : t
-    ));
+    setTasks((prevTasks) =>
+      prevTasks.map((t) => (t.id === id ? { ...t, isNew: false } : t))
+    );
     
     try {
       // Store in localStorage as a temporary solution until backend `last_viewed_at` is consistently updated/used
-      const viewedTaskIds = localStorage.getItem('viewedTaskIds');
+      const viewedTaskIds = localStorage.getItem("viewedTaskIds");
       const viewedTasks = viewedTaskIds ? JSON.parse(viewedTaskIds) : [];
       
       if (!viewedTasks.includes(id)) {
         viewedTasks.push(id);
-        localStorage.setItem('viewedTaskIds', JSON.stringify(viewedTasks));
+        localStorage.setItem("viewedTaskIds", JSON.stringify(viewedTasks));
       }
     } catch (e) {
       // Error with localStorage, ignore. This is a non-critical enhancement.
@@ -677,11 +889,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    * @returns {number} The maximum number of AI generations.
    */
   const getMaxAiGenerationsForUser = (): number => {
-    if (user?.role === 'admin') {
+    if (user?.role === "admin") {
       return Number.MAX_SAFE_INTEGER; // Effectively infinite for admins
     }
-    const isPaidUser = user?.role === 'paid';
-    return isPaidUser ? MAX_PAID_USER_AI_SUBTASK_GENERATIONS : MAX_FREE_USER_AI_SUBTASK_GENERATIONS;
+    const isPaidUser = user?.role === "paid";
+    return isPaidUser
+      ? aiGenerationLimits.paid_user_limit
+      : aiGenerationLimits.free_user_limit;
   };
 
   /**
@@ -701,7 +915,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    * @param {string} researchText - The text content of the research output.
    */
   const setLastResearchOutput = (taskId: string, researchText: string) => {
-    setLastResearchOutputs(prev => ({ ...prev, [taskId]: researchText }));
+    setLastResearchOutputs((prev) => ({ ...prev, [taskId]: researchText }));
   };
 
   /**
@@ -723,8 +937,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     if (!task) {
       toast({
         variant: "destructive",
-        title: t('common.error'),
-        description: t('taskContext.toast.taskNotFound', { taskId }),
+        title: t("common.error"),
+        description: t("taskContext.toast.taskNotFound", { taskId }),
       });
       return;
     }
@@ -756,7 +970,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     toggleFavorite,
     setLastResearchOutput,
     getLastResearchOutput,
+    promoteSubtaskToTask,
   };
 
-  return <TaskContext.Provider value={contextValue}>{children}</TaskContext.Provider>;
+  return (
+    <TaskContext.Provider value={contextValue}>{children}</TaskContext.Provider>
+  );
 }

@@ -17,13 +17,13 @@ De zoekresultaten verwijzen voornamelijk naar `assets/chats/cursor_stijling_toep
 
 Uit de codefragmenten kan ik opmaken dat de placeholder onder de volgende condities wordt getoond:
 
-1.  **Categorie 'Vandaag' (`today`)**: De placeholder lijkt specifiek gekoppeld te zijn aan de "Vandaag" categorie.
-2.  **Specifieke layout condities**:
-    *   Op **mobiel** (`add-new-task-placeholder-mobile`):
-        *   Als de categorie `today` is ÉN het de eerste rij (`rowIndex === 0`) is ÉN (er geen taken zijn in de categorie `tasksInCategory.length === 0` OF het aantal taken niet een veelvoud is van `cardsPerRow`).
-        *   In een andere mobiele conditie: als de categorie `today` is ÉN `rowIndex === 0` ÉN (er geen taken zijn OF het aantal taken niet een veelvoud is van `cardsPerRow` OF (het is de enige rij `numberOfRows === 1` EN het totaal aantal kaarten `totalCards` kleiner is dan `cardsPerRow`)).
-    *   Op **desktop** (`add-new-task-placeholder`):
-        *   Als de categorie `today` is ÉN (er geen taken zijn in de categorie `tasksInCategory.length === 0` OF het aantal taken niet een veelvoud is van `DESKTOP_COLUMNS`).
+1. **Categorie 'Vandaag' (`today`)**: De placeholder lijkt specifiek gekoppeld te zijn aan de "Vandaag" categorie.
+2. **Specifieke layout condities**:
+    * Op **mobiel** (`add-new-task-placeholder-mobile`):
+        * Als de categorie `today` is ÉN het de eerste rij (`rowIndex === 0`) is ÉN (er geen taken zijn in de categorie `tasksInCategory.length === 0` OF het aantal taken niet een veelvoud is van `cardsPerRow`).
+        * In een andere mobiele conditie: als de categorie `today` is ÉN `rowIndex === 0` ÉN (er geen taken zijn OF het aantal taken niet een veelvoud is van `cardsPerRow` OF (het is de enige rij `numberOfRows === 1` EN het totaal aantal kaarten `totalCards` kleiner is dan `cardsPerRow`)).
+    * Op **desktop** (`add-new-task-placeholder`):
+        * Als de categorie `today` is ÉN (er geen taken zijn in de categorie `tasksInCategory.length === 0` OF het aantal taken niet een veelvoud is van `DESKTOP_COLUMNS`).
 
 De placeholder is een `Card` component die, wanneer erop geklikt wordt, een `Dialog` opent voor het toevoegen van een nieuwe taak. De tekst van de placeholder is `t('dashboard.addNewTaskPlaceholder')`, wat vertaald wordt naar "Nieuwe taak toevoegen" (zoals te zien in `public/locales/nl/translation.json`).
 
@@ -318,36 +318,36 @@ Ik heb nu meer context van `src/pages/Dashboard.tsx`, inclusief de `generateSect
 
 De "Verlopen" sectie, waar de "Kleding leveren" kaart zich bevindt (gebaseerd op de screenshot), wordt gerenderd met de volgende layout-logica:
 
-*   **Mobiel (sm screens) en Tablet (md screens, verborgen voor lg):**
-    *   `className="sm:grid md:grid-cols-2 lg:hidden gap-3 md:gap-4 hidden"`
-    *   Dit is een grid met 2 kolommen op `md` schermen.
-    *   Elke `TaskCard` zit in een `motion.div` met `className="mb-2"`.
-    *   **Belangrijk:** De "Nieuwe taak toevoegen" placeholder wordt hier **alleen** getoond als `category === 'today'` (regel 364). Aangezien "Kleding leveren" onder "Verlopen" valt, zal de placeholder hier niet direct een rol spelen voor die specifieke kaart.
+* **Mobiel (sm screens) en Tablet (md screens, verborgen voor lg):**
+  * `className="sm:grid md:grid-cols-2 lg:hidden gap-3 md:gap-4 hidden"`
+  * Dit is een grid met 2 kolommen op `md` schermen.
+  * Elke `TaskCard` zit in een `motion.div` met `className="mb-2"`.
+  * **Belangrijk:** De "Nieuwe taak toevoegen" placeholder wordt hier **alleen** getoond als `category === 'today'` (regel 364). Aangezien "Kleding leveren" onder "Verlopen" valt, zal de placeholder hier niet direct een rol spelen voor die specifieke kaart.
 
-*   **Desktop (lg screens):**
-    *   Er is een complexere logica voor paginering als er meer dan 4 taken zijn (`totalTasks < 5` check op regel 404).
-    *   **Als minder dan 5 taken:**
-        *   `className="grid grid-cols-4 gap-4"` (regel 408).
-        *   De "Nieuwe taak toevoegen" placeholder wordt getoond als `category === 'today'` (regel 424).
-    *   **Als 5 of meer taken:**
-        *   Een gepagineerde weergave met `className="grid grid-cols-4 gap-4 mb-2 grid-rows-[repeat(3,minmax(0,1fr))]"` (regel 448).
-        *   De "Nieuwe taak toevoegen" placeholder wordt getoond als `activePage === 0 && category === 'today'` (regel 467).
+* **Desktop (lg screens):**
+  * Er is een complexere logica voor paginering als er meer dan 4 taken zijn (`totalTasks < 5` check op regel 404).
+  * **Als minder dan 5 taken:**
+    * `className="grid grid-cols-4 gap-4"` (regel 408).
+    * De "Nieuwe taak toevoegen" placeholder wordt getoond als `category === 'today'` (regel 424).
+  * **Als 5 of meer taken:**
+    * Een gepagineerde weergave met `className="grid grid-cols-4 gap-4 mb-2 grid-rows-[repeat(3,minmax(0,1fr))]"` (regel 448).
+    * De "Nieuwe taak toevoegen" placeholder wordt getoond als `activePage === 0 && category === 'today'` (regel 467).
 
 **Mogelijke oorzaken voor de lege ruimte onder "Kleding leveren":**
 
-1.  **Grid Layout & Onvolledige Rijen:**
-    *   Op `md` schermen worden 2 kolommen gebruikt. Als er een oneven aantal taken is in de "Verlopen" sectie (zoals 5 in de screenshot: 4 + "Kleding leveren"), dan zal de laatste rij maar één kaart bevatten, waardoor er naast de "Kleding leveren" kaart een lege plek is, en eronder dus ook 'lege ruimte' lijkt te zijn als de kaart niet de volledige hoogte van een rij vult.
-    *   De screenshot toont 5 "Verlopen" taken. Bij 2 kolommen betekent dit:
-        *   Rij 1: Kaart 1, Kaart 2
-        *   Rij 2: Kaart 3, Kaart 4
-        *   Rij 3: "Kleding leveren", **LEGE RUIMTE**
-    *   De "Kleding leveren" kaart is de 5e kaart in de "Verlopen" sectie. Dit past perfect bij de theorie van een 2-koloms grid waarbij de laatste rij niet volledig gevuld is.
+1. **Grid Layout & Onvolledige Rijen:**
+    * Op `md` schermen worden 2 kolommen gebruikt. Als er een oneven aantal taken is in de "Verlopen" sectie (zoals 5 in de screenshot: 4 + "Kleding leveren"), dan zal de laatste rij maar één kaart bevatten, waardoor er naast de "Kleding leveren" kaart een lege plek is, en eronder dus ook 'lege ruimte' lijkt te zijn als de kaart niet de volledige hoogte van een rij vult.
+    * De screenshot toont 5 "Verlopen" taken. Bij 2 kolommen betekent dit:
+        * Rij 1: Kaart 1, Kaart 2
+        * Rij 2: Kaart 3, Kaart 4
+        * Rij 3: "Kleding leveren", **LEGE RUIMTE**
+    * De "Kleding leveren" kaart is de 5e kaart in de "Verlopen" sectie. Dit past perfect bij de theorie van een 2-koloms grid waarbij de laatste rij niet volledig gevuld is.
 
-2.  **Hoogte van de Kaarten:**
-    *   Als de kaarten geen vaste hoogte hebben, en "Kleding leveren" is korter dan andere kaarten in dezelfde (visuele) rij of vorige rijen, kan dit bijdragen aan het gevoel van lege ruimte eronder, vooral in een grid. Echter, de `TaskCard` componenten hebben meestal een consistente structuur.
+2. **Hoogte van de Kaarten:**
+    * Als de kaarten geen vaste hoogte hebben, en "Kleding leveren" is korter dan andere kaarten in dezelfde (visuele) rij of vorige rijen, kan dit bijdragen aan het gevoel van lege ruimte eronder, vooral in een grid. Echter, de `TaskCard` componenten hebben meestal een consistente structuur.
 
-3.  **Placeholder Logica (Minder waarschijnlijk voor "Verlopen"):**
-    *   Hoewel de placeholder specifiek voor de `today` categorie is, is het goed om te bevestigen dat er geen onbedoelde interactie is. De code laat echter duidelijk zien dat de placeholder-conditie strikt is voor `category === 'today'`.
+3. **Placeholder Logica (Minder waarschijnlijk voor "Verlopen"):**
+    * Hoewel de placeholder specifiek voor de `today` categorie is, is het goed om te bevestigen dat er geen onbedoelde interactie is. De code laat echter duidelijk zien dat de placeholder-conditie strikt is voor `category === 'today'`.
 
 **Conclusie op basis van de code en screenshot:**
 
@@ -734,9 +734,9 @@ Oké, ik begrijp dat de placeholder voor "Nieuwe taak toevoegen" ook getoond moe
 
 Momenteel wordt de "Vandaag" sectie (en dus ook de placeholder daarin) mogelijk niet getoond als er nul taken zijn. Ik ga de volgende aanpassingen doen in `src/pages/Dashboard.tsx`:
 
-1.  Ik zorg ervoor dat de `generateSection` functie de "Vandaag" sectie altijd rendert, zelfs als er geen taken in zijn. Dit stelt ons in staat om de placeholder te tonen.
-2.  Voor de tabletweergave (medium schermen met 2 kolommen), corrigeer ik de logica zodat de placeholder correct wordt getoond als de rij niet vol is (modulo 2 i.p.v. modulo 4).
-3.  Voor de desktopweergave met minder dan 5 taken (4 kolommen), pas ik de conditie aan zodat de placeholder getoond wordt als er geen taken zijn óf als de rij niet vol is.
+1. Ik zorg ervoor dat de `generateSection` functie de "Vandaag" sectie altijd rendert, zelfs als er geen taken in zijn. Dit stelt ons in staat om de placeholder te tonen.
+2. Voor de tabletweergave (medium schermen met 2 kolommen), corrigeer ik de logica zodat de placeholder correct wordt getoond als de rij niet vol is (modulo 2 i.p.v. modulo 4).
+3. Voor de desktopweergave met minder dan 5 taken (4 kolommen), pas ik de conditie aan zodat de placeholder getoond wordt als er geen taken zijn óf als de rij niet vol is.
 
 Hier is de voorgestelde aanpassing:
 
@@ -808,10 +808,10 @@ Hier is de voorgestelde aanpassing:
 De wijzigingen zijn doorgevoerd in `src/pages/Dashboard.tsx`.
 
 Kort samengevat:
-1.  De "Vandaag" sectie wordt nu altijd getoond, ook als er geen taken zijn, zodat de placeholder kan verschijnen.
-2.  De placeholder-logica voor tablet (2 kolommen) is gecorrigeerd om `tasksInCategory.length % 2 !== 0` te gebruiken.
-3.  De placeholder-logica voor desktop met minder dan 5 taken (4 kolommen) is aangepast om te tonen als er 0 taken zijn of als de laatste rij niet vol is (`tasksInCategory.length === 0 || tasksInCategory.length % 4 !== 0`).
-4.  De placeholder-logica voor de gepagineerde desktop weergave en de mobiele weergave was al zodanig dat deze getoond wordt als de "Vandaag" sectie leeg is (of in het geval van mobiel, altijd voor "Vandaag").
+1. De "Vandaag" sectie wordt nu altijd getoond, ook als er geen taken zijn, zodat de placeholder kan verschijnen.
+2. De placeholder-logica voor tablet (2 kolommen) is gecorrigeerd om `tasksInCategory.length % 2 !== 0` te gebruiken.
+3. De placeholder-logica voor desktop met minder dan 5 taken (4 kolommen) is aangepast om te tonen als er 0 taken zijn of als de laatste rij niet vol is (`tasksInCategory.length === 0 || tasksInCategory.length % 4 !== 0`).
+4. De placeholder-logica voor de gepagineerde desktop weergave en de mobiele weergave was al zodanig dat deze getoond wordt als de "Vandaag" sectie leeg is (of in het geval van mobiel, altijd voor "Vandaag").
 
 Dit zou ervoor moeten zorgen dat de placeholder correct wordt weergegeven, inclusief de situatie waarin er geen taken voor "Vandaag" zijn.
 
@@ -829,9 +829,9 @@ Oké, ik begrijp het. De placeholder-kaart voor "Nieuwe taak toevoegen" heeft ni
 
 Om dit te corrigeren, ga ik de volgende stappen ondernemen:
 
-1.  Ik zal de `TaskCard.tsx` component bekijken om te zien of daar een specifieke (minimale) hoogte is gedefinieerd of hoe de hoogte wordt bepaald.
-2.  Vervolgens vergelijk ik de structuur en styling van de `TaskCard` met de placeholder-kaart in `Dashboard.tsx`.
-3.  Ik pas de styling van de placeholder-kaart in `Dashboard.tsx` aan zodat deze een vergelijkbare hoogte en verticale uitlijning van de content krijgt als een `TaskCard`. Het doel is dat, ook al is de content anders, de "frame" van de kaart overeenkomt.
+1. Ik zal de `TaskCard.tsx` component bekijken om te zien of daar een specifieke (minimale) hoogte is gedefinieerd of hoe de hoogte wordt bepaald.
+2. Vervolgens vergelijk ik de structuur en styling van de `TaskCard` met de placeholder-kaart in `Dashboard.tsx`.
+3. Ik pas de styling van de placeholder-kaart in `Dashboard.tsx` aan zodat deze een vergelijkbare hoogte en verticale uitlijning van de content krijgt als een `TaskCard`. Het doel is dat, ook al is de content anders, de "frame" van de kaart overeenkomt.
 
 Laten we eerst `TaskCard.tsx` bekijken.
 
@@ -897,8 +897,8 @@ De `TaskCard` heeft `h-full` *binnen* zijn `Link` wrapper. De `motion.div` in `D
 
 **Voorgestelde aanpassing:**
 
-1.  Zorg ervoor dat de `motion.div` die de placeholder `Card` omhult (in `Dashboard.tsx`) ook `h-full` krijgt, zodat deze probeert de hoogte van de grid-rij te vullen.
-2.  De placeholder `Card` zelf heeft al `h-full`, wat goed is.
+1. Zorg ervoor dat de `motion.div` die de placeholder `Card` omhult (in `Dashboard.tsx`) ook `h-full` krijgt, zodat deze probeert de hoogte van de grid-rij te vullen.
+2. De placeholder `Card` zelf heeft al `h-full`, wat goed is.
 
 Ik zal de `className` van de `motion.div` voor de placeholders aanpassen in `Dashboard.tsx`.
 
@@ -1007,9 +1007,9 @@ Ik heb `h-full` toegevoegd aan de `motion.div` wrappers voor de placeholder-kaar
 
 Een paar opmerkingen bij de aanpassing:
 
-*   Voor de "desktop < 5 taken" placeholder (rond regel 418-430), was de structuur iets anders. De `Dialog` was de directe child van de `motion.div` (grid cell). Ik heb ervoor gezorgd dat de `Card` binnen de `DialogTrigger` de `h-full` class heeft. Idealiter zou de `motion.div` die de grid cell vormt, `h-full` moeten hebben, en de `DialogTrigger` + `Card` moeten zich daarbinnen strekken. De diff laat zien dat de `Card` al `h-full` had, dus dit zou moeten werken als de parent `motion.div` zich correct gedraagt in de grid.
-*   Voor de gepagineerde desktop weergave (rond regel 466) heb ik expliciet een `motion.div className="h-full"` *om* de `Dialog` heen gezet om ervoor te zorgen dat dit grid item de hoogte vult.
-*   Voor de mobiele weergave (rond regel 596) is `h-full` toegevoegd aan de `motion.div`.
+* Voor de "desktop < 5 taken" placeholder (rond regel 418-430), was de structuur iets anders. De `Dialog` was de directe child van de `motion.div` (grid cell). Ik heb ervoor gezorgd dat de `Card` binnen de `DialogTrigger` de `h-full` class heeft. Idealiter zou de `motion.div` die de grid cell vormt, `h-full` moeten hebben, en de `DialogTrigger` + `Card` moeten zich daarbinnen strekken. De diff laat zien dat de `Card` al `h-full` had, dus dit zou moeten werken als de parent `motion.div` zich correct gedraagt in de grid.
+* Voor de gepagineerde desktop weergave (rond regel 466) heb ik expliciet een `motion.div className="h-full"` *om* de `Dialog` heen gezet om ervoor te zorgen dat dit grid item de hoogte vult.
+* Voor de mobiele weergave (rond regel 596) is `h-full` toegevoegd aan de `motion.div`.
 
 Dit zou ertoe moeten leiden dat de grid-cellen voor de placeholders dezelfde hoogte aannemen als de cellen met `TaskCard`s, en de `Card` binnen de placeholder (die al `h-full` heeft) zal zich dan correct strekken, waardoor het "ingedrukte" effect verdwijnt.
 
@@ -1091,9 +1091,9 @@ if (totalTasks < 5) {
 Oké, het spijt me te horen dat de vorige aanpassing geen verschil maakte. Het lijkt erop dat de grid-layout zich niet gedraagt zoals verwacht met alleen `h-full`.
 
 Ik ga een iets andere aanpak proberen:
-1.  Ik zorg ervoor dat de `motion.div` die een `TaskCard` omhult in de grid layouts (tablet en desktop) de class `h-full` krijgt. Dit was in de vorige poging mogelijk niet consistent voor de `TaskCard` zelf.
-2.  Voor de `motion.div` die de placeholder-kaart omhult, behoud ik `h-full`.
-3.  Cruciaal: ik voeg een `min-h-[170px]` toe aan de `Card` component van de *placeholder* zelf. Dit zorgt ervoor dat de placeholder-kaart een minimale hoogte heeft die meer in lijn is met de verwachte hoogte van een `TaskCard`, ongeacht hoe de grid de cellen stretcht. De `TaskCard` heeft door zijn content (titel, beschrijving, progressbar etc.) al een natuurlijke hoogte.
+1. Ik zorg ervoor dat de `motion.div` die een `TaskCard` omhult in de grid layouts (tablet en desktop) de class `h-full` krijgt. Dit was in de vorige poging mogelijk niet consistent voor de `TaskCard` zelf.
+2. Voor de `motion.div` die de placeholder-kaart omhult, behoud ik `h-full`.
+3. Cruciaal: ik voeg een `min-h-[170px]` toe aan de `Card` component van de *placeholder* zelf. Dit zorgt ervoor dat de placeholder-kaart een minimale hoogte heeft die meer in lijn is met de verwachte hoogte van een `TaskCard`, ongeacht hoe de grid de cellen stretcht. De `TaskCard` heeft door zijn content (titel, beschrijving, progressbar etc.) al een natuurlijke hoogte.
 
 Laten we deze wijzigingen toepassen in `src/pages/Dashboard.tsx`:
 
@@ -1191,9 +1191,9 @@ Specifiek in dit codeblok (rond regel 448 in het bestand):
 De klasse `grid-rows-[repeat(3,minmax(0,1fr))]` instrueert de browser om een grid te maken dat altijd streeft naar **3 rijen**. Elke pagina in deze weergave is ontworpen om maximaal 12 taken te tonen (3 rijen x 4 kolommen).
 
 Wanneer je 5 taken hebt:
-*   De eerste 4 taken vullen de eerste rij.
-*   De 5e taak komt op de tweede rij.
-*   Omdat de `grid-rows-[repeat(3,minmax(0,1fr))]` klasse 3 rijen afdwingt, wordt de ruimte voor de derde rij ook gereserveerd, ook al is deze leeg.
+* De eerste 4 taken vullen de eerste rij.
+* De 5e taak komt op de tweede rij.
+* Omdat de `grid-rows-[repeat(3,minmax(0,1fr))]` klasse 3 rijen afdwingt, wordt de ruimte voor de derde rij ook gereserveerd, ook al is deze leeg.
 
 Dit is gedaan om een consistente layout te behouden over de verschillende pagina's heen wanneer je door taken bladert. Als elke pagina een variabel aantal rijen zou hebben, zou de hoogte van de sectie kunnen verspringen tijdens het navigeren, wat visueel storend kan zijn.
 
@@ -1259,13 +1259,13 @@ wat is een logische volgorde, ik heb nu verlopen, vandaag, morgen, overmorgen en
 
 De volgorde die je nu hebt en die ook in de code geïmplementeerd is, is inderdaad erg logisch en gebruikelijk voor taakbeheer:
 
-1.  **Verlopen (`overdue`)**: Deze taken staan bovenaan omdat ze de hoogste urgentie hebben; ze hadden al voltooid moeten zijn.
-2.  **Vandaag (`today`)**: Wat direct je aandacht nodig heeft.
-3.  **Morgen (`tomorrow`)**: Planning voor de zeer nabije toekomst.
-4.  **Overmorgen (`dayAfterTomorrow`)**: Kijkt net iets verder vooruit.
-5.  **Volgende week (`nextWeek`)**: Taken gepland voor de komende 7 dagen. (Deze categorie is ook aanwezig in de standaard sortering in de code, mogelijk heb je die over het hoofd gezien in je opsomming).
-6.  **Binnenkort (`later`)**: Taken die gepland zijn, maar verder in de toekomst liggen of nog geen concrete, nabije deadline hebben.
-7.  **Voltooid (`completed`)**: Deze staan typisch helemaal onderaan (of soms in een apart tabblad/sectie), omdat ze afgehandeld zijn en minder directe aandacht vragen dan openstaande taken.
+1. **Verlopen (`overdue`)**: Deze taken staan bovenaan omdat ze de hoogste urgentie hebben; ze hadden al voltooid moeten zijn.
+2. **Vandaag (`today`)**: Wat direct je aandacht nodig heeft.
+3. **Morgen (`tomorrow`)**: Planning voor de zeer nabije toekomst.
+4. **Overmorgen (`dayAfterTomorrow`)**: Kijkt net iets verder vooruit.
+5. **Volgende week (`nextWeek`)**: Taken gepland voor de komende 7 dagen. (Deze categorie is ook aanwezig in de standaard sortering in de code, mogelijk heb je die over het hoofd gezien in je opsomming).
+6. **Binnenkort (`later`)**: Taken die gepland zijn, maar verder in de toekomst liggen of nog geen concrete, nabije deadline hebben.
+7. **Voltooid (`completed`)**: Deze staan typisch helemaal onderaan (of soms in een apart tabblad/sectie), omdat ze afgehandeld zijn en minder directe aandacht vragen dan openstaande taken.
 
 Deze opbouw volgt een natuurlijke stroom van urgentie: van onmiddellijk/achterstallig naar wat verder in de toekomst, met afgeronde zaken als laatste.
 
@@ -1297,29 +1297,29 @@ Deze volgorde lijkt mij dus al optimaal voor de meeste gebruiksscenario's. Wil j
 
 Over het algemeen ziet de code van `Dashboard.tsx` er redelijk geoptimaliseerd uit, met correct gebruik van `useMemo` voor dure berekeningen en `key` props voor lijsten. Echter, er zijn altijd factoren die de prestaties kunnen beïnvloeden, vooral naarmate de hoeveelheid data (taken) toeneemt. Hier zijn een paar punten die potentieel de pagina langzamer zouden kunnen maken:
 
-1.  **Verwerking van Grote Aantallen Taken (`filteredAndSortedTaskGroups`)**:
-    *   De `useMemo` hook voor `filteredAndSortedTaskGroups` doorloopt alle taken (`rawTaskGroups`) om te filteren en sorteren op basis van `searchTerm`, `filterStatus`, `filterPriority`, en `filterCategory`.
-    *   Als je een zeer groot aantal taken hebt (honderden of duizenden), kan deze filter- en sorteeroperatie bij elke wijziging van de filters of zoekterm merkbaar tijd kosten, ook al is het gememoized. De memoization helpt alleen als de dependencies niet veranderen.
+1. **Verwerking van Grote Aantallen Taken (`filteredAndSortedTaskGroups`)**:
+    * De `useMemo` hook voor `filteredAndSortedTaskGroups` doorloopt alle taken (`rawTaskGroups`) om te filteren en sorteren op basis van `searchTerm`, `filterStatus`, `filterPriority`, en `filterCategory`.
+    * Als je een zeer groot aantal taken hebt (honderden of duizenden), kan deze filter- en sorteeroperatie bij elke wijziging van de filters of zoekterm merkbaar tijd kosten, ook al is het gememoized. De memoization helpt alleen als de dependencies niet veranderen.
 
-2.  **Renderen van Veel `TaskCard` Componenten**:
-    *   **Desktop Gepagineerd**: Hoewel de desktopweergave met 5+ taken per categorie paginering gebruikt (maximaal 12 kaarten per pagina per categorie), worden de sectie-headers en de basisstructuur voor *elke* categorie wel gerenderd. Als je veel categorieën hebt met elk een paar taken, kan het totaal aantal gerenderde elementen alsnog oplopen.
-    *   **Mobiele Horizontale Scroll**:
-        *   De mobiele weergave gebruikt een horizontale scroll per categorie. De code probeert een optimaal aantal kaarten per "visuele" rij te tonen.
-        *   Als een categorie heel veel taken heeft, worden al die `TaskCard` componenten voor die categorie in de DOM geplaatst binnen de scrollbare container (verdeeld over logische rijen, maar de buitenste container is horizontaal scrollbaar). Dit is geen volledige virtualisatie waarbij alleen zichtbare kaarten worden gerenderd. Bij een extreem groot aantal taken in één categorie op mobiel kan dit leiden tot traagheid.
-    *   **`TaskCard` Complexiteit**: Elke `TaskCard` gebruikt `framer-motion` voor animaties en bevat diverse UI-elementen. Hoewel `framer-motion` goed geoptimaliseerd is, draagt elke kaart bij aan de totale render-tijd en het geheugengebruik.
+2. **Renderen van Veel `TaskCard` Componenten**:
+    * **Desktop Gepagineerd**: Hoewel de desktopweergave met 5+ taken per categorie paginering gebruikt (maximaal 12 kaarten per pagina per categorie), worden de sectie-headers en de basisstructuur voor *elke* categorie wel gerenderd. Als je veel categorieën hebt met elk een paar taken, kan het totaal aantal gerenderde elementen alsnog oplopen.
+    * **Mobiele Horizontale Scroll**:
+        * De mobiele weergave gebruikt een horizontale scroll per categorie. De code probeert een optimaal aantal kaarten per "visuele" rij te tonen.
+        * Als een categorie heel veel taken heeft, worden al die `TaskCard` componenten voor die categorie in de DOM geplaatst binnen de scrollbare container (verdeeld over logische rijen, maar de buitenste container is horizontaal scrollbaar). Dit is geen volledige virtualisatie waarbij alleen zichtbare kaarten worden gerenderd. Bij een extreem groot aantal taken in één categorie op mobiel kan dit leiden tot traagheid.
+    * **`TaskCard` Complexiteit**: Elke `TaskCard` gebruikt `framer-motion` voor animaties en bevat diverse UI-elementen. Hoewel `framer-motion` goed geoptimaliseerd is, draagt elke kaart bij aan de totale render-tijd en het geheugengebruik.
 
-3.  **State Updates en Re-renders**:
-    *   De `activePages` state voor de desktop paginering wordt bijgewerkt wanneer je navigeert. Dit veroorzaakt een re-render van de `taskCategorySections`, wat over het algemeen efficiënt zou moeten zijn dankzij `useMemo` en de selectieve re-render van alleen de gewijzigde pagina.
-    *   Filter- en zoekwijzigingen triggeren re-calculatie van `filteredAndSortedTaskGroups`, wat zoals genoemd potentieel duur kan zijn bij veel data.
+3. **State Updates en Re-renders**:
+    * De `activePages` state voor de desktop paginering wordt bijgewerkt wanneer je navigeert. Dit veroorzaakt een re-render van de `taskCategorySections`, wat over het algemeen efficiënt zou moeten zijn dankzij `useMemo` en de selectieve re-render van alleen de gewijzigde pagina.
+    * Filter- en zoekwijzigingen triggeren re-calculatie van `filteredAndSortedTaskGroups`, wat zoals genoemd potentieel duur kan zijn bij veel data.
 
-4.  **Mogelijke Overhead van `framer-motion`**:
-    *   `layout` animaties en `AnimatePresence` zijn krachtig maar kunnen, bij zeer veel geanimeerde elementen tegelijk, een prestatie-impact hebben. De huidige implementatie lijkt dit redelijk gedoseerd te gebruiken (per kaart, per sectie).
+4. **Mogelijke Overhead van `framer-motion`**:
+    * `layout` animaties en `AnimatePresence` zijn krachtig maar kunnen, bij zeer veel geanimeerde elementen tegelijk, een prestatie-impact hebben. De huidige implementatie lijkt dit redelijk gedoseerd te gebruiken (per kaart, per sectie).
 
 **Suggesties voor Potentiële Optimalisaties (indien nodig):**
 
-*   **Virtualisatie voor Grote Lijsten**: Als je merkt dat het renderen van taken in categorieën met heel veel items traag wordt (vooral op mobiel), zou je kunnen overwegen om een virtualisatiebibliotheek (zoals `react-virtualized` of `react-window`) te gebruiken voor de `TaskCard` lijsten. Dit zorgt ervoor dat alleen de zichtbare items daadwerkelijk in de DOM worden gerenderd.
-*   **Debouncing/Throttling van Zoek- en Filterinput**: Als het typen in de zoekbalk of het snel wisselen van filters traag aanvoelt, kan het debouncen van de `handleSearchChange` of `handleFilterChange` functies helpen om het aantal herberekeningen van `filteredAndSortedTaskGroups` te verminderen.
-*   **Optimalisatie van `groupTasksByDate` in `TaskContext`**: Zorgen dat de `groupTasksByDate` functie in de `TaskContext` zo efficiënt mogelijk is en dat de geretourneerde `rawTaskGroups` alleen een nieuwe referentie krijgt als de data daadwerkelijk is veranderd, om onnodige herberekeningen van `useMemo` in `Dashboard.tsx` te voorkomen.
+* **Virtualisatie voor Grote Lijsten**: Als je merkt dat het renderen van taken in categorieën met heel veel items traag wordt (vooral op mobiel), zou je kunnen overwegen om een virtualisatiebibliotheek (zoals `react-virtualized` of `react-window`) te gebruiken voor de `TaskCard` lijsten. Dit zorgt ervoor dat alleen de zichtbare items daadwerkelijk in de DOM worden gerenderd.
+* **Debouncing/Throttling van Zoek- en Filterinput**: Als het typen in de zoekbalk of het snel wisselen van filters traag aanvoelt, kan het debouncen van de `handleSearchChange` of `handleFilterChange` functies helpen om het aantal herberekeningen van `filteredAndSortedTaskGroups` te verminderen.
+* **Optimalisatie van `groupTasksByDate` in `TaskContext`**: Zorgen dat de `groupTasksByDate` functie in de `TaskContext` zo efficiënt mogelijk is en dat de geretourneerde `rawTaskGroups` alleen een nieuwe referentie krijgt als de data daadwerkelijk is veranderd, om onnodige herberekeningen van `useMemo` in `Dashboard.tsx` te voorkomen.
 
 Over het algemeen is de code al voorzien van veel goede optimalisatietechnieken. De bovengenoemde punten worden meestal pas relevant bij een zeer grote dataset of op apparaten met beperkte rekenkracht.
 
@@ -1335,27 +1335,27 @@ welke framer motion wordt er momenteel gebruikt?
 
 In `Dashboard.tsx` wordt `framer-motion` op de volgende manieren gebruikt:
 
-1.  **Import van Kerncomponenten**:
-    *   `motion`: Dit is het hoofdobject waarmee je HTML-elementen (zoals `div`, `p`, etc.) kunt omzetten in bewegingsgevoelige componenten (bijv. `motion.div`).
-    *   `AnimatePresence`: Deze component wordt gebruikt om animaties mogelijk te maken wanneer componenten uit de React-tree worden verwijderd (exit-animaties).
-    *   `Variants`: Dit is een type dat wordt gebruikt om animatiestadia (zoals `hidden`, `visible`, `exit`) te definiëren in objecten, wat helpt om animatielogica te organiseren.
+1. **Import van Kerncomponenten**:
+    * `motion`: Dit is het hoofdobject waarmee je HTML-elementen (zoals `div`, `p`, etc.) kunt omzetten in bewegingsgevoelige componenten (bijv. `motion.div`).
+    * `AnimatePresence`: Deze component wordt gebruikt om animaties mogelijk te maken wanneer componenten uit de React-tree worden verwijderd (exit-animaties).
+    * `Variants`: Dit is een type dat wordt gebruikt om animatiestadia (zoals `hidden`, `visible`, `exit`) te definiëren in objecten, wat helpt om animatielogica te organiseren.
 
-2.  **Gedefinieerde Animaties (`Variants`)**:
-    *   `containerVariants`: Definieert animaties voor container-elementen, met name hoe de onderliggende kinderen (cards) gespreid (`staggerChildren`) binnenkomen.
-        *   `hidden`: `opacity: 0`
-        *   `visible`: `opacity: 1`, `transition: { staggerChildren: 0.07 }`
-    *   `cardVariants`: Definieert animaties voor individuele taakkaarten.
-        *   `hidden`: `opacity: 0, y: 20, scale: 0.95`
-        *   `visible`: `opacity: 1, y: 0, scale: 1` (met een `spring` transitie)
-        *   `exit`: `opacity: 0, y: -10, scale: 0.9`
+2. **Gedefinieerde Animaties (`Variants`)**:
+    * `containerVariants`: Definieert animaties voor container-elementen, met name hoe de onderliggende kinderen (cards) gespreid (`staggerChildren`) binnenkomen.
+        * `hidden`: `opacity: 0`
+        * `visible`: `opacity: 1`, `transition: { staggerChildren: 0.07 }`
+    * `cardVariants`: Definieert animaties voor individuele taakkaarten.
+        * `hidden`: `opacity: 0, y: 20, scale: 0.95`
+        * `visible`: `opacity: 1, y: 0, scale: 1` (met een `spring` transitie)
+        * `exit`: `opacity: 0, y: -10, scale: 0.9`
 
-3.  **Gebruik van `motion.div`**:
-    *   **Sectie Containers**: De `div` die een hele categorie taken omhult (bijv. "Vandaag", "Verlopen") gebruikt `motion.div` met `variants={containerVariants}`, `initial="hidden"`, en `animate="visible"` om de kaarten binnen die sectie met een stagger-effect te laten verschijnen.
-        *   Voorbeeld: `className="sm:grid md:grid-cols-2 lg:hidden gap-3 md:gap-4 hidden"` (tablet) en `className="grid grid-cols-4 gap-4"` (desktop < 5 taken) en `className="grid grid-cols-4 gap-4 mb-2"` (desktop gepagineerd).
-    *   **Individuele Taakkaarten (`TaskCard`) en Placeholder-kaarten**:
-        *   Elke `TaskCard` en elke placeholder-kaart is gewrapt in een `motion.div` met `variants={cardVariants}` en `layout="position"`.
-        *   `layout="position"` is een krachtige feature die automatisch de positieverandering van een component animeert wanneer de layout verandert (bijvoorbeeld door filteren, sorteren of toevoegen/verwijderen van items).
-    *   **Pagina Overgangen (Desktop Gepagineerd)**: De `motion.div` die de set taken voor een specifieke pagina in de desktopweergave toont, gebruikt ook animaties voor `initial`, `animate`, en `exit` om een soepele overgang te creëren bij het wisselen van pagina's:
+3. **Gebruik van `motion.div`**:
+    * **Sectie Containers**: De `div` die een hele categorie taken omhult (bijv. "Vandaag", "Verlopen") gebruikt `motion.div` met `variants={containerVariants}`, `initial="hidden"`, en `animate="visible"` om de kaarten binnen die sectie met een stagger-effect te laten verschijnen.
+        * Voorbeeld: `className="sm:grid md:grid-cols-2 lg:hidden gap-3 md:gap-4 hidden"` (tablet) en `className="grid grid-cols-4 gap-4"` (desktop < 5 taken) en `className="grid grid-cols-4 gap-4 mb-2"` (desktop gepagineerd).
+    * **Individuele Taakkaarten (`TaskCard`) en Placeholder-kaarten**:
+        * Elke `TaskCard` en elke placeholder-kaart is gewrapt in een `motion.div` met `variants={cardVariants}` en `layout="position"`.
+        * `layout="position"` is een krachtige feature die automatisch de positieverandering van een component animeert wanneer de layout verandert (bijvoorbeeld door filteren, sorteren of toevoegen/verwijderen van items).
+    * **Pagina Overgangen (Desktop Gepagineerd)**: De `motion.div` die de set taken voor een specifieke pagina in de desktopweergave toont, gebruikt ook animaties voor `initial`, `animate`, en `exit` om een soepele overgang te creëren bij het wisselen van pagina's:
         ```tsx
         <motion.div
           key={`page-${category}-${activePage}`}
@@ -1366,12 +1366,12 @@ In `Dashboard.tsx` wordt `framer-motion` op de volgende manieren gebruikt:
           transition={{ duration: 0.3 }}
         >
         ```
-    *   **Mobiele Rij Animaties**: De `motion.div` die een rij kaarten in de mobiele horizontale scroll-weergave omhult, gebruikt ook `variants={containerVariants}`.
-    *   **Empty State Message**: De `motion.div` rond de "empty state" berichten gebruikt ook `initial`, `animate`, en `exit` varianten.
-    *   **FAB (Floating Action Button)**: De `motion.div` voor de FAB-knop op mobiel gebruikt `initial`, `animate`, `exit` en een `spring` transitie.
+    * **Mobiele Rij Animaties**: De `motion.div` die een rij kaarten in de mobiele horizontale scroll-weergave omhult, gebruikt ook `variants={containerVariants}`.
+    * **Empty State Message**: De `motion.div` rond de "empty state" berichten gebruikt ook `initial`, `animate`, en `exit` varianten.
+    * **FAB (Floating Action Button)**: De `motion.div` voor de FAB-knop op mobiel gebruikt `initial`, `animate`, `exit` en een `spring` transitie.
 
-4.  **Gebruik van `AnimatePresence`**:
-    *   Rond de `taskCategorySections` en de "empty state" message:
+4. **Gebruik van `AnimatePresence`**:
+    * Rond de `taskCategorySections` en de "empty state" message:
         ```tsx
         <AnimatePresence mode="sync">
           {hasAnyFilteredTasks ? (
@@ -1382,16 +1382,16 @@ In `Dashboard.tsx` wordt `framer-motion` op de volgende manieren gebruikt:
         </AnimatePresence>
         ```
         Dit zorgt ervoor dat wanneer `hasAnyFilteredTasks` verandert (en dus de ene component verdwijnt en de andere verschijnt), de `exit` animaties van de verdwijnende component worden afgespeeld. `mode="sync"` is hier interessant; het betekent dat de exit-animatie en de enter-animatie tegelijk kunnen plaatsvinden. (Update: Ik zie nu `mode="wait"` gebruikt worden bij de paginering van desktop taken, wat betekent dat de exit animatie eerst afwacht alvorens de enter animatie start).
-    *   Rond de FAB-knop op mobiel, om deze soepel in en uit te faden.
-    *   Rond de gepagineerde `motion.div` op desktop (met `mode="wait"`) om de pagina's netjes te laten overvloeien.
-    *   Rond de subtaaklijst in `TaskDetail.tsx` (niet direct in `Dashboard.tsx`, maar relevant voor `framer-motion` gebruik in het project).
+    * Rond de FAB-knop op mobiel, om deze soepel in en uit te faden.
+    * Rond de gepagineerde `motion.div` op desktop (met `mode="wait"`) om de pagina's netjes te laten overvloeien.
+    * Rond de subtaaklijst in `TaskDetail.tsx` (niet direct in `Dashboard.tsx`, maar relevant voor `framer-motion` gebruik in het project).
 
 Samengevat wordt `framer-motion` gebruikt voor:
-*   Het animeren van het verschijnen van secties en taakkaarten.
-*   Het soepel animeren van layout-veranderingen (bijv. bij filteren).
-*   Exit-animaties wanneer items uit de lijst verdwijnen.
-*   Pagina-overgangen in de desktop-weergave.
-*   Het in- en uitfaden van de mobiele FAB-knop.
+* Het animeren van het verschijnen van secties en taakkaarten.
+* Het soepel animeren van layout-veranderingen (bijv. bij filteren).
+* Exit-animaties wanneer items uit de lijst verdwijnen.
+* Pagina-overgangen in de desktop-weergave.
+* Het in- en uitfaden van de mobiele FAB-knop.
 
 ```typescriptreact
         <motion.div
@@ -1428,24 +1428,24 @@ Oké, het toevoegen van een "Favorieten" categorie en de mogelijkheid om taken a
 
 Hier is mijn plan:
 
-1.  **Database Aanpassing:**
-    *   Ik voeg een `is_favorite` (boolean) veld toe aan de `tasks` tabel in je Supabase database. Standaard zal dit `FALSE` zijn.
-2.  **Type Definities:**
-    *   Ik werk het `Task` type in `src/types/task.ts` bij om het `isFavorite` veld op te nemen.
-    *   Ook het `DbTask` type en de `mapDbTaskToTask` functie in `TaskContext.tsx` moeten worden aangepast.
-3.  **Task Context (`TaskContext.tsx`):**
-    *   Ik pas de `updateTask` functie aan zodat `isFavorite` gewijzigd kan worden.
-    *   Ik voeg een nieuwe functie `toggleTaskFavorite(taskId: string)` toe die de `isFavorite` status van een taak omwisselt.
-    *   Ik pas `groupTasksByDate` aan:
-        *   Er komt een nieuwe groep `favorites`.
-        *   Taken die als favoriet zijn gemarkeerd (`isFavorite === true`) zullen **alleen** in de "Favorieten" sectie verschijnen om duplicaten te voorkomen. Als je ze ook in hun datum-gebaseerde categorie wilt zien, laat het me weten, maar dat maakt de logica complexer.
-4.  **Gebruikersinterface:**
-    *   **`TaskCard.tsx`**: Ik voeg een ster-icoontje toe waarmee je een taak favoriet kunt maken of de favorietstatus kunt verwijderen.
-    *   **`TaskDetail.tsx`**: Ook hier komt een vergelijkbare knop/icoon.
-    *   **`Dashboard.tsx`**:
-        *   "Favorieten" wordt toegevoegd aan de `categoryOrder`, waarschijnlijk bovenaan of net na "Vandaag".
-        *   De `getCategoryTitle` functie krijgt een vertaling voor "Favorieten".
-    *   **Vertaalbestanden**: Ik voeg de nodige vertalingen toe voor "Favorieten" en tooltips.
+1. **Database Aanpassing:**
+    * Ik voeg een `is_favorite` (boolean) veld toe aan de `tasks` tabel in je Supabase database. Standaard zal dit `FALSE` zijn.
+2. **Type Definities:**
+    * Ik werk het `Task` type in `src/types/task.ts` bij om het `isFavorite` veld op te nemen.
+    * Ook het `DbTask` type en de `mapDbTaskToTask` functie in `TaskContext.tsx` moeten worden aangepast.
+3. **Task Context (`TaskContext.tsx`):**
+    * Ik pas de `updateTask` functie aan zodat `isFavorite` gewijzigd kan worden.
+    * Ik voeg een nieuwe functie `toggleTaskFavorite(taskId: string)` toe die de `isFavorite` status van een taak omwisselt.
+    * Ik pas `groupTasksByDate` aan:
+        * Er komt een nieuwe groep `favorites`.
+        * Taken die als favoriet zijn gemarkeerd (`isFavorite === true`) zullen **alleen** in de "Favorieten" sectie verschijnen om duplicaten te voorkomen. Als je ze ook in hun datum-gebaseerde categorie wilt zien, laat het me weten, maar dat maakt de logica complexer.
+4. **Gebruikersinterface:**
+    * **`TaskCard.tsx`**: Ik voeg een ster-icoontje toe waarmee je een taak favoriet kunt maken of de favorietstatus kunt verwijderen.
+    * **`TaskDetail.tsx`**: Ook hier komt een vergelijkbare knop/icoon.
+    * **`Dashboard.tsx`**:
+        * "Favorieten" wordt toegevoegd aan de `categoryOrder`, waarschijnlijk bovenaan of net na "Vandaag".
+        * De `getCategoryTitle` functie krijgt een vertaling voor "Favorieten".
+    * **Vertaalbestanden**: Ik voeg de nodige vertalingen toe voor "Favorieten" en tooltips.
 
 Laten we beginnen met de database en de type definities.
 
@@ -1648,10 +1648,10 @@ export interface DbTask {
 Oké, de types in `src/types/task.ts` zijn nu (hopelijk correct) aangepast met `isFavorite` en `is_favorite`, en `DbTask.subtasks` is nu `SubTask[] | null`.
 
 Nu ga ik verder met de aanpassingen in `TaskContext.tsx`. Ik zal:
-1.  De `mapDbTaskToTask` functie aanpassen om `is_favorite` te mappen naar `isFavorite`.
-2.  De `updateTask` functie (indien aanwezig en relevant, anders de logica voor het bijwerken van een taak) aanpassen zodat `isFavorite` geüpdatet kan worden.
-3.  Een nieuwe functie `toggleTaskFavorite(taskId: string)` toevoegen.
-4.  `groupTasksByDate` aanpassen om de "Favorieten" groep te introduceren.
+1. De `mapDbTaskToTask` functie aanpassen om `is_favorite` te mappen naar `isFavorite`.
+2. De `updateTask` functie (indien aanwezig en relevant, anders de logica voor het bijwerken van een taak) aanpassen zodat `isFavorite` geüpdatet kan worden.
+3. Een nieuwe functie `toggleTaskFavorite(taskId: string)` toevoegen.
+4. `groupTasksByDate` aanpassen om de "Favorieten" groep te introduceren.
 
 Ik begin met het lezen van `TaskContext.tsx`.
 
@@ -1784,11 +1784,11 @@ export interface TaskContextType {
 De `TaskContextType` is aangepast. Nu de linterfout hopelijk is opgelost, ga ik verder met de daadwerkelijke favorietenfunctionaliteit in `TaskContext.tsx`.
 
 Ik zal nu de volgende functies aanpassen/toevoegen in `src/contexts/TaskContext.tsx`:
-1.  `mapDbTaskToTask` (is al gebeurd in vorige stappen, maar ik check het).
-2.  `updateTask` om `is_favorite` te kunnen updaten.
-3.  Nieuwe functie `toggleTaskFavorite(taskId: string)`.
-4.  `addTask` om `is_favorite` standaard op `false` te zetten bij het aanmaken.
-5.  `groupTasksByDate` om de "Favorieten" groep te introduceren. Taken die favoriet zijn, worden alleen daar getoond.
+1. `mapDbTaskToTask` (is al gebeurd in vorige stappen, maar ik check het).
+2. `updateTask` om `is_favorite` te kunnen updaten.
+3. Nieuwe functie `toggleTaskFavorite(taskId: string)`.
+4. `addTask` om `is_favorite` standaard op `false` te zetten bij het aanmaken.
+5. `groupTasksByDate` om de "Favorieten" groep te introduceren. Taken die favoriet zijn, worden alleen daar getoond.
 
 Ik zal het bestand `src/contexts/TaskContext.tsx` nu bewerken.
 
@@ -1875,13 +1875,13 @@ Oké, fijn dat de linterfout is opgelost! Dan ga ik nu verder met het implemente
 
 **Volgende stappen in `src/contexts/TaskContext.tsx`:**
 
-1.  **`mapTaskToDbUpdate` aanpassen:** Zorgen dat `isFavorite` (vanuit de client-side `Task` update) correct wordt gemapt naar `is_favorite` voor de database.
-2.  **Nieuwe functie `toggleFavorite(taskId: string)` implementeren:**
-    *   Deze functie wisselt de `isFavorite` status van een taak.
-    *   Roept `updateTask` aan om de wijziging op te slaan in de database.
-3.  **`TaskContextType` (in `src/contexts/TaskContext.context.ts`) bijwerken:** De `toggleFavorite` functie toevoegen aan de interface.
-4.  **`contextValue` (in `TaskContext.tsx`) bijwerken:** De `toggleFavorite` functie beschikbaar maken via de context.
-5.  **`groupTasksByDate` aanpassen (in `TaskContext.tsx`):** Een nieuwe categorie `favorites: Task[]` toevoegen en vullen.
+1. **`mapTaskToDbUpdate` aanpassen:** Zorgen dat `isFavorite` (vanuit de client-side `Task` update) correct wordt gemapt naar `is_favorite` voor de database.
+2. **Nieuwe functie `toggleFavorite(taskId: string)` implementeren:**
+    * Deze functie wisselt de `isFavorite` status van een taak.
+    * Roept `updateTask` aan om de wijziging op te slaan in de database.
+3. **`TaskContextType` (in `src/contexts/TaskContext.context.ts`) bijwerken:** De `toggleFavorite` functie toevoegen aan de interface.
+4. **`contextValue` (in `TaskContext.tsx`) bijwerken:** De `toggleFavorite` functie beschikbaar maken via de context.
+5. **`groupTasksByDate` aanpassen (in `TaskContext.tsx`):** Een nieuwe categorie `favorites: Task[]` toevoegen en vullen.
 
 Laten we beginnen met het aanpassen van `mapTaskToDbUpdate`.
 
@@ -2053,13 +2053,13 @@ Perfect. De `TasksByDate` interface in `src/types/task.ts` is nu ook bijgewerkt.
 
 Hiermee zijn de aanpassingen in de `TaskContext` en gerelateerde types voor de basis favorietenfunctionaliteit voltooid. De volgende stappen zouden zijn:
 
-1.  **UI Aanpassingen (`Dashboard.tsx`):**
-    *   Een nieuwe sectie voor "Favorieten" tonen, gebruikmakend van `groupedTasks.favorites`.
-    *   De volgorde van secties eventueel aanpassen (bijvoorbeeld "Favorieten" bovenaan of net na "Vandaag").
-2.  **UI Aanpassingen (`TaskCard.tsx` en `TaskDetail.tsx`):**
-    *   Een knop (bijv. een ster-icoon) toevoegen om een taak als favoriet te markeren/demarkeren.
-    *   Deze knop roept `TaskContext.toggleFavorite(taskId)` aan.
-    *   Visuele feedback geven of een taak favoriet is (bijv. gevulde ster vs. lege ster).
+1. **UI Aanpassingen (`Dashboard.tsx`):**
+    * Een nieuwe sectie voor "Favorieten" tonen, gebruikmakend van `groupedTasks.favorites`.
+    * De volgorde van secties eventueel aanpassen (bijvoorbeeld "Favorieten" bovenaan of net na "Vandaag").
+2. **UI Aanpassingen (`TaskCard.tsx` en `TaskDetail.tsx`):**
+    * Een knop (bijv. een ster-icoon) toevoegen om een taak als favoriet te markeren/demarkeren.
+    * Deze knop roept `TaskContext.toggleFavorite(taskId)` aan.
+    * Visuele feedback geven of een taak favoriet is (bijv. gevulde ster vs. lege ster).
 
 Wil je dat ik verder ga met de UI-aanpassingen, te beginnen met het toevoegen van de "Favorieten" sectie aan `Dashboard.tsx`? En wat zou de gewenste volgorde van de secties moeten zijn?
 
@@ -2076,8 +2076,8 @@ ik denk favorieten als eerst
 Oké, "Favorieten" als eerste sectie. Ik ga `src/pages/Dashboard.tsx` aanpassen.
 
 Ik zal:
-1.  De `categoryOrder` array aanpassen om `'favorites'` als eerste element op te nemen.
-2.  De `categoryTitles` mapping uitbreiden met een titel voor de `'favorites'` categorie (bijvoorbeeld "Favorieten ⭐" of gewoon "Favorieten").
+1. De `categoryOrder` array aanpassen om `'favorites'` als eerste element op te nemen.
+2. De `categoryTitles` mapping uitbreiden met een titel voor de `'favorites'` categorie (bijvoorbeeld "Favorieten ⭐" of gewoon "Favorieten").
 
 Eerst lees ik het relevante deel van `Dashboard.tsx` om te zien hoe de secties nu worden geordend en gegenereerd.
 
@@ -2105,8 +2105,8 @@ Rond regel 324-329 in `src/pages/Dashboard.tsx` staat:
 ```
 
 Ik ga dit aanpassen:
-1.  `'favorites'` toevoegen aan het begin van `categoryOrder`.
-2.  Een case voor `'favorites'` toevoegen aan `getCategoryTitle` (bijvoorbeeld `t('dashboard.categories.favorites')`, wat betekent dat je deze vertaalsleutel ook moet toevoegen aan je i18n bestanden).
+1. `'favorites'` toevoegen aan het begin van `categoryOrder`.
+2. Een case voor `'favorites'` toevoegen aan `getCategoryTitle` (bijvoorbeeld `t('dashboard.categories.favorites')`, wat betekent dat je deze vertaalsleutel ook moet toevoegen aan je i18n bestanden).
 
 Hier is de voorgestelde wijziging voor `src/pages/Dashboard.tsx`:
 
@@ -2388,19 +2388,19 @@ Oké, dan gaan we nu de favorieten-knop toevoegen aan de `TaskCard`. Ik begin me
 Oké, ik heb een goed beeld van `TaskCard.tsx`. De kaart is al redelijk vol met informatie (titel, categorie, deadline, subtaken-progressie, nieuw-badge).
 
 Een goede plek voor de favorietenknop (ster-icoon) zou kunnen zijn:
-*   **Rechtsboven in de kaart**: Dit is een gebruikelijke plek voor actie-iconen die betrekking hebben op het item zelf.
-*   **Naast de titel**: Als er ruimte is, maar dit kan de layout wat drukker maken.
+* **Rechtsboven in de kaart**: Dit is een gebruikelijke plek voor actie-iconen die betrekking hebben op het item zelf.
+* **Naast de titel**: Als er ruimte is, maar dit kan de layout wat drukker maken.
 
 Ik denk dat rechtsboven de beste optie is. Dit houdt de hoofdcontent van de kaart schoon en de actie is duidelijk zichtbaar.
 
 Ik ga het volgende doen:
-1.  `useTask` hook importeren om toegang te krijgen tot `toggleFavorite`.
-2.  Het `Star` icoon importeren uit `lucide-react`.
-3.  Een `Button` component (variant `ghost` en `icon` size) toevoegen rechtsboven in de `Card`.
-    *   Het `Star` icoon gebruiken.
-    *   De `fill` en `stroke` van het icoon aanpassen op basis van `task.isFavorite`.
-    *   `onClick` handler instellen die `toggleFavorite(task.id)` aanroept.
-    *   Een `Tooltip` toevoegen om "Markeer als favoriet" / "Verwijder als favoriet" te tonen.
+1. `useTask` hook importeren om toegang te krijgen tot `toggleFavorite`.
+2. Het `Star` icoon importeren uit `lucide-react`.
+3. Een `Button` component (variant `ghost` en `icon` size) toevoegen rechtsboven in de `Card`.
+    * Het `Star` icoon gebruiken.
+    * De `fill` en `stroke` van het icoon aanpassen op basis van `task.isFavorite`.
+    * `onClick` handler instellen die `toggleFavorite(task.id)` aanroept.
+    * Een `Tooltip` toevoegen om "Markeer als favoriet" / "Verwijder als favoriet" te tonen.
 
 Hier is de voorgestelde aanpassing voor `src/components/task/TaskCard.tsx`:
 
@@ -2563,8 +2563,8 @@ enkelvoud en ja voeg het toe
 
 Oké, duidelijk!
 
-1.  Ik zal de link in `src/components/task/TaskCard.tsx` terugzetten naar enkelvoud (`/task/${task.id}`).
-2.  Daarna voeg ik de vertalingen voor de favorietenknop-tooltip toe aan beide taalbestanden.
+1. Ik zal de link in `src/components/task/TaskCard.tsx` terugzetten naar enkelvoud (`/task/${task.id}`).
+2. Daarna voeg ik de vertalingen voor de favorietenknop-tooltip toe aan beide taalbestanden.
 
 Eerst de aanpassing in `TaskCard.tsx`:
 
@@ -2788,9 +2788,9 @@ rechtsboven in het kaart staat al het datum, kan het anders ergens anders
 Oké, ik begrijp dat de favorietenknop nu te dicht bij de datumaanduiding staat. Een goede plek zou links naast de taaktitel kunnen zijn. Ik ga `src/components/task/TaskCard.tsx` aanpassen om dit te realiseren.
 
 Ik zal het volgende doen:
-1.  De huidige favorietenknop (die absoluut gepositioneerd is rechtsboven) verwijderen.
-2.  Een nieuwe favorietenknop (een kleiner icoontje) direct links van de taaktitel plaatsen. Dit zal binnen dezelfde flex-container als de titel komen te staan.
-3.  De CSS-styling aanpassen zodat de knop en titel netjes naast elkaar staan en de titel correct wordt afgebroken indien nodig.
+1. De huidige favorietenknop (die absoluut gepositioneerd is rechtsboven) verwijderen.
+2. Een nieuwe favorietenknop (een kleiner icoontje) direct links van de taaktitel plaatsen. Dit zal binnen dezelfde flex-container als de titel komen te staan.
+3. De CSS-styling aanpassen zodat de knop en titel netjes naast elkaar staan en de titel correct wordt afgebroken indien nodig.
 
 Hier is de voorgestelde aanpassing:
 
@@ -2907,10 +2907,10 @@ Je hebt gelijk, met de emoji erbij wordt het inderdaad wat veel aan de linkerkan
 Laten we proberen de favorietenknop aan de rechterkant van de kaartheader te plaatsen, *naast* de datumaanduiding (de kalenderbadge). Dit scheidt het van de titel en emoji, maar houdt het nog steeds in het bovenste gedeelte van de kaart.
 
 Ik zal de volgende wijzigingen aanbrengen in `src/components/task/TaskCard.tsx`:
-1.  De favorietenknop verplaatsen van links van de titel naar de rechterkant.
-2.  Een nieuwe `div` maken die de favorietenknop en de kalenderbadge groepeert.
-3.  De styling aanpassen zodat de titel de overgebleven ruimte inneemt en de knoppen rechts netjes naast elkaar staan.
-4.  De grootte van de favorietenknop en het icoon terugzetten naar de oorspronkelijke grootte (zoals toen het rechtsboven stond) voor betere zichtbaarheid.
+1. De favorietenknop verplaatsen van links van de titel naar de rechterkant.
+2. Een nieuwe `div` maken die de favorietenknop en de kalenderbadge groepeert.
+3. De styling aanpassen zodat de titel de overgebleven ruimte inneemt en de knoppen rechts netjes naast elkaar staan.
+4. De grootte van de favorietenknop en het icoon terugzetten naar de oorspronkelijke grootte (zoals toen het rechtsboven stond) voor betere zichtbaarheid.
 
 Hier is de aanpassing:
 
@@ -2990,12 +2990,12 @@ kan je het anders bij de badges plaats in dezelfde stijl als de andere badges, k
 Oké, dat is een interessante optie! De favorietenindicator als een kleine badge tussen de andere badges onderaan de kaart. Dit kan zorgen voor een rustiger kaartheader.
 
 Ik ga het volgende doen in `src/components/task/TaskCard.tsx`:
-1.  De huidige favorietenknop (die nu rechts in de header staat, naast de datum) volledig verwijderen.
-2.  In de sectie waar de "Nieuw"-badge en categorie-badge staan (onder de beschrijving), zal ik een nieuwe `Button` toevoegen die als favorieten-badge fungeert.
-    *   Deze knop zal het `Star`-icoon bevatten.
-    *   De stijl zal vergelijkbaar zijn met een kleine icoon-badge.
-    *   De `fill` van het stericoon en de tooltip-tekst zullen afhangen van `task.isFavorite`.
-    *   De `onClick`-functionaliteit blijft hetzelfde.
+1. De huidige favorietenknop (die nu rechts in de header staat, naast de datum) volledig verwijderen.
+2. In de sectie waar de "Nieuw"-badge en categorie-badge staan (onder de beschrijving), zal ik een nieuwe `Button` toevoegen die als favorieten-badge fungeert.
+    * Deze knop zal het `Star`-icoon bevatten.
+    * De stijl zal vergelijkbaar zijn met een kleine icoon-badge.
+    * De `fill` van het stericoon en de tooltip-tekst zullen afhangen van `task.isFavorite`.
+    * De `onClick`-functionaliteit blijft hetzelfde.
 
 Hier is de aanpassing:
 
@@ -3170,9 +3170,9 @@ het titel wordt nu niet netjes afgekapt
 Je hebt gelijk, dat ziet er niet goed uit. De titel zou netjes moeten afkappen met "..." als deze te lang is. Het lijkt erop dat de `truncate` of `line-clamp-1` class niet correct werkt in de huidige layout.
 
 Ik ga de volgende aanpassingen doen in `src/components/task/TaskCard.tsx` om dit te corrigeren:
-1.  Ik verwijder `line-clamp-1` van de `h3` tag van de titel, omdat `truncate` al zorgt voor het afkappen op een enkele regel en `line-clamp-1` hier mogelijk conflicteert.
-2.  Ik zorg ervoor dat `truncate` en `min-w-0` (wat belangrijk is voor flex-items die moeten kunnen krimpen en tekst correct willen afkappen) op de `h3` blijven staan.
-3.  Ik voeg `flex-shrink-0` toe aan de container van de kalenderbadge. Dit zorgt ervoor dat de kalenderbadge zijn eigen breedte behoudt en niet krimpt, waardoor de titelcontainer gedwongen wordt de tekst correct af te kappen.
+1. Ik verwijder `line-clamp-1` van de `h3` tag van de titel, omdat `truncate` al zorgt voor het afkappen op een enkele regel en `line-clamp-1` hier mogelijk conflicteert.
+2. Ik zorg ervoor dat `truncate` en `min-w-0` (wat belangrijk is voor flex-items die moeten kunnen krimpen en tekst correct willen afkappen) op de `h3` blijven staan.
+3. Ik voeg `flex-shrink-0` toe aan de container van de kalenderbadge. Dit zorgt ervoor dat de kalenderbadge zijn eigen breedte behoudt en niet krimpt, waardoor de titelcontainer gedwongen wordt de tekst correct af te kappen.
 
 Wat betreft de linterfout over `deadlineText`: deze variabele wordt wel degelijk gebruikt in de tooltip van de kalenderbadge. Ik zal deze fout voor nu negeren, omdat het waarschijnlijk een eigenaardigheid van de linter is of de linter-cache die nog niet is bijgewerkt.
 
@@ -3221,14 +3221,14 @@ Oké, ik begrijp dat de favorieten-badge (het sterretje) in de normale staat sub
 
 Ik ga het volgende aanpassen in `src/components/task/TaskCard.tsx`:
 
-1.  **Voor een taak die NOG GEEN favoriet is:**
-    *   Het `Star`-icoon krijgt standaard geen vulling (`fill="none"`).
-    *   De kleur van het icoon (de rand van de ster) zal standaard een subtiele, wat transparantere kleur zijn (bijv. `text-muted-foreground/50`).
-    *   Bij `:hover` op de knop zal de kleur van het icoon veranderen naar de heldere `text-amber-400` en krijgt het eventueel een lichte achtergrond om het duidelijker te maken.
+1. **Voor een taak die NOG GEEN favoriet is:**
+    * Het `Star`-icoon krijgt standaard geen vulling (`fill="none"`).
+    * De kleur van het icoon (de rand van de ster) zal standaard een subtiele, wat transparantere kleur zijn (bijv. `text-muted-foreground/50`).
+    * Bij `:hover` op de knop zal de kleur van het icoon veranderen naar de heldere `text-amber-400` en krijgt het eventueel een lichte achtergrond om het duidelijker te maken.
 
-2.  **Voor een taak die AL WEL een favoriet is:**
-    *   Het `Star`-icoon blijft gevuld (`fill="currentColor"`) en behoudt zijn heldere `text-amber-400` kleur.
-    *   Bij `:hover` kan de kleur iets intenser worden (`text-amber-500`) voor visuele feedback.
+2. **Voor een taak die AL WEL een favoriet is:**
+    * Het `Star`-icoon blijft gevuld (`fill="currentColor"`) en behoudt zijn heldere `text-amber-400` kleur.
+    * Bij `:hover` kan de kleur iets intenser worden (`text-amber-500`) voor visuele feedback.
 
 Dit betekent dat de `className` van de `Button` en de `fill`-property van het `Star`-icoon conditioneel worden op basis van `task.isFavorite`.
 
@@ -3315,8 +3315,8 @@ nee er lijkt niks toegepast te zijn:
 Het spijt me te horen dat de wijziging niet het gewenste effect heeft, ook al lijkt de class `text-muted-foreground/20` correct toegepast te zijn in de HTML die je deelde.
 
 Mogelijke oorzaken kunnen zijn:
-1.  **Browser Caching**: Soms houden browsers oude stijlen vast. Een harde refresh (Ctrl+Shift+R of Cmd+Shift+R) of het legen van de browsercache kan helpen.
-2.  **Visuele Perceptie**: Het kan zijn dat het verschil tussen `/50` en `/20` op jouw scherm of binnen jouw thema minder opvalt dan gehoopt, of dat `/20` nog steeds te prominent is.
+1. **Browser Caching**: Soms houden browsers oude stijlen vast. Een harde refresh (Ctrl+Shift+R of Cmd+Shift+R) of het legen van de browsercache kan helpen.
+2. **Visuele Perceptie**: Het kan zijn dat het verschil tussen `/50` en `/20` op jouw scherm of binnen jouw thema minder opvalt dan gehoopt, of dat `/20` nog steeds te prominent is.
 
 Laten we proberen de normale staat nog een stap subtieler te maken. Ik verlaag de opacity naar `text-muted-foreground/10`. Als dit nog steeds niet het gewenste effect heeft, ligt het mogelijk aan caching.
 
@@ -3355,12 +3355,12 @@ Je hebt gelijk, mijn excuses. Het is goed mogelijk dat de manier waarop Tailwind
 Laten we een directere aanpak proberen door de `stroke`-kleur van het `Star`-icoon zelf dynamisch aan te passen, inclusief de opacity, en de hover-styling explicieter te maken met `group-hover`.
 
 **Plan:**
-1.  De `Button` krijgt de `group` class, zodat we de hover-staat ervan kunnen gebruiken om de `Star` (het kind-element) te stijlen.
-2.  De `Star` (SVG) krijgt conditionele classes voor zijn `stroke` en `fill`:
-    *   **Normale staat (niet favoriet)**: Zeer lage opacity voor de `stroke` (bijv. `stroke-muted-foreground/10` of zelfs `stroke-transparent` en alleen zichtbaar op hover). `fill="none"`.
-    *   **Hover-staat (niet favoriet)**: Duidelijkere `stroke` (bijv. `group-hover:stroke-amber-400`). `fill="none"`.
-    *   **Normale staat (wel favoriet)**: Duidelijke `stroke` en `fill` (bijv. `stroke-amber-400 fill-amber-400`).
-    *   **Hover-staat (wel favoriet)**: Iets intensere `stroke` en `fill` (bijv. `group-hover:stroke-amber-500 group-hover:fill-amber-500`).
+1. De `Button` krijgt de `group` class, zodat we de hover-staat ervan kunnen gebruiken om de `Star` (het kind-element) te stijlen.
+2. De `Star` (SVG) krijgt conditionele classes voor zijn `stroke` en `fill`:
+    * **Normale staat (niet favoriet)**: Zeer lage opacity voor de `stroke` (bijv. `stroke-muted-foreground/10` of zelfs `stroke-transparent` en alleen zichtbaar op hover). `fill="none"`.
+    * **Hover-staat (niet favoriet)**: Duidelijkere `stroke` (bijv. `group-hover:stroke-amber-400`). `fill="none"`.
+    * **Normale staat (wel favoriet)**: Duidelijke `stroke` en `fill` (bijv. `stroke-amber-400 fill-amber-400`).
+    * **Hover-staat (wel favoriet)**: Iets intensere `stroke` en `fill` (bijv. `group-hover:stroke-amber-500 group-hover:fill-amber-500`).
 
 Ik zal de `className` van zowel de `Button` als de `Star` aanpassen in `src/components/task/TaskCard.tsx`.
 
@@ -3515,11 +3515,11 @@ kan je het zo instellen dat alleen het ster van de kaart waarover gehoverd wordt
 Ah, ik begrijp het! Het probleem is dat de `group-hover` die we gebruiken op de `Button` reageert op hover van *die specifieke knop*, maar jij wilt dat de ster pas zichtbaar wordt als je met de muis over de *hele kaart* (`Card` component) beweegt.
 
 Dat vereist een iets andere aanpak:
-1.  De `Card` component (de bovenliggende `Link` of `Card` zelf) moet de `group` class krijgen.
-2.  De `Star` SVG binnen de favorietenknop zal dan reageren op `group-hover` van die bovenliggende kaart.
-3.  In de normale staat (geen hover over de kaart) moet de ster dan vrijwel onzichtbaar zijn (bijv. `stroke-transparent` of een zeer lage opacity).
-4.  Wanneer over de *kaart* gehoverd wordt, wordt de ster zichtbaar (bijv. `group-hover:stroke-muted-foreground/50` of `group-hover:stroke-amber-400` als het nog geen favoriet is).
-5.  Als een taak al favoriet is, blijft de ster altijd gevuld en duidelijk zichtbaar, maar kan de intensiteit iets toenemen bij hover over de kaart.
+1. De `Card` component (de bovenliggende `Link` of `Card` zelf) moet de `group` class krijgen.
+2. De `Star` SVG binnen de favorietenknop zal dan reageren op `group-hover` van die bovenliggende kaart.
+3. In de normale staat (geen hover over de kaart) moet de ster dan vrijwel onzichtbaar zijn (bijv. `stroke-transparent` of een zeer lage opacity).
+4. Wanneer over de *kaart* gehoverd wordt, wordt de ster zichtbaar (bijv. `group-hover:stroke-muted-foreground/50` of `group-hover:stroke-amber-400` als het nog geen favoriet is).
+5. Als een taak al favoriet is, blijft de ster altijd gevuld en duidelijk zichtbaar, maar kan de intensiteit iets toenemen bij hover over de kaart.
 
 **Belangrijk**: We moeten ervoor zorgen dat als een taak al een favoriet *is*, de ster altijd duidelijk zichtbaar (gevuld) blijft, ongeacht de hover-staat van de kaart. De "alleen zichtbaar bij hover" logica is dus primair voor taken die nog *geen* favoriet zijn.
 
@@ -3555,8 +3555,8 @@ Ik pas `src/components/task/TaskCard.tsx` aan:
 Oké, de aanpassing is doorgevoerd.
 De `Link` component die de `Card` omvat, heeft nu de `group` class.
 De `Star` SVG is aangepast:
--   Als een taak **favoriet is**: blijft deze altijd gevuld (`fill-amber-400`) en de `stroke` is ook `amber-400`. Bij hover over de *kaart* worden beide iets intenser (`amber-500`).
--   Als een taak **geen favoriet is**: is de `stroke` standaard `transparent` (dus onzichtbaar) en `fill` is `none`. Pas wanneer je over de *kaart* hovert, wordt de `stroke` `muted-foreground/50`.
+- Als een taak **favoriet is**: blijft deze altijd gevuld (`fill-amber-400`) en de `stroke` is ook `amber-400`. Bij hover over de *kaart* worden beide iets intenser (`amber-500`).
+- Als een taak **geen favoriet is**: is de `stroke` standaard `transparent` (dus onzichtbaar) en `fill` is `none`. Pas wanneer je over de *kaart* hovert, wordt de `stroke` `muted-foreground/50`.
 
 Dit zou het gewenste effect moeten geven: de niet-favoriete sterren zijn onzichtbaar totdat je over de bijbehorende kaart hovert. Favoriete sterren blijven altijd duidelijk.
 
@@ -3749,10 +3749,10 @@ Uit de code van `src/components/task/TaskDisplayCard.tsx` (regels 179-196) blijk
 // ...
 ```
 Om de tekstlabels te verwijderen en alleen de iconen te tonen, zal ik:
-1.  De tekstelementen `{t('common.edit')}` en `{t('common.delete')}` verwijderen.
-2.  De `size` prop van de `Button` componenten aanpassen naar `"icon"` voor een betere styling als icoonknop.
-3.  De `className` aanpassen om de padding en marge correct in te stellen voor icoonknoppen (bijvoorbeeld `p-0` of een specifieke padding voor iconen, en `gap-1` verwijderen).
-4.  Een `aria-label` toevoegen of controleren of deze al correct is ingesteld (via `t()` is goed, maar we kunnen ook een expliciete `aria-label` toevoegen voor duidelijkheid) voor toegankelijkheid.
+1. De tekstelementen `{t('common.edit')}` en `{t('common.delete')}` verwijderen.
+2. De `size` prop van de `Button` componenten aanpassen naar `"icon"` voor een betere styling als icoonknop.
+3. De `className` aanpassen om de padding en marge correct in te stellen voor icoonknoppen (bijvoorbeeld `p-0` of een specifieke padding voor iconen, en `gap-1` verwijderen).
+4. Een `aria-label` toevoegen of controleren of deze al correct is ingesteld (via `t()` is goed, maar we kunnen ook een expliciete `aria-label` toevoegen voor duidelijkheid) voor toegankelijkheid.
 
 Ik ga deze wijzigingen nu toepassen in `src/components/task/TaskDisplayCard.tsx`.
 
@@ -4069,8 +4069,8 @@ Prima, de `toggleFavorite` prop wordt nu doorgegeven.
 **Stap 2: Aanpassen `TaskDisplayCard.tsx`**
 
 Nu pas ik `TaskDisplayCard.tsx` aan:
-1.  Voeg `toggleFavorite` toe aan de `TaskDisplayCardProps` interface.
-2.  Implementeer de favorietenknop/badge. Ik plaats deze na de "Markeer als (in)compleet" knop en vóór de "Bewerken" knop. De styling zal lijken op de andere actieknoppen daar (`h-7 w-7 p-1.5 rounded-full`, etc.) om consistentie te behouden.
+1. Voeg `toggleFavorite` toe aan de `TaskDisplayCardProps` interface.
+2. Implementeer de favorietenknop/badge. Ik plaats deze na de "Markeer als (in)compleet" knop en vóór de "Bewerken" knop. De styling zal lijken op de andere actieknoppen daar (`h-7 w-7 p-1.5 rounded-full`, etc.) om consistentie te behouden.
 
 
 
@@ -4769,12 +4769,12 @@ is het mogelijk om de markeer als voltooid ook zonder label te weergaven, een du
 Ja, dat is mogelijk. Ik kan de knop "Markeer als (in)compleet" in `src/components/task/TaskDisplayCard.tsx` aanpassen zodat deze alleen een icoon toont en een duidelijker checkbox-icoon gebruikt.
 
 Ik zal de volgende aanpassingen doen:
-1.  De tekstlabels "Markeer als voltooid" en "Markeer als incompleet" verwijderen.
-2.  De huidige `Check` en `X` iconen vervangen door:
-    *   Een `Square` icoon (lege checkbox) als de taak nog niet voltooid is.
-    *   Een `CheckSquare` icoon (aangevinkte checkbox) als de taak voltooid is.
-3.  De knop stylen als een icoonknop, vergelijkbaar met de bewerk- en verwijderknoppen.
-4.  Een tooltip toevoegen om de actie ("Markeer als voltooid" / "Markeer als incompleet") te tonen bij hover.
+1. De tekstlabels "Markeer als voltooid" en "Markeer als incompleet" verwijderen.
+2. De huidige `Check` en `X` iconen vervangen door:
+    * Een `Square` icoon (lege checkbox) als de taak nog niet voltooid is.
+    * Een `CheckSquare` icoon (aangevinkte checkbox) als de taak voltooid is.
+3. De knop stylen als een icoonknop, vergelijkbaar met de bewerk- en verwijderknoppen.
+4. Een tooltip toevoegen om de actie ("Markeer als voltooid" / "Markeer als incompleet") te tonen bij hover.
 
 Ik begin met het aanpassen van `src/components/task/TaskDisplayCard.tsx`.
 
@@ -5090,8 +5090,8 @@ Oké, ik begrijp dat je de huidige checkbox-iconen (`Square` en `CheckSquare`) n
 Ik stel voor om `Circle` (voor een open taak) en `CheckCircle` (voor een voltooide taak) te gebruiken. Deze zijn vaak duidelijker en goed herkenbaar.
 
 Ik zal de volgende aanpassingen doen in `src/components/task/TaskDisplayCard.tsx`:
-1.  `Circle` en `CheckCircle` importeren uit `lucide-react`.
-2.  De `Square` en `CheckSquare` iconen in de "Markeer als voltooid" knop vervangen door respectievelijk `Circle` en `CheckCircle`.
+1. `Circle` en `CheckCircle` importeren uit `lucide-react`.
+2. De `Square` en `CheckSquare` iconen in de "Markeer als voltooid" knop vervangen door respectievelijk `Circle` en `CheckCircle`.
 
 Laat me de wijziging doorvoeren.
 
@@ -5233,8 +5233,8 @@ vinkje zoals eerst
 **Cursor**
 
 Oké, je wilt terug naar de oorspronkelijke iconen voor de "Markeer als voltooid"-knop:
-*   Een `Check`-icoon als de taak nog niet voltooid is (om aan te geven dat je erop kunt klikken om hem af te vinken).
-*   Een `X`-icoon als de taak al voltooid is (om aan te geven dat je erop kunt klikken om het vinkje te verwijderen).
+* Een `Check`-icoon als de taak nog niet voltooid is (om aan te geven dat je erop kunt klikken om hem af te vinken).
+* Een `X`-icoon als de taak al voltooid is (om aan te geven dat je erop kunt klikken om het vinkje te verwijderen).
 
 Ik zal de `Circle` en `CheckCircle` iconen in `src/components/task/TaskDisplayCard.tsx` weer vervangen door `Check` en `X`.
 
@@ -5335,19 +5335,19 @@ checkbox met vinkje en een x
 **Cursor**
 
 Oké, dus je wilt een combinatie:
-*   Als de taak **niet voltooid** is: een **lege checkbox** (`Square`).
-*   Als de taak **wel voltooid** is: een **checkbox met een X erin** (of een X-icoon als dat duidelijker is naast de checkbox-stijl).
+* Als de taak **niet voltooid** is: een **lege checkbox** (`Square`).
+* Als de taak **wel voltooid** is: een **checkbox met een X erin** (of een X-icoon als dat duidelijker is naast de checkbox-stijl).
 
 Lucide React heeft geen standaard icoon voor een "checkbox met een X". We hebben wel:
-*   `Square` (lege checkbox)
-*   `CheckSquare` (checkbox met vinkje)
-*   `XSquare` (checkbox met een X) - Dit lijkt het meest op wat je zoekt voor de "voltooid maar kan ongedaan gemaakt worden" staat.
-*   `X` (losse X)
-*   `Check` (los vinkje)
+* `Square` (lege checkbox)
+* `CheckSquare` (checkbox met vinkje)
+* `XSquare` (checkbox met een X) - Dit lijkt het meest op wat je zoekt voor de "voltooid maar kan ongedaan gemaakt worden" staat.
+* `X` (losse X)
+* `Check` (los vinkje)
 
 Ik stel voor om het volgende te gebruiken:
-*   Taak **niet voltooid**: `Square` (lege checkbox, klik om te voltooien)
-*   Taak **wel voltooid**: `XSquare` (checkbox met een X, klik om voltooiing ongedaan te maken)
+* Taak **niet voltooid**: `Square` (lege checkbox, klik om te voltooien)
+* Taak **wel voltooid**: `XSquare` (checkbox met een X, klik om voltooiing ongedaan te maken)
 
 Dit geeft een duidelijke checkbox-representatie in beide staten.
 
@@ -5365,8 +5365,8 @@ checkbox met vinkje, en checkbox met kruisje
 **Cursor**
 
 Oké, dan gaan we voor:
-*   Taak **niet voltooid**: `Square` (lege checkbox). Als je hierop klikt, wordt de taak voltooid.
-*   Taak **wel voltooid**: `XSquare` (checkbox met een kruisje). Als je hierop klikt, wordt de taak weer als niet-voltooid gemarkeerd.
+* Taak **niet voltooid**: `Square` (lege checkbox). Als je hierop klikt, wordt de taak voltooid.
+* Taak **wel voltooid**: `XSquare` (checkbox met een kruisje). Als je hierop klikt, wordt de taak weer als niet-voltooid gemarkeerd.
 
 Dit lijkt me een duidelijke en consistente set iconen.
 
@@ -5388,8 +5388,8 @@ nee geen lege checkbox
 Ah, mijn excuses voor het misverstand! Geen lege checkbox dus.
 
 Dan bedoel je waarschijnlijk:
-*   Taak **niet voltooid**: een **checkbox met een vinkje** (`CheckSquare`) erin, om aan te geven dat je de taak kunt *voltooien*.
-*   Taak **wel voltooid**: een **checkbox met een kruisje** (`XSquare`) erin, om aan te geven dat je de voltooiing *ongedaan kunt maken*.
+* Taak **niet voltooid**: een **checkbox met een vinkje** (`CheckSquare`) erin, om aan te geven dat je de taak kunt *voltooien*.
+* Taak **wel voltooid**: een **checkbox met een kruisje** (`XSquare`) erin, om aan te geven dat je de voltooiing *ongedaan kunt maken*.
 
 Is dat correct? Dit betekent dat de "actie" die je kunt uitvoeren (voltooien of ongedaan maken) wordt gevisualiseerd met het icoon in de checkbox.
 
@@ -5406,10 +5406,10 @@ ja
 Perfect! Dan gaan we dat implementeren.
 
 Ik pas `src/components/task/TaskDisplayCard.tsx` aan:
-1.  Zorg ervoor dat `CheckSquare` en `XSquare` geïmporteerd worden uit `lucide-react`.
-2.  Voor de "Markeer als voltooid"-knop:
-    *   Als `task.status === 'done'` (voltooid): gebruik het `XSquare` icoon.
-    *   Als `task.status !== 'done'` (niet voltooid): gebruik het `CheckSquare` icoon.
+1. Zorg ervoor dat `CheckSquare` en `XSquare` geïmporteerd worden uit `lucide-react`.
+2. Voor de "Markeer als voltooid"-knop:
+    * Als `task.status === 'done'` (voltooid): gebruik het `XSquare` icoon.
+    * Als `task.status !== 'done'` (niet voltooid): gebruik het `CheckSquare` icoon.
 
 De eventuele ongebruikte iconen zoals `Check`, `X`, `Circle`, en `CheckCircle` (als die er nog stonden van eerdere pogingen) zal ik ook uit de imports verwijderen voor dat bestand.
 
@@ -5575,10 +5575,10 @@ Ja, dat kan. Ik zal de "Markeer als voltooid"-knop (met de `CheckSquare`/`XSquar
 Ik plaats deze knop in de badge-sectie, naast de categorie-badge en de favorieten-badge, voor consistentie.
 
 De logica is als volgt:
-1.  De `toggleTaskCompletion` functie moet beschikbaar zijn in `TaskCard.tsx`. Deze komt uit de `useTask` hook, net als `toggleFavorite`.
-2.  De knop zelf zal lijken op de favorietenknop: een kleine, ronde badge-achtige knop met alleen een icoon.
-3.  De tooltip zal "Markeer als voltooid" of "Markeer als incompleet" tonen, afhankelijk van de huidige status.
-4.  De iconen zijn `CheckSquare` (voor niet-voltooide taken, om aan te geven dat je kunt voltooien) en `XSquare` (voor voltooide taken, om aan te geven dat je de voltooiing ongedaan kunt maken).
+1. De `toggleTaskCompletion` functie moet beschikbaar zijn in `TaskCard.tsx`. Deze komt uit de `useTask` hook, net als `toggleFavorite`.
+2. De knop zelf zal lijken op de favorietenknop: een kleine, ronde badge-achtige knop met alleen een icoon.
+3. De tooltip zal "Markeer als voltooid" of "Markeer als incompleet" tonen, afhankelijk van de huidige status.
+4. De iconen zijn `CheckSquare` (voor niet-voltooide taken, om aan te geven dat je kunt voltooien) en `XSquare` (voor voltooide taken, om aan te geven dat je de voltooiing ongedaan kunt maken).
 
 Ik begin met het aanpassen van `src/components/task/TaskCard.tsx`.
 
@@ -5668,11 +5668,11 @@ export default function TaskCard({ task }: TaskCardProps) {
 
 De "Markeer als voltooid"-knop is nu toegevoegd aan de taakkaarten op het dashboard (`TaskCard.tsx`).
 Deze knop:
--   Gebruikt `CheckSquare` als de taak open is en `XSquare` als de taak voltooid is.
--   Is gestyled als een kleine badge, net als de favorietenknop.
--   Heeft een tooltip die de actie beschrijft.
--   Roept `toggleTaskCompletion` aan (die nu ook uit `useTask` wordt gehaald).
--   De benodigde iconen (`CheckSquare`, `XSquare`) zijn aan de imports toegevoegd.
+- Gebruikt `CheckSquare` als de taak open is en `XSquare` als de taak voltooid is.
+- Is gestyled als een kleine badge, net als de favorietenknop.
+- Heeft een tooltip die de actie beschrijft.
+- Roept `toggleTaskCompletion` aan (die nu ook uit `useTask` wordt gehaald).
+- De benodigde iconen (`CheckSquare`, `XSquare`) zijn aan de imports toegevoegd.
 
 Test het even op het dashboard om te zien of het goed werkt en eruitziet zoals je wilt!
 
@@ -5980,8 +5980,8 @@ De sleutels `markAsComplete` en `markAsIncomplete` worden toegevoegd onder `task
 De Engelse vertalingen zijn toegevoegd.
 
 Nu zal ik de Nederlandse vertalingen toevoegen aan `public/locales/nl/translation.json`:
--   `taskCard.tooltip.markAsComplete`: "Markeer als voltooid"
--   `taskCard.tooltip.markAsIncomplete`: "Markeer als onvoltooid"
+- `taskCard.tooltip.markAsComplete`: "Markeer als voltooid"
+- `taskCard.tooltip.markAsIncomplete`: "Markeer als onvoltooid"
 
 Om dit correct te doen, moet ik eerst de structuur van het Nederlandse bestand controleren. Ik zoek naar de `taskCard.tooltip` sectie. Als die sectie of de `tooltip` subsectie niet bestaat, maak ik die aan.
 

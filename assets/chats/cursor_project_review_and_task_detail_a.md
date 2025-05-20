@@ -782,12 +782,12 @@ chunk-W6L2VRDA.js?v=5b0d5204:16670 Uncaught ReferenceError: hideTimerRef is not 
     at handleActivity (TaskDetail.tsx:298:7)
     at TaskDetail.tsx:306:5
 
-hook.js:608 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. Error Component Stack
+hook.js:608 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see <https://reactrouter.com/v6/upgrading/future#v7_starttransition>. Error Component Stack
     at TaskProvider (TaskContext.tsx:60:32)
     at AppContent (App.tsx:49:25)
     at ThemeProvider (ThemeContext.tsx:29:33)
     at AuthProvider (AuthContext.tsx:12:32)
-hook.js:608 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. Error Component Stack
+hook.js:608 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see <https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath>. Error Component Stack
     at TaskProvider (TaskContext.tsx:60:32)
     at AppContent (App.tsx:49:25)
     at ThemeProvider (ThemeContext.tsx:29:33)
@@ -809,7 +809,7 @@ hook.js:608 The above error occurred in the <TaskDetail> component:
     at App
 
 Consider adding an error boundary to your tree to customize error handling behavior.
-Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+Visit <https://reactjs.org/link/error-boundaries> to learn more about error boundaries.
 chunk-W6L2VRDA.js?v=5b0d5204:9129 Uncaught ReferenceError: hideTimerRef is not defined
     at handleActivity (TaskDetail.tsx:298:7)
     at TaskDetail.tsx:306:5
@@ -1057,13 +1057,13 @@ De functionaliteit voor het contextmenu op desktop (rechtermuisklik op een subta
 **User**
 
     at TaskDetail.tsx:306:5
-hook.js:608 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. Error Component Stack
+hook.js:608 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see <https://reactrouter.com/v6/upgrading/future#v7_starttransition>. Error Component Stack
     at TaskProvider (TaskContext.tsx:60:32)
     at AppContent (App.tsx:49:25)
     at ThemeProvider (ThemeContext.tsx:29:33)
     at AuthProvider (AuthContext.tsx:12:32)
 
-hook.js:608 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. Error Component Stack
+hook.js:608 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see <https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath>. Error Component Stack
     at TaskProvider (TaskContext.tsx:60:32)
     at AppContent (App.tsx:49:25)
     at ThemeProvider (ThemeContext.tsx:29:33)
@@ -1085,7 +1085,7 @@ hook.js:608 The above error occurred in the <TaskDetail> component:
     at App
 
 Consider adding an error boundary to your tree to customize error handling behavior.
-Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+Visit <https://reactjs.org/link/error-boundaries> to learn more about error boundaries.
 chunk-W6L2VRDA.js?v=5b0d5204:9129 Uncaught ReferenceError: hideTimerRef is not defined
     at handleActivity (TaskDetail.tsx:298:7)
     at TaskDetail.tsx:306:5
@@ -8366,7 +8366,7 @@ Hopelijk lukt het nu!
 **User**
 
 de requests.js:1 
- POST https://wzoeijpdtpysbkmxbcld.supabase.co/functions/v1/generate-subtasks 500 (Internal Server Error)
+ POST <https://wzoeijpdtpysbkmxbcld.supabase.co/functions/v1/generate-subtasks> 500 (Internal Server Error)
 s.fetch	@	requests.js:1
 (anonymous)	@	traffic.js:1
 fetch	@	traffic.js:1
@@ -11975,7 +11975,7 @@ Wat vind jij? Is de huidige volgorde "Verwijder" - "Sorteer" prima, of wil je "S
 
 **User**
 
-@TaskContext.tsx nederlandse comments in het engels of verwijderen indien niet nodig, jsdoc toevoegen indien niet aanwezig@TaskDetail.tsx @SubtaskRow.tsx 
+@TaskContext.tsx nederlandse comments in het engels of verwijderen indien niet nodig, jsdoc toevoegen indien niet <aanwezig@TaskDetail.tsx> @SubtaskRow.tsx 
 
 ---
 
@@ -13535,7 +13535,7 @@ Is er nog iets waar ik je mee kan helpen?
 
 **User**
 
-requests.js:1 Fetch finished loading: POST "https://wzoeijpdtpysbkmxbcld.supabase.co/rest/v1/rpc/get_user_profile_with_permissions".
+requests.js:1 Fetch finished loading: POST "<https://wzoeijpdtpysbkmxbcld.supabase.co/rest/v1/rpc/get_user_profile_with_permissions>".
 s.fetch @ requests.js:1
 (anonymous) @ traffic.js:1
 fetch @ traffic.js:1
@@ -13548,7 +13548,7 @@ step @ @supabase_supabase-js.js?v=70dcca96:3886
 __awaiter6 @ @supabase_supabase-js.js?v=70dcca96:3870
 (anonymous) @ @supabase_supabase-js.js?v=70dcca96:3911
 then @ @supabase_supabase-js.js?v=70dcca96:89
-requests.js:1 Fetch finished loading: POST "https://wzoeijpdtpysbkmxbcld.supabase.co/rest/v1/chat_messages".
+requests.js:1 Fetch finished loading: POST "<https://wzoeijpdtpysbkmxbcld.supabase.co/rest/v1/chat_messages>".
 s.fetch @ requests.js:1
 (anonymous) @ traffic.js:1
 fetch @ traffic.js:1
@@ -13685,7 +13685,7 @@ dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=70dcca96:7173
 dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=70dcca96:5478
 dispatchEvent @ chunk-276SZO74.js?v=70dcca96:5472
 dispatchDiscreteEvent @ chunk-276SZO74.js?v=70dcca96:5449Understand this error
-requests.js:1 Fetch failed loading: POST "https://wzoeijpdtpysbkmxbcld.supabase.co/functions/v1/deep-research".
+requests.js:1 Fetch failed loading: POST "<https://wzoeijpdtpysbkmxbcld.supabase.co/functions/v1/deep-research>".
 
 ---
 
@@ -13758,7 +13758,7 @@ De JSDoc voor `RequestBody` bovenaan de functie beschrijft de verwachte velden:
 
 **User**
 
-[deep-research] Main catch block error: Error: API request failed with status 400: Invalid model 'sonar-medium-online'. Permitted models can be found in the documentation at https://docs.perplexity.ai/guides/model-cards.
+[deep-research] Main catch block error: Error: API request failed with status 400: Invalid model 'sonar-medium-online'. Permitted models can be found in the documentation at <https://docs.perplexity.ai/guides/model-cards>.
     at Object.handler (file:///DEV/rakesh/cursor/orgamaster-ai-v2/orga-master-ai-nexus/supabase/functions/deep-research/index.ts:243:13)
     at eventLoopTick (ext:core/01_core.js:168:7)
     at async respond (ext:sb_core_main_js/js/http.js:197:14)
@@ -13909,7 +13909,7 @@ Let ook op eventuele andere consoleberichten, voor het geval er nog iets anders 
 
 **User**
 
-[deep-research] Main catch block error: Error: API request failed with status 400: Invalid model 'sonar-medium-chat'. Permitted models can be found in the documentation at https://docs.perplexity.ai/guides/model-cards.
+[deep-research] Main catch block error: Error: API request failed with status 400: Invalid model 'sonar-medium-chat'. Permitted models can be found in the documentation at <https://docs.perplexity.ai/guides/model-cards>.
     at Object.handler (file:///DEV/rakesh/cursor/orgamaster-ai-v2/orga-master-ai-nexus/supabase/functions/deep-research/index.ts:242:13)
     at eventLoopTick (ext:core/01_core.js:168:7)
     at async respond (ext:sb_core_main_js/js/http.js:197:14)
@@ -14442,7 +14442,7 @@ TaskDetail.tsx:719 i18next::translator: missingKey nl translation taskDetail.but
 TaskDetail.tsx:729 i18next::translator: missingKey nl translation taskDetail.buttons.hideDescription taskDetail.buttons.hideDescription
 TaskDetail.tsx:719 i18next::translator: missingKey nl translation taskDetail.buttons.hideDescription taskDetail.buttons.hideDescription
 TaskDetail.tsx:729 i18next::translator: missingKey nl translation taskDetail.buttons.hideDescription taskDetail.buttons.hideDescription
-requests.js:1 Fetch finished loading: POST "https://wzoeijpdtpysbkmxbcld.supabase.co/rest/v1/rpc/get_user_profile_with_permissions".
+requests.js:1 Fetch finished loading: POST "<https://wzoeijpdtpysbkmxbcld.supabase.co/rest/v1/rpc/get_user_profile_with_permissions>".
 s.fetch @ requests.js:1
 (anonymous) @ traffic.js:1
 fetch @ traffic.js:1

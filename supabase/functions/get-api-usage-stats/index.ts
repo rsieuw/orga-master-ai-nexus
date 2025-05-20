@@ -176,30 +176,103 @@ serve(async (req: Request) => {
     } = payload;
     const offset = (page - 1) * limit;
 
-    // 3. Fetch data from user_api_logs (internal API usage)
-    let internalApiQuery = supabaseAdmin
+    // DEBUG: Log incoming filters // RE-ENABLED
+    console.log("[get-api-usage-stats] DEBUG: Incoming payload filters:", JSON.stringify(payload, null, 2));
+    console.log("[get-api-usage-stats] DEBUG: Parsed filters - startDate:", _startDate, "endDate:", _endDate, "filterUserId:", filterUserId, "filterFunctionName:", filterFunctionName);
+
+    // 3. Fetch data from user_api_logs (internal API usage) for TABLE DISPLAY
+    let internalApiTableQuery = supabaseAdmin
       .from("user_api_logs")
       .select("*", { count: "exact" })
       .order("called_at", { ascending: false })
       .range(offset, offset + limit -1);
 
-    // if (startDate) internalApiQuery = internalApiQuery.gte("timestamp", startDate); // Temporarily removed
-    // if (endDate) internalApiQuery = internalApiQuery.lte("timestamp", endDate);     // Temporarily removed
-    if (filterUserId) internalApiQuery = internalApiQuery.eq("user_id", filterUserId);
-    if (filterFunctionName) internalApiQuery = internalApiQuery.eq("function_name", filterFunctionName);
+    // if (startDate) internalApiTableQuery = internalApiTableQuery.gte("timestamp", startDate); // Temporarily removed
+    // if (endDate) internalApiTableQuery = internalApiTableQuery.lte("timestamp", endDate);     // Temporarily removed
+    if (filterUserId) internalApiTableQuery = internalApiTableQuery.eq("user_id", filterUserId);
+    if (filterFunctionName) internalApiTableQuery = internalApiTableQuery.eq("function_name", filterFunctionName);
     // Add more filters here if needed
 
-    const { data: internalLogs, error: internalError, count: internalCount } = await internalApiQuery;
+    const { data: internalLogsForTable, error: internalTableError, count: internalCount } = await internalApiTableQuery;
 
-    if (internalError) {
-      console.error("Error fetching internal API logs:", internalError);
+    if (internalTableError) {
+      console.error("Error fetching internal API logs for table:", internalTableError);
       // Log the specific database error
       await supabaseAdmin.from('user_api_logs').insert({
           user_id: callingUserId,
           function_name: functionNameForLogging,
-          metadata: { success: false, error: 'Failed to fetch internal_api_logs', dbErrorCode: internalError.code, dbErrorMessage: internalError.message },
+          metadata: { success: false, error: 'Failed to fetch internal_api_logs for table', dbErrorCode: internalTableError.code, dbErrorMessage: internalTableError.message },
       });
-      throw internalError;
+      throw internalTableError;
+    }
+
+    // NEW: 3.B Fetch and Aggregate data from user_api_logs for GRAPH/AGGREGATION
+    // This query fetches all relevant logs for aggregation without pagination limits applied to the aggregation itself.
+    // Filters for date/user/functionName could still be applied if needed for the aggregated view.
+    let internalApiAggQuery = supabaseAdmin
+        .from('user_api_logs')
+        .select('user_id, function_name, called_at') // Select only necessary fields
+        .order('called_at', { ascending: false }) // NEW: Explicitly order by called_at descending
+        .limit(10000); // NEW: Explicitly set a high limit to fetch more/all logs for aggregation
+
+    if (_startDate) internalApiAggQuery = internalApiAggQuery.gte("called_at", _startDate);
+    if (_endDate) internalApiAggQuery = internalApiAggQuery.lte("called_at", _endDate);
+    // Note: filterUserId and filterFunctionName are applied to the table logs,
+    // For a general "top functions" graph, we might not want to filter by functionName here,
+    // or make it a separate payload option. For now, let's keep it consistent with table filters.
+    if (filterUserId) internalApiAggQuery = internalApiAggQuery.eq("user_id", filterUserId);
+    if (filterFunctionName) internalApiAggQuery = internalApiAggQuery.eq("function_name", filterFunctionName);
+
+
+    const { data: allInternalLogsForAgg, error: internalAggError } = await internalApiAggQuery;
+
+    if (internalAggError) {
+        console.error("Error fetching all internal API logs for aggregation:", internalAggError);
+        await supabaseAdmin.from('user_api_logs').insert({
+            user_id: callingUserId,
+            function_name: functionNameForLogging,
+            metadata: { success: false, error: 'Failed to fetch all internal_api_logs for aggregation', dbErrorCode: internalAggError.code, dbErrorMessage: internalAggError.message },
+        });
+        throw internalAggError;
+    }
+    
+    // DEBUG: Check for deep-research in allInternalLogsForAgg // RE-ENABLED
+    if (allInternalLogsForAgg) {
+        const deepResearchLogsRaw = allInternalLogsForAgg.filter(log => log.function_name === 'deep-research');
+        console.log(`[get-api-usage-stats] DEBUG: Found ${deepResearchLogsRaw.length} 'deep-research' entries in allInternalLogsForAgg (total: ${allInternalLogsForAgg.length}).`);
+    } else {
+        console.log("[get-api-usage-stats] DEBUG: allInternalLogsForAgg is null or undefined.");
+    }
+
+    // Perform aggregation on allInternalLogsForAgg
+    const aggregatedInternal: { [key: string]: AggregatedInternalApiUsage } = {};
+    if (allInternalLogsForAgg) {
+      for (const log of allInternalLogsForAgg) {
+        const key = `${log.user_id || 'unknown'}-${log.function_name || 'unknown_function'}`; // Ensure function_name is part of key
+        if (!aggregatedInternal[key]) {
+          aggregatedInternal[key] = {
+            user_id: log.user_id,
+            function_name: log.function_name || 'unknown_function',
+            call_count: 0,
+            last_called_at: new Date(0).toISOString(), 
+          };
+        }
+        aggregatedInternal[key].call_count++;
+        if (log.called_at && new Date(log.called_at) > new Date(aggregatedInternal[key].last_called_at!)) {
+          aggregatedInternal[key].last_called_at = log.called_at;
+        }
+      }
+    }
+    const aggregatedInternalUsage: AggregatedInternalApiUsage[] = Object.values(aggregatedInternal)
+                                                                    .sort((a, b) => b.call_count - a.call_count); // Sort by call_count desc for "top"
+
+    // DEBUG: Check for deep-research in the final aggregatedInternalUsage // RE-ENABLED
+    if (aggregatedInternalUsage && aggregatedInternalUsage.length > 0) {
+        const deepResearchEntryAggregated = aggregatedInternalUsage.find(item => item.function_name === 'deep-research');
+        console.log("[get-api-usage-stats] DEBUG: 'deep-research' entry in final aggregatedInternalUsage:", JSON.stringify(deepResearchEntryAggregated, null, 2));
+        console.log("[get-api-usage-stats] DEBUG: Final aggregatedInternalUsage (first 5 items):", JSON.stringify(aggregatedInternalUsage.slice(0,5), null, 2));
+    } else {
+        console.log("[get-api-usage-stats] DEBUG: aggregatedInternalUsage is empty or undefined after aggregation.");
     }
 
     // 4. Fetch data from external_api_usage_logs
@@ -227,36 +300,6 @@ serve(async (req: Request) => {
       });
       throw externalError;
     }
-
-    // 5. Aggregate Internal API Data
-    const aggregatedInternal: { [key: string]: AggregatedInternalApiUsage } = {};
-    if (internalLogs) {
-      for (const log of internalLogs) {
-        const key = `${log.user_id || 'unknown'}-${log.function_name || 'unknown'}`;
-        if (!aggregatedInternal[key]) {
-          aggregatedInternal[key] = {
-            user_id: log.user_id,
-            function_name: log.function_name,
-            call_count: 0,
-            last_called_at: new Date(0).toISOString(), // Initialize with a very old date
-          };
-        }
-        aggregatedInternal[key].call_count++;
-        if (log.called_at && new Date(log.called_at) > new Date(aggregatedInternal[key].last_called_at!)) {
-          aggregatedInternal[key].last_called_at = log.called_at;
-        }
-      }
-    }
-    const aggregatedInternalUsage: AggregatedInternalApiUsage[] = Object.values(aggregatedInternal);
-    
-    // DEBUG LOGS - Toegevoegd voor troubleshooting
-    console.log("BACKEND DEBUG: internalLogs aanwezig?", !!internalLogs);
-    console.log("BACKEND DEBUG: aantal internalLogs:", internalLogs?.length || 0);
-    console.log("BACKEND DEBUG: aggregatedInternal keys:", Object.keys(aggregatedInternal).length);
-    console.log("BACKEND DEBUG: aggregatedInternal (object):", JSON.stringify(aggregatedInternal, null, 2));
-    console.log("BACKEND DEBUG: aggregatedInternalUsage (array):", JSON.stringify(aggregatedInternalUsage, null, 2));
-    console.log("BACKEND DEBUG: Length of aggregatedInternalUsage:", aggregatedInternalUsage ? aggregatedInternalUsage.length : 'undefined or null');
-    console.log("BACKEND DEBUG: Type of aggregatedInternalUsage:", typeof aggregatedInternalUsage, Array.isArray(aggregatedInternalUsage));
 
     // 6. Aggregate external API usage for average response times
     const aggregatedExternal: Record<string, {
@@ -308,9 +351,9 @@ serve(async (req: Request) => {
     }));
 
     const response: UsageStatsResponse = {
-      internalApiUsage: internalLogs || [],
+      internalApiUsage: internalLogsForTable || [], // Use the paginated logs for table display
       externalApiUsage: externalLogs || [],
-      aggregatedInternalUsage: aggregatedInternalUsage,
+      aggregatedInternalUsage: aggregatedInternalUsage, // Use the new aggregation
       aggregatedExternalUsage: aggregatedExternalUsage,
       summary: { 
         totalInternalCalls: internalCount || 0,
@@ -331,7 +374,8 @@ serve(async (req: Request) => {
         metadata: {
             success: true,
             filters_applied: payload,
-            internal_logs_returned: internalLogs?.length,
+            internal_logs_returned_for_table: internalLogsForTable?.length, // Updated key
+            total_internal_logs_for_aggregation: allInternalLogsForAgg?.length, // New key
             external_logs_returned: externalLogs?.length
         },
     });

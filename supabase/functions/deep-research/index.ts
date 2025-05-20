@@ -48,7 +48,7 @@ interface ApiRespData {
 
 /**
  * @typedef {Object} RequestBody
- * @property {string} [query="Geen onderzoeksvraag opgegeven"] - The main research query or task.
+ * @property {string} [query="No research question provided"] - The main research query or task.
  * @property {string} [description=""] - Additional specific requirements or description for the task.
  * @property {string} [contextQuery=""] - Contextual information for the main task.
  * @property {'nl' | 'en'} [languagePreference='nl'] - The preferred language for the response.
@@ -269,7 +269,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const { 
-      query = "Geen onderzoeksvraag opgegeven",
+      query = "No research question provided",
       description = "", 
       contextQuery = "", 
       languagePreference: reqLanguagePreference = "nl", 
@@ -279,7 +279,7 @@ Deno.serve(async (req: Request) => {
     } = requestData;
     
     requestBodyForLogging = {
-        queryProvided: query !== "Geen onderzoeksvraag opgegeven",
+        queryProvided: query !== "No research question provided",
         queryLength: query?.length,
         descriptionProvided: !!description,
         contextQueryProvided: !!contextQuery,
@@ -291,7 +291,7 @@ Deno.serve(async (req: Request) => {
     
     const serviceNameForLogging = modelProvider.startsWith('perplexity') ? 'PerplexityAI' : 'OpenAI';
 
-    if (!query || query === "Geen onderzoeksvraag opgegeven" || !taskId || taskId === "none") {
+    if (!query || query === "No research question provided" || !taskId || taskId === "none") {
       console.error("[deep-research] Missing required parameters, query:", query, "taskId:", taskId);
       throw new Error("deepResearch.error.missingQueryOrTaskId"); // Will be caught and logged
     }
@@ -588,7 +588,7 @@ The sources section should look like this:
 
     // Remove leading/trailing single or double quotes that might remain
     displayQuery = displayQuery.replace(/^['"]|['"]$/g, '');
-
+    
     // Return the formatted research result
     return new Response(
       JSON.stringify({

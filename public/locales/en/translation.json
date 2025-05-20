@@ -257,14 +257,15 @@
     }
   },
   "adminDashboard": {
-    "title": "Admin dashboard",
+    "title": "Admin Dashboard",
     "tabs": {
       "users": "Users",
       "permissions": "Permissions",
       "themes": "Themes",
-      "feedback": "Feedback",
+      "feedback": "Messages",
       "internalApiUsage": "Internal API Usage",
-      "externalApiUsage": "External API Usage"
+      "externalApiUsage": "External API Usage",
+      "aiLimits": "AI Limits"
     },
     "users": {
       "title": "User management",
@@ -299,6 +300,10 @@
     "externalApiUsage": {
       "title": "External API Usage",
       "description": "Monitor the consumption of external AI services by the API functions."
+    },
+    "aiLimits": {
+      "title": "AI Limit Settings",
+      "description": "Manage the limits for AI feature usage per user type."
     }
   },
   "adminUsersPage": {
@@ -508,8 +513,9 @@
   },
   "navbar": {
     "newTaskButton": {
+      "text": "New Task",
       "ariaLabel": "Create new task",
-      "text": "Generate Tasks"
+      "fabText": "Task"
     },
     "userMenu": {
       "defaultUserName": "User",
@@ -662,14 +668,25 @@
       "subtaskAdded": "Subtask added",
       "subtaskAddedDescription": "Subtask \"{{subtaskTitle}}\" has been successfully added.",
       "addFailed": "Add failed",
-      "subtaskAddFailedDescription": "Could not add the new subtask.",
+      "taskLoadFailedTitle": "Error Loading Task",
+      "taskLoadFailedDescription": "Could not load the task details. Please try again.",
+      "subtaskAddedSuccessTitle": "Subtask Added",
+      "subtaskAddedSuccessDescription": "The new subtask has been successfully added.",
+      "subtaskAddFailedDescription": "Failed to add the subtask.",
+      "subtaskDeleteFailedDescription": "Failed to delete the subtask.",
+      "generateSubtasksFailed": "Failed to generate subtasks. Please try again.",
+      "maxAiSubtaskGenerationReached": "You have reached the maximum number of AI subtask generations.",
+      "taskUpdateError": "Error Updating Task",
       "allSubtasksDeleted": {
-        "title": "All subtasks deleted",
-        "description": "{{count}} subtasks were successfully deleted."
+        "title": "All Subtasks Deleted",
+        "description": "Successfully deleted {{count}} subtasks."
       },
       "allSubtasksDeleteFailed": {
         "description": "Failed to delete all subtasks."
-      }
+      },
+      "subtaskPromotedSuccessTitle": "Subtask Promoted",
+      "subtaskPromotedSuccessDescription": "Subtask has been promoted to a main task.",
+      "subtaskPromotionFailedDescription": "Failed to promote subtask to main task."
     },
     "noDeadline": "No deadline",
     "invalidDate": "Invalid date",
@@ -747,8 +764,9 @@
     "markAsIncomplete": "Mark as incomplete",
     "subtaskActions": {
       "research": "Research subtask",
-      "edit": "Edit subtask",
-      "delete": "Delete subtask",
+      "edit": "Edit",
+      "delete": "Delete",
+      "promoteToTask": "Make Main Task",
       "discussInChat": "Discuss in chat"
     },
     "deleteAllSubtasks": {
@@ -764,7 +782,9 @@
     "buttons": {
       "showDescription": "Show description",
       "hideDescription": "Hide description"
-    }
+    },
+    "showDeadline": "Show deadline",
+    "showProgress": "Show progress"
   },
   "common": {
     "add": "Add",
@@ -1669,6 +1689,33 @@
     "errors": {
       "unknownError": "An unknown error occurred.",
       "fetchLogsError": "Could not fetch internal API logs."
+    }
+  },
+  "adminAiLimitsPage": {
+    "title": "AI Generation Limits",
+    "description": "Configure the maximum number of times users can use AI to generate subtasks per task.",
+    "freeUserLimit": "Free User Limit",
+    "paidUserLimit": "Premium User Limit",
+    "adminLimitNote": "Administrators have no limit on AI generation usage",
+    "generationsPerTask": "generations per task",
+    "freeUserLimitHelp": "The maximum number of times a free user can use AI for a single task",
+    "paidUserLimitHelp": "The maximum number of times a premium user can use AI for a single task",
+    "buttons": {
+      "saveChanges": "Save Changes",
+      "saving": "Saving..."
+    },
+    "loading": "Loading AI limits...",
+    "errors": {
+      "fetchError": "Error fetching AI limits: {message}",
+      "saveError": "Error saving AI limits: {message}"
+    },
+    "toastTitles": {
+      "fetchFailed": "Loading Failed",
+      "saveFailed": "Save Failed",
+      "saveSuccess": "Saved"
+    },
+    "toastMessages": {
+      "saveSuccess": "AI generation limits have been successfully updated"
     }
   }
 }

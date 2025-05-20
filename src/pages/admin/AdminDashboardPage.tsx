@@ -12,7 +12,8 @@ import { useTranslation } from 'react-i18next'; // Import useTranslation
 import AdminFeedbackPage from "./AdminFeedbackPage.tsx";
 import AdminApiUsagePage from "./AdminApiUsagePage.tsx"; // Nieuwe import
 import AdminExternalApiUsagePage from "./AdminExternalApiUsagePage.tsx"; // Nieuwe import
-import { Users, Shield, MessageSquare, Palette, Activity } from "lucide-react"; // Import icons for admin tabs
+import AdminAiLimitsPage from "./AdminAiLimitsPage.tsx"; // Import AI Limits page
+import { Users, Shield, MessageSquare, Palette, Activity, Sliders } from "lucide-react"; // Import icons for admin tabs
 
 /**
  * `AdminDashboardPage` component serves as the main dashboard for administrators.
@@ -41,14 +42,6 @@ const AdminDashboardPage: React.FC = () => {
             <Shield className="h-5 w-5" />
             <span className="hidden sm:inline">{t('adminDashboard.tabs.permissions')}</span>
           </TabsTrigger>
-          <TabsTrigger value="themes" className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
-            <span className="hidden sm:inline">{t('adminDashboard.tabs.themes')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="feedback" className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            <span className="hidden sm:inline">{t('adminDashboard.tabs.feedback', 'Berichten')}</span>
-          </TabsTrigger>
           <TabsTrigger value="internalApiUsage" className="flex items-center gap-2">
             <Activity className="h-5 w-5" />
             <span className="hidden sm:inline">{t('adminDashboard.tabs.internalApiUsage', 'Intern API Gebruik')}</span>
@@ -56,6 +49,18 @@ const AdminDashboardPage: React.FC = () => {
           <TabsTrigger value="externalApiUsage" className="flex items-center gap-2">
             <Activity className="h-5 w-5" />
             <span className="hidden sm:inline">{t('adminDashboard.tabs.externalApiUsage', 'Extern API Gebruik')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="aiLimits" className="flex items-center gap-2">
+            <Sliders className="h-5 w-5" />
+            <span className="hidden sm:inline">{t('adminDashboard.tabs.aiLimits')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="themes" className="flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            <span className="hidden sm:inline">{t('adminDashboard.tabs.themes')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="feedback" className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            <span className="hidden sm:inline">{t('adminDashboard.tabs.feedback', 'Berichten')}</span>
           </TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-4">
@@ -152,6 +157,17 @@ const AdminDashboardPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <AdminExternalApiUsagePage />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="aiLimits" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('adminDashboard.aiLimits.title', 'AI-limietinstellingen')}</CardTitle>
+              <CardDescription>{t('adminDashboard.aiLimits.description', 'Beheer de limieten voor AI-functiegebruik per gebruikerstype.')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdminAiLimitsPage />
             </CardContent>
           </Card>
         </TabsContent>

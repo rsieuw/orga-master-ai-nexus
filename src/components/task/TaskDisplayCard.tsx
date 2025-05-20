@@ -64,6 +64,10 @@ interface TaskDisplayCardProps {
   t: TFunction;
   /** Function to toggle the favorite status of the task. */
   toggleFavorite: (taskId: string) => void;
+  /** Whether to show progress instead of deadline. */
+  showProgressInsteadOfDeadline?: boolean;
+  /** Function to toggle between deadline and progress display. */
+  toggleProgressDisplay?: () => void;
 }
 
 /**
@@ -92,6 +96,8 @@ const TaskDisplayCard: React.FC<TaskDisplayCardProps> = ({
   isGeneratingSubtasks,
   t,
   toggleFavorite,
+  showProgressInsteadOfDeadline = false,
+  toggleProgressDisplay,
 }) => {
   return (
     <Card
@@ -133,25 +139,76 @@ const TaskDisplayCard: React.FC<TaskDisplayCardProps> = ({
             {task?.title}
           </CardTitle>
 
-          {deadlineDay && deadlineMonth && (
-            <div className="transition-all duration-500 ease-in-out">
+          <div className="transition-all duration-500 ease-in-out flex items-center">
+            {totalSubtasks > 0 ? (
               <TooltipProvider delayDuration={100}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center">
-                      <div className={`w-8 h-8 flex flex-col items-center justify-center gap-[6px] rounded-full border border-white/10 overflow-hidden shadow-md calendar-badge ${
-                        task?.priority === 'high' ? 'bg-gradient-to-br from-red-600/90 to-rose-700/90' :
-                        task?.priority === 'medium' ? 'bg-gradient-to-br from-amber-500/90 to-orange-600/90' :
-                        task?.priority === 'low' ? 'bg-gradient-to-br from-blue-500/90 to-cyan-600/90' :
-                        'bg-gradient-to-br from-slate-500/90 to-slate-600/90'
-                      }`}>
-                        <div className="text-[0.875rem] font-bold text-white leading-none">
-                          {deadlineDay}
+                    <div 
+                      className={`flex items-center ${deadlineDay && deadlineMonth ? 'cursor-pointer' : (!deadlineDay && !deadlineMonth && totalSubtasks > 0) ? 'cursor-pointer' : ''}`} 
+                      onClick={(deadlineDay && deadlineMonth) || (!deadlineDay && !deadlineMonth && totalSubtasks > 0) ? toggleProgressDisplay : undefined} 
+                      aria-label={showProgressInsteadOfDeadline ? t('taskDetail.showDeadline') : t('taskDetail.showProgress')}
+                    >
+                      {showProgressInsteadOfDeadline ? (
+                        <div className={`w-8 h-8 flex items-center justify-center rounded-full border border-white/10 overflow-hidden shadow-md ${
+                          task?.priority === 'high' ? 'bg-gradient-to-br from-red-600/90 to-rose-700/90' :
+                          task?.priority === 'medium' ? 'bg-gradient-to-br from-amber-500/90 to-orange-600/90' :
+                          task?.priority === 'low' ? 'bg-gradient-to-br from-blue-500/90 to-cyan-600/90' :
+                          'bg-gradient-to-br from-slate-500/90 to-slate-600/90'
+                        }`}>
+                          <div className="text-[0.7rem] font-bold text-white">
+                            {Math.round(progressValue)}%
+                          </div>
                         </div>
-                        <div className="!text-[0.7rem] font-medium uppercase tracking-tight text-white/80 mt-[-8px] leading-none">
-                          {deadlineMonth.substring(0, 3)}
-                        </div>
-                      </div>
+                      ) : (
+                        deadlineDay && deadlineMonth ? (
+                          <div className={`w-8 h-8 flex flex-col items-center justify-center gap-[6px] rounded-full border border-white/10 overflow-hidden shadow-md calendar-badge ${
+                            task?.priority === 'high' ? 'bg-gradient-to-br from-red-600/90 to-rose-700/90' :
+                            task?.priority === 'medium' ? 'bg-gradient-to-br from-amber-500/90 to-orange-600/90' :
+                            task?.priority === 'low' ? 'bg-gradient-to-br from-blue-500/90 to-cyan-600/90' :
+                            'bg-gradient-to-br from-slate-500/90 to-slate-600/90'
+                          }`}>
+                            <div className="text-[0.875rem] font-bold text-white leading-none">
+                              {deadlineDay || ''}
+                            </div>
+                            <div className="!text-[0.7rem] font-medium uppercase tracking-tight text-white/80 mt-[-8px] leading-none">
+                              {deadlineMonth ? deadlineMonth.substring(0, 3) : ''}
+                            </div>
+                          </div>
+                        ) : showProgressInsteadOfDeadline ? (
+                          <TooltipProvider delayDuration={100}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div 
+                                  className="flex items-center cursor-pointer" 
+                                  onClick={toggleProgressDisplay}
+                                >
+                                  <div className={`w-8 h-8 flex items-center justify-center rounded-full border border-white/10 overflow-hidden shadow-md ${
+                                    task?.priority === 'high' ? 'bg-gradient-to-br from-red-600/90 to-rose-700/90' :
+                                    task?.priority === 'medium' ? 'bg-gradient-to-br from-amber-500/90 to-orange-600/90' :
+                                    task?.priority === 'low' ? 'bg-gradient-to-br from-blue-500/90 to-cyan-600/90' :
+                                    'bg-gradient-to-br from-slate-500/90 to-slate-600/90'
+                                  }`}>
+                                    <div className="text-[0.7rem] font-bold text-white">
+                                      0%
+                                    </div>
+                                  </div>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="left"
+                                align="center"
+                                sideOffset={8}
+                                alignOffset={0}
+                                avoidCollisions
+                                className="bg-popover/90 backdrop-blur-lg px-3 py-2 max-w-[300px] z-50 whitespace-normal break-words"
+                              >
+                                <p className="text-sm font-medium">{t('taskDetail.noSubtasks')}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : null
+                      )}
                     </div>
                   </TooltipTrigger>
                   <TooltipContent
@@ -162,12 +219,50 @@ const TaskDisplayCard: React.FC<TaskDisplayCardProps> = ({
                     avoidCollisions
                     className="bg-popover/90 backdrop-blur-lg px-3 py-2 max-w-[300px] z-50 whitespace-normal break-words"
                   >
-                    <p className="text-sm font-medium">{deadlineText}</p>
+                    <p className="text-sm font-medium">
+                      {showProgressInsteadOfDeadline ? 
+                        `${completedSubtasks} / ${totalSubtasks} ${t('common.subtasks')} ${t('common.done').toLowerCase()}` : 
+                        deadlineText}
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            </div>
-          )}
+            ) : (
+              deadlineDay && deadlineMonth ? (
+                <TooltipProvider delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center">
+                        <div className={`w-8 h-8 flex flex-col items-center justify-center gap-[6px] rounded-full border border-white/10 overflow-hidden shadow-md calendar-badge ${
+                          task?.priority === 'high' ? 'bg-gradient-to-br from-red-600/90 to-rose-700/90' :
+                          task?.priority === 'medium' ? 'bg-gradient-to-br from-amber-500/90 to-orange-600/90' :
+                          task?.priority === 'low' ? 'bg-gradient-to-br from-blue-500/90 to-cyan-600/90' :
+                          'bg-gradient-to-br from-slate-500/90 to-slate-600/90'
+                        }`}>
+                          <div className="text-[0.875rem] font-bold text-white leading-none">
+                            {deadlineDay || ''}
+                          </div>
+                          <div className="!text-[0.7rem] font-medium uppercase tracking-tight text-white/80 mt-[-8px] leading-none">
+                            {deadlineMonth ? deadlineMonth.substring(0, 3) : ''}
+                          </div>
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="left"
+                      align="center"
+                      sideOffset={8}
+                      alignOffset={0}
+                      avoidCollisions
+                      className="bg-popover/90 backdrop-blur-lg px-3 py-2 max-w-[300px] z-50 whitespace-normal break-words"
+                    >
+                      <p className="text-sm font-medium">{deadlineText}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : null
+            )}
+          </div>
         </div>
       </CardHeader>
       {task && (
