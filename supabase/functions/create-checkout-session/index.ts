@@ -8,7 +8,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Stripe from 'https://esm.sh/stripe@11.1.0?target=deno&no-check'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts' // Using alias defined in deno.jsonc
-import { Database } from '@/types/supabase.ts' // Using alias defined in deno.jsonc
+import { Database } from '../_shared/database.types.ts'
 
 // Type alias
 // type Customer = Database['public']['Tables']['customers']['Row'] // Removed as unused

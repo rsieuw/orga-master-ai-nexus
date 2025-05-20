@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { nl, enUS } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge.tsx';
-import { Database } from '@/integrations/supabase/database.types.ts';
+import { Database } from '@/integrations/supabase/index.ts';
 import PopularFunctionsChart from '@/components/admin/api-usage/PopularFunctionsChart.tsx';
 import CostDistributionChart from '@/components/admin/api-usage/CostDistributionChart.tsx';
 import TokenUsageByFunctionChart from '@/components/admin/api-usage/TokenUsageByFunctionChart.tsx';

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client.ts";
 import { useToast } from "@/hooks/use-toast.ts";
 import { useTranslation } from "react-i18next";
 import { Message, MessageType, Citation } from "../types.ts";
-import { Database } from "@/types/supabase.ts";
+import { Database } from "@/integrations/supabase/index.ts";
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from "@/hooks/useAuth.ts";
 

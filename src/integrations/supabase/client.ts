@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase.ts';
+import type { Database } from './index.ts';
 
 /**
  * The URL for the Supabase project.
