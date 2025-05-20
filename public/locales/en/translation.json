@@ -1335,7 +1335,11 @@
       }
     },
     "login": {
-      "title": "Log in",
+      "title": "OrgaMaster AI",
+      "subtitle": "Log in to manage your tasks",
+      "noAccount": "Don't have an account?",
+      "registerHere": "Register here",
+      "signInWithGoogle": "Sign in with Google",
       "emailLabel": "Email",
       "emailPlaceholder": "your@email.com",
       "passwordLabel": "Password",
@@ -1574,7 +1578,8 @@
     "title": "OrgaMaster AI",
     "subtitle": "Log in to manage your tasks",
     "noAccount": "Don't have an account?",
-    "registerHere": "Register here"
+    "registerHere": "Register here",
+    "signInWithGoogle": "Sign in with Google"
   },
   "register": {
     "title": "OrgaMaster AI",
