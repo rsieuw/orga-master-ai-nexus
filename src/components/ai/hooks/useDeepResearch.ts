@@ -18,6 +18,20 @@ interface UseDeepResearchProps {
   setMessages: (updater: (prevMessages: Message[]) => Message[]) => void;
 }
 
+/**
+ * Custom hook to manage deep research functionality.
+ * It handles starting research, saving results, and managing related state.
+ *
+ * @param {UseDeepResearchProps} props - The properties for the hook.
+ * @returns {{
+ *  isResearching: boolean,
+ *  researchCancelled: boolean,
+ *  startDeepResearch: (customPrompt?: string, mode?: ResearchMode) => Promise<void>,
+ *  cancelResearch: () => void,
+ *  handleSaveResearch: (message: Message) => Promise<void>
+ * }}
+ *  An object containing the research state and functions.
+ */
 export function useDeepResearch({
   task,
   addMessage,
@@ -38,6 +52,23 @@ export function useDeepResearch({
   const { setLastResearchOutput } = useTask();
   const previousTaskId = useRef<string | null>(task?.id ?? null);
   const currentThinkingMessageId = useRef<string | null>(null);
+
+  // Effect om onderzoek te stoppen wanneer researchCancelled true wordt
+  useEffect(() => {
+    if (researchCancelled && currentThinkingMessageId.current) {
+      // Update de loading message om aan te geven dat het onderzoek is gestopt
+      updateMessage(currentThinkingMessageId.current, {
+        content: t('chatPanel.research.cancelledByUser'),
+        isLoading: false,
+        messageType: 'error'
+      });
+      
+      // Reset de states
+      setIsResearching(false);
+      setResearchCancelled(false);
+      currentThinkingMessageId.current = null;
+    }
+  }, [researchCancelled, updateMessage, t]);
 
   useEffect(() => {
     if (isResearching && previousTaskId.current !== null && task?.id !== previousTaskId.current) {
@@ -88,7 +119,11 @@ export function useDeepResearch({
     }
   }, [task, updateMessage, toast, t]);
 
-  const startDeepResearch = useCallback(async (customPrompt?: string, mode: ResearchMode = 'research') => {
+  const startDeepResearch = useCallback(async (
+    customPrompt?: string, 
+    mode: ResearchMode = 'research',
+    subtaskDescription?: string | null | undefined
+  ) => {
     // console.log("=== START Deep Research BEGIN ===");
     // console.log("startDeepResearch called with:", { customPrompt, mode });
     // console.trace("Call stack for startDeepResearch");
@@ -129,37 +164,41 @@ export function useDeepResearch({
     }
 
     if (!task?.id || isResearching) {
-      // console.log("❌ Geen taak ID of al bezig met onderzoek", { taskId: task?.id, isResearching });
-      // console.log("=== START Deep Research EINDE (geen taak of al bezig) ===");
+      // console.log("❌ No task ID or already researching", { taskId: task?.id, isResearching });
+      // console.log("=== START Deep Research END (no task or already busy) ===");
       return;
     }
 
     setIsResearching(true);
     setResearchCancelled(false); 
 
-    // const researchTopic = customPrompt || task.title || t('chatPanel.defaultTaskTitle'); // Verwijderd, want niet meer gebruikt
-    // console.log("✅ Onderzoek starten voor:", researchTopic, "met mode:", mode); // Verwijderd
+    const researchTopic = customPrompt || task.title || t('chatPanel.defaultTaskTitle');
+    let displayResearchTopic = researchTopic;
+    if (subtaskDescription && subtaskDescription.trim() !== "") {
+      displayResearchTopic = `${researchTopic} (${t('chatPanel.research.regardingSubtask', 'inzake subtaak')}: ${subtaskDescription})`;
+    }
+    // console.log("✅ Starting research for:", displayResearchTopic, "with mode:", mode);
 
     // Create and add loader message
     const tempMessageId = uuidv4();
-    // console.log("✅ Nieuwe loader messageId gegenereerd:", tempMessageId);
+    // console.log("✅ New loader messageId generated:", tempMessageId);
     
     const thinkingMessage: Message = {
       id: tempMessageId,
       role: 'assistant',
-      content: t('chatPanel.research.researchLoadingText'), 
+      content: t('chatPanel.research.researchLoadingTextInterpolated', { topic: displayResearchTopic }), 
       createdAt: new Date().toISOString(),
       isLoading: true,
       messageType: 'research_loader'
     };
-    // console.log("✅ Loader bericht maken:", thinkingMessage);
+    // console.log("✅ Creating loader message:", thinkingMessage);
     
-    // console.log("✅ addMessage aanroepen voor loader bericht");
+    // console.log("✅ Calling addMessage for loader message");
     await addMessage(thinkingMessage);
-    // console.log("✅ Loader bericht zou toegevoegd moeten zijn met ID:", tempMessageId);
+    // console.log("✅ Loader message should have been added with ID:", tempMessageId);
 
     currentThinkingMessageId.current = tempMessageId;
-    // console.log("✅ currentThinkingMessageId.current bijgewerkt naar:", currentThinkingMessageId.current);
+    // console.log("✅ currentThinkingMessageId.current updated to:", currentThinkingMessageId.current);
 
     try {
       // console.log(`[useDeepResearch] ✅ Invoking Edge Function 'deep-research'. Parameters:`, {
@@ -169,31 +208,39 @@ export function useDeepResearch({
         // localLoaderMessageId: tempMessageId
       // });
       
-      // Volledig verzoek met alle nodige parameters
+      // Full request with all necessary parameters
       const { data, error: invokeError } = await supabase.functions.invoke('deep-research', {
         body: { 
           query: customPrompt || task.title,
+          description: subtaskDescription,
           taskId: task.id,
           mode: mode,
           localLoaderMessageId: tempMessageId
         }
       });
 
-      // currentThinkingMessageId.current zou nog steeds tempMessageId moeten zijn.
+      // Controleer of het onderzoek is geannuleerd tijdens het uitvoeren
+      if (researchCancelled) {
+        // Als het onderzoek is geannuleerd, stoppen we met de verwerking
+        // De effectHook zal de cleanup afhandelen
+        return;
+      }
+
+      // currentThinkingMessageId.current should still be tempMessageId.
       const localLoaderMessageId = currentThinkingMessageId.current;
 
       if (invokeError) {
         // console.error('[useDeepResearch] Error invoking deep-research. Full error object:', invokeError);
-        // De context, inclusief de body van de functie-response, zit mogelijk in invokeError.context
+        // The context, including the body of the function response, might be in invokeError.context
         if (invokeError.context && typeof invokeError.context === 'object') {
           // console.error('[useDeepResearch] Error context:', invokeError.context);
           const responseText = invokeError.context.text || invokeError.context.responseText || (typeof invokeError.context.data === 'string' ? invokeError.context.data : null);
           if (responseText) {
             try {
-              // const errorResponseBody = JSON.parse(responseText); // Verwijderd, want niet meer gebruikt
-              // console.error('[useDeepResearch] Parsed error response body from function:', errorResponseBody); // Verwijderd
+              // const errorResponseBody = JSON.parse(responseText); // Removed, as no longer used
+              // console.error('[useDeepResearch] Parsed error response body from function:', errorResponseBody); // Removed
             } catch (e) {
-              // console.error('[useDeepResearch] Could not parse error response body, raw text:', responseText); // Verwijderd
+              // console.error('[useDeepResearch] Could not parse error response body, raw text:', responseText); // Removed
             }
           } else {
             // console.error('[useDeepResearch] No parsable text found in error context. Context data:', invokeError.context.data);
@@ -209,19 +256,28 @@ export function useDeepResearch({
             messageType: 'error',
           });
         }
-        // Stop verdere uitvoering hier als er een invokeError is
+        // Stop further execution here if there is an invokeError
         setIsResearching(false);
         currentThinkingMessageId.current = null;
         return;
       }
 
       if (data && localLoaderMessageId) {
+        // Controleer nog een keer of het onderzoek is geannuleerd 
+        // voordat we de resultaten gaan verwerken
+        if (researchCancelled) {
+          return;
+        }
+      
         // console.log(
           // `[useDeepResearch] Received data. Attempting to update LOCAL message. LocalLoaderID: ${localLoaderMessageId}, DB-Returned-ID: ${data.id}. Content Snippet: "${data.researchResult?.substring(0, 70)}..."`
         // );
         
-        // Combineer verwijderen loader en toevoegen research_result in één transactie
+        // Combine removing loader and adding research_result in one transaction
         const newResearchResultId = uuidv4();
+        // Determine the effective prompt that was used for the research
+        const effectivePrompt = customPrompt || task?.title || 'Unknown Topic';
+
         const newResultMessage: Message = {
           id: newResearchResultId,
           role: 'assistant',
@@ -230,17 +286,24 @@ export function useDeepResearch({
           messageType: 'research_result',
           isLoading: false,
           timestamp: Date.now(),
-          canBeSaved: true,
-          subtask_title: customPrompt || null,
+          createdAt: new Date().toISOString(), // Ensure createdAt is set
+          canBeSaved: true, // Remains useful if manual save is also an option later
+          subtask_title: null, // Explicitly null, or derive if possible. For now, research is on main task/custom prompt.
+                               // If customPrompt might be a subtask title, this could be:
+                               // (mode === 'instruction' && customPrompt) ? customPrompt : null;
+                               // Or, if selectedSubtaskTitle is available in this hook's scope.
+                               // For now, let's assume research is general or tied to main task title via prompt.
+          prompt: effectivePrompt, // The actual query sent for research
           _forceDisplay: true
         };
-        setMessages(prevMessages => {
-          const filtered = prevMessages.filter(msg => msg.id !== localLoaderMessageId);
-          return [...filtered, newResultMessage];
-        });
-        // console.log(`[useDeepResearch] Nieuw research_result bericht toegevoegd met force en ID: ${newResearchResultId}`);
 
-        // Store the research output in TaskContext
+        // 1. Remove the loader message from local state
+        setMessages(prevMessages => prevMessages.filter(msg => msg.id !== localLoaderMessageId));
+        
+        // 2. Add the new research result message, which will also trigger saveResearchToDb via addMessage's internal logic
+        await addMessage(newResultMessage); // `addMessage` handles `research_result` and calls `saveResearchToDb`
+
+        // Store the research output in TaskContext (this is for other UI elements, not for persistence here)
         if (task?.id && data.researchResult) {
           setLastResearchOutput(task.id, data.researchResult);
           // console.log(`[useDeepResearch] Stored research output for task ${task.id}`);
@@ -289,7 +352,7 @@ export function useDeepResearch({
       setIsResearching(false);
       setResearchCancelled(false);
     }
-  }, [task, isResearching, user, addMessage, updateMessage, toast, t, setMessages, setLastResearchOutput]);
+  }, [task, isResearching, user, addMessage, updateMessage, toast, t, setMessages, setLastResearchOutput, researchCancelled]);
 
   const cancelResearch = useCallback(() => {
     // console.log("Attempting to cancel research...");

@@ -94,7 +94,7 @@
 - ✅ **[UI] Mobiele Weergave/Responsiviteit:**
   - ✅ **[NIEUW]** Verbeter de weergave en bruikbaarheid op mobiele apparaten. **(Prioriteit: Hoog)** (Afgerond, gecontroleerd door gebruiker)
 - ❌ **[Admin] API Management:**
-  - ❌ **[NIEUW]** Gebruikers API verbruik monitor in admin dashboard.
+  - ✅ **[NIEUW]** Gebruikers API verbruik monitor in admin dashboard.
   - ❌ **[NIEUW]** Gebruikers rate limit instellen (bv. op basis van tokens/calls per periode).
 
 ## Prioriteit 4: Toekomstige Ideeën (Optioneel)

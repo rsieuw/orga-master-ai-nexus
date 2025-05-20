@@ -234,20 +234,9 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       return;
     }
 
-    const userRequestMessageText = mode === 'instruction' && selectedSubtaskTitle && prompt 
-      ? `${t('chatPanel.research.instructionPrefixForSubtask', { subtask: selectedSubtaskTitle })} ${prompt}`
-      : prompt || `${t('chatPanel.research.userRequestPrefix')} ${task.title}${selectedSubtaskTitle ? t('chatPanel.research.forSubtaskContinuation', { subtask: selectedSubtaskTitle }) : ''}`;
-
-    const userRequestMessage = ensureMessageHasId({
-      role: 'user',
-      content: userRequestMessageText,
-      messageType: 'standard'
-    });
-    await addMessage(userRequestMessage, false);
-    
     setCurrentResearchMode(mode);
     try {
-      await startDeepResearch(researchTopic, mode);
+      await startDeepResearch(researchTopic, mode, selectedSubtaskTitle);
     } catch (error) {
       
       const errorMessage = ensureMessageHasId({
@@ -258,7 +247,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
       await addMessage(errorMessage, false);
     }
     scrollToBottom();
-  }, [task, selectedSubtaskTitle, t, toast, startDeepResearch, addMessage, setCurrentResearchMode, scrollToBottom]);
+  }, [task, t, toast, startDeepResearch, addMessage, setCurrentResearchMode, scrollToBottom, selectedSubtaskTitle]);
 
   /**
    * Handles the submission of the search input.
@@ -422,7 +411,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
 
       // General subtask generation detection (existing logic)
       const dutchVerbs = ["genereer", "maak", "splits", "deel ", "aanmaken"];
-      const englishVerbs = ["generate", "create", "split", "break "];
+      const englishVerbs = ["create", "split", "break "];
 
       const hasDutchVerb = dutchVerbs.some(verb => inputLower.includes(verb));
       const hasEnglishVerb = englishVerbs.some(verb => inputLower.includes(verb));
@@ -431,6 +420,24 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         (inputLower.includes("genereer subtaken") || inputLower.includes("generate subtasks")) ||
         ((hasDutchVerb && inputLower.includes("subtaken")) || (hasEnglishVerb && inputLower.includes("subtasks")));
       
+      // Zoek naar onderzoek met specifieke zoekterm
+      const researchPrefixes = ["onderzoek naar:", "onderzoek over:", "research:", "research about:", "zoek op over:", "find out about:", "investigate:"];
+      let researchTerm: string | undefined = undefined;
+      
+      // Check of één van de prefixes in de input zit
+      for (const prefix of researchPrefixes) {
+        if (inputLower.includes(prefix.toLowerCase())) {
+          // Extraheer de tekst na de prefix
+          const prefixIndex = inputLower.indexOf(prefix.toLowerCase());
+          if (prefixIndex !== -1) {
+            researchTerm = currentInput.substring(prefixIndex + prefix.length).trim();
+            break;
+          }
+        }
+      }
+
+      // Als geen exacte prefix is gevonden, maar wel het woord "onderzoek" of "research"
+      // Probeer te detecteren of er een patroon is zoals "doe onderzoek naar belastingregels"
       const researchKeywords = ["onderzoek", "research", "zoek op", "find out", "investigate"];
       const requiresResearch = researchKeywords.some(keyword => inputLower.includes(keyword));
 
@@ -486,7 +493,22 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         }
         return;
       } else if (requiresResearch) {
-        handleDeepResearch(currentResearchMode); 
+        // Als we een specifieke term hebben gevonden, gebruik die voor het onderzoek
+        if (researchTerm && researchTerm.length > 0) {
+          handleDeepResearch(currentResearchMode, researchTerm); 
+        } else {
+          // Als er geen specifieke term is gevonden, probeer het onderwerp te extraheren na 'naar', 'over', etc.
+          const postfixRegex = /(?:onderzoek|research|zoek op|find out|investigate)(?:\s+(?:naar|over|about|on|for))?\s+(.+?)(?:\?|\.|$)/i;
+          const match = currentInput.match(postfixRegex);
+          
+          if (match && match[1] && match[1].trim().length > 0) {
+            // We hebben een onderzoeksonderwerp gevonden
+            handleDeepResearch(currentResearchMode, match[1].trim());
+          } else {
+            // Geen specifiek onderwerp gevonden, val terug op de standaardactie
+            handleDeepResearch(currentResearchMode);
+          }
+        }
         return; 
       }
 

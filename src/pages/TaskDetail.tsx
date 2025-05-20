@@ -159,7 +159,6 @@ export default function TaskDetail() {
       deadlineDay = format(parseISO(task.deadline), "d", { locale });
       deadlineMonth = format(parseISO(task.deadline), "MMM", { locale });
     } catch (e) {
-      console.error("Invalid date format for deadline in TaskDetail:", task.deadline);
       deadlineText = t('taskCard.invalidDate');
     }
   }
@@ -279,12 +278,10 @@ export default function TaskDetail() {
       try {
         await expandTask(task.id);
       } catch (error) {
-        console.error('Error in expandTask:', error);
+        // Error handling managed by expandTask
       }
       setIsGenerateSubtasksDialogOpen(false);
       setIsMobileGenerateDialogOpen(false);
-    } else {
-      console.error('Task is undefined in handleGenerateSubtasks');
     }
   };
 
@@ -444,9 +441,6 @@ export default function TaskDetail() {
       case "learning": // English
         return <BookOpen {...iconProps} />;
       default:
-        if (category) {
-          console.warn(`[TaskDetail] Unknown category for background icon: '${category}' (normalized to: '${normalizedCategory}')`);
-        }
         return null;
     }
   };
@@ -479,10 +473,6 @@ export default function TaskDetail() {
     const menuHeight = ESTIMATED_CONTEXT_MENU_HEIGHT; // 160
     const menuWidth = 224; // w-56
 
-    console.log("[TaskDetail] Viewport:", { width: viewportWidth, height: viewportHeight });
-    console.log("[TaskDetail] SubtaskRow Rect:", subtaskRowRect);
-    console.log("[TaskDetail] Menu Dimensions:", { width: menuWidth, height: menuHeight, offset: MENU_OFFSET });
-
     let top: number;
     // Try to position below the element
     if (subtaskRowRect.bottom + menuHeight + MENU_OFFSET <= viewportHeight) {
@@ -510,8 +500,6 @@ export default function TaskDetail() {
       left = MENU_OFFSET;
     }
     
-    console.log("[TaskDetail] Calculated Coords:", { top, left });
-
     setContextMenuSubtaskId(subtaskId);
     setContextMenuPosition({ top, left });
   };
@@ -843,7 +831,6 @@ export default function TaskDetail() {
                                         onClick={() => {
                                           setActiveMobileView('chat');
                                           navigate('#chat', { replace: true });
-                                          console.log("[TaskDetail] 'Bespreken in chat' clicked. Subtask title:", subtaskItem.title);
                                           setSelectedSubtaskTitle(subtaskItem.title);
                                           closeSubtaskContextMenu();
                                         }}
@@ -1122,7 +1109,7 @@ export default function TaskDetail() {
             >
               <PlusCircle className="h-7 w-7" />
             </Button>
-            <p className="text-xs text-center mt-1 text-muted-foreground bg-background/70 backdrop-blur-sm rounded-md px-2 py-0.5">{t('taskDetail.addSubtask.fabTitle')}</p>
+            <p className="text-xs text-center mt-1 text-muted-foreground bg-background/70 backdrop-blur-sm rounded-md px-2 py-0.5">{t('taskDetail.addSubtask.fabText')}</p>
           </div>
           <div className="flex flex-col items-center">
             <Button
@@ -1141,9 +1128,9 @@ export default function TaskDetail() {
               </div>
             </Button>
             {isLimitReached ? (
-              <p className="text-xs text-center mt-1 text-muted-foreground bg-background/70 backdrop-blur-sm rounded-md px-2 py-0.5">{t('taskDetail.generateSubtasks.limitReachedFabTitle')}</p>
+              <p className="text-xs text-center mt-1 text-muted-foreground bg-background/70 backdrop-blur-sm rounded-md px-2 py-0.5">{t('taskDetail.generateSubtasks.limitReachedFabText')}</p>
             ) : (
-              <p className="text-xs text-center mt-1 text-muted-foreground bg-background/70 backdrop-blur-sm rounded-md px-2 py-0.5">{t('taskDetail.generateSubtasks.fabTitle')}</p>
+              <p className="text-xs text-center mt-1 text-muted-foreground bg-background/70 backdrop-blur-sm rounded-md px-2 py-0.5">{t('taskDetail.generateSubtasks.fabText')}</p>
             )}
           </div>
         </div>

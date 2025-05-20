@@ -24,8 +24,10 @@ export type MessageType =
  * Represents a citation with a URL and an optional title.
  */
 export interface Citation {
-  url: string;
+  url?: string;
   title?: string;
+  text?: string;
+  number?: number;
 }
 
 /**

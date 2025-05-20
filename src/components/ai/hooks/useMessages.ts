@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client.ts";
 import { useToast } from "@/hooks/use-toast.ts";
 import { useTranslation } from "react-i18next";
-import { Message, MessageType } from "../types.ts";
+import { Message, MessageType, Citation } from "../types.ts";
 import { Database } from "@/types/supabase.ts";
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from "@/hooks/useAuth.ts";
@@ -331,11 +331,40 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
         }));
 
         const loadedResearch: Message[] = (dbResearch || []).map((research: OriginalSavedResearchRow) => {
-          let mappedCitations: string[] | undefined = undefined;
-          if (Array.isArray(research.citations)) {
-            if (research.citations.every((item): item is string => typeof item === 'string')) mappedCitations = research.citations;
-            else if (research.citations.length === 0) mappedCitations = [];
+          let mappedFrontendCitations: Citation[] | undefined = undefined;
+
+          if (research.citations && Array.isArray(research.citations)) {
+            const tempMapped = research.citations.map((dbCitation: unknown): Citation | undefined => {
+              if (typeof dbCitation === 'object' && dbCitation !== null) {
+                const pc = dbCitation as Partial<Citation>; // Potential Citation
+                // Alleen teruggeven als het de essentiële velden heeft (bijv. text of url)
+                if (pc.text || pc.url || pc.title) {
+                    return {
+                        number: pc.number,
+                        text: pc.text,
+                        title: pc.title,
+                        url: pc.url,
+                    } as Citation;
+                }
+              } else if (typeof dbCitation === 'string') {
+                // Fallback voor pure string URLs
+                return { url: dbCitation, text: dbCitation, title: dbCitation } as Citation;
+              }
+              return undefined;
+            });
+            // Filter alle undefined entries eruit
+            mappedFrontendCitations = tempMapped.filter((c): c is Citation => c !== undefined);
+            
+            if (mappedFrontendCitations.length === 0 && research.citations.length > 0) {
+               console.warn(`[useMessages] Research ID ${research.id}: DB citations present but mapping resulted in empty array. Original:`, JSON.stringify(research.citations));
+               mappedFrontendCitations = undefined; // Zet op undefined als het resultaat leeg is
+            } else if (mappedFrontendCitations.length === 0) {
+                mappedFrontendCitations = undefined; // Ook hier, als leeg na filteren
+            }
+          } else if (research.citations) {
+            console.warn(`[useMessages] Research ID ${research.id}: DB citations is not an array:`, research.citations);
           }
+          
           return ensureMessageHasId({
             dbId: research.id,
             id: research.id, 
@@ -344,7 +373,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
             timestamp: new Date(research.created_at).getTime(),
             createdAt: research.created_at,
             messageType: 'saved_research_display',
-            citations: mappedCitations, 
+            citations: mappedFrontendCitations, 
             subtask_title: research.subtask_title, 
             prompt: research.prompt ?? null 
           });

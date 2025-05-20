@@ -156,8 +156,7 @@
     "title": "OrgaMaster AI",
     "subtitle": "Log in om je taken te beheren",
     "noAccount": "Heb je nog geen account?",
-    "registerHere": "Registreer hier",
-    "signInWithGoogle": "Inloggen met Google"
+    "registerHere": "Registreer hier"
   },
   "register": {
     "title": "OrgaMaster AI",
@@ -328,24 +327,16 @@
         "title": "Onderzoeksmodel opgeslagen",
         "description": "Standaard onderzoeksmodel ingesteld op: {modeLabel}."
       },
-      "researchModelProviderSaved": {
-        "title": "Onderzoeksmodel provider gewijzigd",
-        "description": "Onderzoeksmodel provider ingesteld op: {provider}."
-      },
-      "chatModelProviderSaved": {
-        "title": "Chat model provider gewijzigd",
-        "description": "Chat model provider ingesteld op: {provider}."
-      },
-      "errorSavingChatModel": {
-        "title": "Fout bij opslaan chat model provider",
-        "description": "Kon chat model voorkeur niet opslaan."
-      },
       "copiedToClipboard": "Gekopieerd naar klembord!",
       "genericErrorTitle": "Fout",
       "genericErrorDescription": "Er is iets misgegaan. Probeer het later opnieuw.",
       "layoutPreferenceSaved": {
         "title": "Indelingsvoorkeur opgeslagen",
         "description": "Je voorkeur voor de interface-indeling is opgeslagen."
+      },
+      "errorSavingResearchModel": {
+        "title": "Fout bij opslaan onderzoeksmodel",
+        "description": "Er is een fout opgetreden bij het opslaan van het onderzoeksmodel. Probeer het later opnieuw."
       }
     },
     "desktopLayout": {
@@ -549,7 +540,12 @@
       "description": "Weet je zeker dat je gebruiker {{email}} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt en zal de gebruiker en alle bijbehorende gegevens permanent verwijderen.",
       "success": "Gebruiker {{email}} succesvol verwijderd.",
       "error": "Fout bij verwijderen gebruiker."
-    }
+    },
+    "permissions": "Rechten",
+    "themes": "Thema's",
+    "feedback": "Feedback",
+    "internalApiUsage": "Intern API-gebruik",
+    "externalApiUsage": "Extern API-gebruik"
   },
   "adminPermissionsPage": {
     "features": {
@@ -591,8 +587,6 @@
   "adminThemeSettings": {
     "loading": "Thema-instellingen laden...",
     "noSettings": "Geen thema-instellingen gevonden",
-    "pageTitle": "Thema-instellingen",
-    "pageDescription": "Beheer welke thema's beschikbaar zijn voor elke gebruikersrol.",
     "tableHeaders": {
       "role": "Rol",
       "theme": "Thema",
@@ -715,25 +709,12 @@
     "greeting": "Hallo, {{name}}!",
     "tasksOverview": "Hier is een overzicht van je taken.",
     "searchPlaceholder": "Zoek taken...",
-    "filterStatusAll": "Alle statussen",
-    "filterStatusCompleted": "Voltooid",
-    "filterStatusIncomplete": "Onvoltooid",
-    "filterPriorityAll": "Alle prioriteiten",
-    "filterPriorityHigh": "Hoge prioriteit",
-    "filterPriorityMedium": "Gemiddelde prioriteit",
-    "filterPriorityLow": "Lage prioriteit",
-    "noTasksFound": "Geen taken gevonden die voldoen aan de criteria.",
-    "noTasksAtAll": "Je hebt nog geen taken. Maak je eerste taak aan!",
-    "allTasksCompleted": "Goed bezig! Alle taken zijn voltooid.",
-    "clearFiltersButton": "Filters wissen",
-    "addNewTaskMobile": "Nieuwe taak",
     "overdue": "Verlopen",
     "today": "Vandaag",
     "tomorrow": "Morgen",
     "dayAfterTomorrow": "Overmorgen",
     "nextWeek": "Volgende week",
     "later": "Binnenkort",
-    "favorites": "Favorieten",
     "categories": {
       "completed": "Voltooid",
       "overdue": "Verlopen",
@@ -753,21 +734,12 @@
     "finances": "Financiën",
     "projects": "Projecten",
     "addNewTaskPlaceholder": "Nieuwe taak toevoegen...",
-
-    "tooltips": {
-      "addNewTask": "Nieuwe taak toevoegen"
-    },
     "emptyState": {
-      "noTasks": "Geen taken gevonden",
-      "noTasksDescription": "Probeer je zoekopdracht of filters aan te passen, of maak een nieuwe taak aan.",
-      "allTasksDone": "Alle taken voltooid!",
-      "allTasksDoneDescription": "Goed gedaan! Je hebt al je taken afgerond.",
       "noTasksAtAll": "Je hebt nog geen taken.",
-      "addNewTaskButton": "Nieuwe taak toevoegen"
+      "addNewTaskButton": "Nieuwe taak toevoegen",
+      "noTasksAfterFilter": "Geen taken gevonden met de huidige filters"
     },
-    "accessibility": {
-      "taskColumn": "Taak kolom voor {{category}}"
-    }
+    "defaultUser": "Standaard gebruiker"
   },
   "taskCard": {
     "invalidDate": "Ongeldige datum",
@@ -797,18 +769,7 @@
       "low": "Laag",
       "label": "Prioriteit"
     },
-    "dueDate": "Vervaldatum",
-    "createdAt": "Aangemaakt op",
-    "updatedAt": "Laatst bijgewerkt",
-    "assignedTo": "Toegewezen aan",
-    "noAssignee": "Niet toegewezen",
-    "description": "Beschrijving",
     "noDescription": "Geen beschrijving beschikbaar.",
-    "notes": "Notities",
-    "addNotePlaceholder": "Typ je notitie hier...",
-    "addNoteButton": "Notitie toevoegen",
-    "noNotes": "Nog geen notities.",
-    "subtasks": "Subtaken",
     "addSubtaskPlaceholder": "Nieuwe subtaak...",
     "addSubtaskButton": "Subtaak toevoegen",
     "noSubtasks": "Nog geen subtaken.",
@@ -821,7 +782,10 @@
       "deleteConfirmation": {
         "title": "Subtaak verwijderen?",
         "description": "Weet je zeker dat je de subtaak \"{{subtaskTitle}}\" wilt verwijderen?"
-      }
+      },
+      "options": "Subtaak opties",
+      "edit": "Subtaak bewerken",
+      "delete": "Subtaak verwijderen"
     },
     "toast": {
       "subtaskUpdated": "Subtaak bijgewerkt",
@@ -839,7 +803,10 @@
       },
       "allSubtasksDeleteFailed": {
         "description": "Het verwijderen van alle subtaken is mislukt."
-      }
+      },
+      "taskDeleted": "Taak verwijderd",
+      "taskDeletedDescription": "De taak is succesvol verwijderd",
+      "subtaskStatusUpdateFailedDescription": "Kon de status van de subtaak niet bijwerken. Probeer het opnieuw."
     },
     "subtasksTitle": "Subtaken",
     "sortSubtasksAriaLabel": "Sorteer subtaken",
@@ -849,34 +816,7 @@
     },
     "editTaskDialog": {
       "title": "Taak bewerken",
-      "description": "Pas de details van je taak aan.",
-      "selectStatusPlaceholder": "Selecteer een status",
-      "titlePlaceholder": "Voer hier een taaktitel in",
-      "descriptionPlaceholder": "Voeg optioneel een beschrijving toe...",
-      "selectPriorityPlaceholder": "Selecteer een prioriteit",
-      "selectCategoryPlaceholder": "Selecteer een categorie",
-      "chooseDate": "Kies een datum",
-      "clearDeadlineSR": "Deadline wissen",
-      "toast": {
-        "taskUpdatedTitle": "Taak bijgewerkt",
-        "taskUpdatedDescription": "De wijzigingen zijn opgeslagen.",
-        "updateErrorTitle": "Bijwerkfout",
-        "updateErrorDescription": "De taak kon niet worden bijgewerkt."
-      }
-    },
-    "aiChat": {
-      "title": "AI assistent",
-      "inputPlaceholder": "Stel een vraag over deze taak...",
-      "sendCommand": "Verstuur (Cmd+Enter)",
-      "showChat": "Toon AI chat",
-      "hideChat": "Verberg AI chat",
-      "generatingResponse": "AI genereert antwoord...",
-      "errorResponse": "Fout bij het ophalen van AI-antwoord.",
-      "suggestion": {
-        "generateSubtasks": "Genereer subtaken",
-        "summarizeTask": "Vat taak samen",
-        "estimateTime": "Schat benodigde tijd"
-      }
+      "description": "Pas de details van je taak aan."
     },
     "generateSubtasks": {
       "buttonText": "Genereer Subtaken",
@@ -890,7 +830,8 @@
       "buttonAriaLabel": "Genereer subtaken",
       "fabText": "Subtaken genereren",
       "confirmButton": "Ja, genereer subtaken",
-      "fabTitle": "Genereer"
+      "limitReachedTooltip": "Je hebt de limiet voor AI-generaties bereikt",
+      "limitReachedFabText": "Limiet bereikt"
     },
     "overdueSR": "(Verlopen)",
     "minimizeDescription": "Beschrijving minimaliseren/maximaliseren",
@@ -910,8 +851,7 @@
       "buttonText": "Subtaak toevoegen",
       "buttonAriaLabel": "Nieuwe subtaak toevoegen",
       "tooltip": "Voeg een nieuwe subtaak toe aan deze hoofdtaak.",
-      "fabText": "Nieuwe subtaak",
-      "fabTitle": "Subtaak"
+      "fabText": "Nieuwe subtaak"
     },
     "emptySubtasks": "Geen subtaken toegevoegd",
     "addingSubtask": "Toevoegen...",
@@ -928,8 +868,22 @@
     "deleteAllSubtasksDialog": {
       "title": "Weet je zeker dat je alle subtaken wilt verwijderen?",
       "description": "Deze actie kan niet ongedaan worden gemaakt. Alle subtaken zullen permanent verwijderd worden.",
-      "confirmButton": "Ja, verwijder alle subtaken",
-      "cancelButton": "Annuleren"
+      "confirmButton": "Ja, verwijder alle subtaken"
+    },
+    "notFound": {
+      "title": "Taak niet gevonden"
+    },
+    "noDeadline": "Geen deadline",
+    "invalidDate": "Ongeldige datum",
+    "editTaskSR": "Taak bewerken",
+    "taskOptionsSR": "Taak opties",
+    "editTask": "Taak bewerken",
+    "collapseDescription": "Beschrijving inklappen",
+    "newSubtaskTitleLabel": "Titel nieuwe subtaak",
+    "generatingText": "Genereren...",
+    "buttons": {
+      "showDescription": "Beschrijving tonen",
+      "hideDescription": "Beschrijving verbergen"
     }
   },
   "common": {
@@ -1054,7 +1008,7 @@
         "confirmDeleteButton": "Ik begrijp het, verwijder mijn account"
       },
       "language": {
-        "label": "Interface Language",
+        "label": "Interfacetaal",
         "dutch": "Dutch",
         "english": "English"
       },
@@ -1066,13 +1020,13 @@
         "toggleAriaLabel": "Toggle light/dark theme"
       },
       "desktopLayout": {
-        "label": "Interface Layout (Desktop)",
-        "description": "Choose the default arrangement for the task detail and chat window on desktop.",
-        "option5050": "Balanced",
-        "option3367": "Chat Focused"
+        "label": "Interface Lay-out (Desktop)",
+        "description": "Kies de standaardindeling voor het taakdetailvenster en chatvenster op desktop.",
+        "option5050": "Gebalanceerd",
+        "option3367": "Chat Gefocust"
       },
       "notifications": {
-        "label": "Email Notifications",
+        "label": "E-mailmeldingen",
         "description": "Receive emails for approaching deadlines."
       },
       "toast": {
@@ -1080,16 +1034,16 @@
         "passwordUpdated": "Password successfully updated.",
         "errorSaving": "Error saving. Please try again.",
         "uiLanguageChanged": {
-          "title": "Interface Language Changed",
+          "title": "Interfacetaal Gewijzigd",
           "description": "Interface language has been set to {{language}}."
         },
         "layoutPreferenceSaved": {
-          "title": "Layout Preference Saved",
+          "title": "Lay-outvoorkeur opgeslagen",
           "description": "Your interface layout preference has been saved."
         },
         "errorSavingLayoutPreference": {
-          "title": "Error Saving Layout",
-          "description": "Could not save layout preference. Please try again."
+          "title": "Fout bij Opslaan Lay-out",
+          "description": "Kon lay-outvoorkeur niet opslaan. Probeer het opnieuw."
         },
         "aiModeSaved": {
           "title": "AI Mode Saved",
@@ -1100,20 +1054,20 @@
           "description": "Could not save AI mode preference."
         },
         "researchModelSaved": {
-          "title": "Research Model Saved",
-          "description": "Default research model set to: {modeLabel}."
+          "title": "Onderzoeksmodel Opgeslagen",
+          "description": "Standaard onderzoeksmodel ingesteld op: {modeLabel}."
         },
         "errorSavingResearchModel": {
-          "title": "Error Saving Research Model",
-          "description": "Could not save research model preference."
+          "title": "Fout bij Opslaan Onderzoeksmodel",
+          "description": "Kon onderzoeksmodel voorkeur niet opslaan."
         },
         "notificationsSaved": {
-          "title": "Notification Preference Saved",
+          "title": "Meldingsvoorkeur opgeslagen",
           "descriptionEnabled": "Email notifications have been enabled.",
           "descriptionDisabled": "Email notifications have been disabled."
         },
         "errorSavingNotifications": {
-          "title": "Error Saving Notifications",
+          "title": "Fout bij opslaan meldingen",
           "description": "Could not save notification preferences."
         },
         "copiedToClipboard": "Copied to clipboard!",
@@ -1163,58 +1117,6 @@
         "precise": "Nauwkeurig",
         "custom": "Aangepast"
       }
-    },
-    "desktopLayout": {
-      "label": "Interface-indeling (Desktop)",
-      "description": "Kies de standaardverdeling voor het taakdetail en chatvenster op desktop.",
-      "option5050": "Gebalanceerd",
-      "option3367": "Chat gefocust"
-    },
-    "toast": {
-      "accountUpdated": "Accountgegevens bijgewerkt.",
-      "passwordUpdated": "Wachtwoord succesvol bijgewerkt.",
-      "errorSaving": "Fout bij opslaan. Probeer het opnieuw.",
-      "uiLanguageChanged": {
-        "title": "Interfacetaal gewijzigd",
-        "description": "Interfacetaal is ingesteld op {{language}}."
-      },
-      "layoutPreferenceSaved": {
-        "title": "Indelingsvoorkeur opgeslagen",
-        "description": "Je voorkeur voor de interface-indeling is opgeslagen."
-      },
-      "errorSavingLayoutPreference": {
-        "title": "Fout bij Opslaan Layout",
-        "description": "Kon de layoutvoorkeur niet opslaan. Probeer het opnieuw."
-      },
-      "aiModeSaved": {
-        "title": "AI-modus opgeslagen",
-        "description": "Standaard AI-modus ingesteld op: {modeLabel}."
-      },
-      "errorSavingAiMode": {
-        "title": "Fout bij opslaan AI-modus",
-        "description": "Kon AI-modusvoorkeur niet opslaan."
-      },
-      "researchModelSaved": {
-        "title": "Onderzoeksmodel opgeslagen",
-        "description": "Standaard onderzoeksmodel ingesteld op: {modeLabel}."
-      },
-      "researchModelProviderSaved": {
-        "title": "Onderzoeksmodel provider gewijzigd",
-        "description": "Onderzoeksmodel provider ingesteld op: {provider}."
-      },
-      "chatModelProviderSaved": {
-        "title": "Chat model provider gewijzigd",
-        "description": "Chat model provider ingesteld op: {provider}."
-      },
-      "errorSavingChatModel": {
-        "title": "Fout bij opslaan chat model provider",
-        "description": "Kon chat model voorkeur niet opslaan."
-      },
-      "copiedToClipboard": "Gekopieerd naar klembord!",
-      "genericErrorTitle": "Fout",
-      "genericErrorDescription": "Er is iets misgegaan. Probeer het later opnieuw.",
-      "topicRequiredTitle": "Onderwerp vereist",
-      "topicRequiredDescription": "Een onderwerp voor onderzoek kon niet worden bepaald."
     }
   },
   "profilePage": {
@@ -1262,33 +1164,31 @@
     "selectModelAriaLabel": "Selecteer AI-onderzoeksmodel",
     "notePlaceholder": "Typ je notitie hier...",
     "searchMessagesPlaceholder": "Zoek in berichten...",
-    "stopResearch": "Stop onderzoek",
     "searchPlaceholder": "Typ om te onderzoeken...",
     "noSearchResults": "Geen berichten gevonden met deze zoekterm.",
     "searchingMessages": "Zoeken in berichten",
     "searchingResearch": "Onderzoeken",
-    "defaultTaskTitle": "deze taak",
-    "defaultUsername": "gebruiker",
+    "defaultTaskTitle": "de huidige taak",
     "researchForSubtaskLabel": "Onderzoek voor subtaak: {{subtaskTitle}}",
-    "researchForPromptLabel": "Onderzoek voor prompt: {{prompt}}",
+    "researchForPromptLabel": "Onderzoek naar: {{prompt}}",
     "research": {
-      "startingDeepResearchOn": "Start grondig onderzoek naar: {{topic}}",
-      "contextPrompt": "met aangepaste context: \"{{prompt}}\"",
-      "contextSubtaskForMain": "voor subtaak \"{{subtaskTitle}}\" (van hoofdtaak \"{{mainTaskTitle}})\"",
-      "contextMainTask": "voor hoofdtaak \"{{mainTaskTitle}}\"",
-      "researchLoadingText": "Onderzoek uitvoeren... even geduld.",
-      "researchCompleted": "Onderzoek voltooid.",
       "userRequestPrefix": "Doe onderzoek over:",
       "forSubtaskContinuation": " voor subtaak '{{subtask}}'",
       "instructionPrefixForSubtask": "Voor subtaak '{{subtask}}', help me met:",
       "errorMessage": "Er is een fout opgetreden tijdens het onderzoek. Probeer het later opnieuw.",
+      "researchLoadingText": "Onderzoek uitvoeren... Een ogenblik geduld.",
+      "researchLoadingTextInterpolated": "Onderzoek uitvoeren naar: \"{{topic}}\"... Een ogenblik geduld.",
+      "researchCompleted": "Onderzoek voltooid.",
+      "researchCompletedText": "Onderzoek voltooid.",
+      "cancelledByUser": "Onderzoek geannuleerd door gebruiker.",
       "upgradeNeeded": {
         "title": "Upgrade Vereist",
         "description": "Voor diepgaand onderzoek is een betaald abonnement nodig. Overweeg te upgraden om deze functie te gebruiken."
-      }
+      },
+      "stopResearch": "Onderzoek annuleren",
+      "regardingSubtask": "inzake subtaak"
     },
     "researchModePopover": {
-      "title": "Kies onderzoeksmodus",
       "researchMode": "Onderzoek",
       "instructionMode": "Instructie",
       "creativeMode": "Creatief",
@@ -1299,11 +1199,8 @@
     "startConversationPrompt": "Begin een gesprek met de AI-assistent",
     "initialAssistantMessage": "Hallo {{username}}! Ik ben klaar om je te helpen met je taak: {{taskTitle}}. Wat kan ik voor je doen?",
     "subtaskSelectedMessage": "Oké, we richten ons nu op de subtaak: {{subtaskTitle}}.",
-    "closeSR": "Chat sluiten",
     "copyMessageTitle": "Kopieer bericht",
     "copyMessageSR": "Kopieer dit bericht",
-    "saveResearchTitle": "Onderzoek opslaan",
-    "saveResearchSR": "Onderzoek opslaan",
     "deleteNoteTitle": "Verwijder notitie",
     "deleteNoteSR": "Verwijder deze notitie",
     "deleteResearchTitle": "Verwijder onderzoek",
@@ -1342,7 +1239,14 @@
       "notesItemsKept": "{{count}} notities",
       "researchItemsKept": "{{count}} onderzoeken",
       "clearHistoryFailed": "Kon de chatgeschiedenis niet wissen",
-      "allSubtasksDeletedMessage": "Alle subtaken zijn succesvol verwijderd."
+      "allSubtasksDeletedMessage": "Alle subtaken zijn succesvol verwijderd.",
+      "deepResearchFailedTitle": "Uitgebreid Onderzoek Mislukt",
+      "deepResearchFailedDescriptionDefault": "Er is een fout opgetreden tijdens het uitgebreide onderzoek. Probeer het opnieuw.",
+      "saveResearchFailedDescriptionDefault": "Kon de onderzoeksresultaten niet opslaan. Probeer het opnieuw.",
+      "featureNotAvailableTitle": "Functie Niet Beschikbaar",
+      "featureNotAvailableDescription": "Deze functie is momenteel niet beschikbaar of je hebt geen toestemming om deze te gebruiken.",
+      "researchSavedTitle": "Onderzoek Opgeslagen",
+      "researchSavedDescription": "Het onderzoek is succesvol opgeslagen."
     },
     "errors": {
       "userNotLoggedIn": "Gebruiker niet ingelogd. Log in om notities op te slaan.",
@@ -1356,7 +1260,17 @@
       "unexpectedResponse": "Sorry, onverwacht antwoord van AI ontvangen",
       "aiConnectionFailed": "Sorry, verbinding met AI mislukt of AI functie gaf geen data terug.",
       "invalidPayloadForAction": "Ongeldige payload voor {{action}}",
-      "invalidSubtaskResponseStructure": "Onverwachte antwoordstructuur ontvangen bij het genereren van subtaken."
+      "invalidSubtaskResponseStructure": "Onverwachte antwoordstructuur ontvangen bij het genereren van subtaken.",
+      "research": {
+        "instructionPrefixForSubtask": "Instructievoorvoegsel voor subtaak",
+        "userRequestPrefix": "Voorvoegsel gebruikersverzoek",
+        "forSubtaskContinuation": "Voor subtaak voortzetting",
+        "errorMessage": "Foutmelding",
+        "upgradeNeeded": {
+          "title": "Upgrade nodig",
+          "description": "Om deze functie te gebruiken is een upgrade naar een hoger abonnement nodig"
+        }
+      }
     },
     "export": {
       "chatConversationForTask": "Chat conversatie voor taak:",
@@ -1365,13 +1279,16 @@
       "roleAssistant": "Assistent"
     },
     "pinnedMessages": "Vastgezette berichten",
-    "noteSavedTitle": "Notitie opgeslagen",
     "subtasksAddedConfirmation": {
       "intro": "Oké, ik heb de volgende subtaken toegevoegd:"
     },
     "subtaskAddedConfirmation": {
       "single": "Oké, ik heb de subtaak \"{{subtaskTitle}}\" toegevoegd."
-    }
+    },
+    "inputPlaceholder": "Stel een vraag of typ / voor commando's...",
+    "inputPlaceholderWithContext": "Vraag over {{taskTitle}} of typ / voor commando's...",
+    "sendCommand": "Verstuur",
+    "generatingResponse": "Antwoord genereren..."
   },
   "chatInput": {
     "messagePlaceholder": "Plan, Zoek, Maak het waar...",
@@ -1386,10 +1303,11 @@
     "clearDeadlineSR": "Deadline wissen",
     "toast": {
       "taskUpdatedTitle": "Taak bijgewerkt",
-      "taskUpdatedDescription": "De wijzigingen zijn opgeslagen.",
-      "updateErrorTitle": "Bijwerkfout",
-      "updateErrorDescription": "De taak kon niet worden bijgewerkt."
-    }
+      "taskUpdatedDescription": "De taak is succesvol bijgewerkt",
+      "updateErrorTitle": "Fout bij bijwerken",
+      "updateErrorDescription": "Er is een fout opgetreden bij het bijwerken van de taak"
+    },
+    "selectStatusPlaceholder": "Selecteer status"
   },
   "newTaskDialog": {
     "toast": {
@@ -1465,23 +1383,12 @@
       "taskNotFound": "Taak met ID {{taskId}} niet gevonden.",
       "fetchError": "Fout bij ophalen taken.",
       "notAuthenticated": "Je moet ingelogd zijn om deze actie uit te voeren.",
-      "updateTaskFailedSimple": "Kon de taak niet bijwerken",
       "aiSubtaskGenerationLimitReached": "AI-subtaakgeneratielimiet bereikt voor deze taak ({{count}}/{{limit}}).",
       "aiSubtaskGenerationFailed": "Kon geen AI-subtaken genereren.",
       "aiSubtasksGeneratedSuccessfully": "AI-subtaken succesvol gegenereerd.",
       "errorUpdatingTaskGenerationCount": "Kon AI-generatietelling voor de taak niet bijwerken.",
       "addSubtasksFailed": "Kon nieuwe AI-subtaken niet opslaan in de database.",
       "aiNoNewSubtasksGenerated": "AI heeft geen nieuwe unieke subtaken gegenereerd.",
-      "taskDeleted": "Taak verwijderd",
-      "taskCreated": "Taak aangemaakt",
-      "taskUpdated": "Taak bijgewerkt",
-      "createTaskFailed": "Kon geen taak aanmaken",
-      "updateTaskFailedGeneral": "Kon de taak niet bijwerken",
-      "taskNotFoundSimple": "Taak niet gevonden",
-      "taskNotFoundToUpdateSubtask": "Taak niet gevonden om subtaak bij te werken",
-      "deleteTaskFailed": "Kon de taak niet verwijderen",
-      "markingTaskFailed": "Kon de taak status niet wijzigen",
-      "fetchTasksFailed": "Kon taken niet ophalen",
       "autoCompleted": {
         "title": "Taak automatisch voltooid",
         "description": "Alle subtaken zijn voltooid, dus de taak is automatisch afgerond"
@@ -1497,6 +1404,15 @@
       "aiGenerationSuccess": {
         "title": "AI Generatie Succesvol",
         "description": "{{count}} nieuwe subta(a)k(en) succesvol gegenereerd."
+      },
+      "updateTaskFailed": "Bijwerken taak mislukt",
+      "alreadyGenerating": {
+        "title": "Al aan het genereren",
+        "description": "Er wordt al een verzoek verwerkt. Wacht tot het huidige verzoek is voltooid."
+      },
+      "aiLimitReached": {
+        "title": "AI-limiet bereikt",
+        "description": "Je hebt de limiet voor AI-generaties bereikt"
       }
     },
     "errors": {
@@ -1504,11 +1420,11 @@
       "taskNotFoundToUpdateSubtask": "Taak niet gevonden om subtaak bij te werken",
       "taskNotFoundToDeleteSubtask": "Taak niet gevonden om subtaak te verwijderen"
     },
-    "taskNotFoundWithNoQuotes": "Taak met ID {taskId} niet gevonden",
     "aiSubtaskGenerationLimitReached": "Je hebt de limiet van {limit} AI-subtaakgeneraties bereikt voor deze taak (huidige: {count})",
     "aiSubtaskGenerationFailed": "Kon geen AI-subtaken genereren.",
     "aiSubtasksGeneratedSuccessfully": "AI-subtaken succesvol gegenereerd.",
-    "errorUpdatingTaskGenerationCount": "Kon AI-generatietelling voor de taak niet bijwerken."
+    "errorUpdatingTaskGenerationCount": "Kon AI-generatietelling voor de taak niet bijwerken.",
+    "taskNotFound": "Taak niet gevonden"
   },
   "adminFeedbackPage": {
     "title": "Feedback Berichten",
@@ -1525,18 +1441,14 @@
     },
     "actions": {
       "handled": "Afgehandeld",
-      "read": "Gelezen"
+      "read": "Gelezen",
+      "markImportant": "Als belangrijk markeren",
+      "unmarkImportant": "Belangrijk markering verwijderen"
     },
     "statusValues": {
       "read": "Gelezen",
       "unread": "Ongelezen",
-      "handled": "Afgehandeld",
-      "new": "Nieuw"
-    },
-    "toast": {
-      "deletedTitle": "Bericht verwijderd",
-      "deletedDescription": "Het feedbackbericht is succesvol verwijderd.",
-      "deleteError": "Kon bericht niet verwijderen: {error}"
+      "handled": "Afgehandeld"
     }
   },
   "adminApiUsagePage": {
@@ -1554,7 +1466,7 @@
     },
     "errors": {
       "unknownError": "Er is een onbekende fout opgetreden.",
-      "fetchLogsError": "Kon interne API-logboeken niet ophalen."
+      "fetchLogsError": "Kon interne API-logs niet ophalen."
     },
     "logsTableTitle": "Details interne API-gebruik logs",
     "loadingLogs": "Logboeken laden...",
@@ -1565,44 +1477,44 @@
     "noAggregationDescription": "De API heeft ruwe logs geretourneerd maar geen geaggregeerde gegevens. Neem contact op met de systeembeheerder, er kan een probleem zijn met het API-eindpunt."
   },
   "adminExternalApiUsagePage": {
-    "title": "External API Usage",
-    "description": "Monitor and analyze usage of external APIs.",
+    "title": "Extern API-gebruik",
+    "description": "Monitor en analyseer gebruik van externe APIs.",
     "tableHeaders": {
-      "timestamp": "Timestamp",
-      "user": "User",
+      "timestamp": "Tijdstempel",
+      "user": "Gebruiker",
       "service": "Service",
-      "function": "Function",
+      "function": "Functie",
       "promptTokens": "Prompt Tokens",
       "completionTokens": "Completion Tokens",
-      "totalTokens": "Total Tokens",
-      "cost": "Cost",
+      "totalTokens": "Totaal Tokens",
+      "cost": "Kosten",
       "status": "Status",
-      "details": "Details/Error"
+      "details": "Details/Fout"
     },
-    "status": {
-      "success": "Success",
-      "failed": "Failed",
-      "unknown": "Unknown"
-    },
-    "noLogs": "No external API usage logs found.",
-    "loadingMore": "Loading more entries...",
+    "noLogs": "Geen externe API-gebruikslogs gevonden.",
+    "loadingMore": "Meer resultaten laden...",
     "toastTitles": {
-      "fetchError": "Error Fetching Logs",
-      "fetchUsersError": "Error Fetching Users"
+      "fetchError": "Fout bij ophalen logboeken",
+      "fetchUsersError": "Fout bij ophalen gebruikers"
     },
     "errors": {
-      "unknownError": "An unknown error occurred.",
-      "fetchLogsError": "Could not fetch external API logs."
+      "unknownError": "Er is een onbekende fout opgetreden.",
+      "fetchLogsError": "Kon externe API-logs niet ophalen."
     },
-    "logsTableTitle": "External API Usage Log Details",
-    "loadingLogs": "Loading logs...",
-    "errorLoadingLogs": "Error loading logs",
-    "viewError": "View Error",
-    "noRawDataAvailable": "No Raw API Usage Data Available",
-    "noRawDataDescription": "There are currently no raw external API call logs in the system. This could mean no external services have been called yet.",
-    "noAggregationDataAvailable": "No Aggregated API Usage Data Available",
-    "noAggregationDataDescription": "Although raw logs might exist, no aggregated data could be generated. This might indicate an issue with the aggregation process or simply no data to aggregate for the selected filters.",
-    "noAggregationDataForChart": "No aggregated data available to display this chart."
+    "logsTableTitle": "Loggegevens extern API-gebruik",
+    "loadingLogs": "Logboeken laden...",
+    "errorLoadingLogs": "Fout bij laden logboeken",
+    "viewError": "Toon fout",
+    "noRawDataAvailable": "Geen ruwe API-gebruiksgegevens beschikbaar",
+    "noRawDataDescription": "Er zijn momenteel geen ruwe externe API-aanroeplogboeken in het systeem. Dit kan betekenen dat er nog geen externe services zijn aangeroepen.",
+    "noAggregationDataAvailable": "Geen geaggregeerde API-gebruiksgegevens beschikbaar",
+    "noAggregationDataDescription": "Hoewel er ruwe logboeken kunnen bestaan, konden er geen geaggregeerde gegevens worden gegenereerd. Dit kan wijzen op een probleem met het aggregatieproces of er is eenvoudigweg geen data om te aggregeren voor de geselecteerde filters.",
+    "noAggregationDataForChart": "Geen geaggregeerde gegevens beschikbaar om deze grafiek weer te geven.",
+    "status": {
+      "success": "Succesvol",
+      "failed": "Mislukt",
+      "unknown": "Onbekend"
+    }
   },
   "registerForm": {
     "toast": {
@@ -1622,9 +1534,6 @@
     "submitButton": "Registreren",
     "submitButtonLoading": "Registreren..."
   },
-  "maxAiGenerationsReached": "Maximale AI-generaties bereikt",
-  "maxAiGenerationsReachedDescription": "Je hebt de limiet voor het aantal AI-gegenereerde taken/subtaken bereikt.",
-  
   "taskForm": {
     "title": "Taak bewerken",
     "backButton": "Terug",
@@ -1695,19 +1604,12 @@
       "description": "Stapsgewijze gidsen en gestructureerde instructies voor praktische taken."
     }
   },
-  "buttons": {
-    "showDescription": "Beschrijving tonen",
-    "hideDescription": "Beschrijving verbergen"
-  },
   "charts": {
     "noTokenData": "Geen tokendata beschikbaar om weer te geven.",
     "tokenUsageOverTime": "Tokenverbruik Over Tijd",
     "errorLoadingChartData": "Fout bij laden grafiekdata",
     "noTokenDataForChart": "Geen kostendata beschikbaar om grafiek weer te geven.",
     "tokenTypes": {
-      "prompt": "Prompt Tokens",
-      "completion": "Completion Tokens",
-      "total": "Totaal Tokens",
       "promptTokens": "Prompt Tokens",
       "completionTokens": "Completion Tokens",
       "totalTokens": "Totaal Tokens"
@@ -1728,292 +1630,44 @@
     "tokenUsageByFunctionLegendPrompt": "Prompt Tokens",
     "tokenUsageByFunctionLegendCompletion": "Completion Tokens",
     "tokenUsageByFunctionLegendTotal": "Totaal Tokens",
-    
     "avgResponseTimeByServiceTitle": "Gem. Responstijd per Service",
     "avgResponseTimeLabel": "Gem. Responstijd (ms)",
     "avgResponseTimeTooltip": "Gem. Responstijd",
     "avgResponseTimeLegend": "Gem. Responstijd (ms)",
-    "noAvgResponseTimeData": "Geen gegevens beschikbaar om gemiddelde responstijden weer te geven."
-  },
-  "errors": {
-    "unauthorized": "Not authorized.",
-    "internalServerError": "An internal server error occurred.",
-    "research": {
-      "idRetrievalFailed": "Could not retrieve the ID of the saved research."
-    },
-    "profiles": {
-      "notFound": "No profiles found."
-    },
-    "api": {
-      "configMissing": "Internal server error: API configuration missing."
-    },
-    "request": {
-      "invalidInput": "Invalid or missing 'input' in request body.",
-      "invalidBody": "Invalid request body.",
-      "missingTaskId": "Valid taskId is required in the request body."
-    },
-    "env": {
-      "openaiKeyMissing": "OPENAI_API_KEY environment variable not set.",
-      "supabaseUrlMissing": "SUPABASE_URL environment variable not set.",
-      "supabaseAnonKeyMissing": "SUPABASE_ANON_KEY environment variable not set."
-    },
-    "task": {
-      "fetchFailed": "Error fetching task.",
-      "notFound": "Task not found."
-    },
-    "openai": {
-      "requestFailed": "OpenAI API request failed."
-    },
-    "ai": {
-      "noUsableAnswer": "AI service did not provide a usable answer.",
-      "invalidJson": "Invalid JSON format from AI.",
-      "processingFailed": "Could not process the AI service's response.",
-      "invalidStructure": "Invalid structure received from OpenAI API.",
-      "jsonParseFailed": "Could not parse the JSON response from the AI.",
-      "noContent": "No content found in AI response.",
-      "subtasks": {
-        "invalidArray": "AI response does not contain a valid 'subtasks' array.",
-        "invalidArrayStructure": "AI response 'subtasks' array items must have 'title' and 'description' strings.",
-        "extractionFailed": "Could not extract a valid subtasks array from AI response."
-      }
-    },
-    "internal": {
-      "generateTaskDetails": "Internal server error while generating task details."
-    },
-    "taskIdMissing": "Task ID is missing, cannot perform action.",
-    "unexpectedAIResponse": "Unexpected response from AI.",
-    "chatResponse": {
-      "queryRequired": "Query is required",
-      "modeRequired": "Mode is required",
-      "taskIdRequired": "taskId is required",
-      "openAIApiKeyMissing": "OPENAI_API_KEY environment variable not set",
-      "supabaseUrlMissing": "SUPABASE_URL environment variable not set",
-      "supabaseAnonKeyMissing": "SUPABASE_ANON_KEY environment variable not set",
-      "errorFetchingSubtasks": "Error fetching task subtasks",
-      "exceptionFetchingSubtasks": "Exception fetching subtasks",
-      "openAIRequestFailed": "OpenAI API request failed",
-      "nonJsonResponseFromAI": "Received non-JSON response from AI",
-      "structureMismatchOrChoicesMissing": "Parsed data does not match expected OpenAIChatCompletion structure or choices are missing",
-      "payloadNotValidObject": "Payload from AI is not a valid object, ignoring for finalPayload",
-      "functionExecError": "Function execution error",
-      "unknownError": "Unknown error",
-      "failedParseErrorBody": "Failed to parse error body"
-    },
-    "generic": "An unexpected error occurred. Please try again.",
-    "taskDetailsGenerationError": "Error generating task details.",
-    "subtaskGenerationError": "Error generating subtasks."
+    "noAvgResponseTimeData": "Geen gegevens beschikbaar om gemiddelde responstijden weer te geven.",
+    "costDistributionCustomLabelNoData": "Geen gegevens beschikbaar",
+    "topUsersInternalTitle": "Top gebruikers - intern API-gebruik",
+    "topUsersYAxisLabel": "Aantal verzoeken",
+    "topUsersXAxisLabel": "Gebruiker"
   },
   "adminDocumentation": {
     "title": "Admin Documentation",
-    "description": "Overview of admin functionalities and how to manage the application."
+    "description": "Overzicht van beheerderfunctionaliteiten en hoe de applicatie te beheren."
   },
   "adminInternalApiUsagePage": {
-    "title": "Internal API Usage",
+    "title": "Intern API-gebruik",
     "description": "Monitor and analyze usage of internal APIs.",
     "tableHeaders": {
-      "timestamp": "Timestamp",
-      "user": "User",
+      "timestamp": "Tijdstempel",
+      "user": "Gebruiker",
       "function": "Function Name",
       "status": "Status",
-      "details": "Details/Error",
+      "details": "Details/Fout",
       "ipAddress": "IP Address"
     },
     "status": {
-      "success": "Success",
-      "failed": "Failed",
-      "unknown": "Unknown"
+      "success": "Geslaagd",
+      "failed": "Mislukt",
+      "unknown": "Onbekend"
     },
     "noLogs": "No internal API usage logs found.",
     "toastTitles": {
-      "fetchError": "Error Fetching Logs",
-      "fetchUsersError": "Error Fetching Users"
+      "fetchError": "Fout bij ophalen logboeken",
+      "fetchUsersError": "Fout bij ophalen gebruikers"
     },
     "errors": {
-      "unknownError": "An unknown error occurred.",
+      "unknownError": "Er is een onbekende fout opgetreden.",
       "fetchLogsError": "Could not fetch internal API logs."
-    },
-    "logsTableTitle": "Internal API Usage Log Details",
-    "loadingLogs": "Loading logs...",
-    "errorLoadingLogs": "Error loading logs",
-    "noDataAvailable": "No API Usage Data Available",
-    "noDataDescription": "There are currently no internal API calls logged in the system. This could be because the application is new or no users have triggered any internal API functions yet.",
-    "noAggregationTitle": "Data Structure Issue",
-    "noAggregationDescription": "The API returned raw logs but no aggregated data. Please contact the system administrator as there may be an issue with the API endpoint."
-  },
-  "nav": {
-    "home": "Home",
-    "tasks": "Tasks",
-    "discover": "Discover",
-    "chat": "Chat",
-    "research": "Research",
-    "admin": "Admin",
-    "settings": "Settings",
-    "profile": "Profile",
-    "logout": "Logout",
-    "login": "Login",
-    "register": "Register",
-    "themeEditor": "Theme Editor"
-  },
-  "languages": {
-    "en": "English",
-    "nl": "Nederlands"
-  },
-  "placeholders": {
-    "search": "Search...",
-    "chatInput": "Type your message here...",
-    "taskName": "Task Name",
-    "taskDescription": "Task Description",
-    "subtaskName": "Subtask Name"
-  },
-  "buttons": {
-    "add": "Add",
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "edit": "Edit",
-    "complete": "Complete",
-    "reopen": "Reopen",
-    "submit": "Submit",
-    "upload": "Upload",
-    "clear": "Clear",
-    "loadMore": "Load More",
-    "showLess": "Show Less",
-    "export": "Export",
-    "import": "Import",
-    "startResearch": "Start Deep Research",
-    "stopResearch": "Stop Research",
-    "saveResearch": "Save Research",
-    "deleteResearch": "Delete Research",
-    "deleteAll": "Delete All",
-    "generateDetails": "Generate Details",
-    "generateSubtasks": "Generate Subtasks",
-    "confirm": "Confirm",
-    "remove": "Remove",
-    "change": "Change",
-    "view": "View",
-    "close": "Close",
-    "create": "Create",
-    "send": "Send"
-  },
-  "alerts": {
-    "success": "Success!",
-    "error": "Error!",
-    "warning": "Warning!",
-    "info": "Info",
-    "unsavedChanges": "You have unsaved changes. Are you sure you want to leave?",
-    "deleteConfirmation": "Are you sure you want to delete this item? This action cannot be undone.",
-    "researchTopicMissing": "Please enter a research topic.",
-    "researchInProgress": "Research is already in progress. Please wait for it to complete or stop it before starting a new one.",
-    "researchStartError": "Failed to start research.",
-    "researchStopError": "Failed to stop research.",
-    "researchStatusError": "Failed to get research status.",
-    "researchSaveError": "Failed to save research results.",
-    "researchDeleteError": "Failed to delete research results.",
-    "researchLoadError": "Failed to load research results.",
-    "chatResponseError": "Error getting chat response.",
-    "noResearchData": "No research data available.",
-    "fieldRequired": "This field is required."
-  },
-  "labels": {
-    "status": "Status",
-    "priority": "Priority",
-    "dueDate": "Due Date",
-    "description": "Description",
-    "notes": "Notes",
-    "subtasks": "Subtasks",
-    "completed": "Completed",
-    "pending": "Pending",
-    "overdue": "Overdue",
-    "category": "Category",
-    "tags": "Tags",
-    "assignee": "Assignee",
-    "progress": "Progress",
-    "title": "Title",
-    "content": "Content",
-    "url": "URL",
-    "score": "Score",
-    "type": "Type",
-    "name": "Name",
-    "email": "Email",
-    "role": "Role",
-    "createdAt": "Created At",
-    "updatedAt": "Updated At",
-    "lastLogin": "Last Login",
-    "actions": "Actions",
-    "theme": "Theme",
-    "customCss": "Custom CSS",
-    "primaryColor": "Primary Color",
-    "secondaryColor": "Secondary Color",
-    "accentColor": "Accent Color",
-    "backgroundColor": "Background Color",
-    "textColor": "Text Color",
-    "headingColor": "Heading Color",
-    "fontFamily": "Font Family",
-    "researchTopic": "Research Topic",
-    "filters": "Filters",
-    "filterBy": "Filter by...",
-    "all": "All",
-    "sortBy": "Sort by...",
-    "dateAdded": "Date Added",
-    "relevance": "Relevance",
-    "searchQuery": "Search Query",
-    "results": "Results",
-    "noResults": "No results found.",
-    "loading": "Loading...",
-    "userId": "User ID",
-    "functionName": "Function Name",
-    "serviceName": "Service Name",
-    "timestamp": "Timestamp",
-    "metadata": "Metadata",
-    "totalCalls": "Total Calls",
-    "cost": "Cost",
-    "tokens": "Tokens",
-    "promptTokens": "Prompt Tokens",
-    "completionTokens": "Completion Tokens",
-    "totalTokens": "Total Tokens",
-    "apiUsage": "API Usage",
-    "internalApiUsage": "Internal API Usage",
-    "externalApiUsage": "External API Usage",
-    "selectDateRange": "Select date range",
-    "totalCost": "Total Cost",
-    "totalUsers": "Total Users",
-    "totalRequests": "Total Requests"
-  },
-  "tooltips": {
-    "toggleSidebar": "Toggle Sidebar",
-    "toggleTheme": "Toggle Theme",
-    "viewDetails": "View Details",
-    "editItem": "Edit Item",
-    "deleteItem": "Delete Item"
-  },
-  "tasks": {
-    "newTask": "New Task",
-    "editTask": "Edit Task",
-    "taskDetails": "Task Details",
-    "noTasks": "No tasks yet. Create one!",
-    "uncompleted": "Uncompleted",
-    "searchTasks": "Search tasks...",
-    "filterByCategory": "Filter by category...",
-    "filterByPriority": "Filter by priority...",
-    "filterByStatus": "Filter by status...",
-    "sortByTitle": "Sort by title",
-    "sortByDueDate": "Sort by due date",
-    "sortByPriority": "Sort by priority",
-    "noSubtasks": "No subtasks for this task.",
-    "addSubtask": "Add Subtask",
-    "taskNameRequired": "Task name is required."
-  },
-  "admin": {
-    "title": "Admin Dashboard",
-    "apiUsage": "API Usage",
-    "userManagement": "User Management",
-    "systemSettings": "System Settings",
-    "themeEditor": "Theme Editor",
-    "users": "Users",
-    "roles": "Roles",
-    "permissions": "Permissions",
-    "apiKeys": "API Keys",
-    "logs": "Logs",
-    "noData": "No data available."
+    }
   }
 }

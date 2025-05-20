@@ -4,7 +4,7 @@
  * attempts to identify duplicate keys by parsing the content, and also tries to parse the JSON
  * to catch syntax errors, reporting the approximate line number of issues found.
  */
-import fs from 'fs';
+import fs from 'node:fs';
 
 try {
   const jsonPath = './public/locales/nl/translation.json';

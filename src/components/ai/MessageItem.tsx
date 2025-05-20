@@ -1,4 +1,4 @@
-import { Message, Citation } from "./types.ts";
+import { Message } from "./types.ts";
 import { Bot, Copy, Sparkles, Trash2, Pin, User } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 import ReactMarkdown from 'react-markdown';
@@ -77,7 +77,7 @@ export function MessageItem({
     thead: ({node, ...props}) => <thead className="bg-slate-50 dark:bg-slate-700/50" {...props} />,
     th: ({node, ...props}) => <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider border-b-2 border-slate-200 dark:border-slate-600 whitespace-normal break-words" {...props} />,
     td: ({node, ...props}) => <td className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-200 whitespace-normal break-words" {...props} />,
-    hr: ({node, ...props}) => <hr className="border-t border-slate-300 dark:border-slate-700 my-4" {...props} />
+    hr: ({node, ...props}) => <hr className="border-t border-slate-300 dark:border-slate-500 my-4" {...props} />
   };
 
   // Render specifically for research_loader
@@ -87,7 +87,7 @@ export function MessageItem({
         <div className="mt-1 flex-shrink-0">
           <Bot className="h-5 w-5 text-muted-foreground" />
         </div>
-        <div className="chat-message relative px-2 py-1 rounded-lg max-w-[80%] group chat-message-ai">
+        <div className="chat-message relative px-6 py-3 rounded-lg max-w-[80%] group chat-message-ai">
           <div className="flex items-center text-sm text-muted-foreground">
             <GradientLoader size="sm" className="mr-2" /> 
             <span>{message.content}</span>
@@ -127,7 +127,7 @@ export function MessageItem({
         id={`message-${message.id}`}
         data-message-id={message.id}
         data-message-type={message.messageType}
-        className={`chat-message relative px-2 py-1 rounded-lg max-w-[80%] group ${ 
+        className={`chat-message relative px-6 py-3 rounded-lg max-w-[80%] group ${ 
           message.messageType === 'note_saved' 
             ? "chat-message-note-saved"
             : message.messageType === 'saved_research_display'
@@ -166,37 +166,6 @@ export function MessageItem({
                 >
                   {typeof message.content === 'string' ? message.content : 'Geen inhoud beschikbaar'}
                 </ReactMarkdown>
-                
-                {/* Alleen bronnen tonen als ze nog niet in de content staan */}
-                {message.citations && message.citations.length > 0 && 
-                 typeof message.content === 'string' && 
-                 !message.content.includes('# Sources') && 
-                 !message.content.includes('## Sources') && 
-                 !message.content.includes('# Bronnen') && 
-                 !message.content.includes('## Bronnen') && (
-                  <div className="mt-4">
-                    <h3 className="text-sm font-medium">{t('messageItem.sources')}</h3>
-                    <ul className="mt-2 space-y-2">
-                      {message.citations.map((citation, index) => {
-                        const isCitationObject = typeof citation === 'object' && citation !== null;
-                        return (
-                          <li key={index}>
-                            <a
-                              href={isCitationObject ? (citation as Citation).url : '#'}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline text-xs"
-                            >
-                              {isCitationObject 
-                                ? ((citation as Citation).title || (citation as Citation).url || t('messageItem.source', 'Bron')) 
-                                : (typeof citation === 'string' ? citation : t('messageItem.source', 'Bron'))}
-                            </a>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
               </div>
             ) : message.messageType === 'note_saved' || message.messageType === 'saved_research_display' ? (
               // Bestaande notitie rendering

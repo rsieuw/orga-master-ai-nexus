@@ -380,7 +380,7 @@
 }
 
 .chat-message {
-  @apply p-3 rounded-lg max-w-[75%] break-words relative transition-colors duration-300 ease-in-out shadow-md;
+  @apply rounded-lg max-w-[75%] break-words relative transition-colors duration-300 ease-in-out shadow-md;
 }
 
 .chat-message::after {
