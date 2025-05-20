@@ -180,7 +180,7 @@ serve(async (req: Request) => {
     let internalApiQuery = supabaseAdmin
       .from("user_api_logs")
       .select("*", { count: "exact" })
-      // .order("timestamp", { ascending: false }) // Temporarily removed for debugging
+      .order("called_at", { ascending: false })
       .range(offset, offset + limit -1);
 
     // if (startDate) internalApiQuery = internalApiQuery.gte("timestamp", startDate); // Temporarily removed
@@ -206,7 +206,7 @@ serve(async (req: Request) => {
     let externalApiQuery = supabaseAdmin
       .from("external_api_usage_logs")
       .select("*", { count: "exact" })
-      // .order("timestamp", { ascending: false }) // Temporarily removed for debugging
+      .order("called_at", { ascending: false })
       .range(offset, offset + limit -1);
 
     // if (startDate) externalApiQuery = externalApiQuery.gte("timestamp", startDate); // Temporarily removed

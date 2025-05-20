@@ -77,7 +77,7 @@ export function MessageItem({
     thead: ({node, ...props}) => <thead className="bg-slate-50 dark:bg-slate-700/50" {...props} />,
     th: ({node, ...props}) => <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider border-b-2 border-slate-200 dark:border-slate-600 whitespace-normal break-words" {...props} />,
     td: ({node, ...props}) => <td className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-200 whitespace-normal break-words" {...props} />,
-    hr: ({node, ...props}) => <hr className="border-t border-slate-300 dark:border-slate-500 my-4" {...props} />
+    hr: ({node, ...props}) => <hr style={{ borderTop: '0.5px solid #1e5593', marginTop: '1rem', marginBottom: '1rem' }} {...props} />
   };
 
   // Render specifically for research_loader
@@ -87,8 +87,8 @@ export function MessageItem({
         <div className="mt-1 flex-shrink-0">
           <Bot className="h-5 w-5 text-muted-foreground" />
         </div>
-        <div className="chat-message relative px-6 py-3 rounded-lg max-w-[80%] group chat-message-ai">
-          <div className="flex items-center text-sm text-muted-foreground">
+        <div className="chat-message relative px-6 pt-3 pb-2 rounded-lg max-w-[80%] group chat-message-ai">
+          <div className="flex items-center text-sm text-muted-foreground pb-2">
             <GradientLoader size="sm" className="mr-2" /> 
             <span>{message.content}</span>
           </div>

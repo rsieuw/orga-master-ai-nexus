@@ -90,9 +90,7 @@ function extractCitations(
   sources: ExternalApiSource[] | undefined,
 ): Citation[] {
   console.log(
-    `[deep-research] extractCitations called. responseText length: ${responseText?.length}, sources: ${
-      JSON.stringify(sources)
-    }`,
+    `[deep-research] extractCitations called. responseText length: ${responseText?.length}, sources provided: ${!!sources?.length}`
   );
   const citations: Citation[] = [];
 
@@ -103,15 +101,15 @@ function extractCitations(
     const foundNumbers = new Set<number>();
 
     // Optionally log the full responseText if issues persist, but be mindful of log length
-    // console.log(`[deep-research] extractCitations Fallback: responseText for regex (first 500 chars): "${responseText?.substring(0, 500)}"`);
+    // console.log(`[deep-research] extractCitations Fallback: responseText for regex (first 500 chars): \"${responseText?.substring(0, 500)}\"`);
 
     while ((match = citationRegex.exec(responseText)) !== null) {
       const number = parseInt(match[1]);
-      console.log(
-        `[deep-research] extractCitations Fallback: Regex found match: "${match[0]}", extracted number: ${number}. Current foundNumbers: ${
-          JSON.stringify(Array.from(foundNumbers))
-        }`,
-      );
+      // console.log(
+      //   `[deep-research] extractCitations Fallback: Regex found match: \"${match[0]}\", extracted number: ${number}. Current foundNumbers: ${
+      //     JSON.stringify(Array.from(foundNumbers))
+      //   }`,
+      // );
       if (!foundNumbers.has(number)) {
         citations.push({
           number: number,
@@ -119,42 +117,42 @@ function extractCitations(
           // url and title will be undefined here as we only have the number from regex
         });
         foundNumbers.add(number);
-        console.log(
-          `[deep-research] extractCitations Fallback: Added citation for number ${number}. Citations array now: ${
-            JSON.stringify(citations)
-          }`,
-        );
-      } else {
-        console.log(
-          `[deep-research] extractCitations Fallback: Number ${number} already processed, skipping.`,
-        );
+        // console.log(
+        //   `[deep-research] extractCitations Fallback: Added citation for number ${number}. Citations array now: ${
+        //     JSON.stringify(citations)
+        //   }`,
+        // );
+      // } else {
+        // console.log(
+        //   `[deep-research] extractCitations Fallback: Number ${number} already processed, skipping.`,
+        // );
       }
     }
-    if (citations.length === 0 && responseText?.includes('[')) { // Check if regex missed obvious citations
-      console.log(
-        '[deep-research] extractCitations Fallback: No citations extracted by regex, despite "[" character in responseText. Investigate regex or text.',
-      );
-    } else if (citations.length === 0) {
-      console.log(
-        '[deep-research] extractCitations Fallback: No citations found or extracted by regex.',
-      );
-    }
-    console.log(
-      `[deep-research] extractCitations Fallback: Final extracted citations (before sort): ${
-        JSON.stringify(citations)
-      }`,
-    );
+    // if (citations.length === 0 && responseText?.includes('[')) { // Check if regex missed obvious citations
+    //   console.log(
+    //     '[deep-research] extractCitations Fallback: No citations extracted by regex, despite \"[\" character in responseText. Investigate regex or text.',
+    //   );
+    // } else if (citations.length === 0) {
+    //   console.log(
+    //     '[deep-research] extractCitations Fallback: No citations found or extracted by regex.',
+    //   );
+    // }
+    // console.log(
+    //   `[deep-research] extractCitations Fallback: Final extracted citations (before sort): ${
+    //     JSON.stringify(citations)
+    //   }`,
+    // );
     return citations.sort((a, b) => a.number - b.number);
   } else {
     console.log('[deep-research] extractCitations: Using structured sources logic.');
     sources.forEach((source: ExternalApiSource, index: number) => {
       // Perplexity API docs suggest sources are 1-indexed in text, matching array index + 1
       const citationNumber = index + 1;
-      console.log(
-        `[deep-research] extractCitations Structured: Processing source index ${index} (citation number ${citationNumber}). Source data: ${
-          JSON.stringify(source)
-        }`,
-      );
+      // console.log(
+      //   `[deep-research] extractCitations Structured: Processing source index ${index} (citation number ${citationNumber}). Source data: ${
+      //     JSON.stringify(source)
+      //   }`,
+      // );
 
       // Ensure the responseText actually contains a citation for this source number
       if (responseText.includes(`[${citationNumber}]`)) {
@@ -164,20 +162,20 @@ function extractCitations(
           url: source.url,
           title: source.title || source.name,
         });
-        console.log(
-          `[deep-research] extractCitations Structured: Added citation for number ${citationNumber} due to its presence in responseText.`,
-        );
-      } else {
-        console.log(
-          `[deep-research] extractCitations Structured: ResponseText does not include "[${citationNumber}]". Skipping source index ${index}.`,
-        );
+        // console.log(
+        //   `[deep-research] extractCitations Structured: Added citation for number ${citationNumber} due to its presence in responseText.`,
+        // );
+      // } else {
+        // console.log(
+        //   `[deep-research] extractCitations Structured: ResponseText does not include \"[${citationNumber}]\". Skipping source index ${index}.`,
+        // );
       }
     });
-    console.log(
-      `[deep-research] extractCitations Structured: Final extracted citations (before sort): ${
-        JSON.stringify(citations)
-      }`,
-    );
+    // console.log(
+    //   `[deep-research] extractCitations Structured: Final extracted citations (before sort): ${
+    //     JSON.stringify(citations)
+    //   }`,
+    // );
     return citations.sort((a, b) => a.number - b.number);
   }
 }
@@ -331,30 +329,26 @@ Deno.serve(async (req: Request) => {
         if (reqLanguagePreference === 'nl') {
           systemContent = `Je bent een deskundige instructeur en mentor. Je doel is om complexe onderwerpen en taken op te splitsen in duidelijke, begrijpelijke en uitvoerbare stappen.
 Geef gedetailleerde instructies naar aanleiding van de gebruikersvraag, gepresenteerd als een stapsgewijze lijst (bijvoorbeeld genummerd of met bullet points). Elke stap moet helder en beknopt zijn.
-Structureer je antwoord logisch. Gebruik waar mogelijk voorbeelden, analogieën of scenario's om het begrip van elke stap te vergroten.
+Structureer je antwoord logisch. Gebruik waar mogelijk voorbeelden, analogieën of scenario's om het begrip van elke stap te vergroten. Gebruik tabellen om data overzichtelijk te presenteren waar dit relevant is.
 Indien van toepassing, wijs op mogelijke valkuilen of geef tips voor succes bij specifieke stappen.
 Zorg ervoor dat de instructies direct toepasbaar zijn voor de gebruiker.
 Citeer je bronnen duidelijk in de tekst met genummerde verwijzingen tussen vierkante haken (bijv. [1], [2]).
-Voeg aan het einde van je antwoord een aparte sectie toe met de titel "Bronnen" (dus GEEN "Bronnen:" met dubbele punt).
-Plaats elke bron op een nieuwe regel met een HTML <br /> tag tussen elke bron.
-Lijst in deze sectie elke bron op met het bijbehorende nummer, de volledige titel van de bron, en een directe, werkende URL naar de bron.
-Bijvoorbeeld:
-<hr style="border-top: 0.5px solid #1e5593; margin-top: 1rem; margin-bottom: 1rem;" /><h2 class="text-lg font-semibold mb-3 mt-3 leading-snug text-foreground">Bronnen</h2>
+Voeg aan het einde van je antwoord een aparte sectie toe voor de bronvermelding. Gebruik de titel "Bronnen" als een HTML <h2> heading. Direct na deze titel plaats elke bron op een nieuwe regel met een HTML <br /> tag tussen elke bron (behalve na de laatste). Lijst elke bron op met het bijbehorende nummer, de volledige titel van de bron, en een directe, werkende URL naar de bron.
+De bronnensectie moet er als volgt uitzien:
+<h2>Bronnen</h2>
 1. <a href="https://voorbeeld.url/bron1">Titel van Bron 1</a><br />
 2. <a href="https://voorbeeld.url/bron2">Titel van Bron 2</a>
 Antwoord in het Nederlands.`;
         } else {
           systemContent = `You are an expert instructor and mentor. Your goal is to break down complex topics and tasks into clear, understandable, and actionable steps.
 Provide detailed instructions based on the user's query, presented as a step-by-step list (e.g., numbered or using bullet points). Each step should be clear and concise.
-Structure your response logically. Where possible, use examples, analogies, or scenarios to enhance understanding of each step.
+Structure your response logically. Where possible, use examples, analogies, or scenarios to enhance understanding of each step. Use tables to present data clearly where relevant.
 If applicable, point out potential pitfalls or provide tips for success for specific steps.
 Ensure the instructions are directly applicable for the user.
 Cite your sources clearly in the text using numbered references in square brackets (e.g., [1], [2]).
-At the end of your response, include a separate section titled "Sources" (NOT "Sources:" with a colon).
-Place each source on a new line with an HTML <br /> tag between each source.
-In this section, list each source with its corresponding number, the full title of the source, and a direct, working URL to the source.
-For example:
-<hr style="border-top: 0.5px solid #1e5593; margin-top: 1rem; margin-bottom: 1rem;" /><h2 class="text-lg font-semibold mb-3 mt-3 leading-snug text-foreground">Sources</h2>
+At the end of your response, include a separate section for source citation. Use the title "Sources" as an HTML <h2> heading. Immediately after this heading, place each source on a new line with an HTML <br /> tag between each source (except after the last one). List each source with its corresponding number, the full title of the source, and a direct, working URL to the source.
+The sources section should look like this:
+<h2>Sources</h2>
 1. <a href="https://example.url/source1">Title of Source 1</a><br />
 2. <a href="https://example.url/source2">Title of Source 2</a>
 Respond in English.`;
@@ -365,13 +359,11 @@ Respond in English.`;
           systemContent = `Je bent een buitengewoon creatieve denker, een bron van inspiratie en innovatie. Je bent bedreven in het genereren van originele ideeën, het bedenken van meeslepende verhalen, het oplossen van problemen met onconventionele methoden en het brainstormen over grensverleggende concepten.
 Ga volledig los op de gebruikersvraag. Genereer diverse en fantasierijke ideeën, schrijf boeiende (korte) verhalen, ontwikkel unieke oplossingen of brainstorm zonder beperkingen.
 Denk buiten de gebaande paden. Wees origineel, verrassend en inspirerend.
-Structureer je output op een manier die de creatieve stroom van ideeën goed weergeeft, eventueel met verschillende opties of invalshoeken.
+Structureer je output op een manier die de creatieve stroom van ideeën goed weergeeft, eventueel met verschillende opties of invalshoeken. Gebruik tabellen om data overzichtelijk te presenteren waar dit relevant is.
 Citeer je bronnen duidelijk in de tekst met genummerde verwijzingen tussen vierkante haken (bijv. [1], [2]).
-Voeg aan het einde van je antwoord een aparte sectie toe met de titel "Bronnen" (dus GEEN "Bronnen:" met dubbele punt).
-Plaats elke bron op een nieuwe regel met een HTML <br /> tag tussen elke bron.
-Lijst in deze sectie elke bron op met het bijbehorende nummer, de volledige titel van de bron, en een directe, werkende URL naar de bron.
-Bijvoorbeeld:
-<hr style="border-top: 0.5px solid #1e5593; margin-top: 1rem; margin-bottom: 1rem;" /><h2 class="text-lg font-semibold mb-3 mt-3 leading-snug text-foreground">Bronnen</h2>
+Voeg aan het einde van je antwoord een aparte sectie toe voor de bronvermelding. Gebruik de titel "Bronnen" als een HTML <h2> heading. Direct na deze titel plaats elke bron op een nieuwe regel met een HTML <br /> tag tussen elke bron (behalve na de laatste). Lijst elke bron op met het bijbehorende nummer, de volledige titel van de bron, en een directe, werkende URL naar de bron.
+De bronnensectie moet er als volgt uitzien:
+<h2>Bronnen</h2>
 1. <a href="https://voorbeeld.url/bron1">Titel van Bron 1</a><br />
 2. <a href="https://voorbeeld.url/bron2">Titel van Bron 2</a>
 Antwoord in het Nederlands.`;
@@ -379,13 +371,11 @@ Antwoord in het Nederlands.`;
           systemContent = `You are an exceptionally creative thinker, a wellspring of inspiration and innovation. You are adept at generating original ideas, crafting compelling narratives, solving problems with unconventional methods, and brainstorming groundbreaking concepts.
 Unleash your full creative potential on the user's query. Generate diverse and imaginative ideas, write engaging (short) stories, develop unique solutions, or brainstorm without limitations.
 Think outside the box. Be original, surprising, and inspiring.
-Structure your output in a way that effectively conveys the creative flow of ideas, possibly with different options or perspectives.
+Structure your output in a way that effectively conveys the creative flow of ideas, possibly with different options or perspectives. Use tables to present data clearly where relevant.
 Cite your sources clearly in the text using numbered references in square brackets (e.g., [1], [2]).
-At the end of your response, include a separate section titled "Sources" (NOT "Sources:" with a colon).
-Place each source on a new line with an HTML <br /> tag between each source.
-In this section, list each source with its corresponding number, the full title of the source, and a direct, working URL to the source.
-For example:
-<hr style="border-top: 0.5px solid #1e5593; margin-top: 1rem; margin-bottom: 1rem;" /><h2 class="text-lg font-semibold mb-3 mt-3 leading-snug text-foreground">Sources</h2>
+At the end of your response, include a separate section for source citation. Use the title "Sources" as an HTML <h2> heading. Immediately after this heading, place each source on a new line with an HTML <br /> tag between each source (except after the last one). List each source with its corresponding number, the full title of the source, and a direct, working URL to the source.
+The sources section should look like this:
+<h2>Sources</h2>
 1. <a href="https://example.url/source1">Title of Source 1</a><br />
 2. <a href="https://example.url/source2">Title of Source 2</a>
 Respond in English.`;
@@ -395,24 +385,20 @@ Respond in English.`;
       default:
         if (reqLanguagePreference === 'nl') {
           systemContent = `Je bent een professionele onderzoeker. Voer grondig onderzoek uit naar de gebruikersquery.
-Lever een uitgebreid en goed gestructureerd antwoord in het Nederlands.
+Lever een uitgebreid en goed gestructureerd antwoord in het Nederlands. Gebruik tabellen om data overzichtelijk te presenteren waar dit relevant is.
 Citeer je bronnen duidelijk in de tekst met genummerde verwijzingen tussen vierkante haken (bijv. [1], [2]).
-Voeg aan het einde van je antwoord een aparte sectie toe met de titel "Bronnen" (dus GEEN "Bronnen:" met dubbele punt).
-Plaats elke bron op een nieuwe regel met een HTML <br /> tag tussen elke bron.
-Lijst in deze sectie elke bron op met het bijbehorende nummer, de volledige titel van de bron, en een directe, werkende URL naar de bron.
-Bijvoorbeeld:
-<hr style="border-top: 0.5px solid #1e5593; margin-top: 1rem; margin-bottom: 1rem;" /><h2 class="text-lg font-semibold mb-3 mt-3 leading-snug text-foreground">Bronnen</h2>
+Voeg aan het einde van je antwoord een aparte sectie toe voor de bronvermelding. Gebruik de titel "Bronnen" als een HTML <h2> heading. Direct na deze titel plaats elke bron op een nieuwe regel met een HTML <br /> tag tussen elke bron (behalve na de laatste). Lijst elke bron op met het bijbehorende nummer, de volledige titel van de bron, en een directe, werkende URL naar de bron.
+De bronnensectie moet er als volgt uitzien:
+<h2>Bronnen</h2>
 1. <a href="https://voorbeeld.url/bron1">Titel van Bron 1</a><br />
 2. <a href="https://voorbeeld.url/bron2">Titel van Bron 2</a>`;
         } else {
           systemContent = `You are a professional researcher. Conduct thorough research based on the user's query.
-Provide a comprehensive and well-structured answer in English.
+Provide a comprehensive and well-structured answer in English. Use tables to present data clearly where relevant.
 Cite your sources clearly in the text using numbered references in square brackets (e.g., [1], [2]).
-At the end of your response, include a separate section titled "Sources" (NOT "Sources:" with a colon).
-Place each source on a new line with an HTML <br /> tag between each source.
-In this section, list each source with its corresponding number, the full title of the source, and a direct, working URL to the source.
-For example:
-<hr style="border-top: 0.5px solid #1e5593; margin-top: 1rem; margin-bottom: 1rem;" /><h2 class="text-lg font-semibold mb-3 mt-3 leading-snug text-foreground">Sources</h2>
+At the end of your response, include a separate section for source citation. Use the title "Sources" as an HTML <h2> heading. Immediately after this heading, place each source on a new line with an HTML <br /> tag between each source (except after the last one). List each source with its corresponding number, the full title of the source, and a direct, working URL to the source.
+The sources section should look like this:
+<h2>Sources</h2><br />
 1. <a href="https://example.url/source1">Title of Source 1</a><br />
 2. <a href="https://example.url/source2">Title of Source 2</a>`;
         }
@@ -565,10 +551,12 @@ For example:
     }
     
     // Log internal API call SUCCESS
+    console.log('[deep-research] Attempting to log SUCCESS to user_api_logs...'); // NIEUWE LOG
     try {
       // Use admin client for user_api_logs if available
       const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient;
-      await loggingClient.from('user_api_logs').insert({
+      console.log('[deep-research] Using logging client:', supabaseAdminLoggingClient ? 'AdminClient' : 'UserSpecificClient'); // NIEUWE LOG
+      const { data: logData, error: logError } = await loggingClient.from('user_api_logs').insert({ // Voeg data en error toe
         user_id: userIdForLogging,
         function_name: functionNameForLogging,
         metadata: { 
@@ -580,9 +568,16 @@ For example:
           promptTokens, 
           completionTokens
         },
-      });
-    } catch (logError) {
-      console.error('[deep-research] Failed to log SUCCESS to user_api_logs', logError);
+      }).select(); // Toevoegen van .select() kan helpen om de uitkomst te zien
+
+      if (logError) { // Check expliciet op logError
+        console.error('[deep-research] Error explicitly caught during SUCCESS log insert:', JSON.stringify(logError, null, 2)); // NIEUWE LOG
+        // Overweeg hier geen error te throwen om de hoofdfunctie niet te breken
+      } else {
+        console.log('[deep-research] SUCCESS log insert response data:', JSON.stringify(logData, null, 2)); // NIEUWE LOG
+      }
+    } catch (logCatchError) { // Hernoem de catch variabele
+      console.error('[deep-research] Exception during SUCCESS log to user_api_logs:', JSON.stringify(logCatchError, null, 2)); // Update log
     }
     
     // Clean the query for display purposes before returning
@@ -613,10 +608,12 @@ For example:
                    : "deepResearch.error.general";
     
     // Log internal API call FAILURE
+    console.log('[deep-research] Attempting to log FAILURE to user_api_logs...'); // NIEUWE LOG
     try {
       // Use admin client for user_api_logs if available
       const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient;
-      await loggingClient.from('user_api_logs').insert({
+      console.log('[deep-research] Using logging client for FAILURE:', supabaseAdminLoggingClient ? 'AdminClient' : 'UserSpecificClient'); // NIEUWE LOG
+      const { data: logData, error: logError } = await loggingClient.from('user_api_logs').insert({ // Voeg data en error toe
         user_id: userIdForLogging,
         function_name: functionNameForLogging,
         metadata: { 
@@ -629,9 +626,15 @@ For example:
           promptTokens,
           completionTokens
         },
-      });
-    } catch (logError) {
-      console.error('[deep-research] Failed to log FAILURE to user_api_logs', logError);
+      }).select(); // Toevoegen van .select()
+
+      if (logError) { // Check expliciet op logError
+        console.error('[deep-research] Error explicitly caught during FAILURE log insert:', JSON.stringify(logError, null, 2)); // NIEUWE LOG
+      } else {
+        console.log('[deep-research] FAILURE log insert response data:', JSON.stringify(logData, null, 2)); // NIEUWE LOG
+      }
+    } catch (logCatchError) { // Hernoem de catch variabele
+      console.error('[deep-research] Exception during FAILURE log to user_api_logs:', JSON.stringify(logCatchError, null, 2)); // Update log
     }
 
     let responseStatus = 500;
