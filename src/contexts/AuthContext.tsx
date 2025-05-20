@@ -115,8 +115,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout_internal = useCallback(async () => { // Renamed to avoid conflict with exported logout
     try {
+      if (!session) {
+        console.warn("Logout attempt without an active session. Skipping signOut.");
+        // Optionally, clear local user state if necessary, though onAuthStateChange should handle it
+        setUser(null); 
+        setIsAuthenticated(false);
+        return;
+      }
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      // setUser(null) and setIsAuthenticated(false) will be handled by onAuthStateChange
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : t('auth.toast.logoutFailed.descriptionDefault');
       toast({

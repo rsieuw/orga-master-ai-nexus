@@ -4,6 +4,7 @@
     "npm:@capacitor/android@^7.2.0": "7.2.0_@capacitor+core@7.2.0",
     "npm:@capacitor/app@^7.0.1": "7.0.1_@capacitor+core@7.2.0",
     "npm:@capacitor/assets@^3.0.5": "3.0.5_@types+node@22.15.18_typescript@5.8.3",
+    "npm:@capacitor/cli@7.2.0": "7.2.0",
     "npm:@capacitor/cli@^7.2.0": "7.2.0",
     "npm:@capacitor/core@^7.2.0": "7.2.0",
     "npm:@capacitor/ios@^7.2.0": "7.2.0_@capacitor+core@7.2.0",

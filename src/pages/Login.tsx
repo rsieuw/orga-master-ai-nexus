@@ -57,7 +57,7 @@ export default function Login() {
 
         <LoginForm />
 
-        <div className="mt-6 flex flex-row items-center justify-center space-x-4">
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center sm:space-x-4 space-y-4 sm:space-y-0">
           <Button 
             variant="outline" 
             size="lg"
@@ -79,15 +79,15 @@ export default function Login() {
           </Button>
 
           <a 
-            href="#" // TODO: Replace with actual Google Play Store link
+            href="/assets/downloads/app-debug.apk" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="inline-block"
-            aria-label="Download on Google Play"
+            aria-label="Download voor Android"
           >
             <img 
-              src="/assets/icons/google-play-badge.svg"
-              alt="Get it on Google Play" 
+              src="/assets/icons/android_apk_badge.svg"
+              alt="Download voor Android"
               className="h-12 hover:opacity-90 transition-opacity"
             />
           </a>
