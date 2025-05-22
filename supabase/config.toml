@@ -1,4 +1,49 @@
 project_id = "wzoeijpdtpysbkmxbcld"
+
+# Toegevoegde DB configuratie
+[db]
+  port = 54322 # Standaard lokale poort, wordt genegeerd voor remote
+  major_version = 15 # Zorg dat dit overeenkomt met je remote DB versie
+  # shadow_port = 54320 # Alleen relevant voor lokale shadow DB
+
+[db.pooler]
+  enabled = true # Of false, afhankelijk van of je pooler remote gebruikt.
+  port = 54329 # Standaard pooler poort
+  pool_mode = "transaction"
+  default_pool_size = 35
+  max_client_conn = 100
+
+[db.migrations]
+  schema_paths = []
+
+# Toegevoegde Auth configuratie
+[auth]
+  enabled = true
+  site_url = "https://orgamaster.artifexai.nl"
+  additional_redirect_urls = []
+  jwt_expiry = 3600
+  enable_refresh_token_rotation = true
+  refresh_token_reuse_interval = 10
+[auth.mfa]
+  max_enrolled_factors = 10
+[auth.mfa.totp]
+  enroll_enabled = true
+  verify_enabled = true
+[auth.mfa.phone]
+  enroll_enabled = false
+  verify_enabled = false
+[auth.email]
+  enable_signup = true
+  double_confirm_changes = true
+  enable_confirmations = true
+  secure_password_change = false
+  max_frequency = "1m0s"
+  otp_length = 6
+  otp_expiry = 1200
+[auth.email.template]
+[auth.sms]
+  enable_signup = false
+
 [functions.generate-task-details]
 enabled = true
 verify_jwt = true

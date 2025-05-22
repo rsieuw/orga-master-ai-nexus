@@ -3,6 +3,4 @@ description:
 globs: 
 alwaysApply: false
 ---
-Always write code comments in English
-
-Use the locales for translations
+#Write comments in English

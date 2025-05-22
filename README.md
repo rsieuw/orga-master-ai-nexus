@@ -1,159 +1,207 @@
 # OrgaMaster AI
 
-Welcome to the OrgaMaster AI project repository! This application helps you manage your tasks efficiently with the assistance of AI.
+OrgaMaster AI is an intelligent task management application that integrates Perplexity AI capabilities to streamline your productivity workflow. This project was developed for the Perplexity AI Hackathon.
 
-**Project Goal:** To create an intuitive task management application that leverages AI to streamline task creation, research, and organization.
+![OrgaMaster AI Banner](https://example.com/banner-image.png)
 
-**Key Features (Planned & Implemented):**
+## Project Overview
 
-* User Authentication (Supabase Auth)
-* Task Management (CRUD operations)
-* AI-Powered Task Detail Generation
-* AI-Powered "Deep Research" for tasks
-* Task Filtering & Sorting
-* Notifications & Reminders
-* See `task.md` for a detailed feature list and progress.
+OrgaMaster AI addresses the challenge of task management and information overload by combining structured task organization with powerful AI research capabilities. Our solution helps users efficiently manage tasks while providing contextually relevant information through Perplexity's advanced search technology.
 
-## How can I edit this code?
+### Key Features
 
-There are several ways of editing your application.
+- **Smart Task Management**: Create, organize, and track tasks with customizable details
+- **AI-Powered Task Generation**: Generate structured task details from simple descriptions
+- **Deep Research Integration**: Access Perplexity AI research capabilities to gather comprehensive information related to tasks
+- **Intelligent Subtask Generation**: AI automatically breaks down complex tasks into manageable subtasks
+- **Persistent Research Storage**: Save valuable research findings directly with your tasks
+- **Smart Filtering**: Sort and filter tasks by various criteria
+- **Cross-Platform Experience**: Web, Android and iOS support through Capacitor
 
-### Use your preferred IDE
+## Perplexity AI Integration
 
-If you want to work locally using your own IDE, you can clone this repo and push changes.
+OrgaMaster AI leverages Perplexity's powerful search and knowledge retrieval capabilities in several innovative ways:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Deep Research Function
 
-Follow these steps:
+Our core AI research functionality uses Perplexity's API to conduct in-depth investigation of topics related to user tasks. When a user requests research on a specific task, we:
+
+1. Extract key concepts and context from the task description
+2. Formulate optimized queries for the Perplexity API
+3. Process and structure the returned information for maximum usefulness
+4. Present research findings with proper attribution and sources
+
+The integration allows users to stay in their workflow while accessing current, relevant information without context switching between applications.
+
+### Implementation Architecture
+
+We've implemented the Perplexity integration through Supabase Edge Functions to securely manage API credentials and provide a consistent experience:
+
+```
+Client Request -> Supabase Edge Function -> Perplexity API -> Processed Results -> Client Display
+```
+
+Our implementation includes:
+
+- Rate limiting and usage monitoring
+- Custom prompt engineering to extract the most relevant information
+- Response formatting for optimal readability
+- Permission-based access control
+
+## Demo and Screenshots
+
+### Live Demo
+
+Experience OrgaMaster AI: [Live Demo](https://orgamaster.artifexai.nl/)
+
+### Video Walkthrough
+
+Watch our demo video: [YouTube Demo](https://youtube.com/example)
+
+### Screenshots
+
+![Dashboard View](https://example.com/dashboard.png)
+![Research Integration](https://example.com/research.png)
+![Mobile Experience](https://example.com/mobile.png)
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js & npm ([install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
+- Supabase account (for backend services)
+- Perplexity API key (for AI research functionality)
+
+### Installation and Setup
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone https://github.com/rsieuw/orga-master-ai-nexus.git
 
-# Step 2: Navigate to the project directory.
+# Navigate to the project directory
 cd orga-master-ai-nexus
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Configure environment variables
+cp .env.example .env
+# Edit .env with your Supabase and Perplexity API credentials
+
+# Start the development server
 npm run dev
 ```
 
-### Edit a file directly in GitHub
+### Environment Configuration
 
-* Navigate to the desired file(s).
-* Click the "Edit" button (pencil icon) at the top right of the file view.
-* Make your changes and commit the changes.
-
-### Use GitHub Codespaces
-
-* Navigate to the main page of your repository.
-* Click on the "Code" button (green button) near the top right.
-* Select the "Codespaces" tab.
-* Click on "New codespace" to launch a new Codespace environment.
-* Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-* **Vite**: For fast frontend bundling and development server.
-* **TypeScript**: For static typing and improved code quality.
-* **React**: For building the user interface.
-* **Tailwind CSS**: For utility-first CSS styling.
-* **shadcn/ui**: For a collection of beautifully designed and accessible UI components built on Radix UI.
-* **Radix UI**: Provides the underlying unstyled, accessible UI primitives for shadcn/ui.
-* **Lucide Icons**: For a comprehensive set of SVG icons.
-* **TanStack Query (React Query)**: For server-state management, data fetching, caching, and synchronization.
-* **Zod**: For schema declaration and validation.
-* **React Hook Form**: For performant and flexible form state management and validation (often used with Zod).
-* **Supabase**: For backend services including:
-  * Authentication
-  * Database (PostgreSQL)
-  * Edge Functions (likely using Deno)
-* **Deno**: Used for backend logic, potentially for Supabase Edge Functions and other scripts (indicated by `deno.jsonc` and `deno.lock`).
-* **Node.js**: For the development environment, running Vite, and managing npm packages.
-* **Sonner**: Installed as a dependency for toast notifications, though the primary toast functionality in `TaskDetail.tsx` currently uses a custom hook (`@/hooks/use-toast.ts`).
-* **Other notable libraries**: `class-variance-authority`, `clsx`, `tailwind-merge` (for styling utilities with shadcn/ui), `date-fns` (for date manipulation), `react-router-dom` (for routing), `vitest` (for testing).
-
-## Project Structure
-
-```plaintext
-orga-master-ai-nexus
-├── android/                  # Android native project (Capacitor)
-│   ├── app/
-│   └── gradle/
-├── assets/                   # Static assets for the web app (e.g., images not specific to categories)
-├── icons/                    # App icons (likely source files)
-├── ios/                      # iOS native project (Capacitor)
-│   └── App/
-├── public/                   # Static assets served directly by the web server
-│   ├── assets/
-│   │   └── categories/       # Category-specific icons/images
-│   └── locales/              # Localization files (i18n)
-│       ├── en/
-│       └── nl/
-├── resources/                # Platform-specific resources (icons, splash screens) for Capacitor
-│   ├── android/
-│   └── ios/
-├── src/                      # Main source code for the React application
-│   ├── app/                  # Core application setup, routing, global state
-│   ├── components/           # Reusable UI components
-│   │   ├── admin/
-│   │   ├── ai/
-│   │   ├── auth/
-│   │   ├── filters/
-│   │   ├── layout/
-│   │   ├── task/
-│   │   ├── tasks/
-│   │   └── ui/               # Generic UI elements (e.g., from shadcn/ui)
-│   ├── constants/            # Application-wide constants
-│   ├── contexts/             # React Context API providers
-│   ├── hooks/                # Custom React hooks
-│   ├── integrations/         # Third-party service integrations
-│   │   └── supabase/         # Supabase client and related functions
-│   ├── lib/                  # Utility functions and libraries
-│   ├── pages/                # Top-level page components
-│   │   └── admin/
-│   ├── test/                 # Test files
-│   └── types/                # TypeScript type definitions
-├── supabase/                 # Supabase project specific files
-│   ├── .branches/            # Supabase local development branches
-│   ├── .temp/                # Supabase temporary files
-│   ├── functions/            # Supabase Edge Functions
-│   │   ├── _shared/          # Shared code/vendors for Edge Functions
-│   │   ├── create-checkout-session/
-│   │   ├── deep-research/
-│   │   ├── delete-research/
-│   │   ├── generate-chat-response/
-│   │   ├── generate-subtasks/
-│   │   ├── generate-task-details/
-│   │   ├── get-all-users/
-│   │   ├── get-theme-settings/
-│   │   ├── save-research/
-│   │   ├── stripe-webhooks/
-│   │   └── update-theme-settings/
-│   └── migrations/           # Supabase database migration files
-├── .gitignore                # Specifies intentionally untracked files that Git should ignore
-├── assets.config.json        # Configuration for Capacitor assets generation
-├── capacitor.config.ts       # Capacitor configuration file
-├── components.json           # Likely related to shadcn/ui component management
-├── deno.jsonc                # Deno configuration file
-├── deno.lock                 # Deno lock file for dependencies
-├── eslint.config.js          # ESLint configuration for code linting
-├── find_dupes.js             # Custom script (likely for finding duplicate files)
-├── import_map.json           # Deno import map
-├── index.html                # Main HTML file for the web application
-├── package-lock.json         # Records exact versions of npm dependencies
-├── package.json              # npm package manifest (dependencies, scripts)
-├── postcss.config.js         # PostCSS configuration (used with Tailwind CSS)
-├── README.md                 # This file! Project overview and instructions
-├── tailwind.config.ts        # Tailwind CSS configuration
-├── task.md                   # Detailed feature list and progress
-├── tsconfig.json             # TypeScript compiler options for the project
-├── tsconfig.node.json        # TypeScript compiler options for Node.js specific parts (e.g., Vite config)
-├── validate.js               # Custom script (likely for validation purposes)
-├── vite.config.ts            # Vite bundler configuration
-└── vitest.config.ts          # Vitest (testing framework) configuration
+Create a `.env` file with the following variables:
 ```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_PERPLEXITY_API_KEY=your_perplexity_api_key
+```
+
+### Building for Production
+
+```sh
+# Build for production
+npm run build
+
+# Preview the production build
+npm run preview
+```
+
+### Mobile Development
+
+This project uses Capacitor for native mobile deployments:
+
+```sh
+# Add Capacitor platforms
+npx cap add android
+npx cap add ios
+
+# Sync web code to native projects
+npx cap sync
+```
+
+## Technology Stack
+
+### Frontend
+
+- **React**: UI library
+- **TypeScript**: Type-safe JavaScript
+- **Vite**: Fast build tooling and development server
+- **Tailwind CSS**: Utility-first CSS framework
+- **shadcn/ui**: UI component library built on Radix UI
+- **TanStack Query**: Data fetching and state management
+- **React Router**: Navigation and routing
+- **i18next**: Internationalization
+- **Capacitor**: Cross-platform native runtime
+
+### Backend (Supabase)
+
+- **Authentication**: User accounts and session management
+- **PostgreSQL Database**: Data storage
+- **Edge Functions**: Serverless API endpoints (Deno runtime)
+- **Row-Level Security**: Data access control
+
+### AI Integration
+
+- **Perplexity AI**: Advanced research capabilities through the Sonar API
+- **Edge Functions**: Custom AI processing logic
+- **Schema Design**: Optimized storage for AI research results
+
+## Challenges and Solutions
+
+### Challenge 1: Complex Research Integration
+
+Implementing deep research that remains contextually relevant to tasks required sophisticated prompt engineering and result processing.
+
+**Solution**: We developed a multi-step process that extracts key concepts from tasks, generates targeted research queries, and formats results for optimal presentation within the task context.
+
+### Challenge 2: Mobile Performance
+
+Ensuring the AI features performed well on mobile devices with limited resources.
+
+**Solution**: Implemented progressive loading, response caching, and optimized rendering to provide a smooth experience across all devices.
+
+### Challenge 3: User Experience
+
+Creating an intuitive interface that seamlessly integrates AI capabilities without overwhelming users.
+
+**Solution**: Used iterative design and user testing to refine the interaction model, resulting in contextualized AI features that feel natural within the task management workflow.
+
+## Future Development
+
+- **Multi-modal Research**: Extend Perplexity integration to include image and voice inputs
+- **Collaborative Research**: Enable team members to collaboratively refine research queries
+- **Predictive Insights**: Use pattern recognition to suggest research topics before users request them
+- **Custom Knowledge Base**: Allow organizations to incorporate proprietary information sources
+
+## Developer
+
+This project was entirely developed as a solo effort by [Rakesh Sieuw](https://github.com/rsieuw), showcasing the potential of combining task management with Perplexity AI's powerful research capabilities.
+
+## Contributing
+
+To contribute to this project:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## Acknowledgements
+
+- [Perplexity AI](https://perplexity.ai) for the powerful Sonar API
+- [Supabase](https://supabase.com) for the backend infrastructure
+- [shadcn/ui](https://ui.shadcn.com) for the beautiful component library
+
+## License
+
+This project is proprietary software. All rights reserved.
+
+## Contact
+
+Project Link: [https://github.com/rsieuw/orga-master-ai-nexus](https://github.com/rsieuw/orga-master-ai-nexus)

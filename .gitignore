@@ -7,14 +7,30 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+/.pnp
+.pnp.js
+
+# Build outputs
 dist
 dist-ssr
+build
+out
 *.local
+
+# Testing
+/coverage
+.nyc_output
+/vitest-report
+**/__snapshots__/
+.coverage
+.scannerwork
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
 .DS_Store
 *.suo
@@ -22,3 +38,96 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Documentation session logs
+docs/sessions/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Mobile - Capacitor
+android/app/build/
+ios/App/build/
+ios/App/Pods/
+ios/DerivedData/
+ios/App/App/public/
+capacitor.config.json.timestamp
+
+# Android specific
+android/build/
+android/captures/
+android/.gradle/
+android/local.properties
+android/.idea/
+android/*.iml
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/app/src/main/res/xml/config.xml
+
+# iOS specific
+ios/*.pbxuser
+ios/*.mode1v3
+ios/*.mode2v3
+ios/*.perspectivev3
+ios/*.xcworkspace/xcuserdata
+ios/*.xcodeproj/xcuserdata
+ios/*.moved-aside
+ios/*.mobileprovision
+ios/*.cer
+ios/fastlane/report.xml
+ios/App/Pods/
+ios/App/output/
+ios/App/App/public/
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+
+# Supabase
+supabase/.temp/
+supabase/.branches/
+supabase/.rfc/
+supabase/.env
+supabase.exe
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Testing
+/coverage
+__snapshots__/
+
+# Production specific files
+/build
+
+# Misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Capacitor
+/resources/android/icon
+/resources/android/splash
+/resources/ios/icon
+/resources/ios/splash
+/resources/splash.png
+/resources/icon.png
+
+# Generated files
+*.generated.*
+
+# OS generated files
+.directory
+.fuse_hidden*
+.Trash-*
+
+# Downloaded tools
+/assets/supabase_windows_amd64*

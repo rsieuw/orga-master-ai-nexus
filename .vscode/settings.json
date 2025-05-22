@@ -1,0 +1,9 @@
+{
+    "deno.enable": true,
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "css.validate": false,
+    "stylelint.validate": ["css", "scss"],
+    "editor.quickSuggestions": {
+        "strings": true
+    }
+}

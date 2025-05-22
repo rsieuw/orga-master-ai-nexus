@@ -262,7 +262,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const resetPassword = async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${globalThis.location?.origin || 'https://uw-app-url.com'}/reset-password-confirm`,
+        redirectTo: `https://orgamaster.artifexai.nl/reset-password-confirm`,
       });
       
       if (error) throw error;

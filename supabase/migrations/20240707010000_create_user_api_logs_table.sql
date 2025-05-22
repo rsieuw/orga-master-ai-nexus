@@ -17,6 +17,17 @@ COMMENT ON COLUMN public.user_api_logs.metadata IS 'Optional metadata about the 
 CREATE INDEX idx_user_api_logs_user_id_function_name ON public.user_api_logs(user_id, function_name);
 CREATE INDEX idx_user_api_logs_called_at ON public.user_api_logs(called_at DESC);
 
+-- Voeg role toe aan profiles tabel als deze nog niet bestaat
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'role'
+    ) THEN
+        ALTER TABLE public.profiles ADD COLUMN role TEXT DEFAULT 'user';
+    END IF;
+END $$;
+
 -- Enable RLS
 ALTER TABLE public.user_api_logs ENABLE ROW LEVEL SECURITY;
 
@@ -27,7 +38,7 @@ ON public.user_api_logs
 FOR SELECT
 TO authenticated
 USING (
-  (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
+  COALESCE((SELECT role FROM public.profiles WHERE id = auth.uid()), 'user') = 'admin'
 );
 
 -- Functions can insert into this table (service_role bypasses RLS)

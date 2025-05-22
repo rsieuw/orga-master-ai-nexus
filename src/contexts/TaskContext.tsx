@@ -27,6 +27,8 @@ import {
 } from "date-fns";
 import { TaskContext } from "./TaskContext.context.ts";
 import { useAuth } from "@/hooks/useAuth.ts";
+import { tasksCache } from "@/lib/cache-utils.ts";
+import { column, castTaskUpdate } from "@/lib/type-helpers.ts";
 
 /**
  * Represents the structure for updating a task in the database.
@@ -193,26 +195,43 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // Cache key gebaseerd op gebruiker ID
+    const cacheKey = `tasks_${session.user.id}`;
+
+    try {
+      // Gebruik cache of haal nieuwe data op
+      const fetchAndTransformTasks = async () => {
     const { data, error } = await supabase
       .from("tasks")
       .select("*")
-      .eq("user_id", session.user.id)
+          .eq(column('user_id'), session.user.id)
       .order("created_at", { ascending: false });
 
     if (error) {
+          throw error;
+        }
+  
+        // Veilige type casting en transformatie
+        const dbTasks = data || [];
+        const transformedTasks: Task[] = dbTasks.map((dbTask) =>
+          mapDbTaskToTask(dbTask as DbTask)
+        );
+        return transformedTasks;
+      };
+
+      // Gebruik de cache of haal data op
+      const cachedTasks = await tasksCache.getOrFetch(cacheKey, fetchAndTransformTasks);
+      setTasks(cachedTasks);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
       toast({
         variant: "destructive",
         title: t("taskContext.toast.fetchError"),
       });
       setTasks([]);
-    } else {
-      const dbTasks = data as DbTask[] | null;
-      const transformedTasks: Task[] = (dbTasks || []).map((dbTask) =>
-        mapDbTaskToTask(dbTask)
-      );
-      setTasks(transformedTasks);
-    }
+    } finally {
     setIsLoading(false);
+    }
   }, [toast, t]);
 
   /**
@@ -223,19 +242,49 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    */
   useEffect(() => {
     fetchTasks();
+    
+    // Alleen realtime gebruiken als er een gebruiker is ingelogd
+    if (!user?.id) return;
+
+    // Geoptimaliseerde Realtime subscription met specifieke filters
+    // om alleen wijzigingen te volgen voor de huidige gebruiker
     const subscription = supabase
-      .channel("public:tasks")
+      .channel(`public:tasks:user_id=eq.${user.id}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "tasks" },
-        () => fetchTasks()
+        { 
+          event: "*", 
+          schema: "public", 
+          table: "tasks",
+          filter: `user_id=eq.${user.id}` // Alleen luisteren naar wijzigingen voor deze gebruiker
+        },
+        (payload) => {
+          console.log("Realtime task update ontvangen:", payload.eventType);
+          // Alleen de hele lijst opnieuw ophalen bij INSERT en DELETE
+          // Bij UPDATE alleen de specifieke taak bijwerken
+          if (payload.eventType === 'UPDATE') {
+            // Specifieke taak bijwerken in plaats van alles opnieuw op te halen
+            const updatedTask = payload.new as DbTask;
+            setTasks(prevTasks => {
+              return prevTasks.map(task => 
+                task.id === updatedTask.id 
+                  ? mapDbTaskToTask(updatedTask) 
+                  : task
+              );
+            });
+          } else {
+            // Voor INSERT en DELETE de volledige lijst opnieuw ophalen
+            fetchTasks();
+          }
+        }
       )
       .subscribe();
 
     return () => {
+      // Cleanup subscription wanneer de component unmount
       supabase.removeChannel(subscription);
     };
-  }, [fetchTasks]);
+  }, [fetchTasks, user?.id]);
 
   /**
    * Fetches AI generation limits from the database when the component mounts
@@ -245,10 +294,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       try {
         // System_settings exists in the database but not in the TypeScript definitions
         const { data, error } = await supabase
-          // @ts-expect-error - "system_settings" table exists in the database but not in type definitions
+          // Table bestaat in de database maar niet in type definitie
           .from("system_settings")
           .select("setting_value")
-          .eq("setting_name", "ai_generation_limits")
+          .eq(column('setting_name'), "ai_generation_limits")
           .single();
 
         if (error) {
@@ -331,7 +380,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       .single();
     if (error) throw error;
     if (data) {
-      const newTask = mapDbTaskToTask(data as DbTask);
+      // Type assertion voor data
+      const newTask = mapDbTaskToTask((data as unknown) as DbTask);
       setTasks((prevTasks) => [...prevTasks, newTask]);
       return newTask;
     }
@@ -416,8 +466,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       
       const { error } = await supabase
         .from("tasks")
-        .update(dbUpdates)
-        .eq("id", id)
+        .update(castTaskUpdate(dbUpdates))
+        .eq(column('id'), id)
         .select("*");
 
       if (error) {
@@ -445,7 +495,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    * @throws {Error} If a database error occurs.
    */
   const deleteTask = async (id: string) => {
-    const { error } = await supabase.from("tasks").delete().eq("id", id);
+    const { error } = await supabase.from("tasks").delete().eq(column('id'), id);
     if (error) throw error;
     
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
