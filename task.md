@@ -300,6 +300,7 @@ De weergave op het Google OAuth-scherm verbeteren zodat het de domeinnaam van de
         - De authenticatie en redirect nog steeds correct werken.
 
 **Optioneel (Verificatie door Google):**
+
 - Afhankelijk van de configuratie en het type applicatie, kan Google aanvullende verificatiestappen vereisen voor je OAuth-toestemmingsscherm, vooral als je een custom domain en logo gebruikt.
 
 **Prioriteit:** Medium (verbetering van gebruikerservaring en professionaliteit)

@@ -91,8 +91,7 @@
     "npm:remark-gfm@^4.0.1": "4.0.1",
     "npm:sharp@~0.34.1": "0.34.1",
     "npm:sonner@^1.4.41": "1.7.4_react@18.3.1_react-dom@18.3.1__react@18.3.1",
-    "npm:supabase@2.22.12": "2.22.12",
-    "npm:supabase@^2.22.12": "2.22.12",
+    "npm:supabase@^2.23.4": "2.23.4",
     "npm:tailwind-merge@^2.5.2": "2.6.0",
     "npm:tailwind-scrollbar@^3.1.0": "3.1.0_tailwindcss@3.4.17__postcss@8.5.3",
     "npm:tailwindcss-animate@^1.0.7": "1.0.7_tailwindcss@3.4.17__postcss@8.5.3",
@@ -7373,8 +7372,8 @@
       ],
       "bin": true
     },
-    "supabase@2.22.12": {
-      "integrity": "sha512-PWQT+uzwAXcamM/FK60CaWRjVwsX2SGW5vF7edbiTQC6vsNvTBnSIvd1yiXsIpq32uzQFu+iOrayxaTQytNiTw==",
+    "supabase@2.23.4": {
+      "integrity": "sha512-zuGxvy9qQqZtbc3ehZ2pP6j0r/dcNOW0hU93XPBJ7zSWfLlmQ/erlQHa/o36R4f2zpfR0REVF6023yuNCUdpMA==",
       "dependencies": [
         "bin-links",
         "https-proxy-agent",
@@ -8329,7 +8328,7 @@
         "npm:remark-gfm@^4.0.1",
         "npm:sharp@~0.34.1",
         "npm:sonner@^1.4.41",
-        "npm:supabase@^2.22.12",
+        "npm:supabase@^2.23.4",
         "npm:tailwind-merge@^2.5.2",
         "npm:tailwind-scrollbar@^3.1.0",
         "npm:tailwindcss-animate@^1.0.7",

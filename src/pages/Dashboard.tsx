@@ -62,15 +62,24 @@ const priorityOrder: Record<TaskPriority, number> = {
   none: 0,
 };
 
-// Sort function for tasks by priority (descending)
+// Sort function for tasks by priority (descending) and new status
 /**
- * Sorts tasks by priority in descending order.
- * High > Medium > Low > None.
+ * Sorts tasks first by their 'isNew' status (new tasks first),
+ * then by priority in descending order (High > Medium > Low > None).
  * @param {Task} a - The first task to compare.
  * @param {Task} b - The second task to compare.
- * @returns {number} Returns -1 if b > a, 1 if a > b, 0 if equal.
+ * @returns {number} Returns -1 if a should come before b, 1 if b should come before a, 0 if equal.
  */
 const sortTasksByPriority = (a: Task, b: Task): number => {
+  // Sort new tasks first
+  if (a.isNew && !b.isNew) {
+    return -1; // a comes first
+  }
+  if (!a.isNew && b.isNew) {
+    return 1; // b comes first
+  }
+
+  // If both are new or both are not new, sort by priority
   return priorityOrder[b.priority] - priorityOrder[a.priority];
 };
 

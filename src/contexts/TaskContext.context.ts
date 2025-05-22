@@ -82,9 +82,10 @@ export interface TaskContextType {
   /** 
    * Expands a task by generating subtasks using AI.
    * @param {string} taskId - The ID of the task to expand.
+   * @param {Task} [initialTaskData] - Optional initial task data if the task is new and not yet in the main state.
    * @returns {Promise<void>} A promise that resolves when the subtask generation is complete or attempted.
    */
-  expandTask: (taskId: string) => Promise<void>;
+  expandTask: (taskId: string, initialTaskData?: Task) => Promise<void>;
   /** 
    * Groups tasks by their due date (e.g., overdue, today, tomorrow).
    * @returns {TasksByDate} An object containing tasks grouped by date categories.

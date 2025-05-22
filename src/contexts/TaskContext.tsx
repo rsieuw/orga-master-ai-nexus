@@ -82,6 +82,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [lastResearchOutputs, setLastResearchOutputs] = useState<
     Record<string, string>
   >({});
+  const [loadingError, setLoadingError] = useState<string | null>(null);
 
   // State to store AI generation limits from database
   const [aiGenerationLimits, setAiGenerationLimits] = useState<AiGenerationLimits>({
@@ -382,7 +383,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     if (data) {
       // Type assertion voor data
       const newTask = mapDbTaskToTask((data as unknown) as DbTask);
-      setTasks((prevTasks) => [...prevTasks, newTask]);
+      // Add the new task to the beginning of the array to show it first
+      setTasks((prevTasks) => [newTask, ...prevTasks]);
       return newTask;
     }
     return undefined;
@@ -636,79 +638,58 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    * Updates the task with the generated subtasks and increments the AI generation count.
    * Handles loading states and displays toast notifications for success, failure, or limits.
    * @param {string} taskId - The ID of the task to expand with AI-generated subtasks.
+   * @param {Task | undefined} initialTaskData - Optional initial task data to use if the task is not found in the local state.
    * @throws {Error} If the task is not found, user is not authenticated, or an API error occurs.
    */
-  const expandTask = async (taskId: string) => {
-    if (!user) {
-      toast({ 
-        variant: "destructive", 
-        title: t("taskContext.toast.notAuthenticated"),
-      });
-      return;
-    }
-    
-    const task = getTaskById(taskId);
-    if (!task) {
-      throw new Error(`Task with id ${taskId} not found.`);
-    }
-    
-    // Use the centralized function to determine the limit
-    const maxGenerations = getMaxAiGenerationsForUser();
-    
-    const currentGenerationCount = task.aiSubtaskGenerationCount || 0;
-    
-    if (currentGenerationCount >= maxGenerations) {
-      toast({ 
-        variant: "destructive", 
-        title: t("taskContext.toast.aiLimitReached.title"),
-        description: t("taskContext.toast.aiLimitReached.description", {
-          maxGenerations:
-            maxGenerations === Number.MAX_SAFE_INTEGER
-              ? t("common.unlimited")
-              : maxGenerations, // Show 'unlimited' for admins
-          userType:
-            user.role === "admin"
-              ? t("profile.role.administrator")
-              : user.role === "free"
-              ? t("profile.role.freeUser")
-              : t("profile.role.premiumUser"),
-        }),
-      });
-      return;
-    }
-    
-    // To prevent duplicate generations, check if a generation is already in progress
-    if (isGeneratingSubtasksForTask(taskId)) {
-      toast({ 
-        variant: "default", 
-        title: t("taskContext.toast.alreadyGenerating.title"),
-        description: t("taskContext.toast.alreadyGenerating.description"),
-      });
-      return;
-    }
-    
+  const expandTask = async (taskId: string, initialTaskData?: Task) => {
     setIsGeneratingAISubtasks(taskId);
-    
-    // Check for existing subtask titles (to prevent duplicates)
-    const existingSubtaskTitles = task.subtasks.map((st) =>
-      st.title.toLowerCase()
-    );
-    
+    setLoadingError(null);
+
+    // Try to get the task either from the provided initialTaskData or from the local state
+    const taskToExpand = initialTaskData || getTaskById(taskId);
+
+    if (!taskToExpand) {
+      clearIsGeneratingAISubtasks(taskId);
+      // It's crucial to set an error state or throw, so UI can react
+      const errorMessage = `Task with id ${taskId} not found during expandTask.`;
+      setLoadingError(errorMessage); 
+      toast({
+        variant: "destructive",
+        title: t("common.error"),
+        description: errorMessage,
+      });
+      throw new Error(errorMessage);
+    }
+
+    // Check AI generation limit
+    const currentGenerations = taskToExpand.aiSubtaskGenerationCount || 0;
+    const maxGenerations = getMaxAiGenerationsForUser();
+
+    if (currentGenerations >= maxGenerations) {
+      clearIsGeneratingAISubtasks(taskId);
+      toast({
+        variant: "destructive",
+        title: t("taskContext.toast.aiLimitReachedTitle"),
+        description: t("taskContext.toast.aiLimitReachedDescription", { maxGenerations }),
+      });
+      return;
+    }
+
     try {
-      // Get the current language preference
-      const languagePreferenceValue = user.language_preference || "en";
-      
-      const requestBody = {
-        taskTitle: task.title,
-        taskDescription: task.description,
-        existingSubtasks: existingSubtaskTitles,
-        languagePreference: languagePreferenceValue,
-        taskId: taskId,
+      // Construct the payload for the Edge Function
+      // The Edge Function expects taskId, taskTitle, and languagePreference directly in the body.
+      const payload = {
+        taskId: taskToExpand.id, 
+        taskTitle: taskToExpand.title, 
+        taskDescription: taskToExpand.description, 
+        languagePreference: user?.language_preference || 'en', 
       };
       
-      const { data, error: functionError } = await supabase.functions.invoke(
+      const { data: newSubtasksResponse, error: functionError } = await supabase.functions.invoke(
         "generate-subtasks",
-        { body: requestBody }
+        {
+          body: payload, 
+        }
       );
       
       if (functionError) {
@@ -721,23 +702,22 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
-      // Process the result
-      if (data?.subtasks && Array.isArray(data.subtasks)) {
-        const newSubtasks: SubTask[] = data.subtasks.map(
+      const subtasksArray = Array.isArray(newSubtasksResponse) ? newSubtasksResponse : newSubtasksResponse?.subtasks;
+
+      if (subtasksArray && Array.isArray(subtasksArray)) {
+        const aiGeneratedSubtasks: SubTask[] = subtasksArray.map(
           (item: { title: string; description: string }) => ({
-          id: uuidv4(),
-          taskId,
-          title: item.title,
-          description: item.description,
-          completed: false,
-          createdAt: new Date().toISOString(),
+            id: uuidv4(),
+            taskId,
+            title: item.title,
+            description: item.description, // Ensure description is handled, even if undefined from API
+            completed: false,
+            createdAt: new Date().toISOString(),
           })
         );
         
-        // Add the new subtasks to the existing ones
-        const updatedSubtasks = [...task.subtasks, ...newSubtasks];
+        const updatedSubtasks = [...(taskToExpand.subtasks || []), ...aiGeneratedSubtasks];
         
-        // Create a unique set of subtasks (no duplicate titles)
         const uniqueSubtasks: SubTask[] = [];
         const seenTitles = new Set();
         
@@ -749,19 +729,64 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           }
         }
         
-        // Update the task with the new subtasks and increment the counter
-        await updateTask(taskId, { 
-          subtasks: uniqueSubtasks,
-          aiSubtaskGenerationCount: (task.aiSubtaskGenerationCount || 0) + 1,
-        });
+        // We already have taskToExpand, which is the most up-to-date version
+        // of the task, especially if it was just created and passed as initialTaskData.
         
-        // Show a success message
-        toast({ 
-          title: t("taskContext.toast.aiGenerationSuccess.title"),
-          description: t("taskContext.toast.aiGenerationSuccess.description", {
-            count: newSubtasks.length,
-          }),
-        });
+        const updatedTaskForUI: Task = {
+          ...taskToExpand,
+          subtasks: uniqueSubtasks,
+          aiSubtaskGenerationCount: (taskToExpand.aiSubtaskGenerationCount || 0) + 1,
+          updatedAt: new Date().toISOString(),
+        };
+
+        // Update local state first for responsiveness
+        setTasks((prevTasks) =>
+          prevTasks.map((t) => (t.id === taskId ? updatedTaskForUI : t))
+        );
+        
+        // Now update the database
+        try {
+          const dbUpdates = mapTaskToDbUpdate({
+            subtasks: uniqueSubtasks,
+            aiSubtaskGenerationCount: updatedTaskForUI.aiSubtaskGenerationCount,
+          });
+          
+          const { error: dbError } = await supabase
+            .from("tasks")
+            .update(castTaskUpdate(dbUpdates))
+            .eq(column('id'), taskId);
+
+          if (dbError) {
+            setTasks((prevTasks) => 
+              prevTasks.map((t) => (t.id === taskId ? taskToExpand : t)) 
+            );
+            toast({
+              variant: "destructive",
+              title: t("common.error"),
+              description: t("taskContext.toast.updateTaskFailedSimple"),
+            });
+            throw dbError;
+          }
+
+          toast({ 
+            title: t("taskContext.toast.aiGenerationSuccess.title"),
+            description: t("taskContext.toast.aiGenerationSuccess.description", {
+              count: aiGeneratedSubtasks.length,
+            }),
+          });
+
+        } catch (exception) {
+           setTasks((prevTasks) => 
+              prevTasks.map((t) => (t.id === taskId ? taskToExpand : t)) 
+           );
+          toast({
+            variant: "destructive",
+            title: t("common.error"),
+            description: t("taskContext.toast.updateTaskFailedGeneral"),
+          });
+          throw exception; 
+        }
+        
       } else {
         toast({ 
           variant: "destructive", 
@@ -1021,6 +1046,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setLastResearchOutput,
     getLastResearchOutput,
     promoteSubtaskToTask,
+    loadingError,
   };
 
   return (

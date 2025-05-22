@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTask } from "@/contexts/TaskContext.hooks.ts";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
@@ -54,6 +55,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Date-fns locales mapping
   const dateLocale = i18n.language === 'nl' ? nl : enUS;
@@ -158,6 +160,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsLoading(true);
+    let newTaskForNavigation: Task | undefined = undefined;
 
     try {
       const deadlineISO = deadline ? deadline.toISOString() : undefined;
@@ -172,10 +175,11 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
       };
 
       const newTask = await addTask(taskData);
+      newTaskForNavigation = newTask; // Store for navigation outside the specific if/else
 
       if (newTask && newTask.id && generateSubtasks) {
         try {
-          await expandTask(newTask.id);
+          await expandTask(newTask.id, newTask);
           toast({
             title: t('newTaskDialog.toast.subtasksGeneratedTitle'),
             description: t('newTaskDialog.toast.subtasksGeneratedDescription'),
@@ -187,6 +191,9 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
             title: t('common.error'),
             description: t('newTaskDialog.toast.subtaskGenerationFailedDescription'),
           });
+          // Reset newTaskForNavigation if subtask generation fails and we don't want to navigate
+          // Or, decide if navigation should still occur.
+          // For now, we'll assume navigation should still happen if the main task was created.
         }
       } else if (newTask) {
          toast({
@@ -195,7 +202,13 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
          });
       }
 
-      setOpen(false);
+      setOpen(false); // Close the dialog first
+
+      // Navigate if a new task was successfully created
+      if (newTaskForNavigation && newTaskForNavigation.id) {
+        navigate(`/task/${newTaskForNavigation.id}`);
+      }
+
     } catch (error) {
       console.error("Error creating task:", error);
       toast({
