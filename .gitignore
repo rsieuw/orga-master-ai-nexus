@@ -6,6 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+TASK.md
 
 # Dependencies
 node_modules
@@ -46,6 +47,7 @@ next-env.d.ts
 
 # Documentation session logs
 docs/sessions/
+docs/gallery/
 
 # Environment variables
 .env
