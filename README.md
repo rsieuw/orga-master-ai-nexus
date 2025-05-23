@@ -1,14 +1,12 @@
-# OrgaMaster AI
-
+# OrgaMaster AI 🤖
 OrgaMaster AI is an intelligent task management application that integrates Perplexity AI capabilities to streamline your productivity workflow. This project was developed for the Perplexity AI Hackathon.
 
-![OrgaMaster AI Banner](https://example.com/banner-image.png)
+![OrgaMaster AI Banner](docs/gallery/banner.png)
 
-## Project Overview
-
+## Project Overview 🎯
 OrgaMaster AI addresses the challenge of task management and information overload by combining structured task organization with powerful AI research capabilities. Our solution helps users efficiently manage tasks while providing contextually relevant information through Perplexity's advanced search technology.
 
-### Key Features
+### Key Features ✨
 
 - **Smart Task Management**: Create, organize, and track tasks with customizable details
 - **AI-Powered Task Generation**: Generate structured task details from simple descriptions
@@ -18,12 +16,10 @@ OrgaMaster AI addresses the challenge of task management and information overloa
 - **Smart Filtering**: Sort and filter tasks by various criteria
 - **Cross-Platform Experience**: Web, Android and iOS support through Capacitor
 
-## Perplexity AI Integration
-
+## Perplexity AI Integration 🔗
 OrgaMaster AI leverages Perplexity's powerful search and knowledge retrieval capabilities in several innovative ways:
 
 ### Deep Research Function
-
 Our core AI research functionality uses Perplexity's API to conduct in-depth investigation of topics related to user tasks. When a user requests research on a specific task, we:
 
 1. Extract key concepts and context from the task description
@@ -34,7 +30,6 @@ Our core AI research functionality uses Perplexity's API to conduct in-depth inv
 The integration allows users to stay in their workflow while accessing current, relevant information without context switching between applications.
 
 ### Implementation Architecture
-
 We've implemented the Perplexity integration through Supabase Edge Functions to securely manage API credentials and provide a consistent experience:
 
 ```
@@ -42,23 +37,20 @@ Client Request -> Supabase Edge Function -> Perplexity API -> Processed Results 
 ```
 
 Our implementation includes:
-
 - Rate limiting and usage monitoring
 - Custom prompt engineering to extract the most relevant information
 - Response formatting for optimal readability
 - Permission-based access control
 
-## Demo and Screenshots
+## Demo and Screenshots 📱
 
-### Live Demo
-
+### Live Demo 🌐
 Experience OrgaMaster AI: [Live Demo](https://orgamaster.artifexai.nl/)
 
-### Video Walkthrough
-
+### Video Walkthrough 🎥
 Watch our demo video: [YouTube Demo](https://youtu.be/mS93cufmZpY)
 
-### Screenshots
+### Screenshots 📸
 
 #### Desktop View
 ![Dashboard](docs/gallery/dashboard.jpg)
@@ -69,10 +61,9 @@ Watch our demo video: [YouTube Demo](https://youtu.be/mS93cufmZpY)
 ![Chat Mobile](docs/gallery/chat_mobile.jpg)
 ![Task Details Mobile](docs/gallery/taskdetail_mobile.jpg)
 
-## Getting Started
+## Getting Started 🚀
 
 ### Prerequisites
-
 - Node.js & npm ([install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
 - Supabase account (for backend services)
 - Perplexity API key (for AI research functionality)
@@ -129,10 +120,9 @@ npx cap add ios
 npx cap sync
 ```
 
-## Technology Stack
+## Technology Stack 💻
 
 ### Frontend
-
 - **React**: UI library
 - **TypeScript**: Type-safe JavaScript
 - **Vite**: Fast build tooling and development server
@@ -144,51 +134,44 @@ npx cap sync
 - **Capacitor**: Cross-platform native runtime
 
 ### Backend (Supabase)
-
 - **Authentication**: User accounts and session management
 - **PostgreSQL Database**: Data storage
 - **Edge Functions**: Serverless API endpoints (Deno runtime)
 - **Row-Level Security**: Data access control
 
 ### AI Integration
-
 - **Perplexity AI**: Advanced research capabilities through the Sonar API
 - **Edge Functions**: Custom AI processing logic
 - **Schema Design**: Optimized storage for AI research results
 
-## Challenges and Solutions
+## Challenges and Solutions 🛠️
 
 ### Challenge 1: Complex Research Integration
-
 Implementing deep research that remains contextually relevant to tasks required sophisticated prompt engineering and result processing.
 
 **Solution**: We developed a multi-step process that extracts key concepts from tasks, generates targeted research queries, and formats results for optimal presentation within the task context.
 
 ### Challenge 2: Mobile Performance
-
 Ensuring the AI features performed well on mobile devices with limited resources.
 
 **Solution**: Implemented progressive loading, response caching, and optimized rendering to provide a smooth experience across all devices.
 
 ### Challenge 3: User Experience
-
 Creating an intuitive interface that seamlessly integrates AI capabilities without overwhelming users.
 
 **Solution**: Used iterative design and user testing to refine the interaction model, resulting in contextualized AI features that feel natural within the task management workflow.
 
-## Future Development
+## Future Development 🔮
 
 - **Multi-modal Research**: Extend Perplexity integration to include image and voice inputs
 - **Collaborative Research**: Enable team members to collaboratively refine research queries
 - **Predictive Insights**: Use pattern recognition to suggest research topics before users request them
 - **Custom Knowledge Base**: Allow organizations to incorporate proprietary information sources
 
-## Developer
-
+## Developer 👨‍💻
 This project was entirely developed as a solo effort by [Rakesh Sieuw](https://github.com/rsieuw), showcasing the potential of combining task management with Perplexity AI's powerful research capabilities.
 
-## Contributing
-
+## Contributing 🤝
 To contribute to this project:
 
 1. Fork the repository
@@ -197,24 +180,23 @@ To contribute to this project:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## Acknowledgements
-
+## Acknowledgements 🙏
 - [Perplexity AI](https://perplexity.ai) for the powerful Sonar API
 - [Supabase](https://supabase.com) for the backend infrastructure
 - [shadcn/ui](https://ui.shadcn.com) for the beautiful component library
 
-## License
-
+## License ⚖️
 This project is proprietary software. All rights reserved.
 
-## Contact
+## Contact 📬
 
 Project Link: [https://github.com/rsieuw/orga-master-ai-nexus](https://github.com/rsieuw/orga-master-ai-nexus)
+Email: rsieuw@gmail.com 
+Phone: +316 81171839 
 
-## Demo Access
+## Demo Access 🔑
 
 For demonstration purposes, you can log in using the following credentials:
-
 - **Email:** demo@example.com
 - **Password:** demo2025
 
