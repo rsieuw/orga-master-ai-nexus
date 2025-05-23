@@ -1,7 +1,7 @@
 # OrgaMaster AI 🤖
 OrgaMaster AI is an intelligent task management application that integrates Perplexity AI capabilities to streamline your productivity workflow. This project was developed for the Perplexity AI Hackathon.
 
-![OrgaMaster AI Banner](docs/gallery/banner.png)
+![OrgaMaster AI Banner](https://github.com/rsieuw/orga-master-ai-nexus/raw/main/docs/gallery/banner.png)
 
 ## Project Overview 🎯
 OrgaMaster AI addresses the challenge of task management and information overload by combining structured task organization with powerful AI research capabilities. Our solution helps users efficiently manage tasks while providing contextually relevant information through Perplexity's advanced search technology.
@@ -53,13 +53,13 @@ Watch our demo video: [YouTube Demo](https://youtu.be/mS93cufmZpY)
 ### Screenshots 📸
 
 #### Desktop View
-![Dashboard](docs/gallery/dashboard.jpg)
-![Task Details with Chat](docs/gallery/taskdetail-chat.jpg)
+![Dashboard](https://github.com/rsieuw/orga-master-ai-nexus/raw/main/docs/gallery/dashboard.jpg)
+![Task Details with Chat](https://github.com/rsieuw/orga-master-ai-nexus/raw/main/docs/gallery/taskdetail-chat.jpg)
 
 #### Mobile View
-![Dashboard Mobile](docs/gallery/dashboard_mobile.jpg)
-![Chat Mobile](docs/gallery/chat_mobile.jpg)
-![Task Details Mobile](docs/gallery/taskdetail_mobile.jpg)
+![Dashboard Mobile](https://github.com/rsieuw/orga-master-ai-nexus/raw/main/docs/gallery/dashboard_mobile.jpg)
+![Chat Mobile](https://github.com/rsieuw/orga-master-ai-nexus/raw/main/docs/gallery/chat_mobile.jpg)
+![Task Details Mobile](https://github.com/rsieuw/orga-master-ai-nexus/raw/main/docs/gallery/taskdetail_mobile.jpg)
 
 ## Getting Started 🚀
 
