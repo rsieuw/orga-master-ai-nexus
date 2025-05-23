@@ -45,21 +45,23 @@ Our implementation includes:
 ## Demo and Screenshots 📱
 
 ### Live Demo 🌐
-Experience OrgaMaster AI: [Live Demo](https://orgamaster.artifexai.nl/)
+Experience OrgaMaster AI: [Live Demo](https://orga-master-ai.vercel.app)
 
 ### Video Walkthrough 🎥
 Watch our demo video: [YouTube Demo](https://youtu.be/mS93cufmZpY)
 
-### Screenshots 📸
+### Screenshots ��
 
-#### Desktop View
-![Dashboard](https://github.com/rsieuw/orga-master-ai-nexus/raw/main/docs/gallery/dashboard.jpg)
-![Task Details with Chat](https://github.com/rsieuw/orga-master-ai-nexus/raw/main/docs/gallery/taskdetail-chat.jpg)
+#### Desktop View 🖥️
+![Dashboard](https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/dashboard.png)
+![Task Details with Chat](https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/task-details-with-chat.png)
 
-#### Mobile View
-![Dashboard Mobile](https://github.com/rsieuw/orga-master-ai-nexus/raw/main/docs/gallery/dashboard_mobile.jpg)
-![Chat Mobile](https://github.com/rsieuw/orga-master-ai-nexus/raw/main/docs/gallery/chat_mobile.jpg)
-![Task Details Mobile](https://github.com/rsieuw/orga-master-ai-nexus/raw/main/docs/gallery/taskdetail_mobile.jpg)
+#### Mobile View 📱
+<div style="display: flex; gap: 10px;">
+  <img src="https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/dashboard-mobile.png" alt="Dashboard Mobile" width="300" />
+  <img src="https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/chat-mobile.png" alt="Chat Mobile" width="300" />
+  <img src="https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/task-details-mobile.png" alt="Task Details Mobile" width="300" />
+</div>
 
 ## Getting Started 🚀
 
