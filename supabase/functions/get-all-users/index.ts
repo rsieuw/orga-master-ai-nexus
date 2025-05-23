@@ -15,7 +15,6 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 // import { serve } from "https://deno.land/std@0.168.0/http/server.ts"; // Deno.serve is now preferred
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-// import { createSuccessResponse, createErrorResponse } from "../_shared/responseBuilders.ts"; // If using shared builders
 
 /**
  * Supabase admin client instance, initialized with the Supabase URL and service role key.
@@ -45,43 +44,60 @@ Deno.serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Logging variabelen worden hieronder verwijderd of uitgecommentarieerd
-  // const functionNameForLogging = 'get-all-users';
-  // let userIdForLogging: string | undefined;
-  // let userSpecificSupabaseClient: SupabaseClient | undefined;
-  // let supabaseAdminLoggingClient: SupabaseClient | null = null;
-
-  /* // Admin client creatie voor logging, niet meer nodig
-  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (supabaseServiceRoleKey) {
-    supabaseAdminLoggingClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      supabaseServiceRoleKey
-    );
-  } else {
-    console.warn("[get-all-users] SUPABASE_SERVICE_ROLE_KEY not set.");
-  }
-  */
-
   try {
-    /* // User client creatie voor logging, niet meer nodig
+    // Get the Authorization header
     const authHeader = req.headers.get('Authorization');
-    if (authHeader) {
-      userSpecificSupabaseClient = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-        { global: { headers: { Authorization: authHeader } } }
-      );
-      const { data: { user } } = await userSpecificSupabaseClient.auth.getUser();
-      userIdForLogging = user?.id;
-    } else {
-      console.warn("[get-all-users] No Authorization header found.");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ errorKey: "errors.auth.missingHeader" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
     }
-    */
 
-    // TODO: Toevoegen van admin role check voor de aanroepende gebruiker, 
-    // momenteel is de functie toegankelijk voor iedereen met de function invoke URL.
-    // Dit is een beveiligingsrisico.
+    // Create a Supabase client with the user's token
+    const supabaseUserClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Get the calling user's data
+    const { data: { user: callingUser }, error: userError } = await supabaseUserClient.auth.getUser();
+
+    if (userError || !callingUser) {
+      console.error("Error fetching calling user or no user found:", userError);
+      return new Response(JSON.stringify({ errorKey: "errors.auth.invalidUser" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+
+    // Fetch the calling user's profile to check their role
+    const { data: userProfile, error: profileFetchError } = await supabaseAdmin // Use admin client to fetch profile reliably
+      .from('profiles')
+      .select('role')
+      .eq('id', callingUser.id)
+      .single();
+
+    if (profileFetchError) {
+      console.error("Error fetching user profile for admin check:", profileFetchError);
+      return new Response(JSON.stringify({ errorKey: "errors.profiles.fetchFailed" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
+
+    if (!userProfile || userProfile.role !== 'admin') {
+      console.warn(`User ${callingUser.id} with role ${userProfile?.role || 'unknown'} attempted to access get-all-users.`);
+      return new Response(JSON.stringify({ errorKey: "errors.auth.notAdmin" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403, // Forbidden
+      });
+    }
+
+    // User is admin, proceed to fetch all users
+    // Admin role check has been implemented.
+    // console.log("[get-all-users] Admin access GRANTED."); // Optional: log successful admin access
 
     const { data: profiles, error: profileError } = await supabaseAdmin
       .from("profiles")
@@ -108,18 +124,6 @@ Deno.serve(async (req: Request) => {
       email: emailMap.get(profile.id) || null,
     }));
 
-    // Logging naar user_api_logs hier uitgecommentarieerd
-    /*
-    if (userSpecificSupabaseClient || supabaseAdminLoggingClient) { 
-      const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient!;
-      await loggingClient.from('user_api_logs').insert({
-        user_id: userIdForLogging, 
-        function_name: functionNameForLogging,
-        metadata: { success: true, profilesFetched: profiles.length, authUsersFetched: authUsersData?.users.length },
-      });
-    }
-    */
-
     return new Response(JSON.stringify(usersWithEmail), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
@@ -134,25 +138,8 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Logging naar user_api_logs hier uitgecommentarieerd
-    /*
-    if (userSpecificSupabaseClient || supabaseAdminLoggingClient) { 
-      try {
-        const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient!;
-        await loggingClient.from('user_api_logs').insert({
-          user_id: userIdForLogging, 
-          function_name: functionNameForLogging,
-          metadata: { success: false, error: errorKey, rawErrorMessage: error instanceof Error ? error.message : String(error), requestIp: req.headers.get('x-forwarded-for') },
-        });
-      } catch (logError: unknown) {
-          console.error('[get-all-users] FAILED TO LOG TO user_api_logs:', logError instanceof Error ? logError.message : String(logError));
-      }
-    }
-    */
-
     return new Response(JSON.stringify({ errorKey: errorKey }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      // status: error.status || 500, // error.status is not always available
       status: (error instanceof Response && error.status) ? error.status : 500, 
     });
   }
