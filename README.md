@@ -56,13 +56,18 @@ Experience OrgaMaster AI: [Live Demo](https://orgamaster.artifexai.nl/)
 
 ### Video Walkthrough
 
-Watch our demo video: [YouTube Demo](https://youtube.com/example)
+Watch our demo video: [YouTube Demo](https://youtu.be/mS93cufmZpY)
 
 ### Screenshots
 
-![Dashboard View](https://example.com/dashboard.png)
-![Research Integration](https://example.com/research.png)
-![Mobile Experience](https://example.com/mobile.png)
+#### Desktop Weergave
+![Dashboard](docs/gallery/dashboard.jpg)
+![Taakdetails met Chat](docs/gallery/taskdetail-chat.jpg)
+
+#### Mobiele Weergave
+![Dashboard Mobiel](docs/gallery/dashboard_mobile.jpg)
+![Chat Mobiel](docs/gallery/chat_mobile.jpg)
+![Taakdetails Mobiel](docs/gallery/taskdetail_mobile.jpg)
 
 ## Getting Started
 
