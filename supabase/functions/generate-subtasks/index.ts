@@ -12,7 +12,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from "../_shared/cors.ts";
-import OpenAI from 'https://esm.sh/openai@^4.26.0';
+import { OpenAI } from "https://deno.land/x/openai@v4.52.7/mod.ts";
 
 // --- CORS Headers ---
 // const corsHeaders = {
@@ -125,6 +125,15 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  // Initialiseer langForError hier met een fallback
+  const acceptLanguageHeader = req.headers.get('accept-language');
+  let langForError = 'en'; // Default fallback
+  if (acceptLanguageHeader) {
+    if (acceptLanguageHeader.startsWith('nl')) {
+      langForError = 'nl';
+    } // Blijf 'en' als het niet 'nl' is of als de header ontbreekt
+  }
+
   // const supabaseAdminClient = createClient( // Verwijderd
   //   Deno.env.get("SUPABASE_URL") ?? '',
   //   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? '',
@@ -161,21 +170,27 @@ serve(async (req) => {
 
 
   let userIdForLogging: string | undefined;
-  const functionNameForLogging = 'generate-subtasks';
-  let requestBodyForLogging: Record<string, unknown> = {};
+  const _functionNameForLogging = 'generate-subtasks';
+  let _requestBodyForLogging: Record<string, unknown> = {};
   
   let openaiModelUsed: string | undefined;
   let promptTokens: number | undefined;
   let completionTokens: number | undefined;
   let totalTokens: number | undefined;
   let openAIError: { status?: number; message: string; body?: unknown } | null = null;
-  let generatedSubtasksForLogging: SubtaskSuggestion[] = [];
+  let _generatedSubtasks: SubtaskSuggestion[] = [];
+  let _taskIdForCatch: string | undefined; // For logging in catch block
 
 
   try {
     console.log("Attempting to parse request body...");
     const requestBody = await req.json() as RequestBody;
     console.log("Successfully parsed request body:", requestBody);
+
+    // Overschrijf langForError als we de languagePreference uit de body hebben
+    if (requestBody.languagePreference) {
+      langForError = requestBody.languagePreference === 'nl' ? 'nl' : 'en';
+    }
 
     // Get user for logging
     const { data: { user } } = await userSpecificSupabaseClient.auth.getUser();
@@ -194,7 +209,7 @@ serve(async (req) => {
       researchResults 
     } = requestBody;
 
-    requestBodyForLogging = {
+    _requestBodyForLogging = {
         taskId,
         taskTitleLength: taskTitle?.length,
         taskDescriptionProvided: !!taskDescription,
@@ -206,6 +221,9 @@ serve(async (req) => {
         notesCount: notes?.length || 0,
         researchResultsCount: researchResults?.length || 0,
     };
+
+    _taskIdForCatch = taskId; // Set for catch block logging
+    // const languagePreferenceForExternalLog = languagePreference; // Verwijderd, niet gebruikt in actieve logging
 
     const currentLangErrorMessages = errorMessages[languagePreference as keyof typeof errorMessages] || errorMessages.en;
 
@@ -288,15 +306,15 @@ serve(async (req) => {
     try {
       await userSpecificSupabaseClient.from('external_api_usage_logs').insert({
         user_id: userIdForLogging,
-        task_id: taskId,
+        task_id: _taskIdForCatch,
         service_name: 'OpenAI',
-        function_name: 'chatCompletions.create',
+        function_name: 'chatCompletions.create_subtasks',
         tokens_prompt: promptTokens,
         tokens_completion: completionTokens,
         tokens_total: totalTokens,
         metadata: { 
           model: openaiModelUsed,
-          languagePreference,
+          languagePreference: languagePreference,
           success: !openAIError, 
           error: openAIError ? openAIError : undefined,
         },
@@ -340,7 +358,7 @@ serve(async (req) => {
       throw new Error(currentLangErrorMessages.aiSubtasksInvalidArrayStructure);
     }
 
-    generatedSubtasksForLogging = rawSubtasksArray.reduce((acc: SubtaskSuggestion[], item: RawSubtaskItem) => {
+    _generatedSubtasks = rawSubtasksArray.reduce((acc: SubtaskSuggestion[], item: RawSubtaskItem) => {
       if (item && typeof item.title === 'string' && item.title.trim() !== '') {
         const subtask: SubtaskSuggestion = { title: item.title.trim() };
         acc.push(subtask);
@@ -354,11 +372,11 @@ serve(async (req) => {
       const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient;
       await loggingClient.from('user_api_logs').insert({
         user_id: userIdForLogging,
-        function_name: functionNameForLogging,
+        function_name: _functionNameForLogging,
         metadata: { 
-          ...requestBodyForLogging, 
+          ..._requestBodyForLogging, 
           success: true, 
-          generatedSubtasksCount: generatedSubtasksForLogging.length,
+          generatedSubtasksCount: _generatedSubtasks.length,
           openaiModelUsed,
           promptTokens,
           completionTokens
@@ -369,54 +387,76 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ subtasks: generatedSubtasksForLogging }),
+      JSON.stringify({ subtasks: _generatedSubtasks }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
 
-  } catch (error: unknown) {
-    const lang = (requestBodyForLogging.languagePreference as string) || 'en';
-    const errorMessagesForLang = errorMessages[lang as keyof typeof errorMessages] || errorMessages.en;
-    let displayError = errorMessagesForLang.functionExecError;
-    const errorDetails = error instanceof Error ? error.message : String(error);
-
-    // Nieuwe, meer gedetailleerde error log in de catch
-    console.error("ERROR in generate-subtasks:", {
-      errorMessage: errorDetails,
-      errorObject: JSON.stringify(error, Object.getOwnPropertyNames(error)), // Probeer de error beter te serialiseren
-      requestBodyAtError: requestBodyForLogging, // Log de request body die we hadden
-      userIdAtError: userIdForLogging,
-      timestamp: new Date().toISOString()
-    });
-
-    // Use specific error messages if they were thrown
-    if (Object.values(errorMessagesForLang).includes(errorDetails)) {
-        displayError = errorDetails;
-    }
+  } catch (e) {
+    // console.error("[generate-subtasks] CAUGHT ERROR:", e);
+    const errorsForLang = errorMessages[langForError as keyof typeof errorMessages] || errorMessages.en;
     
-    // Log internal API call FAILURE
-    try {
-      const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient;
-      await loggingClient.from('user_api_logs').insert({
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { 
-          ...requestBodyForLogging, // Contains taskId if parsed
-          success: false, 
-          error: displayError, 
-          rawErrorMessage: errorDetails,
-          openaiModelUsed, // Log model even on failure if known
-          promptTokens,    // Log tokens if available
-          completionTokens 
-        },
-      });
-    } catch (logError) {
-      console.error('Failed to log FAILURE to user_api_logs', logError);
+    let errorKeyForResponse = "functionExecError"; // Default error key
+    let messageForResponse = errorsForLang.functionExecError; // Default message
+    const detailsForResponse = e instanceof Error ? e.message : String(e);
+
+    if (e instanceof Error) {
+      // Probeer een specifiekere errorKey te vinden
+      const knownKeys = Object.keys(errorsForLang) as Array<keyof typeof errorsForLang>;
+      for (const key of knownKeys) {
+        if (errorsForLang[key] === e.message) {
+          errorKeyForResponse = key;
+          messageForResponse = e.message;
+          break;
+        }
+      }
+      // Als het geen directe match is, maar wel een bekende error string bevat:
+      if (errorKeyForResponse === "functionExecError") { //Nog steeds default?
+        if (e.message.includes("OpenAI API key not found")) errorKeyForResponse = "missingOpenAiKey";
+        else if (e.message.includes("OpenAI API request failed")) errorKeyForResponse = "aiRequestFailed";
+        // Update messageForResponse ook als key is aangepast, tenzij het al de e.message was
+        if (errorsForLang[errorKeyForResponse as keyof typeof errorsForLang] && messageForResponse !== e.message) {
+          messageForResponse = errorsForLang[errorKeyForResponse as keyof typeof errorsForLang];
+        }
+      }
+    } else { // Non-error object thrown
+      messageForResponse = String(e); // Gebruik de string representatie
     }
 
-    return new Response(
-      JSON.stringify({ error: displayError, details: errorDetails }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-    );
+    // De uitgecommentarieerde logging naar user_api_logs gebruikte 'errorMessage' en 'errorKey'.
+    // We gebruiken nu errorKeyForResponse en messageForResponse voor de HTTP response.
+
+    // if (supabaseAdminLoggingClient || userSpecificSupabaseClient) {
+    //   const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient;
+    //   console.log("[generate-subtasks] Logging FAILURE to user_api_logs...");
+    //   // const loggingClientForError = supabaseAdminLoggingClient || userSpecificSupabaseClient; // Redundant
+    //   if (userIdForLogging && loggingClient) {
+    //       try {
+    //           await loggingClient.from('user_api_logs').insert({
+    //               user_id: userIdForLogging,
+    //               function_name: _functionNameForLogging,
+    //               metadata: {
+    //                   ..._requestBodyForLogging,
+    //                   task_id: _taskIdForCatch, // Gebruik _taskIdForCatch hier
+    //                   success: false,
+    //                   error_message: messageForResponse, // Gebruik messageForResponse
+    //                   error_key: errorKeyForResponse, // Gebruik errorKeyForResponse
+    //                   raw_error: e instanceof Error ? e.stack : String(e),
+    //                   language_preference: langForError, 
+    //                   openai_model_used: openaiModelUsed, 
+    //                   prompt_tokens: promptTokens, 
+    //                   completion_tokens: completionTokens
+    //               },
+    //           });
+    //       } catch (dbError) {
+    //           console.error("[generate-subtasks] Database error during FAILURE log to user_api_logs:", dbError);
+    //       }
+    //   } else {
+    //       console.warn("[generate-subtasks] Cannot log FAILURE to user_api_logs: userId or logging client missing.");
+    //   }
+    // }
+
+    return new Response(JSON.stringify({ error: messageForResponse, errorKey: errorKeyForResponse, details: detailsForResponse }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 });
   }
 });
 

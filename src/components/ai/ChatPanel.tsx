@@ -544,7 +544,16 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
         });
         if (functionError) throw functionError;
         if (!aiResponseData) throw new Error(t("chatPanel.errors.aiConnectionFailed"));
-        let messageToSave: Omit<Message, 'id' | 'timestamp' | 'createdAt'>;
+        
+        // Prepare message to save, including potential citations
+        let messageToSave: Omit<Message, 'id' | 'timestamp' | 'createdAt'> = {
+          role: 'assistant',
+          content: aiResponseData.response || t("chatPanel.errors.emptyResponseFromAI"), // Fallback for empty response
+          messageType: 'standard',
+          isLoading: false,
+          citations: aiResponseData.citations // Add citations if present
+        };
+
         if (aiResponseData.action) {
           let assistantMessageContent = "";
           try {
@@ -586,7 +595,7 @@ export default function ChatPanel({ task, selectedSubtaskTitle }: ChatPanelProps
            messageToSave = { role: "assistant", content: t("chatPanel.errors.unexpectedResponse"), messageType: 'error' };
         }
         if (messageToSave) {
-          await addMessage(messageToSave, true);
+          await addMessage(ensureMessageHasId(messageToSave), true);
           scrollToBottom();
         }
       } catch (error) {

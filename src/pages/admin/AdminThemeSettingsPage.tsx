@@ -67,15 +67,15 @@ export const ThemeSettingsTable: React.FC = () => {
       setIsLoading(true);
       setError(null);
       try {
-        // Haal eerst de sessie en access token op
+        // First, get the session and access token
         const { data: sessionData } = await supabase.auth.getSession();
         const accessToken = sessionData.session?.access_token;
         
         if (!accessToken) {
-          throw new Error("Niet geautoriseerd: Geen geldige sessie gevonden.");
+          throw new Error("Unauthorized: No valid session found.");
         }
         
-        // Probeer de Edge Function te gebruiken om de thema-instellingen op te halen
+        // Try to use the Edge Function to retrieve theme settings
         const response = await fetch('https://wzoeijpdtpysbkmxbcld.supabase.co/functions/v1/get-theme-settings', {
           headers: {
             Authorization: `Bearer ${accessToken}`
@@ -92,7 +92,7 @@ export const ThemeSettingsTable: React.FC = () => {
           throw new Error("No theme settings received from API");
         }
         
-        // Sorteer de resultaten op rol zodat de volgorde consistent is
+        // Sort results by role for consistent order
         const sortedSettings = themeData.sort((a, b) => {
           const order: Record<UserRole, number> = { admin: 1, paid: 2, free: 3 };
           return (order[a.role as UserRole] || 99) - (order[b.role as UserRole] || 99);
@@ -109,7 +109,7 @@ export const ThemeSettingsTable: React.FC = () => {
           description: message 
         });
         
-        // Gebruik standaard instellingen als fallback
+        // Use default settings as fallback
         setThemeSettings(DEFAULT_THEME_SETTINGS);
       } finally {
         setIsLoading(false);
@@ -134,19 +134,19 @@ export const ThemeSettingsTable: React.FC = () => {
           let updatedThemes = [...setting.available_themes];
           
           if (isAvailable && !updatedThemes.includes(theme)) {
-            // Thema toevoegen als het beschikbaar moet zijn
+            // Add theme if it should be available
             updatedThemes.push(theme);
           } else if (!isAvailable && updatedThemes.includes(theme)) {
-            // Thema verwijderen als het niet beschikbaar moet zijn
+            // Remove theme if it should not be available
             updatedThemes = updatedThemes.filter(t => t !== theme);
             
-            // Als het standaard thema wordt verwijderd, zet dan een ander thema als standaard
+            // If the default theme is removed, set another theme as default
             if (setting.default_theme === theme && updatedThemes.length > 0) {
               setting.default_theme = updatedThemes[0];
             }
           }
           
-          // Zorg ervoor dat er altijd minimaal één thema beschikbaar is
+          // Ensure at least one theme is always available
           if (updatedThemes.length === 0) {
             updatedThemes = ['custom-dark'];
             toast({
@@ -173,7 +173,7 @@ export const ThemeSettingsTable: React.FC = () => {
     setThemeSettings(currentSettings =>
       currentSettings.map(setting => {
         if (setting.role === role) {
-          // Controleer of het nieuwe standaard thema beschikbaar is
+          // Check if the new default theme is available
           if (!setting.available_themes.includes(theme)) {
             toast({
               variant: "destructive",
@@ -198,7 +198,7 @@ export const ThemeSettingsTable: React.FC = () => {
   const handleSaveChanges = async () => {
     setIsLoading(true);
     try {
-      // Valideer elke instelling
+      // Validate each setting
       for (const setting of themeSettings) {
         if (setting.available_themes.length === 0) {
           throw new Error(t("adminThemeSettings.errors.emptyThemeList", { role: setting.role }));
@@ -208,15 +208,15 @@ export const ThemeSettingsTable: React.FC = () => {
         }
       }
 
-      // Haal eerst de sessie en access token op
+      // First, get the session and access token
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData.session?.access_token;
       
       if (!accessToken) {
-        throw new Error("Niet geautoriseerd: Geen geldige sessie gevonden.");
+        throw new Error("Unauthorized: No valid session found.");
       }
 
-      // Stuur alle instellingen naar de Edge Function
+      // Send all settings to the Edge Function
       const response = await fetch('https://wzoeijpdtpysbkmxbcld.supabase.co/functions/v1/update-theme-settings', {
         method: 'POST',
         headers: {
@@ -412,9 +412,9 @@ const AdminThemeSettingsPage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">{t("adminThemeSettings.pageTitle", "Thema-instellingen")}</h1>
+        <h1 className="text-2xl font-bold mb-2">{t("adminThemeSettings.pageTitle", "Theme Settings")}</h1>
         <p className="text-muted-foreground mb-4">
-          {t("adminThemeSettings.pageDescription", "Beheer welke thema's beschikbaar zijn voor elke gebruikersrol.")}
+          {t("adminThemeSettings.pageDescription", "Manage which themes are available for each user role.")}
         </p>
       </div>
       

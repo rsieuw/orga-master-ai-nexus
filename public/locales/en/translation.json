@@ -1048,22 +1048,36 @@
     "systemSettingsButton": "System Settings"
   },
   "chatPanel": {
+    "title": "Chat",
     "titleWithTask": "Chat: {{taskTitle}}",
+    "inputPlaceholder": "Plan, Search, Make it happen...",
+    "inputPlaceholderWithContext": "Ask about {{taskTitle}} or type / for commands...",
+    "defaultTaskTitle": "the current task",
     "loadingHistory": "Loading messages...",
     "startConversationPrompt": "Start a conversation with the AI assistant",
-    "inputPlaceholder": "Ask anything or type / for commands...",
-    "inputPlaceholderWithContext": "Ask about {{taskTitle}} or type / for commands...",
     "sendCommand": "Send",
     "generatingResponse": "Generating response...",
-    "defaultTaskTitle": "the current task",
     "toast": {
+      "researchFailedTitle": "Research failed",
+      "researchFailedDescriptionDefault": "An unexpected error occurred during research.",
+      "researchNoDataTitle": "No Data",
+      "researchNoDataDescription": "The research returned no usable data.",
+      "saveFailedTitle": "Save failed",
+      "saveResearchFailedDescriptionDefault": "Could not save research results.",
+      "researchSavedTitle": "Research saved",
+      "researchSavedDescription": "The research results have been successfully saved.",
+      "deleteFailedTitle": "Deletion failed",
+      "deleteResearchFailedDescriptionDefault": "Could not delete research results.",
+      "researchDeletedTitle": "Research deleted",
+      "researchDeletedDescription": "The research results have been successfully deleted.",
+      "featureNotAvailableTitle": "Feature Not Available",
+      "featureNotAvailableDescription": "This feature is currently not available for your account type.",
       "copiedTitle": "Copied",
       "copiedDescription": "Text has been copied to clipboard",
       "copyFailedTitle": "Copy failed",
       "copyFailedDescription": "Could not copy the text",
       "noteSavedTitle": "Note saved",
       "saveNoteFailedDefault": "Could not save note",
-      "saveFailedTitle": "Save failed",
       "exportFailedTitle": "Export failed",
       "exportFailedDescriptionNoTask": "No task is selected",
       "exportFailedDescription": "No messages to export",
@@ -1077,8 +1091,6 @@
       "actionFailedTitle": "Action failed",
       "topicRequiredTitle": "Topic required",
       "topicRequiredDescription": "Enter a topic for research",
-      "researchDeletedTitle": "Research deleted",
-      "researchDeletedDescription": "The research has been successfully deleted",
       "historyClearedTitle": "History cleared",
       "historyClearedDescription": "The chat history has been cleared",
       "historyClearedWithKeptItemsDescription": "The chat history has been cleared, but {{items}} were kept",
@@ -1088,12 +1100,7 @@
       "clearHistoryFailed": "Could not clear chat history",
       "allSubtasksDeletedMessage": "All subtasks have been successfully deleted.",
       "deepResearchFailedTitle": "Deep Research Failed",
-      "deepResearchFailedDescriptionDefault": "An error occurred during deep research. Please try again.",
-      "saveResearchFailedDescriptionDefault": "Could not save the research results. Please try again.",
-      "featureNotAvailableTitle": "Feature Not Available",
-      "featureNotAvailableDescription": "This feature is currently not available or you do not have permission to use it.",
-      "researchSavedTitle": "Research Saved",
-      "researchSavedDescription": "The research has been successfully saved."
+      "deepResearchFailedDescriptionDefault": "An error occurred during deep research. Please try again."
     },
     "errors": {
       "userNotLoggedIn": "User not logged in. Please log in to save notes.",
@@ -1107,17 +1114,7 @@
       "unexpectedResponse": "Sorry, received an unexpected response from AI",
       "aiConnectionFailed": "Sorry, connection to AI failed or AI function returned no data.",
       "invalidPayloadForAction": "Invalid payload for {{action}}",
-      "invalidSubtaskResponseStructure": "Received an unexpected response structure when trying to generate subtasks.",
-      "research": {
-        "instructionPrefixForSubtask": "For subtask '{{subtask}}', help me with:",
-        "userRequestPrefix": "Research about:",
-        "forSubtaskContinuation": " for subtask '{{subtask}}'",
-        "errorMessage": "An error occurred during research. Please try again later.",
-        "upgradeNeeded": {
-          "title": "Upgrade Required",
-          "description": "Deep research functionality requires a paid subscription. Please consider upgrading to use this feature."
-        }
-      }
+      "invalidSubtaskResponseStructure": "Received an unexpected response structure when trying to generate subtasks."
     },
     "export": {
       "chatConversationForTask": "Chat conversation for task:",
@@ -1126,6 +1123,18 @@
       "roleAssistant": "Assistant"
     },
     "research": {
+      "title": "Deep Research",
+      "description": "Enable deep research to allow the AI assistant to search the internet for detailed information about this task and related topics.",
+      "activateLabel": "Activate deep research",
+      "explanation": "When activated, the AI assistant will use its research capabilities to find and analyze related sources for improved answers.",
+      "startButton": "Start Research",
+      "researchingButton": "Researching...",
+      "researchLoadingText": "Performing research...",
+      "researchLoadingTextInterpolated": "Performing research on: {{topic}}...",
+      "cancelledByUser": "Research cancelled by user.",
+      "confirmationMessage": "Are you sure you want to start research on '{{topic}}'?",
+      "confirmationCancelled": "Research initiation cancelled by user.",
+      "regardingSubtask": "regarding subtask",
       "instructionPrefixForSubtask": "For subtask '{{subtask}}', help me with:",
       "userRequestPrefix": "Research about:",
       "forSubtaskContinuation": " for subtask '{{subtask}}'",
@@ -1134,7 +1143,7 @@
         "title": "Upgrade Required",
         "description": "Deep research functionality requires a paid subscription. Please consider upgrading to use this feature."
       },
-      "regardingSubtask": "regarding subtask"
+      "stopResearch": "Cancel Research"
     },
     "researchModePopover": {
       "researchMode": "Research",
@@ -1175,6 +1184,7 @@
     "initialAssistantMessage": "Hello {{username}}! I'm ready to help you with your task: {{taskTitle}}. What can I do for you?",
     "researchForSubtaskLabel": "Research for subtask: {{subtaskTitle}}",
     "researchForPromptLabel": "Research for: {{prompt}}",
+    "researchGenericTitle": "Research Result",
     "pinnedMessages": "Pinned messages",
     "subtaskSelectedMessage": "Okay, focusing on subtask: {{subtaskTitle}}.",
     "subtasksAddedConfirmation": {
@@ -1183,9 +1193,11 @@
     "subtaskAddedConfirmation": {
       "single": "Okay, I have added the subtask: \"{{subtaskTitle}}\"."
     },
-    "researchLoadingText": "Researching... Please wait.",
-    "researchLoadingTextInterpolated": "Researching: \"{{topic}}\"... Please wait.",
-    "researchCompletedText": "Research completed."
+    "researchCompletedText": "Research completed.",
+    "buttons": {
+      "showDescription": "Show description",
+      "hideDescription": "Hide description"
+    }
   },
   "chatInput": {
     "messagePlaceholder": "Plan, Search, Make it happen...",

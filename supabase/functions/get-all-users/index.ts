@@ -15,6 +15,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 // import { serve } from "https://deno.land/std@0.168.0/http/server.ts"; // Deno.serve is now preferred
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+// import { createSuccessResponse, createErrorResponse } from "../_shared/responseBuilders.ts"; // If using shared builders
 
 /**
  * Supabase admin client instance, initialized with the Supabase URL and service role key.
@@ -39,19 +40,18 @@ const supabaseAdmin: SupabaseClient = createClient(
  * @param {Request} req - The incoming HTTP request object.
  * @returns {Promise<Response>} A promise that resolves to an HTTP response object.
  */
-Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and typed req
-  // Handle CORS preflight requests
+Deno.serve(async (req: Request) => { 
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Logging variables
-  let userIdForLogging: string | undefined;
-  const functionNameForLogging = 'get-all-users';
-  let userSpecificSupabaseClient: SupabaseClient | undefined;
+  // Logging variabelen worden hieronder verwijderd of uitgecommentarieerd
+  // const functionNameForLogging = 'get-all-users';
+  // let userIdForLogging: string | undefined;
+  // let userSpecificSupabaseClient: SupabaseClient | undefined;
+  // let supabaseAdminLoggingClient: SupabaseClient | null = null;
 
-  // Admin client for logging to user_api_logs
-  let supabaseAdminLoggingClient: SupabaseClient | null = null;
+  /* // Admin client creatie voor logging, niet meer nodig
   const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (supabaseServiceRoleKey) {
     supabaseAdminLoggingClient = createClient(
@@ -59,11 +59,12 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
       supabaseServiceRoleKey
     );
   } else {
-    console.warn("[get-all-users] SUPABASE_SERVICE_ROLE_KEY not set. Logging to user_api_logs might be restricted by RLS or done by userSpecificSupabaseClient.");
+    console.warn("[get-all-users] SUPABASE_SERVICE_ROLE_KEY not set.");
   }
+  */
 
   try {
-    // Create a client with the user's auth context for logging who is calling this admin function
+    /* // User client creatie voor logging, niet meer nodig
     const authHeader = req.headers.get('Authorization');
     if (authHeader) {
       userSpecificSupabaseClient = createClient(
@@ -74,12 +75,14 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
       const { data: { user } } = await userSpecificSupabaseClient.auth.getUser();
       userIdForLogging = user?.id;
     } else {
-      // Optional: Handle cases where no auth header is provided, though an admin function like this should require it.
-      // For now, we'll allow the function to proceed, but logging might be anonymous.
-      console.warn("[get-all-users] No Authorization header found. Logging will be anonymous if user ID cannot be determined.");
+      console.warn("[get-all-users] No Authorization header found.");
     }
+    */
 
-    // 1. Fetch profiles
+    // TODO: Toevoegen van admin role check voor de aanroepende gebruiker, 
+    // momenteel is de functie toegankelijk voor iedereen met de function invoke URL.
+    // Dit is een beveiligingsrisico.
+
     const { data: profiles, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("id, name, role, avatar_url, language_preference, created_at, updated_at, status, email_notifications_enabled, ai_mode_preference");
@@ -87,14 +90,12 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
     if (profileError) throw profileError;
     if (!profiles) throw new Error("errors.profiles.notFound");
 
-    // 2. Fetch all auth users (admin operation)
     const { data: authUsersData, error: authError } = await supabaseAdmin.auth.admin.listUsers({
         perPage: 1000, 
     });
 
     if (authError) throw authError;
 
-    // 3. Create email map for quick lookup
     const emailMap = new Map<string, string>();
     authUsersData?.users.forEach(user => {
       if (user.email) {
@@ -102,29 +103,29 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
       }
     });
 
-    // 4. Combine profile data with email
     const usersWithEmail = profiles.map(profile => ({
       ...profile,
       email: emailMap.get(profile.id) || null,
     }));
 
-    // Log success to user_api_logs
-    if (userSpecificSupabaseClient || supabaseAdminLoggingClient) { // Check if any client is available for logging
+    // Logging naar user_api_logs hier uitgecommentarieerd
+    /*
+    if (userSpecificSupabaseClient || supabaseAdminLoggingClient) { 
       const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient!;
       await loggingClient.from('user_api_logs').insert({
-        user_id: userIdForLogging, // This might be undefined if auth header was missing
+        user_id: userIdForLogging, 
         function_name: functionNameForLogging,
         metadata: { success: true, profilesFetched: profiles.length, authUsersFetched: authUsersData?.users.length },
       });
     }
+    */
 
-    // Return combined data
     return new Response(JSON.stringify(usersWithEmail), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
 
-  } catch (error: unknown) { // Typed error
+  } catch (error: unknown) { 
     console.error("Error in get-all-users function:", error);
     let errorKey = "errors.internalServerError";
     if (error instanceof Error) {
@@ -133,12 +134,13 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
       }
     }
 
-    // Log failure to user_api_logs
-    if (userSpecificSupabaseClient || supabaseAdminLoggingClient) { // Check if any client is available for logging
+    // Logging naar user_api_logs hier uitgecommentarieerd
+    /*
+    if (userSpecificSupabaseClient || supabaseAdminLoggingClient) { 
       try {
         const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient!;
         await loggingClient.from('user_api_logs').insert({
-          user_id: userIdForLogging, // Might be undefined
+          user_id: userIdForLogging, 
           function_name: functionNameForLogging,
           metadata: { success: false, error: errorKey, rawErrorMessage: error instanceof Error ? error.message : String(error), requestIp: req.headers.get('x-forwarded-for') },
         });
@@ -146,10 +148,12 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
           console.error('[get-all-users] FAILED TO LOG TO user_api_logs:', logError instanceof Error ? logError.message : String(logError));
       }
     }
+    */
 
     return new Response(JSON.stringify({ errorKey: errorKey }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      // status: error.status || 500, // error.status is not always available
+      status: (error instanceof Response && error.status) ? error.status : 500, 
     });
   }
 });

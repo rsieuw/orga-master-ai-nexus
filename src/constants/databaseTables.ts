@@ -4,19 +4,23 @@ export const DATABASE_TABLES = {
   TASKS: "tasks" as const,
   PROFILES: "profiles" as const,
   CHAT_MESSAGES: "chat_messages" as const,
-  // ... andere tabellen indien nodig
+  // ... other tables if needed
 };
 
-// Interface voor de system_settings tabel
+/**
+ * Interface for the system_settings table.
+ */
 export interface SystemSettings {
   id: string;
   setting_name: string;
-  setting_value: Record<string, unknown>; // Generiek record type in plaats van 'any'
+  setting_value: Record<string, unknown>; // Generic record type instead of 'any'
   created_at: string;
   updated_at: string | null;
 }
 
-// Interface specifiek voor AI generation limits
+/**
+ * Interface specific for AI generation limits.
+ */
 export interface AiGenerationLimits {
   free_user_limit: number;
   paid_user_limit: number;

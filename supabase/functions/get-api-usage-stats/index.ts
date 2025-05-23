@@ -111,9 +111,6 @@ serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  let callingUserId: string | undefined;
-  const functionNameForLogging = 'get-api-usage-stats'; // Name of this function for logging purposes
-
   try {
     // 1. Authentication and Authorization (Admin Check)
     const userClient: SupabaseClient = createClient(
@@ -127,7 +124,6 @@ serve(async (req: Request) => {
       console.error("Authentication error:", authError);
       return createErrorResponse("Not authorized", 401);
     }
-    callingUserId = user.id;
 
     // Check if the user has an admin role
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -139,11 +135,6 @@ serve(async (req: Request) => {
     if (profileError || !profile || profile.role !== "admin") {
       console.warn(`User ${user.id} with role ${profile?.role} attempted to access admin API stats.`);
       // Log unauthorized attempt
-      await supabaseAdmin.from('user_api_logs').insert({
-          user_id: callingUserId,
-          function_name: functionNameForLogging,
-          metadata: { success: false, error: 'Unauthorized access attempt by non-admin user', requested_by_role: profile?.role },
-      });
       return createErrorResponse("Forbidden: Admin access required", 403);
     }
 
@@ -154,13 +145,7 @@ serve(async (req: Request) => {
             payload = await req.json();
         } catch (e) {
             console.error("Error parsing request body:", e);
-            // Log body parsing error
-            await supabaseAdmin.from('user_api_logs').insert({
-                user_id: callingUserId,
-                function_name: functionNameForLogging,
-                metadata: { success: false, error: 'Invalid JSON in request body', rawError: String(e) },
-            });
-                        return createErrorResponse("Invalid JSON in request body", 400);
+            return createErrorResponse("Invalid JSON in request body", 400);
         }
     }
 
@@ -197,12 +182,6 @@ serve(async (req: Request) => {
 
     if (internalTableError) {
       console.error("Error fetching internal API logs for table:", internalTableError);
-      // Log the specific database error
-      await supabaseAdmin.from('user_api_logs').insert({
-          user_id: callingUserId,
-          function_name: functionNameForLogging,
-          metadata: { success: false, error: 'Failed to fetch internal_api_logs for table', dbErrorCode: internalTableError.code, dbErrorMessage: internalTableError.message },
-      });
       throw internalTableError;
     }
 
@@ -228,11 +207,6 @@ serve(async (req: Request) => {
 
     if (internalAggError) {
         console.error("Error fetching all internal API logs for aggregation:", internalAggError);
-        await supabaseAdmin.from('user_api_logs').insert({
-            user_id: callingUserId,
-            function_name: functionNameForLogging,
-            metadata: { success: false, error: 'Failed to fetch all internal_api_logs for aggregation', dbErrorCode: internalAggError.code, dbErrorMessage: internalAggError.message },
-        });
         throw internalAggError;
     }
     
@@ -292,12 +266,6 @@ serve(async (req: Request) => {
 
     if (externalError) {
       console.error("Error fetching external API logs:", externalError);
-      // Log the specific database error
-      await supabaseAdmin.from('user_api_logs').insert({
-          user_id: callingUserId,
-          function_name: functionNameForLogging,
-          metadata: { success: false, error: 'Failed to fetch external_api_usage_logs', dbErrorCode: externalError.code, dbErrorMessage: externalError.message },
-      });
       throw externalError;
     }
 
@@ -367,34 +335,11 @@ serve(async (req: Request) => {
       }
     };
 
-    // Log the successful call of this admin function
-    await supabaseAdmin.from('user_api_logs').insert({
-        user_id: callingUserId,
-        function_name: functionNameForLogging,
-        metadata: {
-            success: true,
-            filters_applied: payload,
-            internal_logs_returned_for_table: internalLogsForTable?.length, // Updated key
-            total_internal_logs_for_aggregation: allInternalLogsForAgg?.length, // New key
-            external_logs_returned: externalLogs?.length
-        },
-    });
-
-        return createSuccessResponse(response);
+    return createSuccessResponse(response);
 
   } catch (error: unknown) {
     console.error("Error in get-api-usage-stats:", error);
     const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
-    // Log the generic error of this admin function
-    await supabaseAdmin.from('user_api_logs').insert({
-        user_id: callingUserId, // Can be undefined if auth fails early
-        function_name: functionNameForLogging,
-        metadata: {
-            success: false,
-            error: 'General error in get-api-usage-stats function',
-            rawErrorMessage: errorMessage
-        },
-    });
-        return createErrorResponse("Internal Server Error", 500, errorMessage);
+    return createErrorResponse("Internal Server Error", 500, errorMessage);
   }
 }); 

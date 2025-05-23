@@ -1,14 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { renderWithProviders } from '@/test/utils';
+import { renderWithProviders } from '@/test/test-helpers.ts';
 import Navbar from './Navbar.tsx';
 import { useAuth } from '@/hooks/useAuth.ts';
-import { MemoryRouter } from 'react-router-dom';
 
 // Mock de AuthContext hook, maar behoud de originele provider
-vi.mock('@/contexts/AuthContext', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@/contexts/AuthContext')>();
+vi.mock('@/contexts/AuthContext.tsx', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/contexts/AuthContext.tsx')>();
   return {
     ...original, // Exporteer alle originele onderdelen (inclusief AuthProvider)
     useAuth: vi.fn(), // Overschrijf alleen useAuth met de mock
@@ -16,6 +15,8 @@ vi.mock('@/contexts/AuthContext', async (importOriginal) => {
 });
 
 describe('Navbar', () => {
+  const mockOpenNewTaskModal = vi.fn(); // Define the mock function once
+
   describe('Niet-geauthenticeerde gebruiker', () => {
     beforeEach(() => {
       (useAuth as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -23,21 +24,22 @@ describe('Navbar', () => {
         logout: vi.fn(),
         user: null,
       });
+      mockOpenNewTaskModal.mockClear(); // Clear mock before each test in this describe block
     });
 
     it('toont de logo en applicatienaam', () => {
-      renderWithProviders(<Navbar />);
+      renderWithProviders(<Navbar openNewTaskModal={mockOpenNewTaskModal} />);
       expect(screen.getByText('OrgaMaster AI')).toBeInTheDocument();
     });
 
     it('toont login en register links wanneer gebruiker niet is ingelogd', () => {
-      renderWithProviders(<Navbar />);
+      renderWithProviders(<Navbar openNewTaskModal={mockOpenNewTaskModal} />);
       expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /register/i })).toBeInTheDocument();
     });
 
     it('toont geen nieuwe taak knop wanneer gebruiker niet is ingelogd', () => {
-      renderWithProviders(<Navbar />);
+      renderWithProviders(<Navbar openNewTaskModal={mockOpenNewTaskModal} />);
       expect(screen.queryByText(/nieuwe taak/i)).not.toBeInTheDocument();
     });
   });
@@ -51,15 +53,16 @@ describe('Navbar', () => {
         logout: mockLogout,
         user: { name: 'Test Gebruiker', email: 'test@example.com' },
       });
+      mockOpenNewTaskModal.mockClear(); // Clear mock before each test in this describe block
     });
 
     it('toont de "Nieuwe Taak" knop wanneer gebruiker is ingelogd', () => {
-      renderWithProviders(<Navbar />);
+      renderWithProviders(<Navbar openNewTaskModal={mockOpenNewTaskModal} />);
       expect(screen.getByText(/nieuwe taak/i)).toBeInTheDocument();
     });
 
     it('toont de gebruiker dropdown met gebruikersnaam', async () => {
-      renderWithProviders(<Navbar />);
+      renderWithProviders(<Navbar openNewTaskModal={mockOpenNewTaskModal} />);
       
       // Klik op het gebruikerspictogram om de dropdown te openen
       const userIcon = screen.getByRole('button', { name: '' });
@@ -72,7 +75,7 @@ describe('Navbar', () => {
     });
 
     it('bevat profiel en instellingen links in de dropdown', async () => {
-      renderWithProviders(<Navbar />);
+      renderWithProviders(<Navbar openNewTaskModal={mockOpenNewTaskModal} />);
       
       // Klik op het gebruikerspictogram om de dropdown te openen
       const userIcon = screen.getByRole('button', { name: '' });
@@ -86,7 +89,7 @@ describe('Navbar', () => {
     });
 
     it('roept de logout functie aan wanneer op uitloggen wordt geklikt', async () => {
-      renderWithProviders(<Navbar />);
+      renderWithProviders(<Navbar openNewTaskModal={mockOpenNewTaskModal} />);
       
       // Klik op het gebruikerspictogram om de dropdown te openen
       const userIcon = screen.getByRole('button', { name: '' });

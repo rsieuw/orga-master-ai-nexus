@@ -16,7 +16,6 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 // Import standard libraries if needed (e.g., for CORS)
 import { corsHeaders } from "../_shared/cors.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 /**
  * Interface for a single choice in the API response.
@@ -64,8 +63,8 @@ interface ApiRespData {
 interface Citation {
   number: number;
   text: string;
-  url?: string;
-  title?: string;
+  url: string;
+  title: string;
 }
 
 /**
@@ -75,6 +74,7 @@ interface ExternalApiSource {
   title?: string;
   name?: string; // Used as a fallback for title
   url?: string;
+  id?: string | number; // Allow id to be string or number
   // Allow other, unknown properties without type errors
   [key: string]: unknown;
 }
@@ -83,101 +83,82 @@ interface ExternalApiSource {
  * Extract citations from a response text.
  * @param {string} responseText - The response text containing citations.
  * @param {ExternalApiSource[] | undefined} sources - The sources array from the API response.
- * @returns {Citation[]} - Array of extracted citations.
+ * @param {string} languagePreference - The preferred language for the response.
+ * @returns {Promise<Citation[]>} - Array of extracted citations.
  */
 function extractCitations(
   responseText: string,
   sources: ExternalApiSource[] | undefined,
-): Citation[] {
-  console.log(
-    `[deep-research] extractCitations called. responseText length: ${responseText?.length}, sources provided: ${!!sources?.length}`
-  );
-  const citations: Citation[] = [];
+  languagePreference: 'nl' | 'en' = 'en'
+): Promise<Citation[]> {
+  let citations: Citation[] = [];
+  const sourceText = languagePreference === 'nl' ? 'Bron' : 'Source';
 
-  if (!sources || sources.length === 0) {
-    console.log('[deep-research] extractCitations: Using fallback logic (no structured sources).');
-    const citationRegex = /\[(\d+)\]/g; // Corrected Regex to find [1], [2], etc.
+  if (sources && sources.length > 0) {
+    // Alleen bronnen met echte URLs toevoegen
+    citations = sources
+      .map((source: ExternalApiSource, index: number) => {
+        const sourceTitle = source.title || source.name || `${sourceText} ${index + 1}`;
+        const sourceUrl = source.url || '';
+        
+        // Alleen bronnen met een echte URL toevoegen
+        if (sourceUrl && sourceUrl !== '#') {
+          const citation: Citation = {
+            number: typeof source.id === 'number' ? source.id : (index + 1),
+            text: sourceTitle,
+            title: sourceTitle,
+            url: sourceUrl
+          };
+          return citation;
+        }
+        return null;
+      })
+      .filter((citation): citation is Citation => citation !== null);
+  } else {
+    // Bronnen uit de tekst extraheren
+    const citationRegex = /\[(\d+)\](?:\s*\(((?:[^()]*|\([^()]*\))*)\))?/g;
     let match;
     const foundNumbers = new Set<number>();
 
-    // Optionally log the full responseText if issues persist, but be mindful of log length
-    // console.log(`[deep-research] extractCitations Fallback: responseText for regex (first 500 chars): \"${responseText?.substring(0, 500)}\"`);
-
     while ((match = citationRegex.exec(responseText)) !== null) {
       const number = parseInt(match[1]);
-      // console.log(
-      //   `[deep-research] extractCitations Fallback: Regex found match: \"${match[0]}\", extracted number: ${number}. Current foundNumbers: ${
-      //     JSON.stringify(Array.from(foundNumbers))
-      //   }`,
-      // );
       if (!foundNumbers.has(number)) {
-        citations.push({
-          number: number,
-          text: `Source ${number}`, // Placeholder text
-          // url and title will be undefined here as we only have the number from regex
-        });
-        foundNumbers.add(number);
-        // console.log(
-        //   `[deep-research] extractCitations Fallback: Added citation for number ${number}. Citations array now: ${
-        //     JSON.stringify(citations)
-        //   }`,
-        // );
-      // } else {
-        // console.log(
-        //   `[deep-research] extractCitations Fallback: Number ${number} already processed, skipping.`,
-        // );
+        const citationContent = match[2] || '';
+        
+        // Alleen toevoegen als er een URL in de citatie zit
+        const urlMatch = citationContent.match(/https?:\/\/[^\s)"]+/);
+        if (urlMatch) {
+          const url = urlMatch[0];
+          const title = citationContent.replace(url, '').trim() || `${sourceText} ${number}`;
+          
+          citations.push({
+            number: number,
+            text: title,
+            url: url,
+            title: title,
+          });
+          foundNumbers.add(number);
+        }
       }
     }
-    // if (citations.length === 0 && responseText?.includes('[')) { // Check if regex missed obvious citations
-    //   console.log(
-    //     '[deep-research] extractCitations Fallback: No citations extracted by regex, despite \"[\" character in responseText. Investigate regex or text.',
-    //   );
-    // } else if (citations.length === 0) {
-    //   console.log(
-    //     '[deep-research] extractCitations Fallback: No citations found or extracted by regex.',
-    //   );
-    // }
-    // console.log(
-    //   `[deep-research] extractCitations Fallback: Final extracted citations (before sort): ${
-    //     JSON.stringify(citations)
-    //   }`,
-    // );
-    return citations.sort((a, b) => a.number - b.number);
-  } else {
-    console.log('[deep-research] extractCitations: Using structured sources logic.');
-    sources.forEach((source: ExternalApiSource, index: number) => {
-      // Perplexity API docs suggest sources are 1-indexed in text, matching array index + 1
-      const citationNumber = index + 1;
-      // console.log(
-      //   `[deep-research] extractCitations Structured: Processing source index ${index} (citation number ${citationNumber}). Source data: ${
-      //     JSON.stringify(source)
-      //   }`,
-      // );
-
-      // Ensure the responseText actually contains a citation for this source number
-      if (responseText.includes(`[${citationNumber}]`)) {
-        citations.push({
-          number: citationNumber,
-          text: source.title || source.name || `Source ${citationNumber}`, // Use source.name as another fallback
-          url: source.url,
-          title: source.title || source.name,
-        });
-        // console.log(
-        //   `[deep-research] extractCitations Structured: Added citation for number ${citationNumber} due to its presence in responseText.`,
-        // );
-      // } else {
-        // console.log(
-        //   `[deep-research] extractCitations Structured: ResponseText does not include \"[${citationNumber}]\". Skipping source index ${index}.`,
-        // );
-      }
-    });
-    // console.log(
-    //   `[deep-research] extractCitations Structured: Final extracted citations (before sort): ${
-    //     JSON.stringify(citations)
-    //   }`,
-    // );
-    return citations.sort((a, b) => a.number - b.number);
   }
+
+  // Sorteer de citations op nummer en verwijder duplicaten
+  citations = citations
+    .sort((a, b) => a.number - b.number)
+    .filter((citation, index, self) => 
+      index === self.findIndex((c) => c.number === citation.number)
+    );
+
+  // Als er geen geldige bronnen zijn, return een lege array
+  return Promise.resolve(citations.length > 0 ? citations : []);
+}
+
+interface ExternalApiError {
+  status?: number;
+  message: string;
+  body?: unknown;
+  provider?: string;
 }
 
 /**
@@ -193,15 +174,11 @@ function extractCitations(
  * @param {Request} req - The incoming HTTP request object.
  * @returns {Promise<Response>} A promise that resolves to an HTTP response object.
  */
-Deno.serve(async (req: Request) => {
+const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
-  // --- Begin simple test log ---
-  console.log("[deep-research] Function invoked. Method:", req.method, "URL:", req.url);
-  // --- End simple test log ---
 
   // Client for user-specific logging (using user's auth context)
   const userSpecificSupabaseClient = createClient(
@@ -213,27 +190,13 @@ Deno.serve(async (req: Request) => {
     }
   );
 
-  // Admin client for logging to user_api_logs
-  let supabaseAdminLoggingClient: SupabaseClient | null = null;
-  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (supabaseServiceRoleKey) {
-    supabaseAdminLoggingClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      supabaseServiceRoleKey
-    );
-  } else {
-    console.warn("[deep-research] SUPABASE_SERVICE_ROLE_KEY not set. Logging to user_api_logs might be restricted by RLS.");
-  }
-
   let userIdForLogging: string | undefined;
-  const functionNameForLogging = 'deep-research';
-  let requestBodyForLogging: Record<string, unknown> = {};
   
   let externalApiModelUsed: string | undefined;
   let promptTokens: number | undefined;
   let completionTokens: number | undefined;
   let totalTokens: number | undefined;
-  let externalApiError: { status?: number; message: string; body?: unknown; provider?: string } | null = null;
+  let externalApiError: ExternalApiError | null = null;
 
   try {
     const { data: { user } } = await userSpecificSupabaseClient.auth.getUser();
@@ -245,49 +208,21 @@ Deno.serve(async (req: Request) => {
       requestData = JSON.parse(rawBody);
     } catch (parseError: unknown) {
       console.error("[deep-research] Error parsing JSON:", parseError);
-      // Log failure if possible
-      if (userIdForLogging) {
-        try {
-            // Try to log with admin client if it exists, otherwise user client
-            const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient;
-            await loggingClient.from('user_api_logs').insert({
-                user_id: userIdForLogging,
-                function_name: functionNameForLogging,
-                metadata: { success: false, error: 'Invalid JSON in request body', rawError: String(parseError) },
-            });
-        } catch (logErr) {
-            console.error("[deep-research] Failed to log JSON parse error to user_api_logs", logErr);
-        }
-      }
-      return new Response(
-        JSON.stringify({ 
-          error: "Invalid JSON in request body", 
-          message: parseError instanceof Error ? parseError.message : "JSON parse error"
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-      );
+      return new Response(JSON.stringify({ error: "Invalid JSON format" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400
+      });
     }
 
     const { 
       query = "No research question provided",
       description = "", 
-      contextQuery = "", 
+      _contextQuery = "", 
       languagePreference: reqLanguagePreference = "nl", 
       taskId = "none", 
       mode = 'research',
       modelProvider = 'perplexity-sonar'
     } = requestData;
-    
-    requestBodyForLogging = {
-        queryProvided: query !== "No research question provided",
-        queryLength: query?.length,
-        descriptionProvided: !!description,
-        contextQueryProvided: !!contextQuery,
-        languagePreference: reqLanguagePreference,
-        taskId,
-        mode,
-        modelProvider
-    };
     
     const serviceNameForLogging = modelProvider.startsWith('perplexity') ? 'PerplexityAI' : 'OpenAI';
 
@@ -310,12 +245,11 @@ Deno.serve(async (req: Request) => {
     let systemContent = "";
     let apiEndpoint = "";
     let apiKey = "";
-    // let apiModel = ""; // Renamed to externalApiModelUsed
     
     if (usePerplexity) {
       apiEndpoint = 'https://api.perplexity.ai/chat/completions';
       apiKey = perplexityApiKey!;
-      externalApiModelUsed = "sonar-pro"; // Perplexity model, was "sonar-medium-chat"
+      externalApiModelUsed = "sonar-pro"; // Teruggezet van sonar-deep-research
     } else {
       apiEndpoint = 'https://api.openai.com/v1/chat/completions';
       apiKey = openAIApiKey!;
@@ -332,12 +266,14 @@ Geef gedetailleerde instructies naar aanleiding van de gebruikersvraag, gepresen
 Structureer je antwoord logisch. Gebruik waar mogelijk voorbeelden, analogieën of scenario's om het begrip van elke stap te vergroten. Gebruik tabellen om data overzichtelijk te presenteren waar dit relevant is.
 Indien van toepassing, wijs op mogelijke valkuilen of geef tips voor succes bij specifieke stappen.
 Zorg ervoor dat de instructies direct toepasbaar zijn voor de gebruiker.
-Citeer je bronnen duidelijk in de tekst met genummerde verwijzingen tussen vierkante haken (bijv. [1], [2]).
-Voeg aan het einde van je antwoord een aparte sectie toe voor de bronvermelding. Gebruik de titel "Bronnen" als een HTML <h2> heading. Direct na deze titel plaats elke bron op een nieuwe regel met een HTML <br /> tag tussen elke bron (behalve na de laatste). Lijst elke bron op met het bijbehorende nummer, de volledige titel van de bron, en een directe, werkende URL naar de bron.
-De bronnensectie moet er als volgt uitzien:
-<h2>Bronnen</h2>
-1. <a href="https://voorbeeld.url/bron1">Titel van Bron 1</a><br />
-2. <a href="https://voorbeeld.url/bron2">Titel van Bron 2</a>
+
+BELANGRIJK: Voor elke bron die je gebruikt:
+1. Citeer deze in de tekst met genummerde verwijzingen tussen vierkante haken (bijv. [1], [2])
+2. Zorg dat elke bron een duidelijke titel en URL heeft
+3. Als je informatie uit een specifieke webpagina haalt, gebruik dan de exacte titel en URL van die pagina
+4. Vermijd het gebruik van placeholder URLs ('#') - gebruik alleen echte, werkende URLs
+5. Als een bron geen URL heeft, geef dan wel een duidelijke titel en beschrijving
+
 Antwoord in het Nederlands.`;
         } else {
           systemContent = `You are an expert instructor and mentor. Your goal is to break down complex topics and tasks into clear, understandable, and actionable steps.
@@ -345,12 +281,14 @@ Provide detailed instructions based on the user's query, presented as a step-by-
 Structure your response logically. Where possible, use examples, analogies, or scenarios to enhance understanding of each step. Use tables to present data clearly where relevant.
 If applicable, point out potential pitfalls or provide tips for success for specific steps.
 Ensure the instructions are directly applicable for the user.
-Cite your sources clearly in the text using numbered references in square brackets (e.g., [1], [2]).
-At the end of your response, include a separate section for source citation. Use the title "Sources" as an HTML <h2> heading. Immediately after this heading, place each source on a new line with an HTML <br /> tag between each source (except after the last one). List each source with its corresponding number, the full title of the source, and a direct, working URL to the source.
-The sources section should look like this:
-<h2>Sources</h2>
-1. <a href="https://example.url/source1">Title of Source 1</a><br />
-2. <a href="https://example.url/source2">Title of Source 2</a>
+
+IMPORTANT: For each source you use:
+1. Cite it in the text using numbered references in square brackets (e.g., [1], [2])
+2. Ensure each source has a clear title and URL
+3. When using information from a specific webpage, use the exact title and URL of that page
+4. Avoid using placeholder URLs ('#') - only use real, working URLs
+5. If a source doesn't have a URL, still provide a clear title and description
+
 Respond in English.`;
         }
         break;
@@ -359,25 +297,29 @@ Respond in English.`;
           systemContent = `Je bent een buitengewoon creatieve denker, een bron van inspiratie en innovatie. Je bent bedreven in het genereren van originele ideeën, het bedenken van meeslepende verhalen, het oplossen van problemen met onconventionele methoden en het brainstormen over grensverleggende concepten.
 Ga volledig los op de gebruikersvraag. Genereer diverse en fantasierijke ideeën, schrijf boeiende (korte) verhalen, ontwikkel unieke oplossingen of brainstorm zonder beperkingen.
 Denk buiten de gebaande paden. Wees origineel, verrassend en inspirerend.
-Structureer je output op een manier die de creatieve stroom van ideeën goed weergeeft, eventueel met verschillende opties of invalshoeken. Gebruik tabellen om data overzichtelijk te presenteren waar dit relevant is.
-Citeer je bronnen duidelijk in de tekst met genummerde verwijzingen tussen vierkante haken (bijv. [1], [2]).
-Voeg aan het einde van je antwoord een aparte sectie toe voor de bronvermelding. Gebruik de titel "Bronnen" als een HTML <h2> heading. Direct na deze titel plaats elke bron op een nieuwe regel met een HTML <br /> tag tussen elke bron (behalve na de laatste). Lijst elke bron op met het bijbehorende nummer, de volledige titel van de bron, en een directe, werkende URL naar de bron.
-De bronnensectie moet er als volgt uitzien:
-<h2>Bronnen</h2>
-1. <a href="https://voorbeeld.url/bron1">Titel van Bron 1</a><br />
-2. <a href="https://voorbeeld.url/bron2">Titel van Bron 2</a>
+Structureer je output op een manier die de creatieve stroom van ideeën goed weergeeft, eventueel met verschillende opties of invalshoeken.
+
+BELANGRIJK: Voor elke bron die je gebruikt:
+1. Citeer deze in de tekst met genummerde verwijzingen tussen vierkante haken (bijv. [1], [2])
+2. Zorg dat elke bron een duidelijke titel en URL heeft
+3. Als je informatie uit een specifieke webpagina haalt, gebruik dan de exacte titel en URL van die pagina
+4. Vermijd het gebruik van placeholder URLs ('#') - gebruik alleen echte, werkende URLs
+5. Als een bron geen URL heeft, geef dan wel een duidelijke titel en beschrijving
+
 Antwoord in het Nederlands.`;
         } else {
           systemContent = `You are an exceptionally creative thinker, a wellspring of inspiration and innovation. You are adept at generating original ideas, crafting compelling narratives, solving problems with unconventional methods, and brainstorming groundbreaking concepts.
 Unleash your full creative potential on the user's query. Generate diverse and imaginative ideas, write engaging (short) stories, develop unique solutions, or brainstorm without limitations.
 Think outside the box. Be original, surprising, and inspiring.
-Structure your output in a way that effectively conveys the creative flow of ideas, possibly with different options or perspectives. Use tables to present data clearly where relevant.
-Cite your sources clearly in the text using numbered references in square brackets (e.g., [1], [2]).
-At the end of your response, include a separate section for source citation. Use the title "Sources" as an HTML <h2> heading. Immediately after this heading, place each source on a new line with an HTML <br /> tag between each source (except after the last one). List each source with its corresponding number, the full title of the source, and a direct, working URL to the source.
-The sources section should look like this:
-<h2>Sources</h2>
-1. <a href="https://example.url/source1">Title of Source 1</a><br />
-2. <a href="https://example.url/source2">Title of Source 2</a>
+Structure your output in a way that effectively conveys the creative flow of ideas, possibly with different options or perspectives.
+
+IMPORTANT: For each source you use:
+1. Cite it in the text using numbered references in square brackets (e.g., [1], [2])
+2. Ensure each source has a clear title and URL
+3. When using information from a specific webpage, use the exact title and URL of that page
+4. Avoid using placeholder URLs ('#') - only use real, working URLs
+5. If a source doesn't have a URL, still provide a clear title and description
+
 Respond in English.`;
         }
         break;
@@ -385,22 +327,32 @@ Respond in English.`;
       default:
         if (reqLanguagePreference === 'nl') {
           systemContent = `Je bent een professionele onderzoeker. Voer grondig onderzoek uit naar de gebruikersquery.
-Lever een uitgebreid en goed gestructureerd antwoord in het Nederlands. Gebruik tabellen om data overzichtelijk te presenteren waar dit relevant is.
-Citeer je bronnen duidelijk in de tekst met genummerde verwijzingen tussen vierkante haken (bijv. [1], [2]).
-Voeg aan het einde van je antwoord een aparte sectie toe voor de bronvermelding. Gebruik de titel "Bronnen" als een HTML <h2> heading. Direct na deze titel plaats elke bron op een nieuwe regel met een HTML <br /> tag tussen elke bron (behalve na de laatste). Lijst elke bron op met het bijbehorende nummer, de volledige titel van de bron, en een directe, werkende URL naar de bron.
-De bronnensectie moet er als volgt uitzien:
-<h2>Bronnen</h2>
-1. <a href="https://voorbeeld.url/bron1">Titel van Bron 1</a><br />
-2. <a href="https://voorbeeld.url/bron2">Titel van Bron 2</a>`;
+Lever een uitgebreid en goed gestructureerd antwoord in het Nederlands.
+
+BELANGRIJK: Voor elke bron die je gebruikt:
+1. Citeer deze in de tekst met genummerde verwijzingen tussen vierkante haken (bijv. [1], [2])
+2. Zorg dat elke bron een duidelijke titel en URL heeft
+3. Als je informatie uit een specifieke webpagina haalt, gebruik dan de exacte titel en URL van die pagina
+4. Vermijd het gebruik van placeholder URLs ('#') - gebruik alleen echte, werkende URLs
+5. Als een bron geen URL heeft, geef dan wel een duidelijke titel en beschrijving
+6. Zorg dat elke bewering of feit wordt ondersteund door ten minste één bron
+7. Gebruik recente en betrouwbare bronnen waar mogelijk
+
+Gebruik tabellen om data overzichtelijk te presenteren waar dit relevant is.`;
         } else {
           systemContent = `You are a professional researcher. Conduct thorough research based on the user's query.
-Provide a comprehensive and well-structured answer in English. Use tables to present data clearly where relevant.
-Cite your sources clearly in the text using numbered references in square brackets (e.g., [1], [2]).
-At the end of your response, include a separate section for source citation. Use the title "Sources" as an HTML <h2> heading. Immediately after this heading, place each source on a new line with an HTML <br /> tag between each source (except after the last one). List each source with its corresponding number, the full title of the source, and a direct, working URL to the source.
-The sources section should look like this:
-<h2>Sources</h2><br />
-1. <a href="https://example.url/source1">Title of Source 1</a><br />
-2. <a href="https://example.url/source2">Title of Source 2</a>`;
+Provide a comprehensive and well-structured answer in English.
+
+IMPORTANT: For each source you use:
+1. Cite it in the text using numbered references in square brackets (e.g., [1], [2])
+2. Ensure each source has a clear title and URL
+3. When using information from a specific webpage, use the exact title and URL of that page
+4. Avoid using placeholder URLs ('#') - only use real, working URLs
+5. If a source doesn't have a URL, still provide a clear title and description
+6. Ensure each claim or fact is supported by at least one source
+7. Use recent and reliable sources where possible
+
+Use tables to present data clearly where relevant.`;
         }
         break;
     }
@@ -425,7 +377,6 @@ The sources section should look like this:
     let responseText = '';
     let responseCitations: unknown[] | undefined;
     let responseData: ApiRespData | null = null;
-
 
     try {
       const response = await fetch(apiEndpoint, {
@@ -458,30 +409,13 @@ The sources section should look like this:
             
             // Ensure that the sources are transformed to the expected format
             if (Array.isArray(rawSources) && rawSources.length > 0) {
-                responseCitations = rawSources.map(source => {
-                    // Perplexity sources have different formats, check for common properties
-                    if (typeof source === 'object' && source !== null) {
-                        // Type assertion to allow property access
-                        const sourceObj = source as Record<string, unknown>;
-                        return {
-                            url: (sourceObj.url as string) || (sourceObj.link as string) || (sourceObj.uri as string) || '#',
-                            title: (sourceObj.title as string) || (sourceObj.name as string) || (sourceObj.text as string) || (sourceObj.url as string) || 'Bron'
-                        };
-                    } else if (typeof source === 'string') {
-                        return {
-                            url: source,
-                            title: source
-                        };
-                    }
-                    // Fallback for unknown source structures
-                    return {
-                        url: '#',
-                        title: 'Bron'
-                    };
-                });
+                responseCitations = await extractCitations(
+                  responseText, 
+                  rawSources as ExternalApiSource[], 
+                  reqLanguagePreference
+                );
             } else if (responseText) {
-                // If there are no sources, try to extract them from the markdown text
-                responseCitations = extractCitations(responseText, undefined);
+                responseCitations = await extractCitations(responseText, undefined, reqLanguagePreference);
             }
         } else if (!usePerplexity && firstChoice) {
             responseText = firstChoice.message?.content || '';
@@ -497,10 +431,22 @@ The sources section should look like this:
             // we try to extract sources from the generated text
             if (responseText) {
                 // Probeer bronnen uit de tekst te extraheren
-                const extractedCitations = extractCitations(responseText, undefined);
+                const extractedCitations = await extractCitations(responseText, undefined, reqLanguagePreference);
                 if (extractedCitations.length > 0) {
                     responseCitations = extractedCitations;
                 }
+            }
+        } else {
+            // Dit zou niet moeten gebeuren als de API call succesvol was en data retourneerde
+            // Maar voor de zekerheid, als responseData.choices[0].message.content leeg is
+            // of als responseData.choices[0] niet bestaat:
+            if (!responseText) { // Controleer of responseText nog steeds leeg is
+                console.error('[deep-research] No content in API response or API error not caught earlier.', responseData);
+                throw new Error("deepResearch.error.emptyApiResponseContent");
+            }
+            // Als er hier wel responseText is, maar geen gestructureerde bronnen, probeer te extraheren
+            if (responseText && (!responseCitations || responseCitations.length === 0)) {
+                responseCitations = await extractCitations(responseText, undefined, reqLanguagePreference);
             }
         }
         if (!responseText && responseData && !responseData.error) {
@@ -550,36 +496,6 @@ The sources section should look like this:
         throw new Error("deepResearch.error.noContentFromAI");
     }
     
-    // Log internal API call SUCCESS
-    console.log('[deep-research] Attempting to log SUCCESS to user_api_logs...'); // NIEUWE LOG
-    try {
-      // Use admin client for user_api_logs if available
-      const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient;
-      console.log('[deep-research] Using logging client:', supabaseAdminLoggingClient ? 'AdminClient' : 'UserSpecificClient'); // NIEUWE LOG
-      const { data: logData, error: logError } = await loggingClient.from('user_api_logs').insert({ // Voeg data en error toe
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { 
-          ...requestBodyForLogging, 
-          success: true, 
-          responseContentLength: responseText.length,
-          citationsCount: responseCitations?.length || 0,
-          externalApiModelUsed, // Log the actual model used
-          promptTokens, 
-          completionTokens
-        },
-      }).select(); // Toevoegen van .select() kan helpen om de uitkomst te zien
-
-      if (logError) { // Check expliciet op logError
-        console.error('[deep-research] Error explicitly caught during SUCCESS log insert:', JSON.stringify(logError, null, 2)); // NIEUWE LOG
-        // Overweeg hier geen error te throwen om de hoofdfunctie niet te breken
-      } else {
-        console.log('[deep-research] SUCCESS log insert response data:', JSON.stringify(logData, null, 2)); // NIEUWE LOG
-      }
-    } catch (logCatchError) { // Hernoem de catch variabele
-      console.error('[deep-research] Exception during SUCCESS log to user_api_logs:', JSON.stringify(logCatchError, null, 2)); // Update log
-    }
-    
     // Clean the query for display purposes before returning
     let displayQuery = query;
     // Regex to match common research-initiating phrases (case-insensitive)
@@ -589,70 +505,82 @@ The sources section should look like this:
     // Remove leading/trailing single or double quotes that might remain
     displayQuery = displayQuery.replace(/^['"]|['"]$/g, '');
     
+    // Als er een description is, voeg deze toe aan de query
+    if (description && description.trim() !== "") {
+        if (reqLanguagePreference === 'nl') {
+            displayQuery = `${displayQuery} (${description})`;
+        } else {
+            displayQuery = `${displayQuery} (${description})`;
+        }
+    }
+
     // Return the formatted research result
     return new Response(
       JSON.stringify({
         researchResult: responseText,
-        citations: responseCitations,
-        query: displayQuery, // Echo back the original query
+        citations: responseCitations?.length ? responseCitations : undefined,
+        query: displayQuery,
         modelUsed: externalApiModelUsed,
         modeUsed: mode,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
 
-  } catch (error: unknown) {
-    console.error("[deep-research] Main catch block error:", error);
-    const errorKey = error instanceof Error && error.message.startsWith("deepResearch.error.") 
-                   ? error.message 
-                   : "deepResearch.error.general";
+  } catch (e: unknown) {
+    let errorKey = "deepResearch.error.general";
+    let errorMessage = "An unexpected error occurred.";
+    let errorStack = undefined;
+
+    if (e instanceof Error) {
+      errorMessage = e.message;
+      errorStack = e.stack;
+      if (e.message.startsWith("deepResearch.error.")) {
+        errorKey = e.message;
+      }
+      console.error(`[deep-research] Caught Error (${errorKey}):`, errorMessage, errorStack);
+    } else if (typeof e === 'string'){
+      errorMessage = e;
+      console.error('[deep-research] Caught string error:', errorMessage);
+    } else if (typeof e === 'object' && e !== null && 'message' in e && typeof (e as { message: unknown }).message === 'string') {
+      errorMessage = (e as { message: string }).message;
+      const eWithStack = e as { stack?: unknown };
+      errorStack = typeof eWithStack.stack === 'string' ? eWithStack.stack : undefined;
+      console.error('[deep-research] Caught object error with message:', errorMessage, errorStack);
+    } else {
+      console.error('[deep-research] Caught unknown error type:', e);
+    }
     
-    // Log internal API call FAILURE
-    console.log('[deep-research] Attempting to log FAILURE to user_api_logs...'); // NIEUWE LOG
-    try {
-      // Use admin client for user_api_logs if available
-      const loggingClient = supabaseAdminLoggingClient || userSpecificSupabaseClient;
-      console.log('[deep-research] Using logging client for FAILURE:', supabaseAdminLoggingClient ? 'AdminClient' : 'UserSpecificClient'); // NIEUWE LOG
-      const { data: logData, error: logError } = await loggingClient.from('user_api_logs').insert({ // Voeg data en error toe
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { 
-          ...requestBodyForLogging, 
-          success: false, 
-          error: errorKey,
-          rawErrorMessage: error instanceof Error ? error.message : String(error),
-          externalApiError: externalApiError ? externalApiError : undefined, // Log external error if it occurred
-          externalApiModelUsed,
-          promptTokens,
-          completionTokens
-        },
-      }).select(); // Toevoegen van .select()
-
-      if (logError) { // Check expliciet op logError
-        console.error('[deep-research] Error explicitly caught during FAILURE log insert:', JSON.stringify(logError, null, 2)); // NIEUWE LOG
-      } else {
-        console.log('[deep-research] FAILURE log insert response data:', JSON.stringify(logData, null, 2)); // NIEUWE LOG
-      }
-    } catch (logCatchError) { // Hernoem de catch variabele
-      console.error('[deep-research] Exception during FAILURE log to user_api_logs:', JSON.stringify(logCatchError, null, 2)); // Update log
+    let detailsForResponse = errorStack || errorMessage;
+    const errObj = externalApiError as ExternalApiError | null;
+    if (errObj && typeof errObj.message === 'string') {
+      detailsForResponse = errObj.message + (errorStack ? ` | Frontend error stack: ${errorStack}` : ` | Frontend error: ${errorMessage}`);
+    } else if (externalApiError) {
+        detailsForResponse = `External API error (no message property or not a string): ${JSON.stringify(externalApiError)}` + (errorStack ? ` | Frontend error stack: ${errorStack}` : ` | Frontend error: ${errorMessage}`);
     }
 
+    if (!errorKey.startsWith("deepResearch.error.status") && externalApiError) {
+        const apiError = externalApiError as ExternalApiError;
+        if (apiError.status && typeof apiError.status === 'number') {
+            errorKey = `deepResearch.error.status${apiError.status}`;
+        }
+    }
+    
     let responseStatus = 500;
-    if (externalApiError && 
-        Object.prototype.hasOwnProperty.call(externalApiError, 'status') && 
-        typeof (externalApiError as { status?: number }).status === 'number') {
-      responseStatus = (externalApiError as { status: number }).status;
+    if (externalApiError) {
+        const apiError = externalApiError as ExternalApiError;
+        if (apiError.status && typeof apiError.status === 'number') {
+            responseStatus = apiError.status;
+        }
     }
 
-    return new Response(
-      JSON.stringify({ 
-        errorKey: errorKey,
-        message: error instanceof Error ? error.message : "An unexpected error occurred."
-      }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" }, 
-        status: responseStatus
-      }
-    );
+    return new Response(JSON.stringify({ 
+      error: errorKey, 
+      details: detailsForResponse
+    }), { 
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: responseStatus 
+    });
   }
-});
+};
+
+Deno.serve(handler);

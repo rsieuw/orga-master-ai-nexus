@@ -76,7 +76,6 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
   // New state for emoji and auto-categorization
   const [taskEmoji, setTaskEmoji] = useState<string>("");
 
-  // AI generation function - now calls the Edge Function
   /**
    * Handles the AI generation of task details (title, description, category, emoji)
    * based on the initial user input.
@@ -150,10 +149,11 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
     }
   };
 
-  // Custom submit handler for creation only
   /**
    * Handles the submission of the new task form.
    * Creates a new task with the provided details and optionally generates subtasks.
+   * Navigates to the new task's page upon successful creation.
+   * Displays toasts for feedback.
    * @async
    * @param {React.FormEvent} [e] - The form event, if submitted via a form element.
    */
@@ -224,6 +224,7 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
   /**
    * Handles the Ctrl+Enter keydown event in input fields to submit the form
    * for creating a task and generating subtasks.
+   * If the title is empty, a toast notification is shown.
    * @async
    * @param {React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>} event - The keyboard event.
    */
@@ -243,13 +244,21 @@ export default function NewTaskDialog({ setOpen }: NewTaskDialogProps) {
     }
   };
 
-  // Functie om de juiste vertaalsleutel voor een categorie te vinden
+  /**
+   * Finds the appropriate translation key for a given category.
+   * @param {string} category - The category string.
+   * @returns {string} The translation key or the original category if not found.
+   */
   const getCategoryTranslationKey = (category: string) => {
     const index = TASK_CATEGORIES.findIndex(cat => cat === category);
     return index !== -1 ? TASK_CATEGORY_KEYS[index] : category;
   };
 
-  // Vertaalde categorienaam ophalen
+  /**
+   * Retrieves the translated category name.
+   * @param {string} category - The category string.
+   * @returns {string} The translated category name.
+   */
   const getTranslatedCategory = (category: string) => {
     const translationKey = getCategoryTranslationKey(category);
     return t(translationKey);

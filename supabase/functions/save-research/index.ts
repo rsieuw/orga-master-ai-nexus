@@ -41,19 +41,12 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  let userIdForLogging: string | undefined;
-  const functionNameForLogging = 'save-research';
-  let requestBodyForLogging: Record<string, unknown> = {};
-  let savedResearchIdForLogging: string | undefined;
-
-  // Use a more generic supabaseClient variable name as SupabaseClient type is sometimes inferred
   const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
   );
 
-  // Admin client for logging to user_api_logs
   let supabaseAdminLoggingClient: SupabaseClient | null = null;
   const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (supabaseServiceRoleKey) {
@@ -62,100 +55,50 @@ Deno.serve(async (req) => {
       supabaseServiceRoleKey
     );
   } else {
-    console.warn("[save-research] SUPABASE_SERVICE_ROLE_KEY not set. Logging to user_api_logs might be restricted by RLS.");
+    console.warn("[save-research] SUPABASE_SERVICE_ROLE_KEY not set. Logging might be restricted.");
   }
 
   try {
-    // 1. Create Supabase client with Auth context - Client already created above
-    // const authHeader = req.headers.get('Authorization')!;
-    // const supabaseClient: SupabaseClient = createClient(
-    //   Deno.env.get('SUPABASE_URL') ?? '',
-    //   Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    //   { global: { headers: { Authorization: authHeader } } }
-    // );
-
-    // 2. Get user from Auth context
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      console.error("User authentication error:", userError);
-      // Attempt to log failure even here if possible, though userId is unknown
-      try {
-        const loggingClient = supabaseAdminLoggingClient || supabase; // Gebruik admin client indien beschikbaar
-        await loggingClient.from('user_api_logs').insert({
-            // user_id: null, // userId is unknown here
-            function_name: functionNameForLogging,
-            metadata: { success: false, error: 'User authentication failed', details: userError?.message },
-        });
-      } catch (logErr) {
-        console.error("Failed to log auth error to user_api_logs", logErr);
-      }
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error("User not authenticated", authError);
       return new Response(JSON.stringify({ errorKey: 'errors.unauthorized' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
       });
     }
-    userIdForLogging = user.id; // Set userIdForLogging now that user is confirmed
 
-    // 3. Parse request body
     const requestBody = await req.json();
     const { taskId, researchContent, citations, subtaskTitle, prompt } = requestBody;
-    requestBodyForLogging = {
-        taskIdProvided: !!taskId,
-        researchContentLength: typeof researchContent === 'string' ? researchContent.length : 0,
-        citationsProvided: !!citations,
-        subtaskTitleProvided: !!subtaskTitle,
-        promptProvided: !!prompt
-    };
     
     if (!taskId || typeof taskId !== 'string') {
-      // Log failure before returning
-      throw new Error("Missing or invalid 'taskId'"); // Throw to be caught by main catch for logging
+      throw new Error("Missing or invalid 'taskId'");
     }
     if (typeof researchContent !== 'string') { 
-        throw new Error("Missing or invalid 'researchContent'"); // Throw to be caught by main catch for logging
+        throw new Error("Missing or invalid 'researchContent'");
     }
-    // Optional: Add more validation for other fields like citations, subtaskTitle, prompt if needed
 
-    // 4. Insert data into the saved_research table
     const { data: savedData, error: insertError } = await supabase
       .from('saved_research')
       .insert({
         task_id: taskId,
         user_id: user.id,
         research_content: researchContent,
-        citations: citations, // Ensure this matches your DB schema (e.g., jsonb or text[])
+        citations: citations, 
         subtask_title: subtaskTitle || null,
-        prompt: prompt || null // Added prompt to insert
+        prompt: prompt || null 
       })
-      .select('id') // Select the ID of the new row
-      .single(); // Expect a single result
+      .select('id') 
+      .single(); 
 
     if (insertError) {
       console.error("Error inserting saved research:", insertError);
-      throw insertError; // Let the generic error handler catch it
+      throw insertError; 
     }
 
     if (!savedData || !savedData.id) {
       console.error("Failed to retrieve ID after inserting saved research");
       throw new Error("errors.research.idRetrievalFailed");
-    }
-    savedResearchIdForLogging = savedData.id; // Store for logging
-
-    // 5. Return success response, including the new ID
-    // Log internal API call SUCCESS
-    try {
-      const loggingClient = supabaseAdminLoggingClient || supabase; // Gebruik admin client indien beschikbaar
-      await loggingClient.from('user_api_logs').insert({
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { 
-          ...requestBodyForLogging, 
-          success: true, 
-          savedResearchId: savedResearchIdForLogging 
-        },
-      });
-    } catch (logError) {
-      console.error('Failed to log SUCCESS to user_api_logs', logError);
     }
 
     return new Response(
@@ -171,34 +114,16 @@ Deno.serve(async (req) => {
     if (error instanceof Error) {
       if (error.message === "errors.research.idRetrievalFailed") {
         errorKey = error.message;
-      } else if (error.name === 'AuthApiError') { // Example for specific Supabase errors
-        errorKey = "errors.unauthorized"; // Or a more specific key
-      } else if (error.message.includes("unique constraint")) { // Example for DB constraint errors
-        errorKey = "errors.request.duplicateEntry"; // Define this key in your translations
+      } else if (error.name === 'AuthApiError') { 
+        errorKey = "errors.unauthorized"; 
+      } else if (error.message.includes("unique constraint")) { 
+        errorKey = "errors.request.duplicateEntry"; 
       }
-      // Log the actual error message for server-side debugging
       console.error("Caught error in save-research function:", error.message);
     }
 
-    // Log internal API call FAILURE
-    try {
-      const loggingClient = supabaseAdminLoggingClient || supabase; // Gebruik admin client indien beschikbaar
-      await loggingClient.from('user_api_logs').insert({
-        user_id: userIdForLogging, // userIdForLogging might be undefined if auth failed early
-        function_name: functionNameForLogging,
-        metadata: { 
-          ...requestBodyForLogging, // Might be empty if parsing body failed
-          success: false, 
-          error: errorKey, 
-          rawErrorMessage: error instanceof Error ? error.message : String(error) 
-        },
-      });
-    } catch (logError) {
-      console.error('Failed to log FAILURE to user_api_logs', logError);
-    }
-
     return new Response(JSON.stringify({ errorKey: errorKey, message: error instanceof Error ? error.message : 'Unknown error' }), {
-      status: 500, // Or a more appropriate status code based on the error
+      status: 500, 
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

@@ -9,12 +9,27 @@ import { useAuth } from "@/hooks/useAuth.ts";
 
 // Helper function to ensure a message has an ID
 export const ensureMessageHasId = (message: Omit<Message, 'id'> & { id?: string }): Message => {
-  return { ...message, id: message.id || uuidv4() } as Message;
+  return {
+    ...message,
+    id: message.id || uuidv4(),
+    // Ensure messageType has a default if not provided
+    messageType: message.messageType || 'standard' 
+  } as Message;
 };
 
 // Define an alias for the specific table row type
 type OriginalSavedResearchRow = Database['public']['Tables']['saved_research']['Row'];
 
+/**
+ * Custom hook to manage messages for a specific task.
+ * Handles fetching, adding, updating, deleting, and pinning messages,
+ * as well as managing notes and research results associated with the task.
+ *
+ * @param {string | null} taskId - The ID of the task.
+ * @param {string | null} taskTitle - The title of the task.
+ * @param {string | null} selectedSubtaskTitle - The title of the currently selected subtask.
+ * @returns An object containing messages, loading state, error state, and various functions to manage messages.
+ */
 export function useMessages(taskId: string | null, taskTitle: string | null, selectedSubtaskTitle: string | null) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,7 +149,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
         createdAt: messageData.createdAt || new Date().toISOString(),
     });
 
-    const currentMessageType: MessageType = newMessage.messageType;
+    const currentMessageType: MessageType = newMessage.messageType || 'standard'; // Fallback to 'standard'
     if (currentMessageType === 'research_result') {
       setMessages((prevMessages) => {
         const updatedMessages = [...prevMessages, newMessage];
@@ -187,6 +202,9 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
 
   // Update message in state by client-side ID
   const updateMessage = useCallback((messageId: string, updates: Partial<Message>) => {
+    // DEBUG LOGGING START
+    console.log('[useMessages|updateMessage] Received update. Message ID:', messageId, 'Updates:', updates);
+    // DEBUG LOGGING END
     if (updates.messageType === 'research_result') {
       if (typeof updates.content !== 'string') {
         updates.content = String(updates.content || '');
@@ -337,7 +355,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
             const tempMapped = research.citations.map((dbCitation: unknown): Citation | undefined => {
               if (typeof dbCitation === 'object' && dbCitation !== null) {
                 const pc = dbCitation as Partial<Citation>; // Potential Citation
-                // Alleen teruggeven als het de essentiële velden heeft (bijv. text of url)
+                // Only return if it has essential fields (e.g., text or url)
                 if (pc.text || pc.url || pc.title) {
                     return {
                         number: pc.number,
@@ -347,19 +365,19 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
                     } as Citation;
                 }
               } else if (typeof dbCitation === 'string') {
-                // Fallback voor pure string URLs
+                // Fallback for pure string URLs
                 return { url: dbCitation, text: dbCitation, title: dbCitation } as Citation;
               }
               return undefined;
             });
-            // Filter alle undefined entries eruit
+            // Filter out all undefined entries
             mappedFrontendCitations = tempMapped.filter((c): c is Citation => c !== undefined);
             
             if (mappedFrontendCitations.length === 0 && research.citations.length > 0) {
                console.warn(`[useMessages] Research ID ${research.id}: DB citations present but mapping resulted in empty array. Original:`, JSON.stringify(research.citations));
-               mappedFrontendCitations = undefined; // Zet op undefined als het resultaat leeg is
+               mappedFrontendCitations = undefined; // Set to undefined if the result is empty
             } else if (mappedFrontendCitations.length === 0) {
-                mappedFrontendCitations = undefined; // Ook hier, als leeg na filteren
+                mappedFrontendCitations = undefined; // Also here, if empty after filtering
             }
           } else if (research.citations) {
             console.warn(`[useMessages] Research ID ${research.id}: DB citations is not an array:`, research.citations);
@@ -374,8 +392,8 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
             createdAt: research.created_at,
             messageType: 'saved_research_display',
             citations: mappedFrontendCitations, 
-            subtask_title: research.subtask_title, 
-            prompt: research.prompt ?? null 
+            subtask_title: research.subtask_title === null ? undefined : research.subtask_title,
+            prompt: research.prompt === null ? undefined : research.prompt
           });
         });
 
@@ -489,8 +507,8 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
           createdAt: research.created_at,
           messageType: 'saved_research_display',
           citations: mappedCitations, 
-          subtask_title: research.subtask_title, 
-          prompt: research.prompt ?? null 
+          subtask_title: research.subtask_title === null ? undefined : research.subtask_title,
+          prompt: research.prompt === null ? undefined : research.prompt
         });
       });
       
@@ -584,23 +602,23 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
   const deleteResearch = async (researchIdOrMessageId: string) => {
     if (!researchIdOrMessageId) return;
 
-    // Controleren of het een message ID is van een niet-opgeslagen onderzoek of een database ID van opgeslagen onderzoek
+    // Check if it is a message ID of unsaved research or a database ID of saved research
     const messageWithId = messages.find(msg => msg.id === researchIdOrMessageId);
     
-    // Als het een message ID is, dan verwijderen we het uit de lokale state
+    // If it is a message ID, remove it from the local state
     if (messageWithId && messageWithId.messageType === 'research_result') {
       setMessages(prevMessages => prevMessages.filter(msg => msg.id !== researchIdOrMessageId));
       
       try {
         if (typeof window !== 'undefined') {
-          // Ook uit localStorage verwijderen als het daar is opgeslagen
+          // Also remove from localStorage if stored there
           const localStorageKey = `useMessages_${taskId || 'default'}_research_messages`;
           const storedResearch = JSON.parse(localStorage.getItem(localStorageKey) || '[]');
           const updatedResearch = storedResearch.filter((msg: Message) => msg.id !== researchIdOrMessageId);
           localStorage.setItem(localStorageKey, JSON.stringify(updatedResearch));
         }
       } catch (e) {
-        // Fout bij lokale opslag bewerkingen negeren
+        // Ignore errors during local storage operations
       }
       
       toast({ 
@@ -611,7 +629,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
       return;
     }
     
-    // Anders is het waarschijnlijk een database ID, probeer het te verwijderen uit de database
+    // Otherwise, it is likely a database ID, try to delete it from the database
     try {
       const { error } = await supabase.functions.invoke('delete-research', {
         body: { researchId: researchIdOrMessageId }
@@ -619,7 +637,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
 
       if (error) throw error;
 
-      // Ook verwijderen uit lokale state als het bestaat als opgeslagen onderzoek
+      // Also remove from local state if it exists as saved research
       setMessages(prevMessages => prevMessages.filter(msg => 
         !(msg.dbId === researchIdOrMessageId || 
           (msg.id === researchIdOrMessageId && msg.messageType === 'saved_research_display'))
@@ -644,23 +662,13 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
     } 
   };
 
-  // --- Placeholder functions --- 
-  const deleteMessageFromDb = (_messageId: string) => {
-    // Implement logic here to delete a specific chat message
-  };
-
-  const saveNoteToChat = (_noteData: Pick<Message, 'content'>) => {
-    // Implement logic here to add a note to the chat (perhaps via addMessage?)
-    // You will need taskId and userId.
-  };
-
-  const displaySavedResearchInChat = (_researchItem: Message) => {
-    // This function should format the research data and add it via addMessage
-    // with messageType 'saved_research_display'
-  };
-  // --- END New added placeholder functions ---
-
-  // Functie om een bericht te pinnen/los te maken
+  /**
+   * Toggles the pinned state of a message.
+   * Updates the message locally and then calls a Supabase RPC to persist the change.
+   * Shows toast notifications for success or failure.
+   * @param {string} messageId - The ID of the message to pin/unpin.
+   * @param {boolean} currentIsPinned - The current pinned state of the message.
+   */
   const togglePinMessage = useCallback(async (messageId: string, currentIsPinned: boolean) => {
     if (!taskId || !user) {
       toast({ variant: "destructive", title: t('common.error'), description: t('chatPanel.toast.cannotChangePinStatusDescription') });
@@ -724,7 +732,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
     }
   }, [taskId, user, t, toast, setMessages, messages]);
 
-  // Hier voegen we een effect toe om de berichten te laden vanuit localStorage als nodig
+  // Effect to load messages from localStorage if necessary
   useEffect(() => {
     try {
       if (typeof window !== 'undefined' && !isLoading && messages.length === 0) {
@@ -733,20 +741,20 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
         
         if (storedMessages) {
           const parsedMessages = JSON.parse(storedMessages) as Message[];
-          // Controleren op onderzoeksberichten
-          // const researchMsgs = parsedMessages.filter(m => // Deze variabele wordt niet meer gebruikt
+          // Check for research messages
+          // const researchMsgs = parsedMessages.filter(m => // This variable is no longer used
           // m.messageType === 'research_result' || m.messageType === 'research_loader');
           
-          // if (researchMsgs.length > 0) {} // Leeg if block verwijderd
+          // if (researchMsgs.length > 0) {} // Empty if block removed
           
-          // Zorg ervoor dat dit alleen uitgevoerd wordt als we echt berichten hebben om te laden
+          // Ensure this is only executed if we actually have messages to load
           if (parsedMessages.length > 0) {
             setMessages(parsedMessages);
           }
         }
       }
     } catch (e) {
-      // Leeg catch block verwijderd
+      // Empty catch block removed
     }
   }, [taskId, isLoading, messages.length]);
 
@@ -760,10 +768,7 @@ export function useMessages(taskId: string | null, taskTitle: string | null, sel
     clearHistory,
     deleteNote,
     deleteResearch,
-    deleteMessageFromDb,
     saveResearchToDb,
-    saveNoteToChat,
-    displaySavedResearchInChat,
     reloadTrigger,
     togglePinMessage,
     setMessages,

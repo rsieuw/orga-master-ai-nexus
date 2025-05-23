@@ -5,7 +5,7 @@
  */
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 // import { supabaseAdmin } from "../_shared/supabaseAdmin.ts" // Not used in this version
 
@@ -33,23 +33,23 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Logging variables
-  let userIdForLogging: string | undefined;
-  const functionNameForLogging = 'delete-research';
-  let requestBodyForLogging: Record<string, unknown> = {};
-  let supabaseClient; // Declare here to be accessible in final catch
+  // Logging variables verwijderd
+  // let userIdForLogging: string | undefined;
+  // const functionNameForLogging = 'delete-research';
+  // let requestBodyForLogging: Record<string, unknown> = {};
+  let supabaseClient; // Blijft, nodig voor de operatie en fallback logging (hoewel die nu ook weg is)
 
-  // Admin client for logging to user_api_logs
-  let supabaseAdminLoggingClient: SupabaseClient | null = null;
-  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (supabaseServiceRoleKey) {
-    supabaseAdminLoggingClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      supabaseServiceRoleKey
-    );
-  } else {
-    console.warn("[delete-research] SUPABASE_SERVICE_ROLE_KEY not set. Logging to user_api_logs might be restricted by RLS.");
-  }
+  // Admin client for logging naar user_api_logs - Verwijderd
+  // let supabaseAdminLoggingClient: SupabaseClient | null = null;
+  // const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  // if (supabaseServiceRoleKey) {
+  //   supabaseAdminLoggingClient = createClient(
+  //     Deno.env.get('SUPABASE_URL')!,
+  //     supabaseServiceRoleKey
+  //   );
+  // } else {
+  //   console.warn("[delete-research] SUPABASE_SERVICE_ROLE_KEY not set. Logging to user_api_logs might be restricted by RLS.");
+  // }
 
   try {
     // 1. Create Supabase client with Auth context
@@ -63,18 +63,20 @@ Deno.serve(async (req) => {
 
     // 2. Get user from Auth context
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    userIdForLogging = user?.id; // Assign userIdForLogging here
+    // userIdForLogging = user?.id; // Verwijderd
 
     if (userError || !user) {
-      // Log an attempt if a user context was partially established or if it's an anonymous attempt
-      if (supabaseClient && userIdForLogging) { // only log if client and user id is available
-          const loggingClient = supabaseAdminLoggingClient || supabaseClient; // Use admin client if available
+      // Log an attempt if a user context was partially established or if it's an anonymous attempt - UITGECOMMENTARIEERD
+      /*
+      if (supabaseClient && userIdForLogging) { // userIdForLogging is nu weg
+          const loggingClient = supabaseAdminLoggingClient || supabaseClient; 
           await loggingClient.from('user_api_logs').insert({
               user_id: userIdForLogging,
               function_name: functionNameForLogging,
               metadata: { success: false, error: 'User not authorized', details: userError?.message },
           });
       }
+      */
       return new Response(JSON.stringify({ error: 'Not authorized' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
@@ -86,14 +88,17 @@ Deno.serve(async (req) => {
     try {
       const body = await req.json();
       researchId = body.researchId;
-      requestBodyForLogging = { researchId: researchId, userAgent: req.headers.get('user-agent') };
+      // requestBodyForLogging = { researchId: researchId, userAgent: req.headers.get('user-agent') }; // Verwijderd
     } catch (parseError: unknown) {
-      const loggingClient = supabaseAdminLoggingClient || supabaseClient; // Use admin client if available
-      await loggingClient.from('user_api_logs').insert({
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { success: false, error: 'Invalid JSON in request body', rawError: String(parseError), ...requestBodyForLogging },
+      // const loggingClient = supabaseAdminLoggingClient || supabaseClient; // Verwijderd
+      // UITGECOMMENTARIEERD
+      /*
+      await supabaseClient.from('user_api_logs').insert({
+        user_id: userIdForLogging, // Verwijderd
+        function_name: functionNameForLogging, // Verwijderd
+        metadata: { success: false, error: 'Invalid JSON in request body', rawError: String(parseError) }, // requestBodyForLogging verwijderd
       });
+      */
       return new Response(
         JSON.stringify({ error: "Invalid JSON in request body" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
@@ -101,12 +106,15 @@ Deno.serve(async (req) => {
     }
     
     if (!researchId || typeof researchId !== 'string') {
-      const loggingClient = supabaseAdminLoggingClient || supabaseClient; // Use admin client if available
-      await loggingClient.from('user_api_logs').insert({
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { success: false, error: 'Missing or invalid researchId', ...requestBodyForLogging },
+      // const loggingClient = supabaseAdminLoggingClient || supabaseClient; // Verwijderd
+      // UITGECOMMENTARIEERD
+      /*
+      await supabaseClient.from('user_api_logs').insert({
+        user_id: userIdForLogging, // Verwijderd
+        function_name: functionNameForLogging, // Verwijderd
+        metadata: { success: false, error: 'Missing or invalid researchId' }, // requestBodyForLogging verwijderd
       });
+      */
       return new Response(
         JSON.stringify({ error: "Missing or invalid 'researchId' in request body" }),
         { 
@@ -116,7 +124,7 @@ Deno.serve(async (req) => {
       );
     }
     
-    requestBodyForLogging = { researchId, userId: user.id }; // Update after validation
+    // requestBodyForLogging = { researchId, userId: user.id }; // Verwijderd
 
     // 4. Delete data from the saved_research table
     const { count, error: deleteError } = await supabaseClient
@@ -128,23 +136,29 @@ Deno.serve(async (req) => {
     console.log(`[delete-research] Attempted delete for researchId: ${researchId}, userId: ${user.id}. Result count: ${count}`);
 
     if (deleteError) {
-      const loggingClient = supabaseAdminLoggingClient || supabaseClient; // Use admin client if available
-      await loggingClient.from('user_api_logs').insert({
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { success: false, error: `Database error: ${deleteError.message}`, researchId, dbErrorCode: deleteError.code, ...requestBodyForLogging },
+      // const loggingClient = supabaseAdminLoggingClient || supabaseClient; // Verwijderd
+      // UITGECOMMENTARIEERD
+      /*
+      await supabaseClient.from('user_api_logs').insert({
+        user_id: userIdForLogging, // Verwijderd
+        function_name: functionNameForLogging, // Verwijderd
+        metadata: { success: false, error: `Database error: ${deleteError.message}`, researchId, dbErrorCode: deleteError.code }, // requestBodyForLogging verwijderd
       });
+      */
       throw new Error(`Database error: ${deleteError.message}`);
     }
 
     if (count === 0) {
       console.warn(`[delete-research] No research found with id ${researchId} for user ${user.id}, or deletion prevented (e.g., RLS).`);
-      const loggingClient = supabaseAdminLoggingClient || supabaseClient; // Use admin client if available
-      await loggingClient.from('user_api_logs').insert({
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { success: false, warning: 'Research not found or not deleted', researchId, count, ...requestBodyForLogging },
+      // const loggingClient = supabaseAdminLoggingClient || supabaseClient; // Verwijderd
+      // UITGECOMMENTARIEERD
+      /*
+      await supabaseClient.from('user_api_logs').insert({
+        user_id: userIdForLogging, // Verwijderd
+        function_name: functionNameForLogging, // Verwijderd
+        metadata: { success: false, warning: 'Research not found or not deleted', researchId, count }, // requestBodyForLogging verwijderd
       });
+      */
       return new Response(JSON.stringify({ 
         warning: `Research with ID ${researchId} not found or could not be deleted.` 
       }), {
@@ -153,13 +167,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 5. Return success response & log
-    const loggingClientForSuccess = supabaseAdminLoggingClient || supabaseClient; // Use admin client if available
-    await loggingClientForSuccess.from('user_api_logs').insert({
-      user_id: userIdForLogging,
-      function_name: functionNameForLogging,
-      metadata: { success: true, researchId, deletedCount: count, ...requestBodyForLogging },
+    // 5. Return success response & log - UITGECOMMENTARIEERD
+    // const loggingClientForSuccess = supabaseAdminLoggingClient || supabaseClient; // Verwijderd
+    /*
+    await supabaseClient.from('user_api_logs').insert({
+      user_id: userIdForLogging, // Verwijderd
+      function_name: functionNameForLogging, // Verwijderd
+      metadata: { success: true, researchId, deletedCount: count }, // requestBodyForLogging verwijderd
     });
+    */
     // console.log(`Research with ID ${researchId} deleted successfully.`);
     return new Response(JSON.stringify({ message: "Research successfully deleted!" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -169,14 +185,15 @@ Deno.serve(async (req) => {
   } catch (error: unknown) {
     // console.error("Error in delete-research function:", error);
     const errorMessage = error instanceof Error ? error.message : "Internal server error while deleting research.";
-    // Ensure supabaseClient is available for logging, might be uninitialized if error is early
-    if (supabaseClient && userIdForLogging) {
+    // Ensure supabaseClient is available for logging, might be uninitialized if error is early - UITGECOMMENTARIEERD
+    /*
+    if (supabaseClient && userIdForLogging) { // userIdForLogging is nu weg
         try {
-            const loggingClient = supabaseAdminLoggingClient || supabaseClient; // Use admin client if available
+            const loggingClient = supabaseAdminLoggingClient || supabaseClient; 
             await loggingClient.from('user_api_logs').insert({
                 user_id: userIdForLogging,
                 function_name: functionNameForLogging,
-                metadata: { success: false, error: 'Generic error in function', rawErrorMessage: errorMessage, ...requestBodyForLogging },
+                metadata: { success: false, error: 'Generic error in function', rawErrorMessage: errorMessage }, // requestBodyForLogging verwijderd
             });
         } catch (logError: unknown) {
             console.error('[delete-research] FAILED TO LOG TO user_api_logs:', logError instanceof Error ? logError.message : String(logError));
@@ -184,6 +201,7 @@ Deno.serve(async (req) => {
     } else {
         console.error('[delete-research] Supabase client or user ID not available for error logging. Original error:', errorMessage);
     }
+    */
     
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,

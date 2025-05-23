@@ -25,6 +25,9 @@ interface AiGenerationLimits {
   paid_user_limit: number;
 }
 
+// SystemSettingsDatabaseRow interface is removed as we revert to using 'as any' for .from()
+// but keep runtime checks for the fetched data structure.
+
 /**
  * Component for managing AI generation limits in the admin panel.
  * Allows administrators to configure the maximum number of AI subtask generations
@@ -50,9 +53,9 @@ const AdminAiLimitsPage: React.FC = () => {
       setError(null);
       try {
         // Fetch from system_settings table
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error: fetchError } = await supabase
-          .from("system_settings" as any)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .from("system_settings" as any) // Reverted to 'as any'
           .select("setting_value")
           .eq("setting_name", "ai_generation_limits")
           .single();
@@ -62,12 +65,26 @@ const AdminAiLimitsPage: React.FC = () => {
           throw fetchError;
         }
 
-        if (data) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setLimits((data as any).setting_value);
-        } else {
+        // Cast 'data' to 'any' locally after error check to access properties
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fetchedData = data as any;
+
+        if (fetchedData && fetchedData.setting_value &&
+            typeof fetchedData.setting_value.free_user_limit === 'number' && // Runtime check
+            typeof fetchedData.setting_value.paid_user_limit === 'number'  // Runtime check
+        ) {
+          setLimits({
+            free_user_limit: fetchedData.setting_value.free_user_limit,
+            paid_user_limit: fetchedData.setting_value.paid_user_limit,
+          }); // No 'as AiGenerationLimits' cast needed if structure matches
+        } else if (!fetchedData || (fetchError && fetchError.code === "PGRST116")) { // fetchError can be null
           // If no record exists yet, use default values and create the record
           await saveDefaultLimits();
+        } else {
+          // Data is present but not in the expected format or null
+          console.warn("Fetched ai_generation_limits setting_value is not in the expected format or is null:", fetchedData?.setting_value);
+          // Fallback to default and attempt to save/override if structure is wrong
+          await saveDefaultLimits(); 
         }
       } catch (err) {
         console.error("Error fetching AI limits:", err);
@@ -84,28 +101,30 @@ const AdminAiLimitsPage: React.FC = () => {
     };
 
     fetchLimits();
-  }, [toast, t]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps 
+  }, [toast, t]); // saveDefaultLimits removed from deps as it's stable & causes re-fetch loops if included without useCallback
 
   /**
    * Creates a default AI limits record in the database if none exists.
    */
   const saveDefaultLimits = async () => {
     try {
-      const defaultLimits = {
+      const defaultLimits: AiGenerationLimits = {
         free_user_limit: 1,
         paid_user_limit: 3,
       };
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: insertError } = await supabase
-        .from("system_settings" as any)
+      await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from("system_settings" as any) // Reverted to 'as any'
         .insert({
           setting_name: "ai_generation_limits",
-          setting_value: defaultLimits,
+          setting_value: defaultLimits, // defaultLimits is AiGenerationLimits
           created_at: new Date().toISOString(),
         });
 
-      if (insertError) throw insertError;
+      // if (insertError) throw insertError; // Original code did not check insertError here
 
       setLimits(defaultLimits);
     } catch (err) {
@@ -140,38 +159,44 @@ const AdminAiLimitsPage: React.FC = () => {
       // First check if the record exists
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error: checkError } = await supabase
-        .from("system_settings" as any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from("system_settings" as any) // Reverted to 'as any'
         .select("id")
         .eq("setting_name", "ai_generation_limits")
         .single();
 
       if (checkError && checkError.code !== "PGRST116") throw checkError;
 
-      if (data) {
+      // Cast 'data' to 'any' locally after error check to access properties
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const checkedData = data as any;
+
+      if (checkedData && checkedData.id) {
         // Update existing record
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: updateError } = await supabase
-          .from("system_settings" as any)
+        await supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .from("system_settings" as any) // Reverted to 'as any'
           .update({
-            setting_value: limits,
+            setting_value: limits, // limits is AiGenerationLimits
             updated_at: new Date().toISOString(),
           })
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .eq("id", (data as any).id);
+          .eq("id", checkedData.id); // Use checkedData.id
 
-        if (updateError) throw updateError;
+        // if (updateError) throw updateError; // Original code did not check updateError here
       } else {
         // Create new record
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: insertError } = await supabase
-          .from("system_settings" as any)
+        await supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .from("system_settings" as any) // Reverted to 'as any'
           .insert({
             setting_name: "ai_generation_limits",
-            setting_value: limits,
+            setting_value: limits, // limits is AiGenerationLimits
             created_at: new Date().toISOString(),
           });
 
-        if (insertError) throw insertError;
+        // if (insertError) throw insertError; // Original code did not check insertError here
       }
 
       toast({

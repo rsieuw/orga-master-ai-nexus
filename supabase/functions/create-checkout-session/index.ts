@@ -50,25 +50,21 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  // Logging variables
-  let userIdForLogging: string | undefined;
-  const functionNameForLogging = 'create-checkout-session';
-  let requestBodyForLogging: Record<string, unknown> = {};
-  // let supabaseLoggingClient: ReturnType<typeof createClient<Database>> | undefined; // Removed, using supabaseAdmin for logging
+  // Logging variables verwijderd
+  // let userIdForLogging: string | undefined;
+  // const functionNameForLogging = 'create-checkout-session';
+  // let requestBodyForLogging: Record<string, unknown> = {};
+  // let supabaseAdminLoggingClient: ReturnType<typeof createClient<Database>> | null = null;
+  // const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-  // Client specifiek voor logging naar user_api_logs met service_role rechten
-  // Wordt alleen geïnitialiseerd als we daadwerkelijk gaan loggen.
-  let supabaseAdminLoggingClient: ReturnType<typeof createClient<Database>> | null = null;
-  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-  if (!supabaseServiceRoleKey) {
-    console.error("[create-checkout-session] SUPABASE_SERVICE_ROLE_KEY is not set. Internal API call logging will be skipped.");
-  } else {
-    supabaseAdminLoggingClient = createClient<Database>(
-      Deno.env.get('SUPABASE_URL')!,
-      supabaseServiceRoleKey
-    );
-  }
+  // if (!supabaseServiceRoleKey) {
+  //   console.error("[create-checkout-session] SUPABASE_SERVICE_ROLE_KEY is not set. Internal API call logging will be skipped.");
+  // } else {
+  //   supabaseAdminLoggingClient = createClient<Database>(
+  //     Deno.env.get('SUPABASE_URL')!,
+  //     supabaseServiceRoleKey
+  //   );
+  // }
 
   try {
     // 1. Get User from JWT
@@ -82,22 +78,19 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_ANON_KEY') ?? '',
         { global: { headers: { Authorization: authHeader } } }
     )
-    // Also use this client for logging // Removed, using supabaseAdmin
-    // supabaseLoggingClient = supabaseClient; // Removed
     
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     if (userError || !user) {
       console.error('User retrieval error:', userError)
       throw new Error('Failed to retrieve user')
     }
-    // Set userId for logging
-    userIdForLogging = user.id;
+    // userIdForLogging = user.id; // Verwijderd
     console.log(`User [${user.id}] authenticated.`);
 
     // 2. Get Price ID from request body
     const reqBody = await req.json()
     const { priceId } = reqBody
-    requestBodyForLogging = { priceId, userAgent: req.headers.get('user-agent') }; // Store for logging
+    // requestBodyForLogging = { priceId, userAgent: req.headers.get('user-agent') }; // Verwijderd
     if (!priceId) {
       throw new Error('Missing priceId in request body')
     }
@@ -172,7 +165,8 @@ serve(async (req) => {
     console.log(`Created checkout session [${session.id}] for customer [${customerId}]`);
 
     // Add logging at the end of the try block, right before returning response
-    // Log SUCCESS to user_api_logs
+    // Log SUCCESS to user_api_logs - UITGECOMMENTARIEERD
+    /*
     try {
       if (supabaseAdminLoggingClient && userIdForLogging) { // Check of admin client en userId bestaan
         await supabaseAdminLoggingClient.from('user_api_logs').insert({ // Gebruik admin client
@@ -189,6 +183,7 @@ serve(async (req) => {
     } catch (logError) {
       console.error('Failed to log SUCCESS to user_api_logs:', logError);
     }
+    */
 
     // 5. Return Session URL
     return new Response(
@@ -227,7 +222,8 @@ serve(async (req) => {
         }
     }
 
-    // Log FAILURE to user_api_logs
+    // Log FAILURE to user_api_logs - UITGECOMMENTARIEERD
+    /*
     if (supabaseAdminLoggingClient && userIdForLogging) {
       try {
         await supabaseAdminLoggingClient.from('user_api_logs').insert({ // Gebruik admin client
@@ -244,6 +240,7 @@ serve(async (req) => {
         console.error('Failed to log FAILURE to user_api_logs:', logError);
       }
     }
+    */
 
     return new Response(
       JSON.stringify({ errorKey }), // Return the error key

@@ -1193,6 +1193,7 @@
     "defaultTaskTitle": "de huidige taak",
     "researchForSubtaskLabel": "Onderzoek voor subtaak: {{subtaskTitle}}",
     "researchForPromptLabel": "Onderzoek naar: {{prompt}}",
+    "researchGenericTitle": "Onderzoeksresultaat",
     "research": {
       "userRequestPrefix": "Doe onderzoek over:",
       "forSubtaskContinuation": " voor subtaak '{{subtask}}'",

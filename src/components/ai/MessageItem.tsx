@@ -139,16 +139,24 @@ export function MessageItem({
                   : "chat-message-ai"
         }`}
       >
-        {(message.messageType === 'saved_research_display' || message.messageType === 'research_result') && (message.subtask_title || message.prompt) && (
-          <p className="text-xs text-blue-600 dark:text-blue-300 mb-2 border-b border-blue-500/30 pb-1.5">
-            {message.prompt
-              ? t('chatPanel.researchForPromptLabel', { prompt: message.prompt })
-              : message.subtask_title
-                  ? t('chatPanel.researchForSubtaskLabel', { subtaskTitle: message.subtask_title })
-                  : null
-            }
-          </p>
-        )}
+        {(message.messageType === 'saved_research_display' || message.messageType === 'research_result') && 
+          (() => {
+            return (
+              <div className="text-xs text-blue-600 dark:text-blue-300 mb-2 border-b border-blue-500/30 pb-1.5">
+                {(message.prompt || message.subtask_title) && (
+                  <p className="mt-1 font-semibold">
+                    {message.prompt
+                      ? t('chatPanel.researchForPromptLabel', { prompt: message.prompt })
+                      : message.subtask_title
+                          ? t('chatPanel.researchForSubtaskLabel', { subtaskTitle: message.subtask_title })
+                          : null
+                    }
+                  </p>
+                )}
+              </div>
+            );
+          })()
+        }
         
         {(message.messageType === 'note_saved' || message.messageType === 'saved_research_display' || message.messageType === 'research_result' || 
           // Extra detectie voor niet-getagde onderzoeksresultaten
@@ -166,6 +174,43 @@ export function MessageItem({
                 >
                   {typeof message.content === 'string' ? message.content : 'Geen inhoud beschikbaar'}
                 </ReactMarkdown>
+                {/* START -- Add citation rendering logic */}
+                {/* Verwijderde lege zelf-uitvoerende functie hier */}
+
+                {message.citations && 
+                 message.citations.length > 0 && 
+                 message.citations.some(c => typeof c === 'object' && c.url /* Tijdelijk versoepeld: && c.url !== '#' */) && (
+                  <div className="mt-4 pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <h4 className="text-sm font-semibold mb-2 text-foreground">{t('messageItem.sources', 'Sources')}</h4>
+                    <ul className="list-none pl-0 text-xs">
+                      {message.citations.map((citation, index) => {
+                        if (typeof citation === 'object' && citation.url && citation.url !== '#') {
+                          return (
+                            <li key={index} className="mb-1 truncate">
+                              <a 
+                                href={citation.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 visited:text-purple-600 dark:visited:text-purple-400 underline"
+                                title={citation.title || citation.text}
+                              >
+                                {citation.number}. {citation.text || citation.title || citation.url}
+                              </a>
+                            </li>
+                          );
+                        } else if (typeof citation === 'object' && citation.text) {
+                            return (
+                                <li key={index} className="mb-1">
+                                    {citation.number}. {citation.text} (Geen link beschikbaar)
+                                </li>
+                            );
+                        }
+                        return null; 
+                      })}
+                    </ul>
+                  </div>
+                )}
+                {/* END -- Add citation rendering logic */}
               </div>
             ) : message.messageType === 'note_saved' || message.messageType === 'saved_research_display' ? (
               // Bestaande notitie rendering

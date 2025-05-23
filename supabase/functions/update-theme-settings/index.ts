@@ -4,20 +4,9 @@
  * validates them, and then calls a Supabase RPC function `update_theme_settings` for each role.
  */
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.41.0'; // Added SupabaseClient for typing
-
-/**
- * CORS headers for the function response.
- * Allows requests from any origin and specifies allowed headers and methods.
- * @constant
- * @type {Record<string, string>}
- */
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-};
+import { serve, supabaseAdmin, corsHeaders, createClient as esmCreateClient, createSuccessResponse, createErrorResponse } from "../_shared/imports.ts";
+// Verwijder Zod import als niet gebruikt
+// import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 
 /**
  * Interface for a single theme setting configuration.
@@ -41,6 +30,31 @@ interface UpdateThemeSettingsRequest {
   settings: ThemeSetting[];
 }
 
+// Define the schema for a single theme setting update
+// const themeSettingSchema = {
+//   type: "object",
+//   properties: {
+//     role: { type: "string" },
+//     available_themes: { type: "array", items: { type: "string" } },
+//     default_theme: { type: "string" },
+//   },
+//   required: ["role", "available_themes", "default_theme"],
+// };
+
+// Define the schema for the overall request body
+// const updateRequestSchema = {
+//   type: "object",
+//   properties: {
+//     settings: {
+//       type: "array",
+//       items: themeSettingSchema,
+//     },
+//   },
+//   required: ["settings"],
+// };
+
+console.log("Function update-theme-settings loading...");
+
 /**
  * Main Deno server function that handles incoming HTTP requests to update theme settings.
  * - Handles CORS preflight requests and only allows POST method.
@@ -52,9 +66,11 @@ interface UpdateThemeSettingsRequest {
  * @param {Request} req - The incoming HTTP request object.
  * @returns {Promise<Response>} A promise that resolves to an HTTP response object.
  */
-serve(async (req) => {
+serve(async (req: Request) => {
+  console.log("Function update-theme-settings called");
   // CORS preflight request
   if (req.method === 'OPTIONS') {
+    console.log("Handling OPTIONS request");
     return new Response(null, {
       status: 204,
       headers: corsHeaders
@@ -69,207 +85,144 @@ serve(async (req) => {
     );
   }
 
-  // Logging variables
-  let userIdForLogging: string | undefined;
-  const functionNameForLogging = 'update-theme-settings';
-  let requestBodyForLogging: Record<string, unknown> = {};
-  let supabaseClient: SupabaseClient | undefined;
+  // Create a Supabase client with the Auth context of the caller
+  // Gebruik esmCreateClient hier direct of hernoem de import
+  const supabaseUserClient = esmCreateClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    {
+      global: { headers: { Authorization: req.headers.get("Authorization")! } },
+    }
+  );
 
-  // Admin client for logging to user_api_logs
-  let supabaseAdminLoggingClient: SupabaseClient | null = null;
+  // Get the user ID from the JWT
+  const { data: { user } } = await supabaseUserClient.auth.getUser();
+  const userId = user?.id;
+
+  // Admin client for logging, using service_role if available
+  let supabaseAdminClient: typeof supabaseAdmin | null = null;
   const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
   if (supabaseServiceRoleKey) {
-    supabaseAdminLoggingClient = createClient(
+    // Gebruik esmCreateClient hier direct of hernoem de import
+    supabaseAdminClient = esmCreateClient(
       Deno.env.get('SUPABASE_URL')!,
       supabaseServiceRoleKey
     );
   } else {
-    console.warn("[update-theme-settings] SUPABASE_SERVICE_ROLE_KEY not set. Logging to user_api_logs might be restricted by RLS or done by the calling admin user context.");
+    console.warn("[update-theme-settings] SUPABASE_SERVICE_ROLE_KEY not set. Operations requiring admin rights might fail if RLS is restrictive for authenticated user.");
+    // Fallback to user's client for admin operations if service role key is not available,
+    // RLS must permit this. For this specific function, we strictly check admin role later.
+    // supabaseAdminClient = supabaseUserClient; // This could be problematic if RLS expects service_role
   }
+  
+  // Use supabaseAdmin from imports if service key is not set, or the specific admin client if it is.
+  // This function should primarily use supabaseAdmin for database operations after role check.
+  const dbAdminClient = supabaseAdminClient || supabaseAdmin;
 
   try {
-    // Create a Supabase client with the Authorization header
-    supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    );
-
-    // Check if the user is an admin
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Not authorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Authenticate and authorize: Only admins can update theme settings
+    if (!userId) {
+      return createErrorResponse('User not authenticated', 401);
     }
 
-    // Store user ID for logging
-    userIdForLogging = user.id;
-
-    // Check if user is admin
-    const { data: userData, error: userError } = await supabaseClient
+    const { data: userProfile, error: profileError } = await dbAdminClient // Use dbAdminClient for profile check
       .from('profiles')
       .select('role')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single();
 
-    if (userError || !userData || userData.role !== 'admin') {
+    if (profileError || !userProfile || userProfile.role !== 'admin') {
+      console.warn(`[update-theme-settings] Unauthorized attempt by user ${userId} with role ${userProfile?.role}`);
       // Log unauthorized attempt to user_api_logs
-      try {
-        const loggingClient = supabaseAdminLoggingClient || supabaseClient;
-        if (loggingClient) {
-          await loggingClient.from('user_api_logs').insert({
-            user_id: userIdForLogging,
-            function_name: functionNameForLogging,
-            metadata: { 
-              success: false, 
-              error: 'Unauthorized: Only administrators can update theme settings',
-              userRole: userData?.role 
-            },
-          });
-        }
-      } catch (logError) {
-        console.error('Failed to log unauthorized attempt to user_api_logs:', logError);
-      }
-
-      return new Response(
-        JSON.stringify({ error: 'Only administrators can update theme settings' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      /*
+      await loggingClient.from('user_api_logs').insert({
+        user_id: userId,
+        function_name: 'update-theme-settings',
+        metadata: { success: false, error: 'Unauthorized: Admin access required' },
+      });
+      */
+      return createErrorResponse('Forbidden: Admin access required', 403);
     }
 
-    // Get request body
+    // Validate request body
     const requestData: UpdateThemeSettingsRequest = await req.json();
-    
-    // Store simplified request data for logging
-    requestBodyForLogging = { 
-      settingsCount: requestData.settings?.length,
-      roles: requestData.settings?.map(s => s.role)
-    };
-    
-    if (!requestData.settings || !Array.isArray(requestData.settings)) {
-      // Log invalid request to user_api_logs
-      try {
-        const loggingClient = supabaseAdminLoggingClient || supabaseClient;
-        if (loggingClient) {
-          await loggingClient.from('user_api_logs').insert({
-            user_id: userIdForLogging,
-            function_name: functionNameForLogging,
-            metadata: { 
-              ...requestBodyForLogging,
-              success: false, 
-              error: 'Invalid input: settings array is required' 
-            },
-          });
-        }
-      } catch (logError) {
-        console.error('Failed to log invalid request to user_api_logs:', logError);
-      }
 
-      return new Response(
-        JSON.stringify({ error: 'Invalid input: settings array is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Basic validation (Zod or similar could be used for more complex validation)
+    if (!requestData.settings || !Array.isArray(requestData.settings) || requestData.settings.length === 0) {
+       // Log invalid request to user_api_logs
+      /*
+      await loggingClient.from('user_api_logs').insert({
+        user_id: userId,
+        function_name: 'update-theme-settings',
+        metadata: { success: false, error: 'Invalid request body', details: validationError.errors }
+      });
+      */
+      return createErrorResponse('Invalid request body: settings array is required and cannot be empty', 400);
     }
 
-    // Validate each setting
     for (const setting of requestData.settings) {
-      if (!setting.role || !Array.isArray(setting.available_themes) || !setting.default_theme) {
-        return new Response(
-          JSON.stringify({ 
-            error: 'Invalid setting format', 
-            details: 'Each setting must include role, available_themes array, and default_theme' 
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      if (!setting.role || !Array.isArray(setting.available_themes) || !setting.default_theme || setting.available_themes.length === 0) {
+        return createErrorResponse(`Invalid setting format for role "${setting.role}". Ensure role, available_themes (non-empty array), and default_theme are provided.`, 400);
       }
-
-      // Check if default theme is in available themes
       if (!setting.available_themes.includes(setting.default_theme)) {
-        return new Response(
-          JSON.stringify({ 
-            error: `Default theme (${setting.default_theme}) must be in the list of available themes for role ${setting.role}` 
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return createErrorResponse(`Default theme "${setting.default_theme}" must be in available_themes for role "${setting.role}".`, 400);
       }
     }
+    const validatedSettings = requestData.settings;
 
-    // Update settings for each role
-    for (const setting of requestData.settings) {
-      const { error: updateError } = await supabaseClient.rpc('update_theme_settings', {
+    // Update each setting
+    const results = [];
+    for (const setting of validatedSettings) {
+      // Use the RPC function to update settings
+      const { data, error: rpcError } = await dbAdminClient.rpc('update_theme_settings', {
         p_role: setting.role,
         p_available_themes: setting.available_themes,
-        p_default_theme: setting.default_theme
+        p_default_theme: setting.default_theme,
       });
 
-      if (updateError) {
-        console.error('Error updating theme settings:', updateError);
-        return new Response(
-          JSON.stringify({ error: `Could not update settings for role ${setting.role}`, details: updateError.message }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      if (rpcError) {
+        console.error(`[update-theme-settings] Error updating theme settings for role ${setting.role}:`, rpcError);
+        return createErrorResponse(`Could not update settings for role ${setting.role}: ${rpcError.message}`, 500);
       }
+      results.push({ role: setting.role, success: true, resultData: data });
     }
-
-    // All successful
+    
     // Log successful updates to user_api_logs
-    try {
-      const loggingClient = supabaseAdminLoggingClient || supabaseClient;
-      if (loggingClient) {
-        await loggingClient.from('user_api_logs').insert({
-          user_id: userIdForLogging,
-          function_name: functionNameForLogging,
-          metadata: { 
-            ...requestBodyForLogging,
-            success: true,
-            rolesUpdated: requestData.settings.map(s => s.role)
-          },
-        });
-      }
-    } catch (logError) {
-      console.error('Failed to log successful updates to user_api_logs:', logError);
-    }
+    /*
+    await loggingClient.from('user_api_logs').insert({
+      user_id: userId,
+      function_name: 'update-theme-settings',
+      metadata: { success: true, updated_settings: validatedSettings }
+    });
+    */
 
-    return new Response(
-      JSON.stringify({ success: true, message: 'Theme settings updated successfully' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return createSuccessResponse({ message: 'Theme settings updated successfully', updated_settings: results });
 
-  } catch (err: unknown) {
-    console.error('Error in update-theme-settings function:', err);
-    
+  } catch (error) { // Verander 'err' naar 'error' als dat de bedoeling was
+    console.error("[update-theme-settings] Error in update-theme-settings:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    // const userIdFromError = userId; // userId is al beschikbaar in deze scope
+
     // Log error to user_api_logs if we have the client and user ID
-    if (supabaseClient && userIdForLogging) {
-      try {
-        const loggingClient = supabaseAdminLoggingClient || supabaseClient;
-        await loggingClient.from('user_api_logs').insert({
-          user_id: userIdForLogging,
-          function_name: functionNameForLogging,
-          metadata: { 
-            ...requestBodyForLogging,
-            success: false, 
-            error: 'A server error occurred',
-            rawErrorMessage: err instanceof Error ? err.message : String(err)
-          },
-        });
-      } catch (logError) {
-        console.error('Failed to log error to user_api_logs:', logError);
-      }
+    if (dbAdminClient && userId) { // Gebruik dbAdminClient
+      /*
+      await loggingClient.from('user_api_logs').insert({
+        user_id: userId, 
+        function_name: 'update-theme-settings',
+        metadata: { success: false, error: 'General error in update-theme-settings', rawErrorMessage: errorMessage }
+      });
+      */
+    } else if (dbAdminClient) { // Gebruik dbAdminClient
+      // Fallback logging if userId couldn't be determined from error
+      /*
+      await loggingClient.from('user_api_logs').insert({
+        user_id: null, // Explicitly null if not determinable
+        function_name: 'update-theme-settings',
+        metadata: { success: false, error: 'General error in update-theme-settings (userId undetermined)', rawErrorMessage: errorMessage }
+      });
+      */
     }
-    
-    return new Response(
-      JSON.stringify({ 
-        error: 'A server error occurred', 
-        details: err instanceof Error ? err.message : String(err) 
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return createErrorResponse(errorMessage, 500);
   }
 }); 

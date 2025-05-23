@@ -280,7 +280,7 @@ export default function TaskDetail() {
   const handleGenerateSubtasks = async () => {
     if (task) {
       try {
-        await expandTask(task.id);
+        await expandTask(task.id, task, user?.language_preference || 'en');
       } catch (error) {
         // Error handling managed by expandTask
       }

@@ -304,3 +304,6 @@ De weergave op het Google OAuth-scherm verbeteren zodat het de domeinnaam van de
 - Afhankelijk van de configuratie en het type applicatie, kan Google aanvullende verificatiestappen vereisen voor je OAuth-toestemmingsscherm, vooral als je een custom domain en logo gebruikt.
 
 **Prioriteit:** Medium (verbetering van gebruikerservaring en professionaliteit)
+
+- ❌ **[AI] Uitbreiding AI Model Task Management:**
+  - Onderzoek en implementeer de mogelijkheid voor het AI-model om meerdere taken te beheren en nieuwe taken aan te maken via chat commando's, in plaats van alleen de huidige hoofdtaak te kunnen aanpassen.

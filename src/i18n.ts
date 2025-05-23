@@ -75,7 +75,7 @@ i18n
        * This allows components to suspend while translations are loading.
        * @type {boolean}
        */
-      useSuspense: true 
+      useSuspense: false
     }
   });
 

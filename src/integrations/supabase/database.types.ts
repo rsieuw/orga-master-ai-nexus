@@ -7,22 +7,72 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
+  api_monitoring: {
     Tables: {
-      [_ in never]: never
+      query_stats: {
+        Row: {
+          calls: number | null
+          capture_time: string
+          id: number
+          max_exec_time: number | null
+          mean_exec_time: number | null
+          query_text: string | null
+          rolname: string | null
+          rows_per_call: number | null
+          stddev_exec_time: number | null
+          total_exec_time: number | null
+        }
+        Insert: {
+          calls?: number | null
+          capture_time?: string
+          id?: number
+          max_exec_time?: number | null
+          mean_exec_time?: number | null
+          query_text?: string | null
+          rolname?: string | null
+          rows_per_call?: number | null
+          stddev_exec_time?: number | null
+          total_exec_time?: number | null
+        }
+        Update: {
+          calls?: number | null
+          capture_time?: string
+          id?: number
+          max_exec_time?: number | null
+          mean_exec_time?: number | null
+          query_text?: string | null
+          rolname?: string | null
+          rows_per_call?: number | null
+          stddev_exec_time?: number | null
+          total_exec_time?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
+      capture_query_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      cleanup_old_stats: {
+        Args: { p_retention_days?: number }
+        Returns: number
+      }
+      report_top_queries: {
+        Args: { p_since?: string; p_limit?: number }
+        Returns: {
+          rolname: string
+          query_text: string
+          avg_calls: number
+          avg_total_time: number
+          avg_mean_time: number
+          max_time: number
+          avg_rows: number
+          samples: number
+        }[]
       }
     }
     Enums: {
@@ -97,6 +147,7 @@ export type Database = {
           function_name: string
           id: string
           metadata: Json | null
+          response_time_ms: number | null
           service_name: string
           task_id: string | null
           tokens_completion: number | null
@@ -110,6 +161,7 @@ export type Database = {
           function_name: string
           id?: string
           metadata?: Json | null
+          response_time_ms?: number | null
           service_name: string
           task_id?: string | null
           tokens_completion?: number | null
@@ -123,6 +175,7 @@ export type Database = {
           function_name?: string
           id?: string
           metadata?: Json | null
+          response_time_ms?: number | null
           service_name?: string
           task_id?: string | null
           tokens_completion?: number | null
@@ -455,24 +508,24 @@ export type Database = {
       }
       system_settings: {
         Row: {
+          created_at: string | null
           id: string
           setting_name: string
           setting_value: Json
-          created_at: string
           updated_at: string | null
         }
         Insert: {
+          created_at?: string | null
           id?: string
           setting_name: string
           setting_value: Json
-          created_at?: string
           updated_at?: string | null
         }
         Update: {
+          created_at?: string | null
           id?: string
           setting_name?: string
           setting_value?: Json
-          created_at?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -518,6 +571,7 @@ export type Database = {
           description: string | null
           emoji: string | null
           id: string
+          is_favorite: boolean | null
           last_viewed_at: string | null
           priority: string | null
           status: string | null
@@ -533,6 +587,7 @@ export type Database = {
           description?: string | null
           emoji?: string | null
           id?: string
+          is_favorite?: boolean | null
           last_viewed_at?: string | null
           priority?: string | null
           status?: string | null
@@ -548,6 +603,7 @@ export type Database = {
           description?: string | null
           emoji?: string | null
           id?: string
+          is_favorite?: boolean | null
           last_viewed_at?: string | null
           priority?: string | null
           status?: string | null
@@ -712,6 +768,86 @@ export type Database = {
       [_ in never]: never
     }
   }
+  realtime_monitor: {
+    Tables: {
+      requests: {
+        Row: {
+          cursor_value: number | null
+          duration_ms: number | null
+          entity: string | null
+          has_cursor: boolean | null
+          id: number
+          log_timestamp: string | null
+          result_count: number | null
+        }
+        Insert: {
+          cursor_value?: number | null
+          duration_ms?: number | null
+          entity?: string | null
+          has_cursor?: boolean | null
+          id?: number
+          log_timestamp?: string | null
+          result_count?: number | null
+        }
+        Update: {
+          cursor_value?: number | null
+          duration_ms?: number | null
+          entity?: string | null
+          has_cursor?: boolean | null
+          id?: number
+          log_timestamp?: string | null
+          result_count?: number | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      cleanup_old_logs: {
+        Args: { p_days?: number }
+        Returns: number
+      }
+      get_entity_stats: {
+        Args: { p_since?: string }
+        Returns: {
+          entity: string
+          avg_duration_ms: number
+          max_duration_ms: number
+          total_requests: number
+          avg_results: number
+        }[]
+      }
+      log_request: {
+        Args: {
+          p_entity: string
+          p_duration_ms: number
+          p_result_count: number
+          p_has_cursor: boolean
+          p_cursor_value?: number
+        }
+        Returns: undefined
+      }
+      report_slow_requests: {
+        Args: { p_threshold_ms?: number; p_limit?: number; p_since?: string }
+        Returns: {
+          log_timestamp: string
+          entity: string
+          duration_ms: number
+          result_count: number
+          has_cursor: boolean
+          cursor_value: number
+        }[]
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
 
 type DefaultSchema = Database[Extract<keyof Database, "public">]
@@ -820,7 +956,7 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
+  api_monitoring: {
     Enums: {},
   },
   public: {
@@ -837,4 +973,7 @@ export const Constants = {
       ],
     },
   },
-} as const 
+  realtime_monitor: {
+    Enums: {},
+  },
+} as const

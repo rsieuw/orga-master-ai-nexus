@@ -12,7 +12,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Import Supabase client & SupabaseClient type
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Import Supabase client
 import { corsHeaders } from "../_shared/cors.ts";
 import { OpenAI } from "https://deno.land/x/openai@v4.52.7/mod.ts";
 
@@ -58,8 +58,6 @@ Deno.serve(async (req) => {
   }
 
   let userIdForLogging: string | undefined;
-  const functionNameForLogging = 'generate-task-details';
-  let requestBodyForContext: Record<string, unknown> = {};
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -67,24 +65,12 @@ Deno.serve(async (req) => {
     { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
   );
 
-  // Admin client for logging to user_api_logs
-  let supabaseAdminLoggingClient: SupabaseClient | null = null;
-  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (supabaseServiceRoleKey) {
-    supabaseAdminLoggingClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      supabaseServiceRoleKey
-    );
-  } else {
-    console.warn("[generate-task-details] SUPABASE_SERVICE_ROLE_KEY not set. Logging to user_api_logs might be restricted by RLS.");
-  }
-
   let openaiModelUsed: string = "gpt-4o-mini"; // Default model for this function
   let promptTokens: number | undefined;
   let completionTokens: number | undefined;
   let totalTokens: number | undefined;
   let openAIError: { status?: number; message: string; body?: unknown } | null = null;
-  let generatedTaskDetailsForLogging: OpenAIResponse | null = null;
+  let parsedOpenAIResponse: OpenAIResponse | null = null;
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -110,7 +96,6 @@ Deno.serve(async (req) => {
        if (body?.languagePreference) {
          languagePreference = body.languagePreference;
        }
-       requestBodyForContext = { userInputLength: userInput?.length, languagePreference }; // For logging
        
        if (!userInput || typeof userInput !== 'string' || userInput.trim() === '') {
           throw new Error("errors.request.invalidInput");
@@ -139,7 +124,7 @@ Deno.serve(async (req) => {
          Het antwoord MOET een geldig JSON-object zijn met de sleutels "title", "description", "category" en "emoji".
          
          Voorbeelden:
-         - Voor een vergadering: { "title": "Kwartaal-vergadering voorbereiden", "description": "Maak slides en agenda voor de kwartaalvergadering van volgende week. Verzamel cijfers van alle afdelingen.", "category": "Werk/Studie", "emoji": "📊" }
+         - Voor een vergadering: { "title": "Kwartaal-vergadering voorbereiden", "description": "Maak slides en agenda voor de kwartaalvergadering van volgende week. Verzamel cijfers van alle afdelingen.", "category": "Werk/Studie", "emoji": "��" }
          - Voor een verjaardag: { "title": "Verjaardagscadeau voor mama kopen", "description": "Zoek een leuk boek of sieraad voor mama's verjaardag op 15 mei. Budget: €50.", "category": "Familie", "emoji": "🎁" }
          - Voor sporten: { "title": "Sportschoolabonnement verlengen", "description": "Bezoek de sportschool om het jaarabonnement te verlengen. Vraag naar speciale acties.", "category": "Gezondheid", "emoji": "🏋️" }`
       : `You are an assistant that helps formulate tasks. Based on the user's input:
@@ -151,9 +136,9 @@ Deno.serve(async (req) => {
          The response MUST be a valid JSON object with the keys "title", "description", "category", and "emoji".
          
          Examples:
-         - For a meeting: { "title": "Prepare quarterly meeting", "description": "Create slides and agenda for next week's quarterly meeting. Gather figures from all departments.", "category": "Werk/Studie", "emoji": "📊" }
-         - For a birthday: { "title": "Buy birthday gift for mom", "description": "Find a nice book or jewelry for mom's birthday on May 15th. Budget: €50.", "category": "Familie", "emoji": "🎁" }
-         - For exercise: { "title": "Renew gym membership", "description": "Visit the gym to renew the annual membership. Ask about special offers.", "category": "Gezondheid", "emoji": "🏋️" }`;
+         - For a meeting: { "title": "Prepare quarterly meeting", "description": "Create slides and agenda for next week's quarterly meeting. Gather figures from all departments.", "category": "Work/Study", "emoji": "📊" }
+         - For a birthday: { "title": "Buy birthday gift for mom", "description": "Find a nice book or jewelry for mom's birthday on May 15th. Budget: €50.", "category": "Family", "emoji": "🎁" }
+         - For exercise: { "title": "Renew gym membership", "description": "Visit the gym to renew the annual membership. Ask about special offers.", "category": "Health", "emoji": "🏋️" }`;
 
     const userPrompt = `User input: "${userInput}"`;
 
@@ -188,24 +173,24 @@ Deno.serve(async (req) => {
       } else {
         // Attempt to parse and validate immediately after successful OpenAI call
         try {
-          const parsedResponse = JSON.parse(aiResponse) as OpenAIResponse; // Parse first
+          const tempParsed = JSON.parse(aiResponse) as OpenAIResponse; // Parse first
           // Now validate the parsedResponse structure
       if (
-            typeof parsedResponse.title === 'string' && 
-            typeof parsedResponse.description === 'string' &&
-            typeof parsedResponse.category === 'string' &&
-            typeof parsedResponse.emoji === 'string'
+            typeof tempParsed.title === 'string' && 
+            typeof tempParsed.description === 'string' &&
+            typeof tempParsed.category === 'string' &&
+            typeof tempParsed.emoji === 'string'
       ) {
-            generatedTaskDetailsForLogging = parsedResponse; // Assign if valid
+            parsedOpenAIResponse = tempParsed; // Assign if valid
           } else {
               openAIError = { message: "errors.ai.invalidJson", body: aiResponse };
               console.error("OpenAI response JSON structure invalid:", aiResponse);
-              // generatedTaskDetailsForLogging remains null
+              // parsedOpenAIResponse remains null
       }
     } catch (e) {
           openAIError = { message: "errors.ai.processingFailed", body: aiResponse };
           console.error("Failed to parse OpenAI JSON response for logging:", aiResponse, e);
-          generatedTaskDetailsForLogging = null; // Clear if parsing failed
+          parsedOpenAIResponse = null; // Clear if parsing failed
         }
       }
     } catch (e: unknown) { // Explicitly type e as unknown
@@ -245,69 +230,23 @@ Deno.serve(async (req) => {
 
     // If OpenAI call or parsing failed, throw to be caught by the main catch block
     if (openAIError) {
-      throw new Error(openAIError.message); // This will be caught and logged as internal failure
+      const errorKey = openAIError.message.startsWith("errors.") ? openAIError.message : "errors.ai.apiCallFailed";
+      return new Response(JSON.stringify({ errorKey: errorKey, details: openAIError.body || openAIError.message }), { status: openAIError.status || 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    if (!generatedTaskDetailsForLogging) { // Should be redundant if openAIError is handled
-        throw new Error("errors.ai.noUsableAnswer"); // Fallback
+    if (!parsedOpenAIResponse) { // Should be redundant if openAIError is handled
+        const errorKey = "errors.ai.processingFailed";
+        return new Response(JSON.stringify({ errorKey: errorKey, details: "Failed to get valid structured data from AI." }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     
-    // Log internal API call SUCCESS
-    try {
-      const loggingClient = supabaseAdminLoggingClient || supabase; // Gebruik admin client indien beschikbaar
-      await loggingClient.from('user_api_logs').insert({
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { 
-          ...requestBodyForContext, 
-          success: true, 
-          generatedTitleLength: generatedTaskDetailsForLogging!.title.length // Added non-null assertion as it's checked before
-        },
-      });
-    } catch (logError) {
-      console.error('Failed to log SUCCESS to user_api_logs', logError);
-    }
-
-    // 6. Return the generated title, description, category and emoji
     return new Response(
-      JSON.stringify(generatedTaskDetailsForLogging),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify(parsedOpenAIResponse),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
 
-  } catch (error) {
-    let errorKey = "errors.internal.generateTaskDetails"; // Default fallback key
-    if (error instanceof Error) {
-      const knownKeys = [
-        "errors.request.invalidInput", 
-        "errors.ai.noUsableAnswer", 
-        "errors.ai.invalidJson", 
-        "errors.ai.processingFailed",
-        "errors.ai.apiCallFailed" // Added from OpenAI try-catch
-      ];
-      if (knownKeys.includes(error.message)) {
-        errorKey = error.message;
-      }
-    }
-    
-    // Log internal API call FAILURE
-    try {
-      const loggingClient = supabaseAdminLoggingClient || supabase; // Gebruik admin client indien beschikbaar
-      await loggingClient.from('user_api_logs').insert({
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { 
-          ...requestBodyForContext, 
-          success: false, 
-          error: errorKey, 
-          rawErrorMessage: error instanceof Error ? error.message : String(error) 
-        },
-      });
-    } catch (logError) {
-      console.error('Failed to log FAILURE to user_api_logs', logError);
-    }
-
-    return new Response(JSON.stringify({ errorKey: errorKey }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("[generate-task-details] Main catch error:", err);
+    const errorKeyForCatch = err.message.startsWith("errors.") ? err.message : "errors.internalServerError";
+    return new Response(JSON.stringify({ errorKey: errorKeyForCatch, details: err.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }});
   }
 });

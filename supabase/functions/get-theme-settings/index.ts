@@ -7,15 +7,10 @@
 
 // import { serve } from "https://deno.land/std@0.168.0/http/server.ts"; // Deno.serve is now preferred
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.41.0'; // Pinned version for stability
+import { corsHeaders } from "../_shared/cors.ts"; // Importeren als het een gedeeld bestand is
+// import { createSuccessResponse, createErrorResponse } from "../_shared/responseBuilders.ts"; // Indien gebruikt
 
-// Re-defined corsHeaders locally as it might differ or can be shared from _shared/cors.ts
-// For consistency, it's better to import if it's identical to the one in _shared/cors.ts
-// import { corsHeaders } from '../_shared/cors.ts'; // Assuming it exists and is suitable
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS'
-};
+console.log("Function get-theme-settings loading...");
 
 /**
  * @typedef {Object} ThemeSetting
@@ -35,8 +30,7 @@ const corsHeaders = {
  * @param {Request} req - The incoming HTTP request object.
  * @returns {Promise<Response>} A promise that resolves to an HTTP response object containing an array of ThemeSetting objects or an error.
  */
-Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and typed req
-  // CORS preflight request
+Deno.serve(async (req: Request) => { 
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -44,16 +38,19 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
     });
   }
 
-  // Logging variables
-  let userIdForLogging: string | undefined;
-  const functionNameForLogging = 'get-theme-settings';
-  let loggingSupabaseClient: SupabaseClient | undefined = undefined; // For logging, initialized with user context if available
-  let rpcSupabaseClient: SupabaseClient; // For the main RPC call
-  const requestIp = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip'); // Get IP for logging
-  const userAgent = req.headers.get('user-agent');
+  // Logging variabelen worden verwijderd of hieronder uitgecommentarieerd
+  // const functionNameForLogging = 'get-theme-settings';
+  // let loggingSupabaseClient: SupabaseClient | undefined = undefined; 
+  // const requestIp = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip'); 
+  // const userAgent = req.headers.get('user-agent');
+  // let supabaseAdminLoggingClient: SupabaseClient | null = null;
+  // let userIdForLogging: string | undefined;
 
-  // Admin client for logging to user_api_logs
-  let supabaseAdminLoggingClient: SupabaseClient | null = null;
+  // Client voor de RPC call
+  let rpcSupabaseClient: SupabaseClient;
+  const authHeader = req.headers.get('Authorization');
+
+  /* // Verwijder admin client creatie als niet meer nodig
   const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (supabaseServiceRoleKey) {
     supabaseAdminLoggingClient = createClient(
@@ -61,12 +58,12 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
       supabaseServiceRoleKey
     );
   } else {
-    console.warn("[get-theme-settings] SUPABASE_SERVICE_ROLE_KEY not set. Logging to user_api_logs might be restricted by RLS or done by user/anon client.");
+    console.warn("[get-theme-settings] SUPABASE_SERVICE_ROLE_KEY not set.");
   }
+  */
 
   try {
-    // Create a client for logging the calling user, if auth header is present
-    const authHeader = req.headers.get('Authorization');
+    /* // Verwijder user specifieke client creatie voor logging als niet meer nodig
     if (authHeader) {
       loggingSupabaseClient = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
@@ -78,21 +75,18 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
         userIdForLogging = user?.id;
       } catch (authError) {
         console.warn('[get-theme-settings] Error fetching user for logging:', authError);
-        // Non-critical, proceed with anonymous logging if user fetch fails
       }
     } else {
-      // If no auth header, loggingSupabaseClient remains undefined, logging will use a new anon client if needed.
-      console.warn("[get-theme-settings] No Authorization header found. Call will be logged anonymously if possible.");
+      console.warn("[get-theme-settings] No Authorization header found.");
     }
+    */
     
-    // Client for the main RPC call. Uses authHeader if present, otherwise anon key for the RPC call.
-    // This aligns with the original logic where the client for RPC was built using the request's Authorization header.
     rpcSupabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: authHeader || '' }, // Pass auth header if present
+          headers: { Authorization: authHeader || '' }, 
         },
       }
     );
@@ -102,12 +96,11 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
     );
 
     let settingsToReturn = data;
-    let logData: Record<string, unknown> = { requestIp, userAgent }; // Base log data
+    // let logData: Record<string, unknown> = { requestIp, userAgent }; // logData niet meer nodig
 
     if (rpcError) {
       console.error('[get-theme-settings] RPC error, falling back to defaults:', rpcError);
-      logData = { ...logData, success: false, rpc_error_message: rpcError.message, rpc_error_code: rpcError.code, details: 'RPC call to get_theme_settings failed, using defaults.' };
-      // Fall through to use default settings
+      // logData = { ...logData, success: false, rpc_error_message: rpcError.message, rpc_error_code: rpcError.code, details: 'RPC call to get_theme_settings failed, using defaults.' };
     }
 
     if (!settingsToReturn || (Array.isArray(settingsToReturn) && settingsToReturn.length === 0) || rpcError) {
@@ -116,19 +109,19 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
         { role: 'paid', available_themes: ['light', 'dark', 'custom-dark'], default_theme: 'custom-dark' },
         { role: 'free', available_themes: ['custom-dark'], default_theme: 'custom-dark' }
       ];
-      // Update logData if defaults are used due to no data (and no prior RPC error logged this way)
+      /* // logData niet meer nodig
       if (!rpcError) {
         logData = { ...logData, success: true, used_default_settings: true, details: 'No theme settings from RPC, returned default set.' };
       } else {
-        // If rpcError was already set, logData already reflects the failure but marks that defaults were used.
         logData.used_default_settings = true; 
       }
+      */
     } else {
-      // Successfully got settings from RPC
-      logData = { ...logData, success: true, used_default_settings: false, settings_count: settingsToReturn?.length };
+      // logData = { ...logData, success: true, used_default_settings: false, settings_count: settingsToReturn?.length };
     }
 
-    // Perform the log operation
+    // Logging naar user_api_logs hier uitgecommentarieerd
+    /*
     const actualLoggingClient = supabaseAdminLoggingClient || loggingSupabaseClient || createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '');
     try {
       await actualLoggingClient.from('user_api_logs').insert({
@@ -139,30 +132,32 @@ Deno.serve(async (req: Request) => { // Replaced std/serve with Deno.serve and t
     } catch (dbLogError) {
       console.error('[get-theme-settings] FAILED TO LOG TO user_api_logs:', dbLogError);
     }
+    */
 
     return new Response(
       JSON.stringify(settingsToReturn),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: rpcError ? 500 : 200, // Return 500 if RPC error caused fallback to defaults
+        status: rpcError ? 500 : 200, 
       }
     );
   } catch (error: unknown) {
-    // This main catch block handles errors like createClient failing or unexpected issues.
     console.error('Error fetching theme settings (main catch block):', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error fetching theme settings';
     
-    // rpcSupabaseClient is omitted from the fallback chain here as it might not be initialized if an error occurred before its assignment.
+    // Logging naar user_api_logs hier uitgecommentarieerd
+    /*
     const actualErrorLoggingClient = supabaseAdminLoggingClient || loggingSupabaseClient || createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '');
     try {
       await actualErrorLoggingClient.from('user_api_logs').insert({
-        user_id: userIdForLogging,
-        function_name: functionNameForLogging,
-        metadata: { success: false, error: 'General error in function', rawErrorMessage: errorMessage, requestIp, userAgent },
+        user_id: userIdForLogging, // userIdForLogging is niet meer beschikbaar hier
+        function_name: functionNameForLogging, // functionNameForLogging is niet meer beschikbaar hier
+        metadata: { success: false, error: 'General error in function', rawErrorMessage: errorMessage, requestIp, userAgent }, // requestIp en userAgent niet meer beschikbaar
       });
     } catch (dbLogError) {
       console.error('[get-theme-settings] FAILED TO LOG TO user_api_logs (main catch):', dbLogError);
     }
+    */
 
     const defaultErrorResponseSettings = [
         { role: 'admin', available_themes: ['light', 'dark', 'custom-dark'], default_theme: 'custom-dark' },

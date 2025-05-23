@@ -41,7 +41,7 @@ export interface Message {
   /** The content of the message. */
   content: string;
   /** The type of the message. */
-  messageType: 'standard' | 'research_result' | 'system' | 'error' | 'note_saved' | 'action_confirm' | 'saved_research_display' | 'research_loader';
+  messageType?: MessageType;
   /** The timestamp when the message was created (in milliseconds). */
   timestamp?: number;
   /** The ISO string representation of when the message was created. */
@@ -57,7 +57,7 @@ export interface Message {
   /** Indicates if the message is pinned. */
   isPinned?: boolean;
   /** The ID of the saved research associated with this message, if any. */
-  savedResearchId?: string;
+  savedResearchId?: string | null;
   /** Indicates if the message content can be saved as research. */
   canBeSaved?: boolean;
   /** The title of the subtask related to this message. */
@@ -65,9 +65,15 @@ export interface Message {
   /** The ID of the subtask related to this message. */
   subtaskId?: string | null;
   /** The prompt that generated this message, if applicable. */
-  prompt?: string | null;
+  prompt?: string;
   /** Flag to force direct display of the message, bypassing some conditions. */
   _forceDisplay?: boolean;
+  /** The mode used for research. */
+  mode?: ResearchMode;
+  /** The used AI model. */
+  model?: string;
+  /** The query entered by the user. */
+  query?: string;
 }
 
 /**
@@ -107,3 +113,6 @@ export const aiModels: AIModel[] = [
     icon: Target,
   },
 ];
+
+// Voeg ResearchMode definitie hier toe
+export type ResearchMode = 'research' | 'instruction' | 'creative';

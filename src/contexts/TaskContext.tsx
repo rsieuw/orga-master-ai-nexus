@@ -80,9 +80,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     Record<string, boolean>
   >({});
   const [lastResearchOutputs, setLastResearchOutputs] = useState<
-    Record<string, string>
+    Record<string, string | undefined>
   >({});
-  const [loadingError, setLoadingError] = useState<string | null>(null);
 
   // State to store AI generation limits from database
   const [aiGenerationLimits, setAiGenerationLimits] = useState<AiGenerationLimits>({
@@ -261,6 +260,25 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         },
         (payload) => {
           console.log("Realtime task update ontvangen:", payload.eventType);
+
+          // Log to realtime_monitor
+          const logRealtimeEvent = () => {
+            if (!user?.id) return; // Ensure user.id is available
+            try {
+              // const entityName = `tasks_user_${user.id}`;
+              // await supabase.rpc('log_request', {
+              //   p_entity: entityName,
+              //   p_duration_ms: 0, 
+              //   p_result_count: 1, 
+              //   p_has_cursor: false, 
+              //   p_cursor_value: undefined // Gebruik undefined voor optionele parameter
+              // });
+            } catch (error) {
+              console.error("Error logging realtime event to realtime_monitor:", error);
+            }
+          };
+          logRealtimeEvent();
+
           // Alleen de hele lijst opnieuw ophalen bij INSERT en DELETE
           // Bij UPDATE alleen de specifieke taak bijwerken
           if (payload.eventType === 'UPDATE') {
@@ -641,166 +659,172 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
    * @param {Task | undefined} initialTaskData - Optional initial task data to use if the task is not found in the local state.
    * @throws {Error} If the task is not found, user is not authenticated, or an API error occurs.
    */
-  const expandTask = async (taskId: string, initialTaskData?: Task) => {
-    setIsGeneratingAISubtasks(taskId);
-    setLoadingError(null);
-
-    // Try to get the task either from the provided initialTaskData or from the local state
-    const taskToExpand = initialTaskData || getTaskById(taskId);
+  const expandTask = async (taskId: string, initialTaskData?: Task, languagePreference?: string) => {
+    const taskToExpand = initialTaskData || tasks.find((t) => t.id === taskId);
 
     if (!taskToExpand) {
-      clearIsGeneratingAISubtasks(taskId);
-      // It's crucial to set an error state or throw, so UI can react
-      const errorMessage = `Task with id ${taskId} not found during expandTask.`;
-      setLoadingError(errorMessage); 
+      console.error(`[TaskContext] expandTask: Task with id ${taskId} not found.`);
       toast({
         variant: "destructive",
-        title: t("common.error"),
-        description: errorMessage,
-      });
-      throw new Error(errorMessage);
-    }
-
-    // Check AI generation limit
-    const currentGenerations = taskToExpand.aiSubtaskGenerationCount || 0;
-    const maxGenerations = getMaxAiGenerationsForUser();
-
-    if (currentGenerations >= maxGenerations) {
-      clearIsGeneratingAISubtasks(taskId);
-      toast({
-        variant: "destructive",
-        title: t("taskContext.toast.aiLimitReachedTitle"),
-        description: t("taskContext.toast.aiLimitReachedDescription", { maxGenerations }),
+        title: t("taskContext.toast.taskNotFound.title"),
+        description: t("taskContext.toast.taskNotFound.description", { taskId }),
       });
       return;
     }
 
+    if (isGeneratingSubtasksForTask(taskId)) {
+      toast({
+        title: t("taskContext.toast.alreadyGenerating.title"),
+        description: t("taskContext.toast.alreadyGenerating.description"),
+      });
+      return;
+    }
+
+    const isDeepResearch = taskToExpand.category === 'Diepgaand Onderzoek'; // Of een andere indicator
+
+    // Check AI generation limits if not deep research
+    if (!isDeepResearch && isAiGenerationLimitReached(taskToExpand)) {
+      toast({
+        variant: "destructive",
+        title: t("taskContext.toast.limitReached.title"),
+        description: t("taskContext.toast.limitReached.description", {
+          limit: getMaxAiGenerationsForUser(),
+        }),
+      });
+      return;
+    }
+
+    setIsGeneratingAISubtasks(taskId);
+
     try {
-      // Construct the payload for the Edge Function
-      // The Edge Function expects taskId, taskTitle, and languagePreference directly in the body.
-      const payload = {
-        taskId: taskToExpand.id, 
-        taskTitle: taskToExpand.title, 
-        taskDescription: taskToExpand.description, 
-        languagePreference: user?.language_preference || 'en', 
+      const functionName = isDeepResearch ? 'deep-research' : 'generate-subtasks';
+      // console.log(`[TaskContext] Invoking ${functionName} for task: ${taskToExpand.title}`);
+
+
+      const requestBody: { 
+        taskId: string; 
+        taskTitle: string; 
+        taskDescription?: string; 
+        existingSubtasks?: SubTask[];
+        languagePreference?: string; // Add languagePreference here
+      } = {
+        taskId: taskToExpand.id,
+        taskTitle: taskToExpand.title,
+        taskDescription: taskToExpand.description,
+        existingSubtasks: taskToExpand.subtasks,
       };
+
+      if (languagePreference) {
+        requestBody.languagePreference = languagePreference;
+      }
       
-      const { data: newSubtasksResponse, error: functionError } = await supabase.functions.invoke(
-        "generate-subtasks",
-        {
-          body: payload, 
+      const { data: newSubtasksData, error: invokeError } =
+        await supabase.functions.invoke<{ subtasks?: SubTask[], researchOutput?: string, error?: string }>(functionName, {
+          body: requestBody,
+        });
+
+      if (invokeError) {
+        console.error(`[TaskContext] Error invoking ${functionName}:`, invokeError);
+        throw invokeError;
+      }
+
+      if (newSubtasksData?.error) {
+        console.error(`[TaskContext] Error from ${functionName} function:`, newSubtasksData.error);
+        throw new Error(newSubtasksData.error);
+      }
+      
+      let updatedSubtasks: SubTask[] = taskToExpand.subtasks;
+
+      if (isDeepResearch && newSubtasksData?.researchOutput) {
+        // console.log("[TaskContext] Deep research output received:", newSubtasksData.researchOutput);
+        setLastResearchOutputs(prev => ({...prev, [taskId]: newSubtasksData.researchOutput}));
+        // For deep research, we might not get subtasks directly, or we might.
+        // If subtasks are also returned by deep-research, handle them:
+        if (newSubtasksData.subtasks && Array.isArray(newSubtasksData.subtasks)) {
+            const incomingSubtasks = newSubtasksData.subtasks.map((st) => ({
+              ...st,
+              id: st.id || uuidv4(), // Ensure ID exists
+              taskId: taskToExpand.id,
+              completed: st.completed || false,
+              createdAt: st.createdAt || new Date().toISOString(),
+            }));
+            updatedSubtasks = [...taskToExpand.subtasks, ...incomingSubtasks];
         }
+
+      } else if (!isDeepResearch && newSubtasksData?.subtasks && Array.isArray(newSubtasksData.subtasks)) {
+        // console.log("[TaskContext] Subtasks received from generate-subtasks:", newSubtasksData.subtasks);
+        const incomingSubtasks = newSubtasksData.subtasks.map((st) => ({
+          ...st,
+          id: st.id || uuidv4(), // Ensure ID exists
+          taskId: taskToExpand.id,
+          completed: st.completed || false,
+          createdAt: st.createdAt || new Date().toISOString(),
+        }));
+        updatedSubtasks = [...taskToExpand.subtasks, ...incomingSubtasks];
+      } else if (!isDeepResearch) {
+        // Handle case where generate-subtasks might not return subtasks as expected
+        console.warn(`[TaskContext] ${functionName} did not return expected subtasks array.`);
+      }
+
+
+      // Optimistic update for subtasks in local state
+      setTasks((prevTasks) =>
+        prevTasks.map((t) =>
+          t.id === taskId
+            ? { 
+                ...taskToExpand, // Use the taskToExpand which has the full data before this operation
+                subtasks: updatedSubtasks, 
+                // Increment count only if it was not deep research
+                aiSubtaskGenerationCount: isDeepResearch ? taskToExpand.aiSubtaskGenerationCount : (taskToExpand.aiSubtaskGenerationCount || 0) + 1,
+                updatedAt: new Date().toISOString(), 
+              }
+            : t
+        )
       );
       
-      if (functionError) {
-        toast({ 
-          variant: "destructive", 
-          title: t("taskContext.toast.aiGenerationFailed.title"),
-          description: t("taskContext.toast.aiGenerationFailed.description"),
-        });
-        clearIsGeneratingAISubtasks(taskId);
-        return;
+      // Update the database with the new subtasks and potentially incremented count
+      const dbUpdates: DbTaskUpdate = {
+        subtasks: updatedSubtasks as unknown as Json, // Cast, assuming subtasks structure is JSON compatible
+        updated_at: new Date().toISOString(),
+      };
+      if (!isDeepResearch) {
+        dbUpdates.ai_subtask_generation_count = (taskToExpand.aiSubtaskGenerationCount || 0) + 1;
       }
-      
-      const subtasksArray = Array.isArray(newSubtasksResponse) ? newSubtasksResponse : newSubtasksResponse?.subtasks;
 
-      if (subtasksArray && Array.isArray(subtasksArray)) {
-        const aiGeneratedSubtasks: SubTask[] = subtasksArray.map(
-          (item: { title: string; description: string }) => ({
-            id: uuidv4(),
-            taskId,
-            title: item.title,
-            description: item.description, // Ensure description is handled, even if undefined from API
-            completed: false,
-            createdAt: new Date().toISOString(),
-          })
-        );
-        
-        const updatedSubtasks = [...(taskToExpand.subtasks || []), ...aiGeneratedSubtasks];
-        
-        const uniqueSubtasks: SubTask[] = [];
-        const seenTitles = new Set();
-        
-        for (const subtask of updatedSubtasks) {
-          const normalizedTitle = subtask.title.toLowerCase().trim();
-          if (!seenTitles.has(normalizedTitle)) {
-            seenTitles.add(normalizedTitle);
-            uniqueSubtasks.push(subtask);
-          }
-        }
-        
-        // We already have taskToExpand, which is the most up-to-date version
-        // of the task, especially if it was just created and passed as initialTaskData.
-        
-        const updatedTaskForUI: Task = {
-          ...taskToExpand,
-          subtasks: uniqueSubtasks,
-          aiSubtaskGenerationCount: (taskToExpand.aiSubtaskGenerationCount || 0) + 1,
-          updatedAt: new Date().toISOString(),
-        };
+      const { error: updateError } = await supabase
+        .from("tasks")
+        .update(dbUpdates)
+        .eq(column("id"), taskId);
 
-        // Update local state first for responsiveness
-        setTasks((prevTasks) =>
-          prevTasks.map((t) => (t.id === taskId ? updatedTaskForUI : t))
-        );
-        
-        // Now update the database
-        try {
-          const dbUpdates = mapTaskToDbUpdate({
-            subtasks: uniqueSubtasks,
-            aiSubtaskGenerationCount: updatedTaskForUI.aiSubtaskGenerationCount,
-          });
-          
-          const { error: dbError } = await supabase
-            .from("tasks")
-            .update(castTaskUpdate(dbUpdates))
-            .eq(column('id'), taskId);
-
-          if (dbError) {
-            setTasks((prevTasks) => 
-              prevTasks.map((t) => (t.id === taskId ? taskToExpand : t)) 
-            );
-            toast({
-              variant: "destructive",
-              title: t("common.error"),
-              description: t("taskContext.toast.updateTaskFailedSimple"),
-            });
-            throw dbError;
-          }
-
-          toast({ 
-            title: t("taskContext.toast.aiGenerationSuccess.title"),
-            description: t("taskContext.toast.aiGenerationSuccess.description", {
-              count: aiGeneratedSubtasks.length,
-            }),
-          });
-
-        } catch (exception) {
-           setTasks((prevTasks) => 
-              prevTasks.map((t) => (t.id === taskId ? taskToExpand : t)) 
-           );
-          toast({
-            variant: "destructive",
-            title: t("common.error"),
-            description: t("taskContext.toast.updateTaskFailedGeneral"),
-          });
-          throw exception; 
-        }
-        
-      } else {
-        toast({ 
-          variant: "destructive", 
-          title: t("taskContext.toast.aiGenerationFailed.title"),
-          description: t(
-            "taskContext.toast.aiGenerationFailed.invalidResponse"
-          ),
+      if (updateError) {
+        console.error("[TaskContext] Error updating task with new subtasks in DB:", updateError);
+        // Potentially revert optimistic update or notify user
+        toast({
+          variant: "destructive",
+          title: t("taskContext.toast.subtaskUpdateError.title"),
+          description: t("taskContext.toast.subtaskUpdateError.description"),
         });
+      } else {
+        // console.log("[TaskContext] Task updated successfully in DB with new subtasks/research.");
+        if (!isDeepResearch) {
+          toast({
+            title: t("taskContext.toast.subtasksGenerated.title"),
+            description: t("taskContext.toast.subtasksGenerated.description"),
+          });
+        } else {
+           toast({
+            title: t("taskContext.toast.researchCompleted.title"),
+            description: t("taskContext.toast.researchCompleted.description"),
+          });
+        }
       }
     } catch (error) {
-      toast({ 
-        variant: "destructive", 
-        title: t("taskContext.toast.aiGenerationFailed.title"),
-        description: t("taskContext.toast.aiGenerationFailed.description"),
+      console.error("[TaskContext] General error in expandTask:", error);
+      const errorMessage = error instanceof Error ? error.message : t("taskContext.toast.subtaskGenerationFailed.default");
+      toast({
+        variant: "destructive",
+        title: t("taskContext.toast.subtaskGenerationFailed.title"),
+        description: errorMessage,
       });
     } finally {
       clearIsGeneratingAISubtasks(taskId);
@@ -1046,10 +1070,61 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setLastResearchOutput,
     getLastResearchOutput,
     promoteSubtaskToTask,
-    loadingError,
   };
 
   return (
     <TaskContext.Provider value={contextValue}>{children}</TaskContext.Provider>
   );
+}
+
+export interface TaskContextType {
+  tasks: Task[];
+  isLoading: boolean;
+  addTask: (
+    task: Omit<
+      Task,
+      | "id"
+      | "createdAt"
+      | "updatedAt"
+      | "subtasks"
+      | "userId"
+      | "aiSubtaskGenerationCount"
+      | "isNew"
+    > & {
+      category?: string | null | undefined;
+      emoji?: string | null | undefined;
+    }
+  ) => Promise<Task | undefined>;
+  updateTask: (
+    id: string,
+    updates: Partial<Omit<Task, "id" | "createdAt" | "updatedAt" | "userId">>
+  ) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+  getTaskById: (id: string) => Task | undefined;
+  addSubtask: (
+    taskId: string,
+    subtaskTitle: string,
+    subtaskDescription?: string
+  ) => Promise<void>;
+  updateSubtask: (
+    taskId: string,
+    subtaskId: string,
+    updates: Partial<Omit<SubTask, "id" | "taskId" | "createdAt">>
+  ) => Promise<void>;
+  deleteSubtask: (taskId: string, subtaskId: string) => Promise<void>;
+  deleteAllSubtasks: (taskId: string) => Promise<void>;
+  toggleTaskCompletion: (taskId: string, completed: boolean) => Promise<void>;
+  expandTask: (taskId: string, initialTaskData?: Task, languagePreference?: string) => Promise<void>;
+  isGeneratingSubtasksForTask: (taskId: string) => boolean;
+  groupTasksByDate: () => TasksByDate;
+  getMaxAiGenerationsForUser: () => number;
+  isAiGenerationLimitReached: (task: Task) => boolean;
+  markTaskAsViewed: (id: string) => void; // Should be Promise<void> if it becomes async
+  toggleFavorite: (taskId: string) => Promise<void>;
+  setLastResearchOutput: (taskId: string, researchText: string) => void;
+  getLastResearchOutput: (taskId: string) => string | undefined;
+  promoteSubtaskToTask: (
+    parentTaskId: string,
+    subtaskId: string
+  ) => Promise<Task | undefined>;
 }
