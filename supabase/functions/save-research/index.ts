@@ -6,7 +6,7 @@
  */
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { corsHeaders } from "../_shared/cors.ts";
 
 /**
@@ -46,17 +46,6 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
   );
-
-  let supabaseAdminLoggingClient: SupabaseClient | null = null;
-  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (supabaseServiceRoleKey) {
-    supabaseAdminLoggingClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      supabaseServiceRoleKey
-    );
-  } else {
-    console.warn("[save-research] SUPABASE_SERVICE_ROLE_KEY not set. Logging might be restricted.");
-  }
 
   try {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
