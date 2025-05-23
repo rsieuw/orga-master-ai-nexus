@@ -60,14 +60,14 @@ Watch our demo video: [YouTube Demo](https://youtu.be/mS93cufmZpY)
 
 ### Screenshots
 
-#### Desktop Weergave
+#### Desktop View
 ![Dashboard](docs/gallery/dashboard.jpg)
-![Taakdetails met Chat](docs/gallery/taskdetail-chat.jpg)
+![Task Details with Chat](docs/gallery/taskdetail-chat.jpg)
 
-#### Mobiele Weergave
-![Dashboard Mobiel](docs/gallery/dashboard_mobile.jpg)
-![Chat Mobiel](docs/gallery/chat_mobile.jpg)
-![Taakdetails Mobiel](docs/gallery/taskdetail_mobile.jpg)
+#### Mobile View
+![Dashboard Mobile](docs/gallery/dashboard_mobile.jpg)
+![Chat Mobile](docs/gallery/chat_mobile.jpg)
+![Task Details Mobile](docs/gallery/taskdetail_mobile.jpg)
 
 ## Getting Started
 
@@ -211,11 +211,11 @@ This project is proprietary software. All rights reserved.
 
 Project Link: [https://github.com/rsieuw/orga-master-ai-nexus](https://github.com/rsieuw/orga-master-ai-nexus)
 
-## Demo Toegang
+## Demo Access
 
-Voor demonstratie doeleinden kun je inloggen met de volgende gegevens:
+For demonstration purposes, you can log in using the following credentials:
 
-- **E-mail:** demo@exampl.com
-- **Wachtwoord:** demo2025
+- **Email:** demo@example.com
+- **Password:** demo2025
 
-Deze demo account heeft beperkte rechten en is bedoeld om de basis functionaliteiten van de applicatie te verkennen.
+This demo account has limited permissions and is intended to explore the basic functionalities of the application.
