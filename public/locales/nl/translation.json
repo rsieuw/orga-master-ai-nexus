@@ -662,25 +662,24 @@
     "builtWith": "Gebouwd met",
     "by": "door",
     "links": {
-      "support": "Ondersteuning",
-      "contact": "Contact"
+      "support": "Support"
     }
   },
-  "contactPage": {
-    "title": "Neem contact op",
-    "description": "Heb je een vraag, suggestie of heb je een bug gevonden? Laat het ons weten!",
+  "supportPage": {
+    "title": "Contact & Support",
+    "description": "Heb je een vraag, suggestie of een bug gevonden? Laat het ons weten! Voor overige supportinformatie, zie hieronder.",
     "backButton": "Terug",
     "subjectLabel": "Onderwerp",
-    "subjectPlaceholder": "Selecteer een onderwerp...",
+    "subjectPlaceholder": "Kies een onderwerp...",
     "subjectOptions": {
       "suggestion": "Suggestie / Idee",
-      "bugReport": "Bug rapport",
-      "generalQuestion": "Algemene vraag",
+      "bugReport": "Bugrapport",
+      "generalQuestion": "Algemene Vraag",
       "other": "Anders"
     },
     "messageLabel": "Bericht",
     "messagePlaceholder": "Beschrijf je vraag, suggestie of bug zo duidelijk mogelijk...",
-    "sendButton": "Versturen",
+    "sendButton": "Verstuur",
     "sendingButton": "Versturen...",
     "toast": {
       "notLoggedIn": {
@@ -689,28 +688,23 @@
       },
       "subjectRequired": {
         "title": "Onderwerp vereist",
-        "description": "Selecteer a.u.b. een onderwerp."
+        "description": "Kies een onderwerp."
       },
       "messageRequired": {
         "title": "Bericht vereist",
-        "description": "Voer a.u.b. een bericht in."
+        "description": "Voer een bericht in."
       },
       "messageSent": {
-        "title": "Bericht verzonden",
-        "description": "Bedankt voor je feedback! We zullen het zo snel mogelijk bekijken."
+        "title": "Bericht Verstuurd",
+        "description": "Bedankt voor je feedback! We kijken er zo snel mogelijk naar."
       },
       "sendFailed": {
-        "title": "Verzenden mislukt",
-        "defaultError": "Kon het bericht niet verzenden. Probeer het later nog eens."
+        "title": "Versturen Mislukt",
+        "defaultError": "Kon het bericht niet versturen. Probeer het later opnieuw."
       }
-    }
-  },
-  "supportPage": {
-    "mainTitle": "Ondersteuning",
-    "cardTitle": "Hulp nodig?",
-    "paragraph1": "Heb je vragen of ervaar je problemen met OrgaMaster AI? Neem contact op met ons ondersteuningsteam.",
-    "paragraph2a": "Je kunt ons bereiken via e-mail op:",
-    "paragraph3": "We streven ernaar je vragen zo snel mogelijk te beantwoorden."
+    },
+    "additionalInfoTitle": "Aanvullende Informatie",
+    "additionalInfoPlaceholder": "Meer supportinformatie is hier binnenkort beschikbaar."
   },
   "dashboard": {
     "greeting": "Hallo, {{name}}!",
@@ -963,7 +957,21 @@
     "medium": "Gemiddeld",
     "low": "Laag",
     "unlimited": "onbeperkt",
-    "guest": "Gast"
+    "guest": "Gast",
+    "save": "Opslaan",
+    "remove": "Verwijderen",
+    "retry": "Opnieuw proberen",
+    "status": "Status",
+    "priority": "Prioriteit",
+    "deadline": "Deadline",
+    "category": "Categorie",
+    "description": "Beschrijving",
+    "title": "Titel",
+    "actions": "Acties",
+    "previous": "Vorige",
+    "next": "Volgende",
+    "page": "Pagina",
+    "of": "van"
   },
   "pageTitles": {
     "home": "Home",

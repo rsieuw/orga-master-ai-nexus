@@ -20,8 +20,7 @@ import TaskForm from "./pages/TaskForm.tsx";
 import Settings from "./pages/Settings.tsx";
 import Profile from "./pages/Profile.tsx";
 import NotFound from "./pages/NotFound.tsx";
-import SupportPage from "./pages/Support.tsx";
-import ContactPage from "./pages/ContactPage.tsx";
+import SupportPage from "./pages/SupportPage.tsx";
 import PricingPage from "./pages/Pricing.tsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.tsx";
 import UpdatePasswordPage from "./pages/UpdatePasswordPage.tsx";
@@ -92,7 +91,6 @@ const AppContent = () => {
             <Route path="/settings" element={<Settings />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/support" element={<SupportPage />} />
-            <Route path="/contact" element={<ContactPage />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/typed-greeting-test" element={<TypedGreetingTest />} />
             

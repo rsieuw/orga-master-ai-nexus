@@ -21,6 +21,7 @@ import CostDistributionChart from '@/components/admin/api-usage/CostDistribution
 import TokenUsageByFunctionChart from '@/components/admin/api-usage/TokenUsageByFunctionChart.tsx';
 import { Tooltip } from '@/components/ui/tooltip.tsx';
 import AvgResponseTimeChart, { AggregatedExternalServiceUsage } from '@/components/admin/api-usage/AvgResponseTimeChart.tsx';
+import { Button } from "@/components/ui/button.tsx";
 
 export type ExternalApiUsageLog = Database['public']['Tables']['external_api_usage_logs']['Row'];
 
@@ -71,6 +72,9 @@ const AdminExternalApiUsagePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const currentLocale = i18n.language === 'nl' ? nl : enUS;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25); // Default items per page
+  const [totalItems, setTotalItems] = useState(0);
 
   /**
    * @function fetchUsers
@@ -102,7 +106,7 @@ const AdminExternalApiUsagePage: React.FC = () => {
    * It then maps this data with fetched user profiles to create displayable entries.
    * It only proceeds if user data has been fetched (or attempted).
    */
-  const fetchExternalApiLogs = useCallback(async () => {
+  const fetchExternalApiLogs = useCallback(async (page = 1, limit = itemsPerPage) => {
     if (!usersFetched) return;
 
     setIsLoading(true);
@@ -111,9 +115,9 @@ const AdminExternalApiUsagePage: React.FC = () => {
     setAggregatedExternalLogs([]);
 
     try {
-      const { data: usageStatsData, error: usageStatsError } = await supabase.functions.invoke(
+      const { data: usageStatsData, error: usageStatsError, count } = await supabase.functions.invoke(
         'get-api-usage-stats',
-        { body: { limit: 1000 } }
+        { body: { page, limit, fetchExternalRaw: true } } // Pass page and limit, and flag to fetch external raw
       );
       console.log('Response from get-api-usage-stats (External Page):', JSON.stringify(usageStatsData, null, 2));
 
@@ -121,6 +125,8 @@ const AdminExternalApiUsagePage: React.FC = () => {
 
       if (usageStatsData) {
         const rawLogs: ExternalApiUsageLog[] = usageStatsData.externalApiUsage || [];
+        // Assuming the count is returned for the externalApiUsage query specifically
+        setTotalItems(usageStatsData.externalApiUsageCount || 0); 
         const aggregatedLogsData: AggregatedExternalServiceUsage[] = usageStatsData.aggregatedExternalUsage || [];
         
         let currentError: string | null = null;
@@ -169,7 +175,7 @@ const AdminExternalApiUsagePage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [t, toast, users, usersFetched]);
+  }, [t, toast, users, usersFetched, itemsPerPage]);
 
   useEffect(() => {
     if (!usersFetched) {
@@ -179,9 +185,9 @@ const AdminExternalApiUsagePage: React.FC = () => {
 
   useEffect(() => {
     if (usersFetched) {
-      fetchExternalApiLogs();
+      fetchExternalApiLogs(currentPage, itemsPerPage);
     }
-  }, [usersFetched, fetchExternalApiLogs]);
+  }, [usersFetched, fetchExternalApiLogs, currentPage, itemsPerPage]);
 
   // Transformations for chart data
   const popularFunctionsChartInput = aggregatedExternalLogs.map(aggLog => ({
@@ -201,6 +207,16 @@ const AdminExternalApiUsagePage: React.FC = () => {
   //   total_tokens_completion: log.total_tokens_completion,
   //   total_tokens_total: log.total_tokens_total,
   // }));
+
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
 
   return (
     <div className="">
@@ -303,6 +319,31 @@ const AdminExternalApiUsagePage: React.FC = () => {
           )}
         </TableBody>
       </Table>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1}
+          >
+            {t('common.previous')}
+          </Button>
+          <span className="text-sm">
+            {t('common.page')} {currentPage} {t('common.of')} {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages}
+          >
+            {t('common.next')}
+          </Button>
+        </div>
+      )}
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 mb-8">

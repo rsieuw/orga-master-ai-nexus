@@ -8,52 +8,44 @@ import { Button } from '@/components/ui/button.tsx';
 import { useToast } from '@/hooks/use-toast.ts';
 import { useAuth } from '@/hooks/useAuth.ts';
 import { supabase } from '@/integrations/supabase/client.ts';
-import { Loader2, ArrowLeft } from 'lucide-react'; // Import ArrowLeft icon
-import { useNavigate } from 'react-router-dom'; // Initialize useNavigate hook
+import { Loader2, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 /**
- * `ContactPage` provides a form for users to send feedback, suggestions, or report issues.
+ * `SupportPage` provides a form for users to send feedback, suggestions, or report issues.
  * It requires the user to be authenticated. The form includes fields for subject and message.
  * On submission, it sends the data to the 'feedback' table in Supabase.
  * It displays loading states and provides toast notifications for success or failure.
  * Includes a back button for navigation.
  */
-const ContactPage: React.FC = () => {
+const SupportPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate(); // Initialize useNavigate hook
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const [subject, setSubject] = useState<string>('');
   const [message, setMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  /**
-   * Handles the submission of the contact/feedback form.
-   * Prevents default form submission and validates user authentication, subject, and message.
-   * If valid, it inserts the feedback into the Supabase 'feedback' table.
-   * Shows appropriate toast notifications for success or errors.
-   * Resets the form on successful submission.
-   * @param {React.FormEvent<HTMLFormElement>} event - The form submission event.
-   */
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!user) {
       toast({
         variant: "destructive",
-        title: t('contactPage.toast.notLoggedIn.title'),
-        description: t('contactPage.toast.notLoggedIn.description'),
+        title: t('supportPage.toast.notLoggedIn.title'),
+        description: t('supportPage.toast.notLoggedIn.description'),
       });
       return;
     }
 
     if (!subject) {
-       toast({ variant: "destructive", title: t('contactPage.toast.subjectRequired.title'), description: t('contactPage.toast.subjectRequired.description') });
+       toast({ variant: "destructive", title: t('supportPage.toast.subjectRequired.title'), description: t('supportPage.toast.subjectRequired.description') });
        return;
     }
     if (!message.trim()) {
-       toast({ variant: "destructive", title: t('contactPage.toast.messageRequired.title'), description: t('contactPage.toast.messageRequired.description') });
+       toast({ variant: "destructive", title: t('supportPage.toast.messageRequired.title'), description: t('supportPage.toast.messageRequired.description') });
        return;
     }
 
@@ -64,7 +56,7 @@ const ContactPage: React.FC = () => {
         .from('feedback')
         .insert({
           user_id: user.id,
-          user_email: user.email, // Store email for context
+          user_email: user.email,
           subject: subject,
           message: message.trim(),
         });
@@ -74,20 +66,18 @@ const ContactPage: React.FC = () => {
       }
 
       toast({
-        title: t('contactPage.toast.messageSent.title'),
-        description: t('contactPage.toast.messageSent.description'),
+        title: t('supportPage.toast.messageSent.title'),
+        description: t('supportPage.toast.messageSent.description'),
       });
-      // Reset form
       setSubject('');
       setMessage('');
 
     } catch (error: unknown) {
       console.error("Error sending feedback:", error);
-      // Type check for error message
-      const errorMessage = error instanceof Error ? error.message : t('contactPage.toast.sendFailed.defaultError');
+      const errorMessage = error instanceof Error ? error.message : t('supportPage.toast.sendFailed.defaultError');
       toast({
         variant: "destructive",
-        title: t('contactPage.toast.sendFailed.title'),
+        title: t('supportPage.toast.sendFailed.title'),
         description: errorMessage,
       });
     } finally {
@@ -97,53 +87,50 @@ const ContactPage: React.FC = () => {
 
   return (
     <AppLayout>
-      {/* Wrapper for vertical centering */}
       <div className="flex flex-grow flex-col items-center justify-center">
-        {/* Container for the card and back button */}
         <div className="w-full max-w-2xl px-4">
-           {/* Back button */}
            <div className="mb-4">
              <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                {t('contactPage.backButton')}
+                {t('supportPage.backButton')} 
               </Button>
            </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>{t('contactPage.title')}</CardTitle>
+              <CardTitle>{t('supportPage.title')}</CardTitle> 
               <CardDescription>
-                {t('contactPage.description')}
+                {t('supportPage.description')}
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="subject">{t('contactPage.subjectLabel')}</Label>
+                  <Label htmlFor="subject">{t('supportPage.subjectLabel')}</Label>
                    <Select 
                      value={subject} 
                      onValueChange={setSubject}
-                     required // HTML5 validation
+                     required
                    >
                      <SelectTrigger id="subject">
-                       <SelectValue placeholder={t('contactPage.subjectPlaceholder')} />
+                       <SelectValue placeholder={t('supportPage.subjectPlaceholder')} />
                      </SelectTrigger>
                      <SelectContent>
-                       <SelectItem value="suggestie">{t('contactPage.subjectOptions.suggestion')}</SelectItem>
-                       <SelectItem value="bug">{t('contactPage.subjectOptions.bugReport')}</SelectItem>
-                       <SelectItem value="vraag">{t('contactPage.subjectOptions.generalQuestion')}</SelectItem>
-                       <SelectItem value="anders">{t('contactPage.subjectOptions.other')}</SelectItem>
+                       <SelectItem value="suggestie">{t('supportPage.subjectOptions.suggestion')}</SelectItem>
+                       <SelectItem value="bug">{t('supportPage.subjectOptions.bugReport')}</SelectItem>
+                       <SelectItem value="vraag">{t('supportPage.subjectOptions.generalQuestion')}</SelectItem>
+                       <SelectItem value="anders">{t('supportPage.subjectOptions.other')}</SelectItem>
                      </SelectContent>
                    </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="message">{t('contactPage.messageLabel')}</Label>
+                  <Label htmlFor="message">{t('supportPage.messageLabel')}</Label>
                   <Textarea
                     id="message"
-                    placeholder={t('contactPage.messagePlaceholder')}
+                    placeholder={t('supportPage.messagePlaceholder')}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    required // HTML5 validation
+                    required
                     rows={6}
                   />
                 </div>
@@ -155,7 +142,7 @@ const ContactPage: React.FC = () => {
                   className="w-full bg-gradient-to-r from-blue-700 to-purple-800 hover:from-blue-800 hover:to-purple-900 text-white"
                 >
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {isLoading ? t('contactPage.sendingButton') : t('contactPage.sendButton')}
+                  {isLoading ? t('supportPage.sendingButton') : t('supportPage.sendButton')}
                 </Button>
               </CardFooter>
             </form>
@@ -166,4 +153,4 @@ const ContactPage: React.FC = () => {
   );
 };
 
-export default ContactPage; 
+export default SupportPage; 

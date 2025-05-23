@@ -125,14 +125,12 @@
 - ✅ **[FEATURE] Upgrade Optie:**
   - ✅ **[NIEUW]** Implementeer de mogelijkheid voor gebruikers om te upgraden naar een betaald plan (UI: Prijspagina, knop in profiel).
   - ❌ **[NIEUW]** Backend integratie (Stripe, etc.).
-- ❌ **[FEATURE] Emoticons in Chat:**
-  - ❌ **[NIEUW]** Voeg ondersteuning toe voor het invoegen en weergeven van emoticons in het chatvenster.
 - ❌ **[PERF] Optimalisaties:**
   - Analyseer bundle size en laadtijden. Voer performance profiling uit.
 - ❌ **[DOCS] Documentatie:**
   - ✅ Voeg JSDoc toe aan componenten en functies. Breid README.md uit.
   - ❌ **[NIEUW]** Vul de inhoud van de Support en Documentatie pagina's aan.
-  - ❌ **[NIEUW]** Maak een 3-minuten YouTube handleiding/demo video voor de Perplexity Hackathon.
+  - ✅ **[NIEUW]** Maak een 3-minuten YouTube handleiding/demo video voor de Perplexity Hackathon.
 - ❌ **[STATE] State Management Evaluatie:**
   - Evalueer of een specifiekere state management library nodig is naarmate de applicatie groeit.
 

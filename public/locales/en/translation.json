@@ -542,13 +542,12 @@
     "builtWith": "Built with",
     "by": "by",
     "links": {
-      "support": "Support",
-      "contact": "Contact"
+      "support": "Support"
     }
   },
-  "contactPage": {
-    "title": "Contact Us",
-    "description": "Have a question, suggestion, or found a bug? Let us know!",
+  "supportPage": {
+    "title": "Contact Us & Support",
+    "description": "Have a question, suggestion, or found a bug? Let us know! For other support information, see below.",
     "backButton": "Back",
     "subjectLabel": "Subject",
     "subjectPlaceholder": "Select a subject...",
@@ -583,14 +582,9 @@
         "title": "Send Failed",
         "defaultError": "Could not send the message. Please try again later."
       }
-    }
-  },
-  "supportPage": {
-    "mainTitle": "Support",
-    "cardTitle": "Need Help?",
-    "paragraph1": "Do you have questions or are you experiencing problems with OrgaMaster AI? Contact our support team.",
-    "paragraph2a": "You can reach us via email at:",
-    "paragraph3": "We strive to answer your questions as quickly as possible."
+    },
+    "additionalInfoTitle": "Additional Information",
+    "additionalInfoPlaceholder": "More support information will be available here soon."
   },
   "dashboard": {
     "greeting": "Hello, {{name}}",

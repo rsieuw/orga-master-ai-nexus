@@ -8,6 +8,10 @@ import {
   createErrorResponse
 } from "../_shared/imports.ts";
 
+// Added import for ExternalApiUsageLog type
+import type { Database } from "../_shared/database.types.ts";
+export type ExternalApiUsageLog = Database['public']['Tables']['external_api_usage_logs']['Row'];
+
 /**
  * FORCE REDEPLOY WITH IMPROVED IMPORTS - TIMESTAMP: 2024-09-21
  * @interface RequestPayload
@@ -20,6 +24,7 @@ import {
  * @property {Array<'user' | 'function' | 'service' | 'day' | 'week' | 'month'>} [groupBy] - Fields to group the results by (implementation pending).
  * @property {number} [limit] - The maximum number of items to return per page.
  * @property {number} [page] - The page number for pagination.
+ * @property {boolean} [fetchExternalRaw] - Added to specifically request raw external logs with pagination
  */
 interface RequestPayload {
   startDate?: string; // ISO 8601 date string
@@ -30,6 +35,7 @@ interface RequestPayload {
   groupBy?: Array<'user' | 'function' | 'service' | 'day' | 'week' | 'month'>;
   limit?: number;
   page?: number;
+  fetchExternalRaw?: boolean; // Added to specifically request raw external logs with pagination
 }
 
 /**
@@ -59,10 +65,12 @@ interface AggregatedInternalApiUsage {
  * @property {number} pagination.currentPage - The current page number.
  * @property {number} pagination.totalPages - The total number of pages.
  * @property {number} pagination.totalItems - The total number of items across all pages.
+ * @property {number} [externalApiUsageCount] - Added to return the total count for pagination
  */
 interface UsageStatsResponse {
   internalApiUsage?: unknown[]; // To be defined based on aggregations
   externalApiUsage?: unknown[]; // To be defined based on aggregations
+  externalApiUsageCount?: number; // Added to return the total count for pagination
   aggregatedInternalUsage?: AggregatedInternalApiUsage[]; // Nieuw veld
   aggregatedExternalUsage?: AggregatedExternalServiceUsage[]; // New property for aggregated data
   summary?: {
@@ -157,7 +165,8 @@ serve(async (req: Request) => {
         serviceName: filterServiceName,
         // groupBy, // Implementation of groupBy is complex and will be added later
         limit = 25,
-        page = 1
+        page = 1,
+        fetchExternalRaw = false // Destructure the new flag
     } = payload;
     const offset = (page - 1) * limit;
 
@@ -250,26 +259,49 @@ serve(async (req: Request) => {
     }
 
     // 4. Fetch data from external_api_usage_logs
-    let externalApiQuery = supabaseAdmin
-      .from("external_api_usage_logs")
-      .select("*", { count: "exact" })
-      .order("called_at", { ascending: false })
-      .range(offset, offset + limit -1);
+    let externalLogs: ExternalApiUsageLog[] = [];
+    let externalCount: number | null = 0;
 
-    // if (startDate) externalApiQuery = externalApiQuery.gte("timestamp", startDate); // Temporarily removed
-    // if (endDate) externalApiQuery = externalApiQuery.lte("timestamp", endDate);     // Temporarily removed
-    if (filterUserId) externalApiQuery = externalApiQuery.eq("user_id", filterUserId);
-    if (filterServiceName) externalApiQuery = externalApiQuery.eq("service_name", filterServiceName);
-    // Add more filters here
+    if (fetchExternalRaw) {
+      let externalApiQuery = supabaseAdmin
+        .from("external_api_usage_logs")
+        .select("*", { count: "exact" }) // Fetch count for pagination
+        .order("called_at", { ascending: false })
+        .range(offset, offset + limit - 1);
 
-    const { data: externalLogs, error: externalError, count: externalCount } = await externalApiQuery;
+      if (_startDate) externalApiQuery = externalApiQuery.gte("called_at", _startDate);
+      if (_endDate) externalApiQuery = externalApiQuery.lte("called_at", _endDate);
+      if (filterUserId) externalApiQuery = externalApiQuery.eq("user_id", filterUserId);
+      if (filterServiceName) externalApiQuery = externalApiQuery.eq("service_name", filterServiceName);
+      
+      const { data: fetchedExternalLogs, error: externalError, count: fetchedExternalCount } = await externalApiQuery;
 
-    if (externalError) {
-      console.error("Error fetching external API logs:", externalError);
-      throw externalError;
+      if (externalError) {
+        console.error("Error fetching external API logs:", externalError);
+        throw externalError;
+      }
+      externalLogs = fetchedExternalLogs || [];
+      externalCount = fetchedExternalCount;
+    } else {
+      // If not fetching raw, perhaps fetch all for aggregation (current behavior for charts)
+      // This part might need adjustment based on whether charts should also be paginated or show all data.
+      // For now, keeping the existing logic for fetching all external logs for aggregation if fetchExternalRaw is false.
+       const { data: allExternalLogsForAgg, error: externalAggError } = await supabaseAdmin
+        .from('external_api_usage_logs')
+        .select('*') 
+        .order('called_at', { ascending: false })
+        .limit(10000); // High limit for aggregation data
+
+      if (externalAggError) {
+        console.error("Error fetching all external API logs for aggregation:", externalAggError);
+        throw externalAggError;
+      }
+      externalLogs = allExternalLogsForAgg || [];
+      // externalCount might not be relevant here, or set to externalLogs.length if needed.
+      // For now, it's primarily for the paginated raw logs.
     }
 
-    // 6. Aggregate external API usage for average response times
+    // 5. Aggregate external API usage for charts (using externalLogs which could be all or paginated based on fetchExternalRaw)
     const aggregatedExternal: Record<string, {
         sum_response_time_ms: number;
         response_time_log_count: number; // Renamed from 'count' for clarity
@@ -332,7 +364,8 @@ serve(async (req: Request) => {
           currentPage: page,
           totalPages: Math.ceil((internalCount || 0) / limit), // Example for internal logs
           totalItems: internalCount || 0
-      }
+      },
+      externalApiUsageCount: externalCount === null ? undefined : externalCount // Pass count for external logs pagination
     };
 
     return createSuccessResponse(response);

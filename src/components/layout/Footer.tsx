@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { HelpCircle, Mail } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
@@ -32,13 +32,6 @@ export default function Footer() {
           >
             <HelpCircle className="h-4 w-4" />
             <span>{t('footer.links.support')}</span>
-          </Link>
-          <Link 
-            to="/contact"
-            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-          >
-            <Mail className="h-4 w-4" />
-            <span>{t('footer.links.contact')}</span>
           </Link>
         </nav>
       </div>
