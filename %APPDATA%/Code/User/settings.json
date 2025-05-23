@@ -1,9 +1,0 @@
-{
-    "github.copilot.advanced": {
-        "authProvider": "github"
-    },
-    "github.copilot.chat.codesearch.enabled": true,
-    "github.copilot.chat.newWorkspaceCreation.enabled": true,
-    "php.validate.executablePath": "C:\\php\\php.exe",
-    "powershell.powerShellExePath": "D:\\WindowsApps\\Microsoft.PowerShell_7.5.1.0_x64__8wekyb3d8bbwe\\pwsh.exe"
-} 

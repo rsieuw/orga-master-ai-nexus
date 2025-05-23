@@ -132,6 +132,9 @@ __snapshots__/
 # Downloaded tools
 /assets/supabase_windows_amd64*
 
+# Explicitly ignore the mistakenly committed AppData path
+%APPDATA%/
+
 # User-specific application data (if copied into the project)
 # This will ignore any directory named AppData, appdata, etc., at any level within the project.
 # Note: This does NOT affect the system-wide %APPDATA% directory outside the project.
