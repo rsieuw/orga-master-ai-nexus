@@ -205,3 +205,12 @@ This project is proprietary software. All rights reserved.
 ## Contact
 
 Project Link: [https://github.com/rsieuw/orga-master-ai-nexus](https://github.com/rsieuw/orga-master-ai-nexus)
+
+## Demo Toegang
+
+Voor demonstratie doeleinden kun je inloggen met de volgende gegevens:
+
+- **E-mail:** demo@exampl.com
+- **Wachtwoord:** demo2025
+
+Deze demo account heeft beperkte rechten en is bedoeld om de basis functionaliteiten van de applicatie te verkennen.
