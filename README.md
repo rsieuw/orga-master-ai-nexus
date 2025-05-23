@@ -1,7 +1,7 @@
 # OrgaMaster AI 🤖
 OrgaMaster AI is an intelligent task management application that integrates Perplexity AI capabilities to streamline your productivity workflow. This project was developed for the Perplexity AI Hackathon.
 
-![OrgaMaster AI Banner](https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/banner.png)
+![OrgaMaster AI Banner](https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/gallery/banner.png)
 
 ## Project Overview 🎯
 OrgaMaster AI addresses the challenge of task management and information overload by combining structured task organization with powerful AI research capabilities. Our solution helps users efficiently manage tasks while providing contextually relevant information through Perplexity's advanced search technology.
@@ -45,7 +45,7 @@ Our implementation includes:
 ## Demo and Screenshots 📱
 
 ### Live Demo 🌐
-Experience OrgaMaster AI: [Live Demo](https://orga-master-ai.vercel.app)
+Experience OrgaMaster AI: [Live Demo](https://orgamaster.artifexai.nl)
 
 ### Video Walkthrough 🎥
 Watch our demo video: [YouTube Demo](https://youtu.be/mS93cufmZpY)
@@ -53,14 +53,14 @@ Watch our demo video: [YouTube Demo](https://youtu.be/mS93cufmZpY)
 ### Screenshots ��
 
 #### Desktop View 🖥️
-<img src="https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/optimized/dashboard.png" alt="Dashboard" width="800" />
-<img src="https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/optimized/task-details-with-chat.png" alt="Task Details with Chat" width="800" />
+![Dashboard](https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/dashboard.png)
+![Task Details with Chat](https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/task-details-with-chat.png)
 
 #### Mobile View 📱
-<div style="display: flex; gap: 10px; flex-wrap: wrap;">
-  <img src="https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/optimized/mobile/dashboard-mobile.png" alt="Dashboard Mobile" width="250" />
-  <img src="https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/optimized/mobile/chat-mobile.png" alt="Chat Mobile" width="250" />
-  <img src="https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/optimized/mobile/task-details-mobile.png" alt="Task Details Mobile" width="250" />
+<div style="display: flex; gap: 10px;">
+  <img src="https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/dashboard-mobile.png" alt="Dashboard Mobile" width="200" />
+  <img src="https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/chat-mobile.png" alt="Chat Mobile" width="200" />
+  <img src="https://raw.githubusercontent.com/rsieuw/orga-master-ai-nexus/main/assets/task-details-mobile.png" alt="Task Details Mobile" width="200" />
 </div>
 
 ## Getting Started 🚀
